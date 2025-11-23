@@ -212,42 +212,52 @@ class Simulation:
         if node.kind == 'valve':
             node.setting = 0.0 if node.setting > 0.5 else 1.0
 
-    def _solve_pressure_network(self):
-        for _ in range(config.PRESSURE_ITERATIONS):
+    def _solve_pressure_network(self, dt):
+        # IMPLICIT COMPRESSIBILITY SOLVER
+        base_capacity = config.PIPE_AREA_M2 * config.SEGMENT_LENGTH_M
+        alpha = (base_capacity / config.BULK_MODULUS) / dt
+        
+        for _ in range(config.MAX_PRESSURE_ITERATIONS):
             max_change = 0.0
             for node in self.nodes:
                 if node.fixed_pressure is not None: continue
                 
-                # PARTIAL FILL LOGIC (Threshold)
-                if node.current_volume < node.volume_capacity * 0.99:
+                fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
+                
+                if fill_ratio < config.PRESSURE_RAMP_START:
                     node.pressure = 0.0
                     continue 
                 
                 total_p_conductance = 0.0
                 total_conductance = 0.0
                 
-                # Cap fill ratio at 1.0 for conductance calc to prevent runaway math
-                fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
-                
                 for neighbor in node.connections:
                     c = 1.0 / config.PIPE_RESISTANCE
                     if node.kind == 'valve': c = node.setting / config.VALVE_RESISTANCE
                     elif neighbor.kind == 'valve': c = neighbor.setting / config.VALVE_RESISTANCE
                     
-                    # Scale conductance by fill level so empty pipes don't suck pressure
-                    c *= fill_ratio
+                    c *= min(1.0, neighbor.current_volume / neighbor.volume_capacity)
                     
                     if c > 0.0001:
                         total_p_conductance += neighbor.pressure * c
                         total_conductance += c
+                
                 if total_conductance > 0:
-                    new_p = total_p_conductance / total_conductance
+                    numerator = total_p_conductance + alpha * node.pressure
+                    denominator = total_conductance + alpha
+                    
+                    target_p = numerator / denominator
+                    
+                    cushion_factor = (fill_ratio - config.PRESSURE_RAMP_START) / (1.0 - config.PRESSURE_RAMP_START)
+                    new_p = target_p * cushion_factor
+                    
                     diff = abs(new_p - node.pressure)
                     if diff > max_change: max_change = diff
                     node.pressure = new_p
                 else:
                     pass 
-            if max_change < 0.1: break
+            
+            if max_change < config.PRESSURE_TOLERANCE: break
 
     def _get_node_viscosity(self, node):
         if node.fluid.mass <= 0: return config.VISCOSITIES['Water']
@@ -281,14 +291,11 @@ class Simulation:
                 node.fluid.composition = {}
                 node.last_velocity = 0.0
 
-        self._solve_pressure_network()
+        self._solve_pressure_network(dt)
 
         flows = [] 
         seen_edges = set()
         
-        # TRACKER FOR CURRENT SUBSTEP VELOCITIES
-        # We use a dict to store the instantaneous velocity for this physics step
-        # instead of overwriting node.last_velocity directly.
         step_velocities = dict.fromkeys(self.nodes, 0.0)
 
         for node_a in self.nodes:
@@ -299,14 +306,24 @@ class Simulation:
                 
                 delta_p = node_a.pressure - node_b.pressure
                 
-                # --- HYDROSTATIC LEVELING ---
-                # Drives fluid from high-fill to low-fill segments
-                # even when mechanical pressure is zero.
-                fill_a = node_a.current_volume / node_a.volume_capacity
-                fill_b = node_b.current_volume / node_b.volume_capacity
-                delta_p += (fill_a - fill_b) * 20.0 # 20.0 = Leveling Force (kPa)
-                # ---------------------------
-
+                # --- HYDROSTATIC REGIME COUPLING ---
+                fill_a = min(1.0, node_a.current_volume / node_a.volume_capacity)
+                fill_b = min(1.0, node_b.current_volume / node_b.volume_capacity)
+                
+                # Quadratic Drop-off for regime coupling
+                # factor = (1.0 - min_fill)^2
+                # At min_fill=0.9 (Pressure Ramp Start), factor = 0.01.
+                # Force = 500 * 0.01 = 5 kPa. (Negligible)
+                # At min_fill=0.0 (Empty), factor = 1.0.
+                # Force = 500 * 1.0 = 500 kPa. (Strong Sprint)
+                
+                min_fill = min(fill_a, fill_b)
+                air_space = max(0.0, 1.0 - min_fill)
+                air_space_sq = air_space * air_space
+                
+                delta_p += (fill_a - fill_b) * config.HYDROSTATIC_FORCE * air_space_sq
+                # -----------------------------------
+                
                 r = config.PIPE_RESISTANCE
                 if node_a.kind == 'valve':
                     if node_a.setting < 0.01: r = 1e9
@@ -336,7 +353,6 @@ class Simulation:
                 
                 if moved:
                     v = q / config.PIPE_AREA_M2
-                    # Update step tracker, retaining max magnitude for this step
                     if abs(v) > abs(step_velocities[node_a]): step_velocities[node_a] = v
                     if abs(v) > abs(step_velocities[node_b]): step_velocities[node_b] = v
 
@@ -350,14 +366,7 @@ class Simulation:
                     source.current_volume -= real_amount
                 
                 dest.current_volume += real_amount
-                
-                # Fixed Rendering Bug:
-                # Always update composition if fluid moved, regardless of amount
                 dest.fluid.composition = source.fluid.composition.copy()
         
-        # APPLY SMOOTHING TO NODE VELOCITY
-        # Blend the current step's velocity into the persistent velocity to filter out noise.
-        alpha = 0.2 # Smoothing factor (0.0 - 1.0). Lower = smoother but more lag.
         for node in self.nodes:
-            target_v = step_velocities[node]
-            node.last_velocity = node.last_velocity * (1.0 - alpha) + target_v * alpha
+            node.last_velocity = step_velocities[node]
