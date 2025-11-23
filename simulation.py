@@ -11,17 +11,13 @@ class Node:
         self.setting = 1.0 
         self.material_type = material_type 
         
-        # PHYSICAL STATE
-        self.pressure = 0.0 # Calculated by Solver
-        self.fluid = FluidBatch() # Holds Mass and Composition
+        self.pressure = 0.0 
+        self.fluid = FluidBatch() 
         
-        # Capacity (m^3)
         self.volume_capacity = config.PIPE_AREA_M2 * config.SEGMENT_LENGTH_M
         self.current_volume = 0.0 
         
-        # Boundary Conditions
         self.fixed_pressure = fixed_pressure 
-        
         self.connections = [] 
         self.is_primary = is_primary
         
@@ -32,9 +28,7 @@ class Simulation:
         self.nodes = []
         self.history = [] 
         
-        # Initial Source
         self.source_node = Node(0, 0, kind='source', fixed_pressure=config.DEFAULT_SOURCE_PRESSURE, is_primary=True, material_type='Red')
-        # Prime it so it has mass to give
         self.source_node.current_volume = self.source_node.volume_capacity
         self.source_node.fluid.mass = 1000.0 
         self.source_node.fluid.composition = {'Red': 1.0}
@@ -87,7 +81,6 @@ class Simulation:
             node.material_type = 'Red'
 
     def adjust_source_rate(self, node, delta):
-        # Adjust Pressure
         if node.fixed_pressure is not None:
             node.fixed_pressure += delta
             if node.fixed_pressure < 0: node.fixed_pressure = 0
@@ -220,80 +213,83 @@ class Simulation:
             node.setting = 0.0 if node.setting > 0.5 else 1.0
 
     def _solve_pressure_network(self):
-        """
-        Iterative solver to find steady-state pressures based on connectivity.
-        P_node = Average(P_neighbors_weighted_by_conductance)
-        """
-        # 1. Initialize Unknown Pressures
-        # If a node is fixed (Source/Sink), it anchors the field.
-        # If not, we let it float.
-        
         for _ in range(config.PRESSURE_ITERATIONS):
             max_change = 0.0
-            
             for node in self.nodes:
                 if node.fixed_pressure is not None: continue
                 
-                # Calculate target pressure based on neighbors
+                # PARTIAL FILL LOGIC (Threshold)
+                if node.current_volume < node.volume_capacity * 0.99:
+                    node.pressure = 0.0
+                    continue 
+                
                 total_p_conductance = 0.0
                 total_conductance = 0.0
                 
+                # Cap fill ratio at 1.0 for conductance calc to prevent runaway math
+                fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
+                
                 for neighbor in node.connections:
-                    # Determine Conductance (1/Resistance)
-                    # Basic pipe = 1/PIPE_RESISTANCE
-                    # Valve = Setting/VALVE_RESISTANCE
-                    
                     c = 1.0 / config.PIPE_RESISTANCE
+                    if node.kind == 'valve': c = node.setting / config.VALVE_RESISTANCE
+                    elif neighbor.kind == 'valve': c = neighbor.setting / config.VALVE_RESISTANCE
                     
-                    # Valve check logic
-                    if node.kind == 'valve':
-                        c = node.setting / config.VALVE_RESISTANCE
-                    elif neighbor.kind == 'valve':
-                        c = neighbor.setting / config.VALVE_RESISTANCE
-                        
+                    # Scale conductance by fill level so empty pipes don't suck pressure
+                    c *= fill_ratio
+                    
                     if c > 0.0001:
                         total_p_conductance += neighbor.pressure * c
                         total_conductance += c
-                
                 if total_conductance > 0:
                     new_p = total_p_conductance / total_conductance
                     diff = abs(new_p - node.pressure)
                     if diff > max_change: max_change = diff
                     node.pressure = new_p
                 else:
-                    # Trapped node, decays to 0 or stays static
-                    # Realistically it stays static, but let's bleed it for stability
-                    node.pressure *= 0.98 
+                    pass 
+            if max_change < 0.1: break
+
+    def _get_node_viscosity(self, node):
+        if node.fluid.mass <= 0: return config.VISCOSITIES['Water']
+        
+        total_visc = 0.0
+        total_frac = 0.0
+        for chem, frac in node.fluid.composition.items():
+            v = config.VISCOSITIES.get(chem, 0.1)
+            total_visc += v * frac
+            total_frac += frac
             
-            if max_change < 0.1: break # Converged
+        if total_frac > 0:
+            return total_visc / total_frac
+        return config.VISCOSITIES['Water']
 
     def update(self, dt):
-        # Clamp DT to prevent explosion if frame rate drops
         dt = min(dt, 0.1)
-        
         sub_dt = dt / config.PHYSICS_SUBSTEPS
         for _ in range(config.PHYSICS_SUBSTEPS):
             self._step_physics(sub_dt)
 
     def _step_physics(self, dt):
-        # 1. Refill Sources / Empty Sinks
         for node in self.nodes:
             if node.kind == 'source':
                 node.current_volume = node.volume_capacity
-                node.pressure = node.fixed_pressure # Reset anchor
+                node.pressure = node.fixed_pressure 
                 node.fluid.composition = {node.material_type: 1.0}
             elif node.kind == 'sink':
                 node.current_volume = 0.0
                 node.pressure = 0.0
                 node.fluid.composition = {}
+                node.last_velocity = 0.0
 
-        # 2. Solve Pressure Field (Steady State)
         self._solve_pressure_network()
 
-        # 3. Transport (Mixing)
-        flows = [] # (source, dest, volume_m3)
+        flows = [] 
         seen_edges = set()
         
+        # Reset velocities before calc
+        for node in self.nodes:
+            node.last_velocity = 0.0
+
         for node_a in self.nodes:
             for node_b in node_a.connections:
                 edge_id = frozenset([node_a, node_b])
@@ -302,72 +298,52 @@ class Simulation:
                 
                 delta_p = node_a.pressure - node_b.pressure
                 
-                # Resistance
                 r = config.PIPE_RESISTANCE
                 if node_a.kind == 'valve':
-                    # Avoid divide by zero, treat 0.0 as infinite resistance
                     if node_a.setting < 0.01: r = 1e9
                     else: r = config.VALVE_RESISTANCE / node_a.setting
                 elif node_b.kind == 'valve':
                     if node_b.setting < 0.01: r = 1e9
                     else: r = config.VALVE_RESISTANCE / node_b.setting
                 
-                # Flow Rate Q (m^3/s) = DeltaP / R
                 q = delta_p / r
                 
-                # Store velocity for visuals
-                v = q / config.PIPE_AREA_M2
-                node_a.last_velocity = v
-                node_b.last_velocity = v
-                
                 vol_to_move = abs(q) * dt
-                
-                if q > 0:
-                    # A -> B
-                    # Only flow if A has liquid to give
-                    # Infinite sources are always full
-                    if node_a.current_volume > 0:
-                        flows.append((node_a, node_b, vol_to_move))
-                elif q < 0:
-                    # B -> A
-                    if node_b.current_volume > 0:
-                        flows.append((node_b, node_a, vol_to_move))
+                max_move_clamp = node_a.volume_capacity * 0.5
+                vol_to_move = min(vol_to_move, max_move_clamp)
 
-        # 4. Apply Mixing (CSTR)
-        for source, dest, vol in flows:
-            # Clamp to available volume (cannot give what you don't have)
-            real_vol = min(vol, source.current_volume)
+                visc_a = self._get_node_viscosity(node_a)
+                visc_b = self._get_node_viscosity(node_b)
+
+                moved = False
+                if q > 0:
+                    if node_a.current_volume >= node_a.volume_capacity * visc_a:
+                        flows.append((node_a, node_b, vol_to_move))
+                        moved = True
+                elif q < 0:
+                    if node_b.current_volume >= node_b.volume_capacity * visc_b:
+                        flows.append((node_b, node_a, vol_to_move))
+                        moved = True
+                
+                if moved:
+                    v = q / config.PIPE_AREA_M2
+                    if abs(v) > abs(node_a.last_velocity): node_a.last_velocity = v
+                    if abs(v) > abs(node_b.last_velocity): node_b.last_velocity = v
+
+        for source, dest, amount in flows:
+            avail = source.current_volume
+            if source.kind == 'source': avail = float('inf')
+            real_amount = min(amount, avail)
             
-            if real_vol > 0:
-                # Calculate Mass to move based on source density
-                # (Simplified: assume density is property of fluid inside)
-                # Ideally density depends on composition. 
-                # Let's just move "FluidBatch" proportional to volume.
+            if real_amount > 0:
+                if source.kind != 'source':
+                    source.current_volume -= real_amount
                 
-                # Fraction of source being moved
-                frac = real_vol / max(source.current_volume, 0.00001)
-                frac = min(frac, 1.0)
+                dest.current_volume += real_amount
                 
-                mass_moved = source.fluid.mass * frac
+                if amount > dest.volume_capacity * 0.1:
+                    dest.fluid.composition = source.fluid.composition.copy()
                 
-                # Extract
-                packet = source.fluid.extract(mass_moved)
-                source.current_volume -= real_vol
-                
-                # Add to Dest (Mixes)
-                dest.fluid.add(packet.mass, packet.composition)
-                dest.current_volume += real_vol
-                
-                # Sink Logic: If dest is sink, it vanishes instantly (handled in step 1 next frame)
-                # Source Logic: If source is source, it regenerates instantly (handled in step 1 next frame)
-                
-                # Overflow Logic?
-                # In CSTR, usually volume is constant and overflow happens. 
-                # Here, we allow "filling up". 
-                # If dest overfills, pressure solver handles it next frame (P rises, pushing fluid out).
-                # But for mass conservation, we clamp volume to capacity visually?
-                if dest.current_volume > dest.volume_capacity:
-                    dest.current_volume = dest.volume_capacity
-                    # Note: We just deleted mass here (Spillover). 
-                    # In a closed loop, pressure would rise until flow stops.
-                    # In our "open" logic, this acts like a relief valve.
+                # IMPORTANT: REMOVED THE DESTINATION CLAMP
+                # This allows nodes to buffer >100% capacity, preventing the 99% threshold flicker
+                # The excess pressure will naturally drive outflow in the next step.

@@ -22,24 +22,37 @@ BUTTON_MARGIN = 10
 
 # Physics Constants
 # Hydraulic Resistance (kPa per (m^3/s))
-# Low resistance for fast, energetic flow visual
 PIPE_RESISTANCE = 1.0 
-VALVE_RESISTANCE = 0.5 
+VALVE_RESISTANCE = 1.0 
 
 # Pressure Solver Settings
 PRESSURE_ITERATIONS = 10 
-# High sub-steps (40) prevents numerical explosion/flickering at low resistance
 PHYSICS_SUBSTEPS = 40 
 
 # Source settings
 DEFAULT_SOURCE_PRESSURE = 500.0 # kPa
 
-# Chemistry Constants (Density in kg/m^3)
+# Viscosity Thresholds
+VISCOSITIES = {
+    'Water': 0.1,
+    'Red': 0.9,   
+    'Green': 0.5, 
+    'Blue': 0.1   
+}
+
+# Chemistry Constants
 DENSITIES = {
     'Water': 1000.0,
     'Red': 1050.0,   
     'Green': 950.0,
     'Blue': 1000.0   
+}
+
+MOLAR_MASSES = {
+    'Water': 18.0,
+    'Red': 40.0,   
+    'Green': 30.0,
+    'Blue': 20.0   
 }
 
 # WPA Color Palette

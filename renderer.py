@@ -10,26 +10,29 @@ class Renderer:
         self.ui_font = pygame.font.SysFont("Consolas", 16, bold=True)
 
     def _get_fluid_color(self, node):
+        # 1. Get Base Color from Composition
         total_frac = sum(node.fluid.composition.values())
+        
         if total_frac <= 0.001:
-            base_rgb = config.C_FLUID 
-        else:
-            r, g, b = 0, 0, 0
-            for chem, frac in node.fluid.composition.items():
-                chem_color = config.FLUID_COLORS.get(chem, config.C_FLUID)
-                r += chem_color[0] * frac; g += chem_color[1] * frac; b += chem_color[2] * frac
-            r /= total_frac; g /= total_frac; b /= total_frac
-            base_rgb = (int(r), int(g), int(b))
+            return config.C_PIPE_EMPTY
+        
+        r, g, b = 0, 0, 0
+        for chem, frac in node.fluid.composition.items():
+            chem_color = config.FLUID_COLORS.get(chem, config.C_FLUID)
+            r += chem_color[0] * frac; g += chem_color[1] * frac; b += chem_color[2] * frac
+        r /= total_frac; g /= total_frac; b /= total_frac
+        base_rgb = (int(r), int(g), int(b))
 
-        # VISUAL FILL based on Volume, not Pressure
+        # 2. Visual Fill Calculation (Boosted Saturation)
         fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
+        color_intensity = min(1.0, fill_ratio * 3.0) 
         
         start_c = config.C_PIPE_EMPTY
         end_c = base_rgb
         
-        fin_r = int(start_c[0] + (end_c[0] - start_c[0]) * fill_ratio)
-        fin_g = int(start_c[1] + (end_c[1] - start_c[1]) * fill_ratio)
-        fin_b = int(start_c[2] + (end_c[2] - start_c[2]) * fill_ratio)
+        fin_r = int(start_c[0] + (end_c[0] - start_c[0]) * color_intensity)
+        fin_g = int(start_c[1] + (end_c[1] - start_c[1]) * color_intensity)
+        fin_b = int(start_c[2] + (end_c[2] - start_c[2]) * color_intensity)
         return (fin_r, fin_g, fin_b)
 
     def draw_grid(self):
@@ -81,13 +84,38 @@ class Renderer:
 
     def draw_simulation(self, sim):
         line_width = max(2, int(4 * self.cam.zoom))
+        
+        # PASS 1: Draw Pipe Skeleton (Empty Gray Lines)
+        # We iterate over connections to draw the full "background" pipe
+        # This ensures gaps are filled with gray before we paint fluid on top
         for node in sim.nodes:
             sx, sy = self.cam.world_to_screen(node.x, node.y)
             for neighbor in node.connections:
                 nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
-                color = self._get_fluid_color(node) 
-                pygame.draw.line(self.surface, color, (sx, sy), (nsx, nsy), line_width)
+                pygame.draw.line(self.surface, config.C_PIPE_EMPTY, (sx, sy), (nsx, nsy), line_width)
 
+        # PASS 2: Draw Fluid (Half-Segments)
+        # We only draw the half of the pipe belonging to 'node'. 
+        # This prevents Node B (Empty) from overdrawing Node A (Full).
+        for node in sim.nodes:
+            fill = min(1.0, node.current_volume / node.volume_capacity)
+            
+            # Only draw if there is something to see
+            if fill > 0.01:
+                sx, sy = self.cam.world_to_screen(node.x, node.y)
+                color = self._get_fluid_color(node) 
+                
+                for neighbor in node.connections:
+                    nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
+                    
+                    # Calculate Midpoint
+                    mx = (sx + nsx) / 2
+                    my = (sy + nsy) / 2
+                    
+                    # Draw ONLY from Node to Midpoint
+                    pygame.draw.line(self.surface, color, (sx, sy), (mx, my), line_width)
+
+        # PASS 3: Draw Components
         for node in sim.nodes:
             sx, sy = self.cam.world_to_screen(node.x, node.y)
             if node.kind == 'source':
@@ -115,40 +143,96 @@ class Renderer:
         txt = self.font.render(f"POS: {int(mouse_world_pos[0])}, {int(mouse_world_pos[1])}", True, config.C_HIGHLIGHT)
         self.surface.blit(txt, (10, 10))
 
-    def draw_telemetry(self, node, mouse_screen_pos):
+    def draw_inspector_tooltip(self, node, mouse_screen_pos, world_pos=None):
+        """
+        Draws the detailed engineering inspector.
+        Highlights the specific segment being inspected.
+        """
         if not node: return
-        box_w, box_h = 220, 150 
-        x, y = mouse_screen_pos[0] + 15, mouse_screen_pos[1] + 15
-        if x + box_w > config.SCREEN_WIDTH: x -= box_w + 30
-        if y + box_h > config.SCREEN_HEIGHT: y -= box_h + 30
+        
+        # --- HIGHLIGHT THE SEGMENT ---
+        # Draws a bright yellow line over the inspected connection(s)
+        line_width = max(4, int(6 * self.cam.zoom)) 
+        sx, sy = self.cam.world_to_screen(node.x, node.y)
+        
+        for neighbor in node.connections:
+            nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
+            # If inspecting a segment, we might want to highlight only that one,
+            # but highlighting all connections from the node is decent feedback for now.
+            # If world_pos is provided (clicked on segment), we could be smarter,
+            # but since 'node' is just an endpoint, this shows what node we are inspecting.
+            pygame.draw.line(self.surface, config.C_HIGHLIGHT, (sx, sy), (nsx, nsy), line_width)
+
+        # --- TOOLTIP BOX ---
+        box_w, box_h = 240, 140 
+        x, y = mouse_screen_pos[0] + 20, mouse_screen_pos[1] + 20
+        if x + box_w > config.SCREEN_WIDTH: x -= box_w + 40
+        if y + box_h > config.SCREEN_HEIGHT: y -= box_h + 40
         
         rect = (x, y, box_w, box_h)
-        pygame.draw.rect(self.surface, (20, 20, 25), rect)
-        pygame.draw.rect(self.surface, config.C_HIGHLIGHT, rect, 1)
+        pygame.draw.rect(self.surface, (10, 15, 20), rect)
+        pygame.draw.rect(self.surface, config.C_HIGHLIGHT, rect, 2)
         
-        comp_str = ""
+        flow_rate_lps = abs(node.last_velocity) * config.PIPE_AREA_M2 * 1000.0
+        display_pressure = node.pressure
+        if node.kind == 'valve' and node.setting < 0.01:
+            max_p = 0
+            for n in node.connections:
+                if n.pressure > max_p: max_p = n.pressure
+            display_pressure = max_p
+
+        comp_lines = []
         if node.fluid.composition:
             sorted_comp = sorted(node.fluid.composition.items(), key=lambda item: item[1], reverse=True)
-            top_chem, top_frac = sorted_comp[0]
-            comp_str = f"{top_chem} {int(top_frac*100)}%"
-            if len(sorted_comp) > 1: comp_str += "..."
+            for chem, frac in sorted_comp:
+                if frac > 0.01: 
+                    comp_lines.append(f"  {chem}: {int(frac*100)}%")
+        else:
+            comp_lines.append("  Empty")
 
         lines = [
-            f"TYPE: {node.kind.upper()}",
-            f"MAT:  {node.material_type}" if node.kind == 'source' else "",
-            f"P_SRC: {int(node.fixed_pressure)} kPa" if node.kind == 'source' else "",
-            f"PRESS: {node.pressure:.1f} kPa",
-            f"VEL:   {node.last_velocity:.2f} m/s",
-            f"VOL:   {node.current_volume:.3f} m3",
-            f"COMP:  {comp_str}"
-        ]
+            f"NODE: {node.kind.upper()}",
+            f"FLOW: {flow_rate_lps:,.1f} L/s",
+            f"PRES: {display_pressure:,.1f} kPa",
+            "COMPOSITION:"
+        ] + comp_lines
         
-        curr_y = y + 10
-        for line in lines:
-            if not line: continue
-            txt = self.font.render(line, True, config.C_TEXT)
-            self.surface.blit(txt, (x + 10, curr_y))
+        curr_y = y + 12
+        for i, line in enumerate(lines):
+            color = config.C_TEXT
+            if i == 0: color = config.C_HIGHLIGHT
+            txt = self.font.render(line, True, color)
+            self.surface.blit(txt, (x + 12, curr_y))
             curr_y += 20
+            
+        # --- DRAW POINTER TRIANGLE ---
+        if world_pos:
+            wsx, wsy = self.cam.world_to_screen(world_pos[0], world_pos[1])
+            
+            # Calculate angle from box center to click point
+            box_cx = x + box_w / 2
+            box_cy = y + box_h / 2
+            dx = wsx - box_cx
+            dy = wsy - box_cy
+            angle = math.atan2(dy, dx)
+            
+            # Triangle geometry
+            tip = (wsx, wsy)
+            size = 12
+            # Base points rotated 90 deg from the angle
+            base_x = math.cos(angle) * size
+            base_y = math.sin(angle) * size
+            perp_x = -base_y * 0.5
+            perp_y = base_x * 0.5
+            
+            # Back up slightly from tip
+            back_x = wsx - base_x
+            back_y = wsy - base_y
+            
+            p1 = (back_x + perp_x, back_y + perp_y)
+            p2 = (back_x - perp_x, back_y - perp_y)
+            
+            pygame.draw.polygon(self.surface, config.C_HIGHLIGHT, [tip, p1, p2])
 
     def draw_toolbar(self, buttons, current_mode, mouse_pos, active_material):
         rect = (0, config.SCREEN_HEIGHT - config.TOOLBAR_HEIGHT, config.SCREEN_WIDTH, config.TOOLBAR_HEIGHT)
