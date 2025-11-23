@@ -286,9 +286,10 @@ class Simulation:
         flows = [] 
         seen_edges = set()
         
-        # Reset velocities before calc
-        for node in self.nodes:
-            node.last_velocity = 0.0
+        # TRACKER FOR CURRENT SUBSTEP VELOCITIES
+        # We use a dict to store the instantaneous velocity for this physics step
+        # instead of overwriting node.last_velocity directly.
+        step_velocities = dict.fromkeys(self.nodes, 0.0)
 
         for node_a in self.nodes:
             for node_b in node_a.connections:
@@ -298,6 +299,14 @@ class Simulation:
                 
                 delta_p = node_a.pressure - node_b.pressure
                 
+                # --- HYDROSTATIC LEVELING ---
+                # Drives fluid from high-fill to low-fill segments
+                # even when mechanical pressure is zero.
+                fill_a = node_a.current_volume / node_a.volume_capacity
+                fill_b = node_b.current_volume / node_b.volume_capacity
+                delta_p += (fill_a - fill_b) * 20.0 # 20.0 = Leveling Force (kPa)
+                # ---------------------------
+
                 r = config.PIPE_RESISTANCE
                 if node_a.kind == 'valve':
                     if node_a.setting < 0.01: r = 1e9
@@ -327,8 +336,9 @@ class Simulation:
                 
                 if moved:
                     v = q / config.PIPE_AREA_M2
-                    if abs(v) > abs(node_a.last_velocity): node_a.last_velocity = v
-                    if abs(v) > abs(node_b.last_velocity): node_b.last_velocity = v
+                    # Update step tracker, retaining max magnitude for this step
+                    if abs(v) > abs(step_velocities[node_a]): step_velocities[node_a] = v
+                    if abs(v) > abs(step_velocities[node_b]): step_velocities[node_b] = v
 
         for source, dest, amount in flows:
             avail = source.current_volume
@@ -341,9 +351,13 @@ class Simulation:
                 
                 dest.current_volume += real_amount
                 
-                if amount > dest.volume_capacity * 0.1:
-                    dest.fluid.composition = source.fluid.composition.copy()
-                
-                # IMPORTANT: REMOVED THE DESTINATION CLAMP
-                # This allows nodes to buffer >100% capacity, preventing the 99% threshold flicker
-                # The excess pressure will naturally drive outflow in the next step.
+                # Fixed Rendering Bug:
+                # Always update composition if fluid moved, regardless of amount
+                dest.fluid.composition = source.fluid.composition.copy()
+        
+        # APPLY SMOOTHING TO NODE VELOCITY
+        # Blend the current step's velocity into the persistent velocity to filter out noise.
+        alpha = 0.2 # Smoothing factor (0.0 - 1.0). Lower = smoother but more lag.
+        for node in self.nodes:
+            target_v = step_velocities[node]
+            node.last_velocity = node.last_velocity * (1.0 - alpha) + target_v * alpha

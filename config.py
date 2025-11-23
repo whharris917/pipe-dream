@@ -7,7 +7,10 @@ FPS = 60
 SNAP_DISTANCE = 15.0       
 INTERACTION_DISTANCE = 40.0 
 MIN_PIPE_LENGTH = 4.0      
-SEGMENT_LENGTH_PX = 20.0 
+
+# Reduced segment length for higher resolution simulation
+# (User requested this change, so keeping it 10.0)
+SEGMENT_LENGTH_PX = 10.0 
 SEGMENT_LENGTH_M = 1.0 
 
 # Hydraulic Geometry
@@ -22,10 +25,12 @@ BUTTON_MARGIN = 10
 
 # Physics Constants
 # Hydraulic Resistance (kPa per (m^3/s))
+# Reverted to original lower values for iterative solver
 PIPE_RESISTANCE = 1.0 
 VALVE_RESISTANCE = 1.0 
 
 # Pressure Solver Settings
+# Reverted to original values
 PRESSURE_ITERATIONS = 10 
 PHYSICS_SUBSTEPS = 40 
 
@@ -33,6 +38,7 @@ PHYSICS_SUBSTEPS = 40
 DEFAULT_SOURCE_PRESSURE = 500.0 # kPa
 
 # Viscosity Thresholds
+# Reverted to original holding values
 VISCOSITIES = {
     'Water': 0.1,
     'Red': 0.9,   
