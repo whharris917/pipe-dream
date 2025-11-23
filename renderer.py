@@ -21,13 +21,15 @@ class Renderer:
             r /= total_frac; g /= total_frac; b /= total_frac
             base_rgb = (int(r), int(g), int(b))
 
-        pressure = node.pressure
-        t = min(max(pressure / 100.0, 0.0), 1.0)
+        # VISUAL FILL based on Volume, not Pressure
+        fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
+        
         start_c = config.C_PIPE_EMPTY
         end_c = base_rgb
-        fin_r = int(start_c[0] + (end_c[0] - start_c[0]) * t)
-        fin_g = int(start_c[1] + (end_c[1] - start_c[1]) * t)
-        fin_b = int(start_c[2] + (end_c[2] - start_c[2]) * t)
+        
+        fin_r = int(start_c[0] + (end_c[0] - start_c[0]) * fill_ratio)
+        fin_g = int(start_c[1] + (end_c[1] - start_c[1]) * fill_ratio)
+        fin_b = int(start_c[2] + (end_c[2] - start_c[2]) * fill_ratio)
         return (fin_r, fin_g, fin_b)
 
     def draw_grid(self):
@@ -115,7 +117,7 @@ class Renderer:
 
     def draw_telemetry(self, node, mouse_screen_pos):
         if not node: return
-        box_w, box_h = 180, 110
+        box_w, box_h = 220, 150 
         x, y = mouse_screen_pos[0] + 15, mouse_screen_pos[1] + 15
         if x + box_w > config.SCREEN_WIDTH: x -= box_w + 30
         if y + box_h > config.SCREEN_HEIGHT: y -= box_h + 30
@@ -134,8 +136,10 @@ class Renderer:
         lines = [
             f"TYPE: {node.kind.upper()}",
             f"MAT:  {node.material_type}" if node.kind == 'source' else "",
+            f"P_SRC: {int(node.fixed_pressure)} kPa" if node.kind == 'source' else "",
             f"PRESS: {node.pressure:.1f} kPa",
-            f"MASS:  {node.fluid.mass:.2f} kg",
+            f"VEL:   {node.last_velocity:.2f} m/s",
+            f"VOL:   {node.current_volume:.3f} m3",
             f"COMP:  {comp_str}"
         ]
         

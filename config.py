@@ -7,7 +7,12 @@ FPS = 60
 SNAP_DISTANCE = 15.0       
 INTERACTION_DISTANCE = 40.0 
 MIN_PIPE_LENGTH = 4.0      
-SEGMENT_LENGTH = 20.0 
+SEGMENT_LENGTH_PX = 20.0 
+SEGMENT_LENGTH_M = 1.0 
+
+# Hydraulic Geometry
+PIPE_DIAMETER_M = 0.3  
+PIPE_AREA_M2 = 3.14159 * (PIPE_DIAMETER_M / 2)**2
 
 # UI Settings
 TOOLBAR_HEIGHT = 60
@@ -16,8 +21,26 @@ BUTTON_HEIGHT = 40
 BUTTON_MARGIN = 10
 
 # Physics Constants
-FLOW_SPEED = 5.0    
-SOURCE_PRESSURE = 100.0
+# Hydraulic Resistance (kPa per (m^3/s))
+# Low resistance for fast, energetic flow visual
+PIPE_RESISTANCE = 1.0 
+VALVE_RESISTANCE = 0.5 
+
+# Pressure Solver Settings
+PRESSURE_ITERATIONS = 10 
+# High sub-steps (40) prevents numerical explosion/flickering at low resistance
+PHYSICS_SUBSTEPS = 40 
+
+# Source settings
+DEFAULT_SOURCE_PRESSURE = 500.0 # kPa
+
+# Chemistry Constants (Density in kg/m^3)
+DENSITIES = {
+    'Water': 1000.0,
+    'Red': 1050.0,   
+    'Green': 950.0,
+    'Blue': 1000.0   
+}
 
 # WPA Color Palette
 C_BACKGROUND = (30, 35, 40)     
