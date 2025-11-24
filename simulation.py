@@ -310,13 +310,6 @@ class Simulation:
                 fill_a = min(1.0, node_a.current_volume / node_a.volume_capacity)
                 fill_b = min(1.0, node_b.current_volume / node_b.volume_capacity)
                 
-                # Quadratic Drop-off for regime coupling
-                # factor = (1.0 - min_fill)^2
-                # At min_fill=0.9 (Pressure Ramp Start), factor = 0.01.
-                # Force = 500 * 0.01 = 5 kPa. (Negligible)
-                # At min_fill=0.0 (Empty), factor = 1.0.
-                # Force = 500 * 1.0 = 500 kPa. (Strong Sprint)
-                
                 min_fill = min(fill_a, fill_b)
                 air_space = max(0.0, 1.0 - min_fill)
                 air_space_sq = air_space * air_space
@@ -365,8 +358,32 @@ class Simulation:
                 if source.kind != 'source':
                     source.current_volume -= real_amount
                 
+                # --- MIXING LOGIC ---
+                # Calculate new composition based on volume-weighted average
+                
+                vol_existing = dest.current_volume
+                vol_incoming = real_amount
+                vol_total = vol_existing + vol_incoming
+                
+                if vol_total > 1e-9:
+                    new_comp = {}
+                    all_chems = set(dest.fluid.composition.keys()) | set(source.fluid.composition.keys())
+                    
+                    for chem in all_chems:
+                        qty_existing = vol_existing * dest.fluid.composition.get(chem, 0.0)
+                        qty_incoming = vol_incoming * source.fluid.composition.get(chem, 0.0)
+                        
+                        new_frac = (qty_existing + qty_incoming) / vol_total
+                        
+                        if new_frac > 0.001:
+                            new_comp[chem] = new_frac
+                            
+                    dest.fluid.composition = new_comp
+                else:
+                    dest.fluid.composition = source.fluid.composition.copy()
+
                 dest.current_volume += real_amount
-                dest.fluid.composition = source.fluid.composition.copy()
+                # --------------------
         
         for node in self.nodes:
             node.last_velocity = step_velocities[node]
