@@ -274,10 +274,24 @@ class Simulation:
         return config.VISCOSITIES['Water']
 
     def update(self, dt):
-        dt = min(dt, 0.1)
-        sub_dt = dt / config.PHYSICS_SUBSTEPS
-        for _ in range(config.PHYSICS_SUBSTEPS):
-            self._step_physics(sub_dt)
+            dt = min(dt, 0.1)
+            sub_dt = dt / config.PHYSICS_SUBSTEPS
+            
+            # 1. Initialize an accumulator for the display velocity
+            velocity_sums = {n: 0.0 for n in self.nodes}
+
+            for _ in range(config.PHYSICS_SUBSTEPS):
+                self._step_physics(sub_dt)
+                
+                # 2. Accumulate the instantaneous velocity from this substep
+                for n in self.nodes:
+                    velocity_sums[n] += n.last_velocity
+
+            # 3. Average the velocity over the frame for smooth display
+            for n in self.nodes:
+                # Avoid division by zero if substeps is somehow 0 (safety)
+                if config.PHYSICS_SUBSTEPS > 0:
+                    n.last_velocity = velocity_sums[n] / config.PHYSICS_SUBSTEPS
 
     def _step_physics(self, dt):
         for node in self.nodes:
@@ -311,7 +325,13 @@ class Simulation:
                 fill_b = min(1.0, node_b.current_volume / node_b.volume_capacity)
                 
                 min_fill = min(fill_a, fill_b)
-                air_space = max(0.0, 1.0 - min_fill)
+
+                # NEW: Cubic ease-in for air space. 
+                # This drastically reduces the suction force when the pipe is barely empty,
+                # preventing velocity spikes at the very tip of the flow.
+                raw_air = max(0.0, 1.0 - min_fill)
+                air_space = raw_air * raw_air * raw_air
+
                 air_space_sq = air_space * air_space
                 
                 delta_p += (fill_a - fill_b) * config.HYDROSTATIC_FORCE * air_space_sq

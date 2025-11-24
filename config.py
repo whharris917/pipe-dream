@@ -9,7 +9,7 @@ INTERACTION_DISTANCE = 40.0
 MIN_PIPE_LENGTH = 4.0      
 
 # Resolution
-SEGMENT_LENGTH_PX = 20.0 
+SEGMENT_LENGTH_PX = 10.0 
 SEGMENT_LENGTH_M = 1.0 
 
 # Hydraulic Geometry
@@ -29,7 +29,7 @@ VALVE_RESISTANCE = 30.0
 # PERFORMANCE OPTIMIZATION:
 # The Implicit Solver is stable at larger time steps.
 # Reduced from 40 to 10 for a 4x speedup.
-PHYSICS_SUBSTEPS = 10 
+PHYSICS_SUBSTEPS = 40 
 
 # Source settings
 DEFAULT_SOURCE_PRESSURE = 300.0 # kPa
@@ -43,12 +43,12 @@ PRESSURE_TOLERANCE = 0.001
 # PERFORMANCE OPTIMIZATION:
 # Reduced from 20 to 8. This is sufficient for visual
 # convergence in a game context. Yields 2.5x speedup.
-MAX_PRESSURE_ITERATIONS = 8   
+MAX_PRESSURE_ITERATIONS = 20
 
-PRESSURE_RAMP_START = 0.90     
+PRESSURE_RAMP_START = 0.50   
 
 # Hydrostatic Leveling (Diffusion)
-HYDROSTATIC_FORCE = 300.0      
+HYDROSTATIC_FORCE = 700.0      
 
 # -----------------------------------
 
