@@ -3,7 +3,7 @@ import config
 import math
 from simulation import Simulation
 from renderer import Renderer
-from camera import Camera # Added missing import
+from camera import Camera 
 
 # --- CONFIGURATION ---
 GRAPH_RECT = pygame.Rect(50, 50, 1180, 300)
@@ -15,94 +15,124 @@ VALVE_X = (START_X + END_X) // 2
 def setup_demo_scene():
     """
     Constructs a specific test bench: Source -> Pipe -> Valve -> Pipe -> Sink
+    Using the new Junction/Pipe architecture.
     """
     sim = Simulation()
     
-    # 1. Move default source to start position
-    sim.source_node.x = START_X
-    sim.source_node.y = SIM_Y_OFFSET
-    sim.source_node.material_type = 'Red'
+    # Clear default setup
+    sim.junctions = []
+    sim.pipes = []
     
-    # 2. Create Valve and Sink Nodes
-    valve_node = sim.create_node(VALVE_X, SIM_Y_OFFSET, kind='valve')
-    valve_node.setting = 0.0 # Start Closed
+    # 1. Create Junctions
+    source = sim.create_node(START_X, SIM_Y_OFFSET, kind='source', material_type='Red')
+    sim.source_node = source # Track for main loop
     
-    sink_node = sim.create_node(END_X, SIM_Y_OFFSET, kind='sink')
+    valve = sim.create_node(VALVE_X, SIM_Y_OFFSET, kind='valve')
+    valve.setting = 0.0 # Start Closed
     
-    # 3. Connect them with pipes
-    # Note: add_pipe creates intermediate nodes automatically
-    sim.add_pipe(sim.source_node, valve_node.x, valve_node.y, connect_to_end_node=valve_node)
-    sim.add_pipe(valve_node, sink_node.x, sink_node.y, connect_to_end_node=sink_node)
+    sink = sim.create_node(END_X, SIM_Y_OFFSET, kind='sink')
     
-    return sim, valve_node
+    # 2. Connect with Pipes (Edges)
+    # Keep track of them in order for the graph
+    pipe1 = sim.create_pipe(source, valve)
+    pipe2 = sim.create_pipe(valve, sink)
+    
+    ordered_pipes = [pipe1, pipe2]
+    
+    return sim, valve, ordered_pipes
 
-def draw_graph(surface, sim):
+def draw_graph(surface, sim, ordered_pipes):
     """
-    Draws the engineering plots: Pressure, Volume, Velocity.
+    Draws the engineering plots by sampling Pipe internals.
     """
     # Background
     pygame.draw.rect(surface, (20, 25, 30), GRAPH_RECT)
     pygame.draw.rect(surface, (100, 100, 100), GRAPH_RECT, 2)
     
-    # Collect Data sorted by X position
-    # We filter for nodes approximately on the pipe line to ignore any noise
-    nodes = [n for n in sim.nodes if abs(n.y - SIM_Y_OFFSET) < 5]
-    nodes.sort(key=lambda n: n.x)
-    
-    if not nodes: return
-
     data_points = []
-    for n in nodes:
-        # Normalized X coordinate (0.0 to 1.0 within graph width)
-        norm_x = (n.x - START_X) / (END_X - START_X)
-        screen_x = GRAPH_RECT.left + norm_x * GRAPH_RECT.width
+    
+    # Iterate through the known path to build the X-axis profile
+    current_x = START_X
+    
+    for pipe in ordered_pipes:
+        # Ensure direction matches graph (Left to Right)
+        # If pipe is defined Right-to-Left, we'd need to flip logic, 
+        # but setup_demo_scene creates them Left-to-Right.
         
-        # Extract Metrics
-        # Pressure: Scale 0-500 kPa -> 0-100% height
-        p = n.pressure
-        p_norm = min(1.0, p / 600.0) # 600 is visual max
+        # Metrics for this pipe section
+        # Pressure: Interpolate linearly from Start Node to End Node
+        p_start = pipe.start_node.pressure
+        p_end = pipe.end_node.pressure
         
-        # Volume: Fill Ratio 0.0-1.0
-        vol = n.current_volume / n.volume_capacity
-        vol_norm = min(1.0, vol)
+        # Velocity: Constant for the whole pipe edge
+        # Q = vA => v = Q/A
+        vel = pipe.flow_rate / config.PIPE_AREA_M2
         
-        # Velocity: Scale 0-10 m/s -> 0-100% height
-        # Note: We use absolute velocity for graph
-        vel = n.last_velocity
-        vel_norm = min(1.0, abs(vel) / 5.0) # 5 m/s max visual
+        # Sample the cells (The fluid packets)
+        num_cells = len(pipe.cells)
+        step_x = pipe.length_px / num_cells
         
-        data_points.append({
-            'x': screen_x,
-            'p': p_norm,
-            'vol': vol_norm,
-            'vel': vel_norm,
-            'kind': n.kind
-        })
+        for i, cell in enumerate(pipe.cells):
+            # X Position on Graph
+            # pipe.cells[0] is usually the entrance (depending on flow direction logic)
+            # In simulation.py, flow direction determines insert/pop end.
+            # Visual representation maps index 0 to start_node.
+            sample_x = current_x + (i * step_x)
+            
+            # Normalize X to graph width
+            norm_x = (sample_x - START_X) / (END_X - START_X)
+            screen_x = GRAPH_RECT.left + norm_x * GRAPH_RECT.width
+            
+            # 1. Pressure Interpolation
+            # Linear gradient along the pipe
+            alpha = i / num_cells
+            local_p = p_start + (p_end - p_start) * alpha
+            p_norm = min(1.0, local_p / 600.0)
+            
+            # 2. Fill Ratio (Volume)
+            # Estimate volume from mass (assuming water density for simplicity of graph)
+            # Real calc would use weighted density
+            vol_m3 = cell.volume() # Uses 1000 kg/m3 default
+            capacity_m3 = pipe.cell_volume
+            fill = vol_m3 / capacity_m3
+            vol_norm = min(1.0, fill)
+            
+            # 3. Velocity
+            vel_norm = min(1.0, abs(vel) / 5.0)
+            
+            data_points.append({
+                'x': screen_x,
+                'p': p_norm,
+                'vol': vol_norm,
+                'vel': vel_norm
+            })
+            
+        current_x += pipe.length_px
 
     # Helper to map normalized Y (0-1) to screen Y
     def get_y(norm_val):
         return GRAPH_RECT.bottom - (norm_val * GRAPH_RECT.height)
+
+    if not data_points: return
 
     # DRAW GRAPHS
     
     # 1. Volume (Filled Area - Blue)
     if len(data_points) > 1:
         poly_points = [(p['x'], get_y(p['vol'])) for p in data_points]
-        # Close polygon to bottom axis
         poly_points.append((data_points[-1]['x'], GRAPH_RECT.bottom))
         poly_points.append((data_points[0]['x'], GRAPH_RECT.bottom))
         
         s = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), pygame.SRCALPHA)
-        pygame.draw.polygon(s, (0, 100, 255, 50), poly_points) # Transparent Blue
+        pygame.draw.polygon(s, (0, 100, 255, 50), poly_points) 
         surface.blit(s, (0,0))
-        
         pygame.draw.lines(surface, (0, 200, 255), False, [(p['x'], get_y(p['vol'])) for p in data_points], 2)
 
     # 2. Velocity (Green Line)
     if len(data_points) > 1:
         pygame.draw.lines(surface, (50, 255, 50), False, [(p['x'], get_y(p['vel'])) for p in data_points], 2)
 
-    # 3. Pressure (Red Line) - Draw last so it's on top
+    # 3. Pressure (Red Line)
     if len(data_points) > 1:
         pygame.draw.lines(surface, (255, 50, 50), False, [(p['x'], get_y(p['p'])) for p in data_points], 2)
 
@@ -120,7 +150,7 @@ def draw_graph(surface, sim):
         surface.blit(font.render(f"{text}: {range_txt}", True, color), (lx, ly))
         ly += 20
 
-    # Draw markers for Valve location
+    # Draw Valve Marker
     valve_scr_x = GRAPH_RECT.left + ((VALVE_X - START_X) / (END_X - START_X)) * GRAPH_RECT.width
     pygame.draw.line(surface, (150, 150, 150), (valve_scr_x, GRAPH_RECT.top), (valve_scr_x, GRAPH_RECT.bottom), 1)
     surface.blit(font.render("VALVE", True, (150, 150, 150)), (valve_scr_x + 5, GRAPH_RECT.bottom - 20))
@@ -128,14 +158,13 @@ def draw_graph(surface, sim):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-    pygame.display.set_caption("Pipe Dream - Physics Dashboard")
+    pygame.display.set_caption("Pipe Dream - Graph Dashboard")
     clock = pygame.time.Clock()
 
     # Setup
-    sim, valve_node = setup_demo_scene()
+    sim, valve_node, ordered_pipes = setup_demo_scene()
     
-    # We need a camera for the Renderer (even though we manipulate simulation directly)
-    camera = Camera() # Default camera 0,0
+    camera = Camera() 
     renderer = Renderer(screen, camera)
 
     running = True
@@ -151,22 +180,19 @@ def main():
                 elif event.key == pygame.K_1:
                     sim.cycle_source_material(sim.source_node)
 
-        # Update Physics
         sim.update(dt)
 
-        # Render
         screen.fill(config.C_BACKGROUND)
         
-        # Draw the physical pipe representation below
+        # Draw Simulation World
         renderer.draw_grid()
         renderer.draw_simulation(sim)
         
-        # Draw the Data Dashboard above
-        draw_graph(screen, sim)
+        # Draw Graph Overlay
+        draw_graph(screen, sim, ordered_pipes)
         
-        # Controls Text
         font = pygame.font.SysFont("Consolas", 16)
-        msg = font.render("SPACE: Toggle Valve | 1: Cycle Fluid | Sinking Pressure: 0 kPa", True, config.C_TEXT)
+        msg = font.render("SPACE: Toggle Valve | 1: Cycle Fluid", True, config.C_TEXT)
         screen.blit(msg, (50, config.SCREEN_HEIGHT - 40))
 
         pygame.display.flip()
