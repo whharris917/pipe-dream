@@ -11,6 +11,7 @@ class Node:
         self.setting = 1.0 
         self.material_type = material_type 
         
+        # 'pressure' is used to visualize crowding (0-100%+)
         self.pressure = 0.0 
         self.fluid = FluidBatch() 
         
@@ -212,198 +213,150 @@ class Simulation:
         if node.kind == 'valve':
             node.setting = 0.0 if node.setting > 0.5 else 1.0
 
-    def _solve_pressure_network(self, dt):
-        # IMPLICIT COMPRESSIBILITY SOLVER
-        base_capacity = config.PIPE_AREA_M2 * config.SEGMENT_LENGTH_M
-        alpha = (base_capacity / config.BULK_MODULUS) / dt
-        
-        for _ in range(config.MAX_PRESSURE_ITERATIONS):
-            max_change = 0.0
-            for node in self.nodes:
-                if node.fixed_pressure is not None: continue
-                
-                fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
-                
-                if fill_ratio < config.PRESSURE_RAMP_START:
-                    node.pressure = 0.0
-                    continue 
-                
-                total_p_conductance = 0.0
-                total_conductance = 0.0
-                
-                for neighbor in node.connections:
-                    c = 1.0 / config.PIPE_RESISTANCE
-                    if node.kind == 'valve': c = node.setting / config.VALVE_RESISTANCE
-                    elif neighbor.kind == 'valve': c = neighbor.setting / config.VALVE_RESISTANCE
-                    
-                    c *= min(1.0, neighbor.current_volume / neighbor.volume_capacity)
-                    
-                    if c > 0.0001:
-                        total_p_conductance += neighbor.pressure * c
-                        total_conductance += c
-                
-                if total_conductance > 0:
-                    numerator = total_p_conductance + alpha * node.pressure
-                    denominator = total_conductance + alpha
-                    
-                    target_p = numerator / denominator
-                    
-                    cushion_factor = (fill_ratio - config.PRESSURE_RAMP_START) / (1.0 - config.PRESSURE_RAMP_START)
-                    new_p = target_p * cushion_factor
-                    
-                    diff = abs(new_p - node.pressure)
-                    if diff > max_change: max_change = diff
-                    node.pressure = new_p
-                else:
-                    pass 
-            
-            if max_change < config.PRESSURE_TOLERANCE: break
-
-    def _get_node_viscosity(self, node):
-        if node.fluid.mass <= 0: return config.VISCOSITIES['Water']
-        
-        total_visc = 0.0
-        total_frac = 0.0
-        for chem, frac in node.fluid.composition.items():
-            v = config.VISCOSITIES.get(chem, 0.1)
-            total_visc += v * frac
-            total_frac += frac
-            
-        if total_frac > 0:
-            return total_visc / total_frac
-        return config.VISCOSITIES['Water']
-
     def update(self, dt):
-            dt = min(dt, 0.1)
-            sub_dt = dt / config.PHYSICS_SUBSTEPS
-            
-            # 1. Initialize an accumulator for the display velocity
-            velocity_sums = {n: 0.0 for n in self.nodes}
+        dt = min(dt, 0.1)
+        sub_dt = dt / config.PHYSICS_SUBSTEPS
+        
+        velocity_sums = {n: 0.0 for n in self.nodes}
 
-            for _ in range(config.PHYSICS_SUBSTEPS):
-                self._step_physics(sub_dt)
-                
-                # 2. Accumulate the instantaneous velocity from this substep
-                for n in self.nodes:
-                    velocity_sums[n] += n.last_velocity
-
-            # 3. Average the velocity over the frame for smooth display
+        for _ in range(config.PHYSICS_SUBSTEPS):
+            self._step_physics(sub_dt)
             for n in self.nodes:
-                # Avoid division by zero if substeps is somehow 0 (safety)
-                if config.PHYSICS_SUBSTEPS > 0:
-                    n.last_velocity = velocity_sums[n] / config.PHYSICS_SUBSTEPS
+                velocity_sums[n] += n.last_velocity
+
+        for n in self.nodes:
+            if config.PHYSICS_SUBSTEPS > 0:
+                n.last_velocity = velocity_sums[n] / config.PHYSICS_SUBSTEPS
+            
+            # Update visual pressure (100% = Capacity)
+            # We can now go over 100%, indicating pressure
+            n.pressure = (n.current_volume / n.volume_capacity) * 100.0
 
     def _step_physics(self, dt):
+        # 1. EMISSION & SINKS
         for node in self.nodes:
             if node.kind == 'source':
-                node.current_volume = node.volume_capacity
-                node.pressure = node.fixed_pressure 
-                node.fluid.composition = {node.material_type: 1.0}
+                # Sources act as infinite reservoirs at 100% capacity
+                if node.current_volume < node.volume_capacity:
+                    node.current_volume = node.volume_capacity
+                    node.fluid.composition = {node.material_type: 1.0}
             elif node.kind == 'sink':
                 node.current_volume = 0.0
                 node.pressure = 0.0
-                node.fluid.composition = {}
-                node.last_velocity = 0.0
 
-        self._solve_pressure_network(dt)
-
-        flows = [] 
-        seen_edges = set()
-        
+        # 2. CALCULATE POTENTIAL ENERGY & TRANSFERS
+        transfers = []
         step_velocities = dict.fromkeys(self.nodes, 0.0)
 
-        for node_a in self.nodes:
-            for node_b in node_a.connections:
-                edge_id = frozenset([node_a, node_b])
-                if edge_id in seen_edges: continue
-                seen_edges.add(edge_id)
-                
-                delta_p = node_a.pressure - node_b.pressure
-                
-                # --- HYDROSTATIC REGIME COUPLING ---
-                fill_a = min(1.0, node_a.current_volume / node_a.volume_capacity)
-                fill_b = min(1.0, node_b.current_volume / node_b.volume_capacity)
-                
-                min_fill = min(fill_a, fill_b)
-
-                # NEW: Cubic ease-in for air space. 
-                # This drastically reduces the suction force when the pipe is barely empty,
-                # preventing velocity spikes at the very tip of the flow.
-                raw_air = max(0.0, 1.0 - min_fill)
-                air_space = raw_air * raw_air * raw_air
-
-                air_space_sq = air_space * air_space
-                
-                delta_p += (fill_a - fill_b) * config.HYDROSTATIC_FORCE * air_space_sq
-                # -----------------------------------
-                
-                r = config.PIPE_RESISTANCE
-                if node_a.kind == 'valve':
-                    if node_a.setting < 0.01: r = 1e9
-                    else: r = config.VALVE_RESISTANCE / node_a.setting
-                elif node_b.kind == 'valve':
-                    if node_b.setting < 0.01: r = 1e9
-                    else: r = config.VALVE_RESISTANCE / node_b.setting
-                
-                q = delta_p / r
-                
-                vol_to_move = abs(q) * dt
-                max_move_clamp = node_a.volume_capacity * 0.5
-                vol_to_move = min(vol_to_move, max_move_clamp)
-
-                visc_a = self._get_node_viscosity(node_a)
-                visc_b = self._get_node_viscosity(node_b)
-
-                moved = False
-                if q > 0:
-                    if node_a.current_volume >= node_a.volume_capacity * visc_a:
-                        flows.append((node_a, node_b, vol_to_move))
-                        moved = True
-                elif q < 0:
-                    if node_b.current_volume >= node_b.volume_capacity * visc_b:
-                        flows.append((node_b, node_a, vol_to_move))
-                        moved = True
-                
-                if moved:
-                    v = q / config.PIPE_AREA_M2
-                    if abs(v) > abs(step_velocities[node_a]): step_velocities[node_a] = v
-                    if abs(v) > abs(step_velocities[node_b]): step_velocities[node_b] = v
-
-        for source, dest, amount in flows:
-            avail = source.current_volume
-            if source.kind == 'source': avail = float('inf')
-            real_amount = min(amount, avail)
+        # Pre-calculate Energy States using Compressible Model
+        node_energies = {}
+        for node in self.nodes:
+            fill = node.current_volume / node.volume_capacity
             
-            if real_amount > 0:
-                if source.kind != 'source':
-                    source.current_volume -= real_amount
-                
-                # --- MIXING LOGIC ---
-                # Calculate new composition based on volume-weighted average
-                
-                vol_existing = dest.current_volume
-                vol_incoming = real_amount
-                vol_total = vol_existing + vol_incoming
-                
-                if vol_total > 1e-9:
-                    new_comp = {}
-                    all_chems = set(dest.fluid.composition.keys()) | set(source.fluid.composition.keys())
-                    
-                    for chem in all_chems:
-                        qty_existing = vol_existing * dest.fluid.composition.get(chem, 0.0)
-                        qty_incoming = vol_incoming * source.fluid.composition.get(chem, 0.0)
-                        
-                        new_frac = (qty_existing + qty_incoming) / vol_total
-                        
-                        if new_frac > 0.001:
-                            new_comp[chem] = new_frac
-                            
-                    dest.fluid.composition = new_comp
-                else:
-                    dest.fluid.composition = source.fluid.composition.copy()
+            # PRESSURE COMPONENT
+            if fill <= 1.0:
+                # Gentle slope for normal filling/spreading
+                p_energy = fill * config.PRESSURE_SENSITIVITY
+            else:
+                # Steep slope for compression (Weight Support)
+                p_energy = config.PRESSURE_SENSITIVITY + (fill - 1.0) * config.COMPRESSION_PENALTY
+            
+            # GRAVITY COMPONENT (Higher y = Lower Energy)
+            g_energy = -node.y * config.GRAVITY_SENSITIVITY
+            
+            node_energies[node] = p_energy + g_energy
 
-                dest.current_volume += real_amount
-                # --------------------
-        
+        for node_a in self.nodes:
+            if node_a.current_volume <= 0.0001: continue
+            
+            valid_neighbors = []
+            for neighbor in node_a.connections:
+                if node_a.kind == 'valve' and node_a.setting < 0.01: continue
+                if neighbor.kind == 'valve' and neighbor.setting < 0.01: continue
+                valid_neighbors.append(neighbor)
+
+            if not valid_neighbors: continue
+
+            scores = {}
+            total_score = 0.0
+            energy_a = node_energies[node_a]
+            
+            for nb in valid_neighbors:
+                energy_b = node_energies[nb]
+                
+                # Flow is driven by Energy Delta
+                delta_energy = energy_a - energy_b
+                
+                # ATOMIC COHESION (Surface Tension)
+                # If target is virtually empty (breaking the surface), it costs extra energy.
+                if nb.current_volume < 0.05 * nb.volume_capacity:
+                    delta_energy -= config.SURFACE_TENSION
+
+                # FRICTION CHECK
+                if delta_energy < config.FLOW_FRICTION:
+                    score = 0.0
+                else:
+                    # Exclusion Rule:
+                    fill_b = nb.current_volume / nb.volume_capacity
+                    
+                    if fill_b >= config.MAX_COMPRESSION:
+                        score = 0.0
+                    else:
+                        score = delta_energy
+
+                if score > 0:
+                    scores[nb] = score
+                    total_score += score
+
+            # --- DISTRIBUTE FLUID ---
+            if total_score <= 0.001: continue
+
+            mobility = min(1.0, total_score * dt * config.MAX_FLOW_SPEED / 100.0)
+            amount_to_move = node_a.current_volume * mobility
+
+            for nb, score in scores.items():
+                if score <= 0: continue
+                
+                share = amount_to_move * (score / total_score)
+                
+                # We allow compressing the neighbor up to MAX_COMPRESSION
+                space_in_nb = (nb.volume_capacity * config.MAX_COMPRESSION) - nb.current_volume
+                actual_flow = min(share, space_in_nb)
+                
+                if actual_flow > 0:
+                    transfers.append((node_a, nb, actual_flow))
+
+        # 3. APPLY TRANSFERS
+        for source, dest, amount in transfers:
+            # Safety checks
+            real_amount = min(amount, source.current_volume)
+            space_dest = (dest.volume_capacity * config.MAX_COMPRESSION) - dest.current_volume
+            real_amount = min(real_amount, space_dest)
+
+            if real_amount <= 1e-9: continue
+
+            source.current_volume -= real_amount
+            dest.current_volume += real_amount
+            
+            # Mixing Logic
+            vol_existing = dest.current_volume - real_amount
+            vol_incoming = real_amount
+            vol_total = dest.current_volume
+            
+            if vol_total > 1e-9:
+                new_comp = {}
+                all_chems = set(dest.fluid.composition.keys()) | set(source.fluid.composition.keys())
+                for chem in all_chems:
+                    qty_existing = vol_existing * dest.fluid.composition.get(chem, 0.0)
+                    qty_incoming = vol_incoming * source.fluid.composition.get(chem, 0.0)
+                    new_frac = (qty_existing + qty_incoming) / vol_total
+                    if new_frac > 0.001:
+                        new_comp[chem] = new_frac
+                dest.fluid.composition = new_comp
+
+            v = real_amount / config.PIPE_AREA_M2
+            if v > step_velocities[source]: step_velocities[source] = v
+            if v > step_velocities[dest]: step_velocities[dest] = v
+
         for node in self.nodes:
             node.last_velocity = step_velocities[node]

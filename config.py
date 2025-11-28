@@ -23,39 +23,48 @@ BUTTON_HEIGHT = 40
 BUTTON_MARGIN = 10
 
 # Physics Constants
-PIPE_RESISTANCE = 30.0 
-VALVE_RESISTANCE = 30.0 
+PIPE_RESISTANCE = 1.0 
+VALVE_RESISTANCE = 1.0 
 
-# PERFORMANCE OPTIMIZATION:
-# The Implicit Solver is stable at larger time steps.
-# Reduced from 40 to 10 for a 4x speedup.
-PHYSICS_SUBSTEPS = 40 
+# PHYSICS SIMULATION SETTINGS
+# ---------------------------
+
+# High substeps + Softer compression = Smooth, stable flow.
+PHYSICS_SUBSTEPS = 60 
+
+# --- COMPRESSIBLE HYDROSTATIC MODEL ---
+
+# How much volume can be squeezed into a pipe before it strictly refuses more?
+MAX_COMPRESSION = 2.0
+
+# Base pressure for fluid < 100% full. 
+PRESSURE_SENSITIVITY = 400.0   
+
+# The "Spring Stiffness" for fluid > 100% full.
+COMPRESSION_PENALTY = 3000.0
+
+# The weight of the fluid.
+GRAVITY_SENSITIVITY = 100.0
+
+# Speed limit for flow.
+MAX_FLOW_SPEED = 100.0       
+
+# Minimum Energy Delta required to move fluid (Friction).
+FLOW_FRICTION = 0.1
+
+# --- ATOMIC COHESION ---
+# The energy cost to move into an empty node.
+# High values make the fluid "sticky" and reluctant to spread into thin films.
+# It forces atoms to clump together or pile up before breaking into new territory.
+SURFACE_TENSION = 0.001
 
 # Source settings
-DEFAULT_SOURCE_PRESSURE = 300.0 # kPa
-
-# --- ADVANCED PHYSICS PARAMETERS ---
-
-# Implicit Compressibility Solver Settings
-BULK_MODULUS = 2000.0          
-PRESSURE_TOLERANCE = 0.001     
-
-# PERFORMANCE OPTIMIZATION:
-# Reduced from 20 to 8. This is sufficient for visual
-# convergence in a game context. Yields 2.5x speedup.
-MAX_PRESSURE_ITERATIONS = 20
-
-PRESSURE_RAMP_START = 0.50   
-
-# Hydrostatic Leveling (Diffusion)
-HYDROSTATIC_FORCE = 700.0      
-
-# -----------------------------------
+DEFAULT_SOURCE_PRESSURE = 1000.0 
 
 # Viscosity Thresholds
 VISCOSITIES = {
     'Water': 0.1,
-    'Red': 0.9,   
+    'Red': 0.1,   
     'Green': 0.5, 
     'Blue': 0.1   
 }
@@ -63,7 +72,7 @@ VISCOSITIES = {
 # Chemistry Constants
 DENSITIES = {
     'Water': 1000.0,
-    'Red': 1050.0,   
+    'Red': 1000.0,   
     'Green': 950.0,
     'Blue': 1000.0   
 }

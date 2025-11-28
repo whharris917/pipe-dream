@@ -1,6 +1,7 @@
 import pygame
 import math
 import config
+import random
 
 class Renderer:
     def __init__(self, surface, cam):
@@ -23,17 +24,8 @@ class Renderer:
         r /= total_frac; g /= total_frac; b /= total_frac
         base_rgb = (int(r), int(g), int(b))
 
-        # 2. Visual Fill Calculation (Boosted Saturation)
-        fill_ratio = min(1.0, node.current_volume / node.volume_capacity)
-        color_intensity = min(1.0, fill_ratio * 3.0) 
-        
-        start_c = config.C_PIPE_EMPTY
-        end_c = base_rgb
-        
-        fin_r = int(start_c[0] + (end_c[0] - start_c[0]) * color_intensity)
-        fin_g = int(start_c[1] + (end_c[1] - start_c[1]) * color_intensity)
-        fin_b = int(start_c[2] + (end_c[2] - start_c[2]) * color_intensity)
-        return (fin_r, fin_g, fin_b)
+        # 2. Return base RGB (Intensity is now handled by dot density)
+        return base_rgb
 
     def draw_grid(self):
         scaled_size = 40 * self.cam.zoom 
@@ -84,36 +76,77 @@ class Renderer:
 
     def draw_simulation(self, sim):
         line_width = max(2, int(4 * self.cam.zoom))
+        particle_radius = max(1, int(1.5 * self.cam.zoom))
+        
+        # VISUAL CONFIGURATION
+        # How many dots represent a "full" pipe segment?
+        # Adjust this to make the swarm look denser or sparser.
+        DOTS_PER_FULL_SEGMENT = 25 
         
         # PASS 1: Draw Pipe Skeleton (Empty Gray Lines)
-        # We iterate over connections to draw the full "background" pipe
-        # This ensures gaps are filled with gray before we paint fluid on top
         for node in sim.nodes:
             sx, sy = self.cam.world_to_screen(node.x, node.y)
             for neighbor in node.connections:
                 nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
                 pygame.draw.line(self.surface, config.C_PIPE_EMPTY, (sx, sy), (nsx, nsy), line_width)
 
-        # PASS 2: Draw Fluid (Half-Segments)
-        # We only draw the half of the pipe belonging to 'node'. 
-        # This prevents Node B (Empty) from overdrawing Node A (Full).
+        # PASS 2: Draw Fluid as "Random Walker" Dots
         for node in sim.nodes:
-            fill = min(1.0, node.current_volume / node.volume_capacity)
+            # Skip empty nodes
+            if node.current_volume <= 0.0001: continue
             
-            # Only draw if there is something to see
-            if fill > 0.01:
-                sx, sy = self.cam.world_to_screen(node.x, node.y)
-                color = self._get_fluid_color(node) 
+            sx, sy = self.cam.world_to_screen(node.x, node.y)
+            color = self._get_fluid_color(node)
+            
+            # Calculate number of particles based on volume/capacity ratio
+            # Over-pressurized nodes (volume > capacity) will get extra dots
+            fill_ratio = node.current_volume / node.volume_capacity
+            num_dots = int(fill_ratio * DOTS_PER_FULL_SEGMENT)
+            
+            if num_dots < 1 and node.current_volume > 0: num_dots = 1
+            
+            connections = node.connections
+            
+            # If solitary node (no connections), draw at center
+            if not connections:
+                pygame.draw.circle(self.surface, color, (int(sx), int(sy)), particle_radius)
+                continue
                 
-                for neighbor in node.connections:
-                    nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
+            # Distribute dots among the connections
+            # We draw dots on the "half-pipe" belonging to this node
+            dots_per_conn = num_dots // len(connections)
+            remainder = num_dots % len(connections)
+            
+            for i, neighbor in enumerate(connections):
+                count = dots_per_conn + (1 if i < remainder else 0)
+                if count <= 0: continue
+                
+                nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
+                
+                # Vector to Midpoint
+                mx = (sx + nsx) / 2
+                my = (sy + nsy) / 2
+                vx = mx - sx
+                vy = my - sy
+                
+                # Perpendicular Vector for width jitter
+                length = math.hypot(vx, vy)
+                if length < 0.1: px, py = 0, 0
+                else: px, py = -vy/length, vx/length
+                
+                # Scatter dots
+                for _ in range(count):
+                    # Random position along the length (0.0 to 1.0)
+                    t = random.random()
                     
-                    # Calculate Midpoint
-                    mx = (sx + nsx) / 2
-                    my = (sy + nsy) / 2
+                    # Random jitter across the width (-0.5 to 0.5)
+                    # We keep it slightly inside the pipe walls (0.8 factor)
+                    jitter = (random.random() - 0.5) * line_width * 0.8
                     
-                    # Draw ONLY from Node to Midpoint
-                    pygame.draw.line(self.surface, color, (sx, sy), (mx, my), line_width)
+                    dot_x = sx + vx * t + px * jitter
+                    dot_y = sy + vy * t + py * jitter
+                    
+                    pygame.draw.circle(self.surface, color, (int(dot_x), int(dot_y)), particle_radius)
 
         # PASS 3: Draw Components
         for node in sim.nodes:
@@ -151,16 +184,11 @@ class Renderer:
         if not node: return
         
         # --- HIGHLIGHT THE SEGMENT ---
-        # Draws a bright yellow line over the inspected connection(s)
         line_width = max(4, int(6 * self.cam.zoom)) 
         sx, sy = self.cam.world_to_screen(node.x, node.y)
         
         for neighbor in node.connections:
             nsx, nsy = self.cam.world_to_screen(neighbor.x, neighbor.y)
-            # If inspecting a segment, we might want to highlight only that one,
-            # but highlighting all connections from the node is decent feedback for now.
-            # If world_pos is provided (clicked on segment), we could be smarter,
-            # but since 'node' is just an endpoint, this shows what node we are inspecting.
             pygame.draw.line(self.surface, config.C_HIGHLIGHT, (sx, sy), (nsx, nsy), line_width)
 
         # --- TOOLTIP BOX ---
@@ -174,12 +202,10 @@ class Renderer:
         pygame.draw.rect(self.surface, config.C_HIGHLIGHT, rect, 2)
         
         flow_rate_lps = abs(node.last_velocity) * config.PIPE_AREA_M2 * 1000.0
-        display_pressure = node.pressure
-        if node.kind == 'valve' and node.setting < 0.01:
-            max_p = 0
-            for n in node.connections:
-                if n.pressure > max_p: max_p = n.pressure
-            display_pressure = max_p
+        
+        # In the new model, Pressure = Crowding %
+        display_pressure = node.pressure 
+        pressure_label = f"CROWDING: {int(display_pressure)}%"
 
         comp_lines = []
         if node.fluid.composition:
@@ -193,7 +219,7 @@ class Renderer:
         lines = [
             f"NODE: {node.kind.upper()}",
             f"FLOW: {flow_rate_lps:,.1f} L/s",
-            f"PRES: {display_pressure:,.1f} kPa",
+            pressure_label,
             "COMPOSITION:"
         ] + comp_lines
         
@@ -208,24 +234,18 @@ class Renderer:
         # --- DRAW POINTER TRIANGLE ---
         if world_pos:
             wsx, wsy = self.cam.world_to_screen(world_pos[0], world_pos[1])
-            
-            # Calculate angle from box center to click point
             box_cx = x + box_w / 2
             box_cy = y + box_h / 2
             dx = wsx - box_cx
             dy = wsy - box_cy
             angle = math.atan2(dy, dx)
             
-            # Triangle geometry
             tip = (wsx, wsy)
             size = 12
-            # Base points rotated 90 deg from the angle
             base_x = math.cos(angle) * size
             base_y = math.sin(angle) * size
             perp_x = -base_y * 0.5
             perp_y = base_x * 0.5
-            
-            # Back up slightly from tip
             back_x = wsx - base_x
             back_y = wsy - base_y
             

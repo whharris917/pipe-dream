@@ -58,9 +58,9 @@ def draw_graph(surface, sim):
         screen_x = GRAPH_RECT.left + norm_x * GRAPH_RECT.width
         
         # Extract Metrics
-        # Pressure: Scale 0-500 kPa -> 0-100% height
+        # Pressure (Crowding): Scale 0-100% -> 0-100% height
         p = n.pressure
-        p_norm = min(1.0, p / 600.0) # 600 is visual max
+        p_norm = min(1.0, p / 100.0) 
         
         # Volume: Fill Ratio 0.0-1.0
         vol = n.current_volume / n.volume_capacity
@@ -102,7 +102,7 @@ def draw_graph(surface, sim):
     if len(data_points) > 1:
         pygame.draw.lines(surface, (50, 255, 50), False, [(p['x'], get_y(p['vel'])) for p in data_points], 2)
 
-    # 3. Pressure (Red Line) - Draw last so it's on top
+    # 3. Pressure/Crowding (Red Line) - Draw last so it's on top
     if len(data_points) > 1:
         pygame.draw.lines(surface, (255, 50, 50), False, [(p['x'], get_y(p['p'])) for p in data_points], 2)
 
@@ -110,7 +110,7 @@ def draw_graph(surface, sim):
     font = pygame.font.SysFont("Consolas", 12)
     
     legend_items = [
-        ("PRESSURE (Red)", (255, 50, 50), "0 - 600 kPa"),
+        ("CROWDING (Red)", (255, 50, 50), "0 - 100%"),
         ("VELOCITY (Green)", (50, 255, 50), "0 - 5 m/s"),
         ("FILL (Blue)", (0, 200, 255), "0 - 100%")
     ]
@@ -166,7 +166,7 @@ def main():
         
         # Controls Text
         font = pygame.font.SysFont("Consolas", 16)
-        msg = font.render("SPACE: Toggle Valve | 1: Cycle Fluid | Sinking Pressure: 0 kPa", True, config.C_TEXT)
+        msg = font.render("SPACE: Toggle Valve | 1: Cycle Fluid | Sinking Crowding: 0 %", True, config.C_TEXT)
         screen.blit(msg, (50, config.SCREEN_HEIGHT - 40))
 
         pygame.display.flip()
