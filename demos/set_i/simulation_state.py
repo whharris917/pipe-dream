@@ -29,14 +29,15 @@ class Simulation:
         self.last_x = np.zeros(self.capacity, dtype=np.float32)
         self.last_y = np.zeros(self.capacity, dtype=np.float32)
         
+        # Control flags
+        self.rebuild_next = False
+        
         # Settings
         self.paused = True
         self.dt = config.DEFAULT_DT
         self.gravity = config.DEFAULT_GRAVITY
         self.target_temp = 0.5
         self.use_thermostat = False
-        
-        # NOTE: Damping removed to match improved_ui.py performance
         
         self.r_skin = 0.3
         self.r_cut_base = 2.5
@@ -52,29 +53,79 @@ class Simulation:
         self.steps_accumulator = 0
         self.last_sps_update = time.time()
 
-    def add_particles_brush(self, x, y, radius, density=0.5):
-        if self.count >= self.capacity - 100:
-            self._resize_arrays()
-            
-        n_to_add = 1 if radius < 1.0 else int(density * radius**2)
-        if n_to_add < 1: n_to_add = 1
+    def add_particles_brush(self, x, y, radius):
+        """
+        Paints particles in a triangular lattice configuration.
+        Spacing is set to 2^(1/6) * sigma (approx 1.12 sigma),
+        which is the energy minimum of the Lennard-Jones potential.
+        """
+        # 1. Determine spacing based on LJ minimum
+        sigma = config.ATOM_SIGMA
+        spacing = 1.12246 * sigma  # 2^(1/6) * sigma
         
-        for _ in range(n_to_add):
-            angle = random.random() * 6.28
-            r = math.sqrt(random.random()) * radius
-            px = x + math.cos(angle) * r
-            py = y + math.sin(angle) * r
+        # Vertical spacing for triangular lattice is sqrt(3)/2 * spacing
+        row_height = spacing * 0.866025 
+        
+        # 2. Determine grid bounds relative to brush center
+        r_sq = radius * radius
+        
+        # Scan a grid large enough to cover the radius
+        n_rows = int(radius / row_height) + 1
+        n_cols = int(radius / spacing) + 1
+        
+        # Pre-check capacity to avoid multiple resizes
+        estimated_add = int(3.14159 * radius * radius / (spacing * row_height)) + 10
+        if self.count + estimated_add >= self.capacity:
+            self._resize_arrays()
+
+        # 3. Iterate lattice points
+        for row in range(-n_rows, n_rows + 1):
+            offset_x = 0.5 * spacing if (row % 2 != 0) else 0.0
+            y_curr = y + row * row_height
             
-            if 0 < px < config.WORLD_SIZE and 0 < py < config.WORLD_SIZE:
-                idx = self.count
-                self.pos_x[idx] = px
-                self.pos_y[idx] = py
-                self.vel_x[idx] = 0.0
-                self.vel_y[idx] = 0.0
-                self.is_static[idx] = 0 
-                self.count += 1
+            for col in range(-n_cols, n_cols + 1):
+                x_curr = x + col * spacing + offset_x
                 
-        self.pair_count = 0
+                # Check circular brush shape
+                dx = x_curr - x
+                dy = y_curr - y
+                if dx*dx + dy*dy <= r_sq:
+                    # Check World Bounds
+                    if 0 < x_curr < config.WORLD_SIZE and 0 < y_curr < config.WORLD_SIZE:
+                        # Check overlap with existing particles (simple dist check)
+                        # We use a slightly smaller check radius (0.8 sigma) to allow
+                        # filling gaps without placing atoms INSIDE others.
+                        if not self._check_overlap(x_curr, y_curr, 0.8 * sigma):
+                            if self.count >= self.capacity: self._resize_arrays()
+                            
+                            idx = self.count
+                            self.pos_x[idx] = x_curr
+                            self.pos_y[idx] = y_curr
+                            self.vel_x[idx] = 0.0
+                            self.vel_y[idx] = 0.0
+                            self.is_static[idx] = 0 
+                            self.count += 1
+        
+        self.rebuild_next = True
+
+    def _check_overlap(self, x, y, threshold):
+        """Returns True if (x,y) is within threshold of any existing particle."""
+        # Note: This is O(N) unoptimized. For a brush tool, it is usually acceptable
+        # since N is < 10k. If laggy, we could use the neighbor cells.
+        threshold_sq = threshold * threshold
+        
+        # Optimization: Only check active particles
+        # Numba could speed this up, but Python loop overhead might be dominant for small N
+        # Let's do a numpy vectorized check for speed.
+        if self.count == 0: return False
+        
+        dx = self.pos_x[:self.count] - x
+        dy = self.pos_y[:self.count] - y
+        dist_sq = dx*dx + dy*dy
+        
+        if np.any(dist_sq < threshold_sq):
+            return True
+        return False
 
     def delete_particles_brush(self, x, y, radius):
         r2 = radius**2
@@ -106,7 +157,7 @@ class Simulation:
                 
         if len(keep_indices) < self.count:
             self._compact_arrays(keep_indices)
-            self.pair_count = 0
+            self.rebuild_next = True
 
     def add_wall(self, start_pos, end_pos):
         self.walls.append({'start': start_pos, 'end': end_pos})
@@ -142,7 +193,7 @@ class Simulation:
                 self.vel_y[self.count] = 0.0
                 self.is_static[self.count] = 1
                 self.count += 1
-        self.pair_count = 0 
+        self.rebuild_next = True
 
     def _compact_arrays(self, keep_indices):
         indices = np.array(keep_indices, dtype=np.int32)
@@ -165,31 +216,43 @@ class Simulation:
                 self.is_static[:self.count],
                 config.WORLD_SIZE, self.cell_size
             )
-            self.pair_count = 0 
+            self.rebuild_next = True
 
-        rebuild = False
-        if self.pair_count == 0:
-            rebuild = True
+        # Check conditions that require a rebuild
+        should_rebuild = False
+        if self.pair_count == 0 or self.rebuild_next:
+            should_rebuild = True
         elif self.count > 0:
-            rebuild = check_displacement(
+            should_rebuild = check_displacement(
                 self.pos_x[:self.count], self.pos_y[:self.count],
                 self.last_x[:self.count], self.last_y[:self.count],
                 self.r_skin_sq_limit
             )
+
+        if should_rebuild and self.count > 0:
+            # SAFETY LOOP: Ensure neighbor list is large enough
+            while True:
+                count = build_neighbor_list(
+                    self.pos_x[:self.count], self.pos_y[:self.count],
+                    self.r_list2, self.cell_size, config.WORLD_SIZE,
+                    self.pair_i, self.pair_j
+                )
+                
+                if count >= self.max_pairs:
+                    print(f"Pair list overflow ({count} >= {self.max_pairs}). Resizing...")
+                    self.max_pairs *= 2
+                    self.pair_i = np.zeros(self.max_pairs, dtype=np.int32)
+                    self.pair_j = np.zeros(self.max_pairs, dtype=np.int32)
+                    continue 
+                
+                self.pair_count = count
+                break 
             
-        if rebuild and self.count > 0:
-            self.pair_count = build_neighbor_list(
-                self.pos_x[:self.count], self.pos_y[:self.count],
-                self.r_list2, self.cell_size, config.WORLD_SIZE,
-                self.pair_i, self.pair_j
-            )
             self.last_x[:self.count] = self.pos_x[:self.count]
             self.last_y[:self.count] = self.pos_y[:self.count]
+            self.rebuild_next = False
 
         if self.count > 0:
-            # CRITICAL OPTIMIZATION: Cast all scalars to float32
-            # This ensures Numba generates a pure float32 kernel (AVX friendly)
-            # instead of promoting everything to float64 (slow).
             f32_sigma = np.float32(config.ATOM_SIGMA)
             f32_epsilon = np.float32(config.ATOM_EPSILON)
             f32_mass = np.float32(config.ATOM_MASS)
@@ -212,21 +275,20 @@ class Simulation:
             )
             
             self.total_steps += steps_done
-            
-            # --- SPS Calculation ---
             self.steps_accumulator += steps_done
             now = time.time()
             elapsed = now - self.last_sps_update
-            if elapsed >= 0.5: # Update metric every 0.5s
+            if elapsed >= 0.5:
                 self.sps = self.steps_accumulator / elapsed
                 self.steps_accumulator = 0
                 self.last_sps_update = now
             
+            # If aborted early, schedule a rebuild for NEXT frame
+            # But do NOT set pair_count to 0, so UI still shows what was used.
             if steps_done < steps_to_run:
-                self.pair_count = 0
+                self.rebuild_next = True
 
             if self.use_thermostat:
-                # Same rigorous casting for thermostat
                 apply_thermostat(
                     self.vel_x[:self.count], self.vel_y[:self.count],
                     np.float32(config.ATOM_MASS), 
@@ -245,7 +307,7 @@ class Simulation:
             if not np.all(is_inside):
                 keep_indices = np.where(is_inside)[0]
                 self._compact_arrays(keep_indices)
-                self.pair_count = 0
+                self.rebuild_next = True # Rebuild next frame, keep count for UI
 
     def _resize_arrays(self):
         self.capacity *= 2
