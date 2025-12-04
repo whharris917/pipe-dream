@@ -61,7 +61,26 @@ def main():
     # --- UI INITIALIZATION ---
     ui_elements = []
     
-    # Right Panel Layout Helper
+    # --- LEFT PANEL ELEMENTS ---
+    lp_margin = 10
+    lp_w = LEFT_W - 2 * lp_margin
+    lp_h = 40 # Fixed height for text buttons
+    lp_curr_y = 20
+    
+    # Play/Pause
+    btn_play = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Play", active=False, color_active=(50, 200, 50), color_inactive=(200, 50, 50))
+    lp_curr_y += lp_h + 10
+    
+    # Clear
+    btn_clear = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Clear", active=False, toggle=False, color_inactive=(150, 80, 80))
+    lp_curr_y += lp_h + 10
+    
+    # Reset
+    btn_reset = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Reset", active=False, toggle=False, color_inactive=(150, 50, 50))
+    
+    ui_elements.extend([btn_play, btn_clear, btn_reset])
+
+    # --- RIGHT PANEL ELEMENTS ---
     rp_margin = 15
     rp_curr_y = 20
     rp_width = RIGHT_W - 2 * rp_margin
@@ -69,11 +88,6 @@ def main():
     
     # 1. Metrics Section (Placeholder for text)
     rp_curr_y += 100 # Leave space for the text metrics
-    
-    # 2. Controls Section
-    btn_play = Button(rp_start_x, rp_curr_y, rp_width, 40, "PLAY / PAUSE", active=False, color_active=(50, 200, 50), color_inactive=(200, 50, 50))
-    ui_elements.append(btn_play)
-    rp_curr_y += 55
     
     # Sliders
     # Params: x, y, w, min, max, init, label, hard_min, hard_max
@@ -116,11 +130,6 @@ def main():
     ui_elements.append(btn_resize) # Input handled separately
     rp_curr_y += 40
     
-    # Reset Row
-    btn_clear = Button(rp_start_x, rp_curr_y, btn_w, 30, "Clear", active=False, toggle=False, color_inactive=(120, 60, 60))
-    btn_reset = Button(rp_start_x + btn_w + 10, rp_curr_y, btn_w, 30, "Reset All", active=False, toggle=False, color_inactive=(150, 50, 50))
-    ui_elements.extend([btn_clear, btn_reset])
-    
     # --- STATE ---
     current_tool = 0 # 0=Brush, 1=Wall
     zoom = 1.0
@@ -136,6 +145,16 @@ def main():
     wall_idx = -1
     wall_pt = -1
     
+    # Helper for Temp Calculation
+    def calculate_current_temp(vel_x, vel_y, count, mass):
+        if count == 0: return 0.0
+        # KE = 0.5 * m * v^2
+        # T = KE_avg (in this simplified unit system)
+        vx = vel_x[:count]
+        vy = vel_y[:count]
+        ke_total = 0.5 * mass * np.sum(vx**2 + vy**2)
+        return ke_total / count
+
     running = True
     while running:
         # --- EVENTS ---
@@ -143,8 +162,8 @@ def main():
             if event.type == pygame.QUIT: running = False
             
             # 1. UI Interaction
-            # Check if mouse is in Right Panel
-            mouse_in_ui = (event.type == pygame.MOUSEBUTTONDOWN and event.pos[0] > RIGHT_X)
+            # Check if mouse is in Right Panel OR Left Panel
+            mouse_in_ui = (event.type == pygame.MOUSEBUTTONDOWN and (event.pos[0] > RIGHT_X or event.pos[0] < LEFT_W))
             
             ui_captured = False
             for el in ui_elements:
@@ -184,7 +203,7 @@ def main():
                 continue # Skip world interaction if UI hit
 
             # 2. World Interaction (Middle Panel)
-            # Only process if mouse x < RIGHT_X
+            # Only process if mouse x < RIGHT_X and x > LEFT_W
             if event.type == pygame.MOUSEWHEEL:
                 factor = 1.1 if event.y > 0 else 0.9
                 zoom = max(0.1, min(zoom * factor, 50.0))
@@ -313,9 +332,11 @@ def main():
         pygame.draw.rect(screen, (40, 40, 45), (RIGHT_X, 0, RIGHT_W, 90))
         pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (RIGHT_X, 90), (config.WINDOW_WIDTH, 90))
         
+        curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)
+        
         metric_x = RIGHT_X + 15
         screen.blit(big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, 10))
-        screen.blit(font.render(f"Pairs: {sim.pair_count}", True, (180, 180, 180)), (metric_x, 40))
+        screen.blit(font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, 40))
         screen.blit(font.render(f"SPS: {int(sim.sps)}  FPS: {clock.get_fps():.1f}", True, (100, 255, 100)), (metric_x, 60))
         
         # Widgets

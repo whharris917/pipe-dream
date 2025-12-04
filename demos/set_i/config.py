@@ -3,11 +3,11 @@ import numpy as np
 # Window Layout
 WINDOW_WIDTH = 1400  # Increased to fit panels
 WINDOW_HEIGHT = 900
-PANEL_LEFT_WIDTH = 50
+PANEL_LEFT_WIDTH = 120 # Widened to fit text buttons
 PANEL_RIGHT_WIDTH = 350 # Wide enough for sliders with inputs
 
 # World
-DEFAULT_WORLD_SIZE = 50.0  # Updated default
+DEFAULT_WORLD_SIZE = 50.0  
 
 # Physics Defaults
 DEFAULT_DT = 0.002
