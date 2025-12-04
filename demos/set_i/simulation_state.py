@@ -57,6 +57,83 @@ class Simulation:
         self.sps = 0.0
         self.steps_accumulator = 0
         self.last_sps_update = time.time()
+        
+        # Trigger JIT compilation immediately
+        self._warmup_compiler()
+
+    def _warmup_compiler(self):
+        """
+        Runs a dummy step with 2 particles to force Numba to compile
+        all JIT functions immediately on startup, preventing lag
+        during the first user interaction.
+        """
+        print("Warming up Numba compiler...")
+        
+        # Create 2 dummy particles
+        self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
+        self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
+        self.count = 2
+        
+        # Run neighbor list builder
+        self.pair_count = build_neighbor_list(
+            self.pos_x[:2], self.pos_y[:2],
+            self.r_list2, self.cell_size, self.world_size,
+            self.pair_i, self.pair_j
+        )
+        
+        # Run integration step
+        f32_sigma = np.float32(config.ATOM_SIGMA)
+        f32_epsilon = np.float32(config.ATOM_EPSILON)
+        f32_mass = np.float32(config.ATOM_MASS)
+        f32_dt = np.float32(self.dt)
+        f32_gravity = np.float32(self.gravity)
+        f32_rcut2 = np.float32(self.r_cut_base**2)
+        f32_skin_sq = np.float32(self.r_skin_sq_limit)
+        f32_world = np.float32(self.world_size)
+        f32_damping = np.float32(self.damping)
+        
+        integrate_n_steps(
+            1,
+            self.pos_x[:2], self.pos_y[:2],
+            self.vel_x[:2], self.vel_y[:2],
+            self.force_x[:2], self.force_y[:2],
+            self.last_x[:2], self.last_y[:2],
+            self.is_static[:2],
+            f32_sigma, f32_epsilon, f32_mass,
+            self.pair_i, self.pair_j, self.pair_count,
+            f32_dt, f32_gravity, f32_rcut2,
+            f32_skin_sq,
+            f32_world,
+            self.use_boundaries,
+            f32_damping
+        )
+        
+        # Run displacement check
+        check_displacement(
+            self.pos_x[:2], self.pos_y[:2],
+            self.last_x[:2], self.last_y[:2],
+            self.r_skin_sq_limit
+        )
+        
+        # Run sort
+        spatial_sort(
+            self.pos_x[:2], self.pos_y[:2],
+            self.vel_x[:2], self.vel_y[:2],
+            self.force_x[:2], self.force_y[:2],
+            self.is_static[:2],
+            self.world_size, self.cell_size
+        )
+        
+        # Run thermostat
+        apply_thermostat(
+            self.vel_x[:2], self.vel_y[:2],
+            f32_mass, self.is_static[:2],
+            np.float32(0.5), np.float32(0.1)
+        )
+        
+        # Clean up
+        self.clear_particles()
+        print("Warmup complete.")
 
     def resize_world(self, new_size):
         if new_size < 100.0: new_size = 100.0
@@ -287,6 +364,8 @@ class Simulation:
                 self.steps_accumulator = 0
                 self.last_sps_update = now
             
+            # If aborted early, schedule a rebuild for NEXT frame
+            # But do NOT set pair_count to 0, so UI still shows what was used.
             if steps_done < steps_to_run:
                 self.rebuild_next = True
 
