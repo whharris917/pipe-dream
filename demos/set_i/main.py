@@ -6,7 +6,6 @@ from simulation_state import Simulation
 from ui_widgets import Slider, Button, InputField
 
 def sim_to_screen(x, y, zoom, pan_x, pan_y, view_w, view_h, world_size):
-    # Center relative to the CURRENT world size
     cx_world = world_size / 2.0
     cy_world = world_size / 2.0
     cx_screen = view_w / 2.0
@@ -37,16 +36,19 @@ def main():
     clock = pygame.time.Clock()
     
     sim = Simulation()
-    ui_y = config.WINDOW_HEIGHT + 20 # Moved up slightly for more room
+    ui_y = config.WINDOW_HEIGHT + 10 # Slightly higher to fit more items
     
-    # UI Elements (Left Column)
+    # UI Elements (Left Column - Physics)
+    # Reduced spacing to 30px to fit everything
     btn_play = Button(20, ui_y, 80, 40, "PLAY", active=False, color_active=(50, 200, 50), color_inactive=(200, 50, 50))
     slider_gravity = Slider(120, ui_y, 150, 10, 0.0, 50.0, 0.0, "Gravity")
-    slider_temp = Slider(120, ui_y + 40, 150, 10, 0.0, 5.0, 0.5, "Temperature")
-    slider_damping = Slider(120, ui_y + 80, 150, 10, 0.90, 1.0, 1.0, "Damping")
-    slider_M = Slider(120, ui_y + 120, 150, 10, 1.0, 100.0, float(config.DEFAULT_DRAW_M), "Speed (Steps/Frame)")
+    slider_temp = Slider(120, ui_y + 30, 150, 10, 0.0, 5.0, 0.5, "Temperature")
+    slider_damping = Slider(120, ui_y + 60, 150, 10, 0.90, 1.0, 1.0, "Damping")
+    slider_sigma = Slider(120, ui_y + 90, 150, 10, 0.5, 2.0, config.ATOM_SIGMA, "Sigma (Size)")
+    slider_epsilon = Slider(120, ui_y + 120, 150, 10, 0.1, 5.0, config.ATOM_EPSILON, "Epsilon (Str)")
+    slider_M = Slider(120, ui_y + 150, 150, 10, 1.0, 100.0, float(config.DEFAULT_DRAW_M), "Speed (Steps/Frame)")
     
-    # UI Elements (Center Column)
+    # UI Elements (Center Column - Controls)
     btn_thermostat = Button(300, ui_y, 120, 30, "Thermostat", active=False)
     btn_boundaries = Button(300, ui_y + 40, 120, 30, "Reflect Bounds", active=False)
     btn_clear = Button(300, ui_y + 80, 120, 30, "Clear Atoms", active=False, toggle=False, color_inactive=(150, 80, 80))
@@ -58,12 +60,12 @@ def main():
     
     slider_brush_size = Slider(config.WINDOW_WIDTH - 250, ui_y + 40, 210, 10, 1.0, 10.0, 2.0, "Brush Size")
     
-    # World Resize Controls
     lbl_resize = font.render("World Size:", True, (200, 200, 200))
     input_world_size = InputField(config.WINDOW_WIDTH - 250, ui_y + 100, 80, 25, str(config.DEFAULT_WORLD_SIZE))
     btn_resize = Button(config.WINDOW_WIDTH - 160, ui_y + 100, 120, 25, "Resize & Restart", active=False, toggle=False)
 
-    ui_elements = [btn_play, slider_gravity, slider_temp, slider_damping, slider_M, 
+    ui_elements = [btn_play, slider_gravity, slider_temp, slider_damping, 
+                   slider_sigma, slider_epsilon, slider_M, 
                    btn_thermostat, btn_boundaries, btn_clear, btn_reset,
                    btn_tool_brush, btn_tool_wall, slider_brush_size,
                    btn_resize]
@@ -101,10 +103,11 @@ def main():
             if btn_reset.clicked:
                 sim.reset_simulation()
                 input_world_size.set_value(config.DEFAULT_WORLD_SIZE)
-                # Reset UI states
                 slider_gravity.val = config.DEFAULT_GRAVITY
                 slider_temp.val = 0.5
                 slider_damping.val = config.DEFAULT_DAMPING
+                slider_sigma.val = config.ATOM_SIGMA
+                slider_epsilon.val = config.ATOM_EPSILON
                 btn_thermostat.active = False
                 btn_boundaries.active = False
                 zoom = 1.0; pan_x = 0; pan_y = 0
@@ -117,7 +120,6 @@ def main():
             if btn_resize.clicked:
                 new_size = input_world_size.get_value()
                 sim.resize_world(new_size)
-                # Reset View
                 zoom = 1.0; pan_x = 0; pan_y = 0
 
             # Tool Switching Logic
@@ -146,7 +148,6 @@ def main():
                 elif event.button == 3: # Erase
                     is_erasing = True
                 elif event.button == 1: # Left Click
-                    # Use current sim world_size for conversion
                     sim_x, sim_y = screen_to_sim(event.pos[0], event.pos[1], zoom, pan_x, pan_y, config.WINDOW_WIDTH, config.WINDOW_HEIGHT, sim.world_size)
                     
                     if current_tool == 0: # Brush
@@ -209,6 +210,10 @@ def main():
         sim.gravity = slider_gravity.val
         sim.target_temp = slider_temp.val
         sim.damping = slider_damping.val
+        # Update dynamic physics params
+        sim.sigma = slider_sigma.val
+        sim.epsilon = slider_epsilon.val
+        
         sim.use_thermostat = btn_thermostat.active
         sim.use_boundaries = btn_boundaries.active
         steps_per_frame = int(slider_M.val)
@@ -227,7 +232,7 @@ def main():
         # --- RENDER ---
         screen.fill(config.BACKGROUND_COLOR)
         
-        # Grid - Use sim.world_size
+        # Grid
         tl = sim_to_screen(0, 0, zoom, pan_x, pan_y, config.WINDOW_WIDTH, config.WINDOW_HEIGHT, sim.world_size)
         br = sim_to_screen(sim.world_size, sim.world_size, zoom, pan_x, pan_y, config.WINDOW_WIDTH, config.WINDOW_HEIGHT, sim.world_size)
         pygame.draw.rect(screen, config.GRID_COLOR, (tl[0], tl[1], br[0]-tl[0], br[1]-tl[1]), 2)
@@ -240,7 +245,8 @@ def main():
                 is_stat = sim.is_static[i]
                 color = config.COLOR_STATIC if is_stat else config.COLOR_DYNAMIC
                 
-                radius_sim = config.ATOM_SIGMA * config.PARTICLE_RADIUS_SCALE
+                # Dynamic visual radius based on slider
+                radius_sim = sim.sigma * config.PARTICLE_RADIUS_SCALE
                 base_scale = (config.WINDOW_WIDTH - 100) / sim.world_size
                 radius_screen = max(2, int(radius_sim * base_scale * zoom))
                 
@@ -261,7 +267,6 @@ def main():
         
         for el in ui_elements: el.draw(screen, font)
         
-        # Draw World Size Label and Input
         screen.blit(lbl_resize, (config.WINDOW_WIDTH - 350, ui_y + 105))
         input_world_size.draw(screen, font)
 

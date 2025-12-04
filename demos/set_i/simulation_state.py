@@ -14,6 +14,10 @@ class Simulation:
         self.world_size = config.DEFAULT_WORLD_SIZE
         self.use_boundaries = False
         
+        # Physics Parameters (Mutable)
+        self.sigma = config.ATOM_SIGMA
+        self.epsilon = config.ATOM_EPSILON
+        
         # Physics State Arrays
         self.pos_x = np.zeros(self.capacity, dtype=np.float32)
         self.pos_y = np.zeros(self.capacity, dtype=np.float32)
@@ -64,26 +68,23 @@ class Simulation:
     def _warmup_compiler(self):
         """
         Runs a dummy step with 2 particles to force Numba to compile
-        all JIT functions immediately on startup, preventing lag
-        during the first user interaction.
+        all JIT functions immediately on startup.
         """
         print("Warming up Numba compiler...")
         
-        # Create 2 dummy particles
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
         
-        # Run neighbor list builder
         self.pair_count = build_neighbor_list(
             self.pos_x[:2], self.pos_y[:2],
             self.r_list2, self.cell_size, self.world_size,
             self.pair_i, self.pair_j
         )
         
-        # Run integration step
-        f32_sigma = np.float32(config.ATOM_SIGMA)
-        f32_epsilon = np.float32(config.ATOM_EPSILON)
+        # Use current sigma/epsilon for warmup
+        f32_sigma = np.float32(self.sigma)
+        f32_epsilon = np.float32(self.epsilon)
         f32_mass = np.float32(config.ATOM_MASS)
         f32_dt = np.float32(self.dt)
         f32_gravity = np.float32(self.gravity)
@@ -108,14 +109,12 @@ class Simulation:
             f32_damping
         )
         
-        # Run displacement check
         check_displacement(
             self.pos_x[:2], self.pos_y[:2],
             self.last_x[:2], self.last_y[:2],
             self.r_skin_sq_limit
         )
         
-        # Run sort
         spatial_sort(
             self.pos_x[:2], self.pos_y[:2],
             self.vel_x[:2], self.vel_y[:2],
@@ -124,14 +123,12 @@ class Simulation:
             self.world_size, self.cell_size
         )
         
-        # Run thermostat
         apply_thermostat(
             self.vel_x[:2], self.vel_y[:2],
             f32_mass, self.is_static[:2],
             np.float32(0.5), np.float32(0.1)
         )
         
-        # Clean up
         self.clear_particles()
         print("Warmup complete.")
 
@@ -145,7 +142,6 @@ class Simulation:
         self.count = 0
         self.pair_count = 0
         self.walls = []
-        # Clear arrays
         self.pos_x.fill(0)
         self.pos_y.fill(0)
         self.vel_x.fill(0)
@@ -160,10 +156,14 @@ class Simulation:
         self.target_temp = 0.5
         self.damping = config.DEFAULT_DAMPING
         self.use_boundaries = False
+        # Reset physics parameters
+        self.sigma = config.ATOM_SIGMA
+        self.epsilon = config.ATOM_EPSILON
         self.clear_particles()
 
     def add_particles_brush(self, x, y, radius):
-        sigma = config.ATOM_SIGMA
+        # Use dynamic sigma
+        sigma = self.sigma
         spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025 
         r_sq = radius * radius
@@ -254,7 +254,8 @@ class Simulation:
         for wall in self.walls:
             p1 = np.array(wall['start'])
             p2 = np.array(wall['end'])
-            spacing = config.ATOM_SIGMA * 0.7
+            # Use dynamic sigma
+            spacing = self.sigma * 0.7
             vec = p2 - p1
             length = np.linalg.norm(vec)
             if length < 1e-4: continue 
@@ -285,7 +286,6 @@ class Simulation:
     def step(self, steps_to_run):
         if self.paused: return
 
-        # Use self.world_size instead of config.WORLD_SIZE
         if self.total_steps % 100 == 0 and self.count > 0:
             spatial_sort(
                 self.pos_x[:self.count], self.pos_y[:self.count],
@@ -329,8 +329,9 @@ class Simulation:
             self.rebuild_next = False
 
         if self.count > 0:
-            f32_sigma = np.float32(config.ATOM_SIGMA)
-            f32_epsilon = np.float32(config.ATOM_EPSILON)
+            # Pass dynamic sigma/epsilon
+            f32_sigma = np.float32(self.sigma)
+            f32_epsilon = np.float32(self.epsilon)
             f32_mass = np.float32(config.ATOM_MASS)
             f32_dt = np.float32(self.dt)
             f32_gravity = np.float32(self.gravity)
@@ -364,8 +365,6 @@ class Simulation:
                 self.steps_accumulator = 0
                 self.last_sps_update = now
             
-            # If aborted early, schedule a rebuild for NEXT frame
-            # But do NOT set pair_count to 0, so UI still shows what was used.
             if steps_done < steps_to_run:
                 self.rebuild_next = True
 
@@ -378,7 +377,6 @@ class Simulation:
                     np.float32(0.1)
                 )
             
-            # Boundary Check: Use new self.world_size
             active_x = self.pos_x[:self.count]
             active_y = self.pos_y[:self.count]
             w = self.world_size
