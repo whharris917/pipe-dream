@@ -4,7 +4,9 @@ import numpy as np
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
 UI_HEIGHT = 200
-WORLD_SIZE = 600.0
+
+# This is now the *Default* size. The actual size is stored in Simulation instance.
+DEFAULT_WORLD_SIZE = 600.0  
 
 # Physics Defaults
 DEFAULT_DT = 0.002

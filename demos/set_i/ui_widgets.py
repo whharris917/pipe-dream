@@ -85,3 +85,57 @@ class Button:
             
         txt_rect = self.cached_surf.get_rect(center=self.rect.center)
         screen.blit(self.cached_surf, txt_rect)
+
+class InputField:
+    def __init__(self, x, y, w, h, initial_text=""):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = initial_text
+        self.active = False
+        self.color_active = (200, 200, 255)
+        self.color_inactive = (100, 100, 110)
+        self.cached_surf = None
+        self.last_text = None
+        
+    def handle_event(self, event):
+        changed = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = True
+            else:
+                self.active = False
+            changed = True # Redraw on focus change
+            
+        if event.type == pygame.KEYDOWN and self.active:
+            if event.key == pygame.K_RETURN:
+                # User hit enter, maybe we want to trigger something? 
+                # For now just lose focus
+                self.active = False
+            elif event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            else:
+                # Simple number filter
+                if event.unicode.isdigit() or event.unicode == '.':
+                    self.text += event.unicode
+            changed = True
+            
+        return changed
+
+    def get_value(self):
+        try:
+            return float(self.text)
+        except ValueError:
+            return 0.0
+
+    def set_value(self, val):
+        self.text = str(val)
+
+    def draw(self, screen, font):
+        color = self.color_active if self.active else self.color_inactive
+        pygame.draw.rect(screen, (30, 30, 35), self.rect)
+        pygame.draw.rect(screen, color, self.rect, 2)
+        
+        if self.cached_surf is None or self.text != self.last_text:
+            self.last_text = self.text
+            self.cached_surf = font.render(self.text, True, (255, 255, 255))
+            
+        screen.blit(self.cached_surf, (self.rect.x + 5, self.rect.y + 5))

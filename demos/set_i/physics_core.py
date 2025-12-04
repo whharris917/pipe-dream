@@ -6,17 +6,18 @@ from numba import njit
 def force_LJ_scalar(r2, sigma2, epsilon24):
     """
     Standard LJ Force calculation using scalar constants.
+    Includes a force cap to prevent explosions at r -> 0.
     """
-    # Soft core clamping to prevent singularity at r=0
-    if r2 < 0.1 * sigma2:
-        r2 = 0.1 * sigma2
+    min_r2 = 0.64 * sigma2
+    eff_r2 = r2 if r2 > min_r2 else min_r2
 
-    inv_r2 = 1.0 / r2
+    inv_r2 = 1.0 / eff_r2
     s2_inv_r2 = sigma2 * inv_r2
     inv_r6 = s2_inv_r2 * s2_inv_r2 * s2_inv_r2
     inv_r12 = inv_r6 * inv_r6
     
-    return epsilon24 * (2.0 * inv_r12 - inv_r6) * inv_r2
+    force_val = epsilon24 * (2.0 * inv_r12 - inv_r6) * inv_r2
+    return force_val
 
 @njit(fastmath=True)
 def check_displacement(pos_x, pos_y, last_x, last_y, limit_sq):
@@ -86,15 +87,16 @@ def integrate_n_steps(
     sigma, epsilon, mass,
     pair_i, pair_j, pair_count,
     dt, gravity, r_cut2_base,
-    skin_limit_sq
+    skin_limit_sq,
+    world_size,
+    use_boundaries,
+    wall_damping
 ):
     N = pos_x.shape[0]
     half_dt = 0.5 * dt
     dt2_2m = 0.5 * dt * dt / mass
     inv_mass = 1.0 / mass
     
-    # Pre-calculate physics constants 
-    # (Inputs guaranteed to be float32, so these operations stay float32)
     sigma2 = sigma * sigma
     epsilon24 = 24.0 * epsilon
     
@@ -106,13 +108,35 @@ def integrate_n_steps(
             if check_displacement(pos_x, pos_y, last_x, last_y, skin_limit_sq):
                 return steps_done
 
-        # 1. Integration (Pos + Half Vel)
+        # 1. Integration (Pos + Half Vel) + Optional Boundaries
         for i in range(N):
             if is_static[i] == 0:
-                pos_x[i] += vel_x[i] * dt + force_x[i] * dt2_2m
-                pos_y[i] += vel_y[i] * dt + force_y[i] * dt2_2m
+                # Update Position
+                xi = pos_x[i] + vel_x[i] * dt + force_x[i] * dt2_2m
+                yi = pos_y[i] + vel_y[i] * dt + force_y[i] * dt2_2m
+                
+                # Reflective Boundaries (Conditional)
+                if use_boundaries:
+                    if xi >= world_size:
+                        xi = 2.0 * world_size - xi
+                        vel_x[i] = -vel_x[i] * wall_damping
+                    elif xi < 0.0:
+                        xi = -xi
+                        vel_x[i] = -vel_x[i] * wall_damping
+                        
+                    if yi >= world_size:
+                        yi = 2.0 * world_size - yi
+                        vel_y[i] = -vel_y[i] * wall_damping
+                    elif yi < 0.0:
+                        yi = -yi
+                        vel_y[i] = -vel_y[i] * wall_damping
+                
+                pos_x[i] = xi
+                pos_y[i] = yi
+                
+                # Update Velocity (Half Step)
                 vel_x[i] += force_x[i] * inv_mass * half_dt
-                # Global damping removed to match "Fast" script efficiency
+                vel_y[i] += force_y[i] * inv_mass * half_dt
 
         # 2. Reset Forces & Gravity
         for i in range(N):
@@ -122,9 +146,7 @@ def integrate_n_steps(
             else:
                 force_y[i] = 0.0
 
-        # 3. Forces (Branchless / Vectorizable)
-        # We process ALL pairs in the list. Static atoms will accumulate 
-        # force but won't move because of the check in step 1 & 4.
+        # 3. Forces
         for k in range(pair_count):
             i = pair_i[k]
             j = pair_j[k]
@@ -135,7 +157,6 @@ def integrate_n_steps(
             
             if r2 < r_cut2_base:
                 f_scal = force_LJ_scalar(r2, sigma2, epsilon24)
-                
                 fx = f_scal * dx
                 fy = f_scal * dy
                 
@@ -159,16 +180,12 @@ def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, world_
     N = pos_x.shape[0]
     n_cells = int(world_size // cell_size) + 1
     inv_cell = 1.0 / cell_size
-    
     keys = np.zeros(N, dtype=np.int32)
-    
     for i in range(N):
         cx = int(pos_x[i] * inv_cell)
         cy = int(pos_y[i] * inv_cell)
         keys[i] = cy * n_cells + cx
-        
     perm = np.argsort(keys)
-    
     pos_x[:] = pos_x[perm]
     pos_y[:] = pos_y[perm]
     vel_x[:] = vel_x[perm]
@@ -182,20 +199,15 @@ def apply_thermostat(vel_x, vel_y, mass, is_static, target_temp, mix):
     ke = 0.0
     count = 0
     N = vel_x.shape[0]
-    
     for i in range(N):
         if is_static[i] == 0:
             ke += 0.5 * mass * (vel_x[i]**2 + vel_y[i]**2)
             count += 1
-            
     if count == 0: return
-    
     current_T = ke / count
     if current_T <= 1e-6: return
-    
     scale = math.sqrt(target_temp / current_T)
     eff_scale = 1.0 + mix * (scale - 1.0)
-    
     for i in range(N):
         if is_static[i] == 0:
             vel_x[i] *= eff_scale
