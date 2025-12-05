@@ -29,7 +29,12 @@ class Simulation:
         self.vel_y = np.zeros(self.capacity, dtype=np.float32)
         self.force_x = np.zeros(self.capacity, dtype=np.float32)
         self.force_y = np.zeros(self.capacity, dtype=np.float32)
+        
+        # 0=Dynamic, 1=Static, 2=Kinematic
         self.is_static = np.zeros(self.capacity, dtype=np.int32)
+        
+        # Kinematic Props: [pivot_x, pivot_y, omega]
+        self.kinematic_props = np.zeros((self.capacity, 3), dtype=np.float32)
         
         # Per-Particle Properties
         self.atom_sigma = np.zeros(self.capacity, dtype=np.float32)
@@ -103,6 +108,7 @@ class Simulation:
             self.force_x[:2], self.force_y[:2],
             self.last_x[:2], self.last_y[:2],
             self.is_static[:2],
+            self.kinematic_props[:2], # Added
             self.atom_sigma[:2], self.atom_eps_sqrt[:2], f32_mass,
             self.pair_i, self.pair_j, self.pair_count,
             f32_dt, f32_gravity, f32_rcut2, f32_skin_sq, f32_world, self.use_boundaries, f32_damping
@@ -113,6 +119,7 @@ class Simulation:
             self.vel_x[:2], self.vel_y[:2],
             self.force_x[:2], self.force_y[:2],
             self.is_static[:2],
+            self.kinematic_props[:2], # Added
             self.atom_sigma[:2], self.atom_eps_sqrt[:2],
             self.world_size, self.cell_size
         )
@@ -127,6 +134,7 @@ class Simulation:
             'vel_x': np.copy(self.vel_x[:self.count]),
             'vel_y': np.copy(self.vel_y[:self.count]),
             'is_static': np.copy(self.is_static[:self.count]),
+            'kinematic_props': np.copy(self.kinematic_props[:self.count]), # Added
             'atom_sigma': np.copy(self.atom_sigma[:self.count]),
             'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls),
@@ -149,6 +157,13 @@ class Simulation:
         self.vel_x[:self.count] = state['vel_x']
         self.vel_y[:self.count] = state['vel_y']
         self.is_static[:self.count] = state['is_static']
+        
+        # Handle restore of new prop if it exists, else zero
+        if 'kinematic_props' in state:
+            self.kinematic_props[:self.count] = state['kinematic_props']
+        else:
+            self.kinematic_props[:self.count] = 0.0
+
         self.atom_sigma[:self.count] = state['atom_sigma']
         self.atom_eps_sqrt[:self.count] = state['atom_eps_sqrt']
         
@@ -167,6 +182,7 @@ class Simulation:
             'vel_x': np.copy(self.vel_x[:self.count]),
             'vel_y': np.copy(self.vel_y[:self.count]),
             'is_static': np.copy(self.is_static[:self.count]),
+            'kinematic_props': np.copy(self.kinematic_props[:self.count]),
             'atom_sigma': np.copy(self.atom_sigma[:self.count]),
             'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls),
@@ -185,6 +201,7 @@ class Simulation:
             'vel_x': np.copy(self.vel_x[:self.count]),
             'vel_y': np.copy(self.vel_y[:self.count]),
             'is_static': np.copy(self.is_static[:self.count]),
+            'kinematic_props': np.copy(self.kinematic_props[:self.count]),
             'atom_sigma': np.copy(self.atom_sigma[:self.count]),
             'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls),
@@ -208,6 +225,7 @@ class Simulation:
         self.pos_x.fill(0); self.pos_y.fill(0)
         self.vel_x.fill(0); self.vel_y.fill(0)
         self.is_static.fill(0)
+        self.kinematic_props.fill(0)
         self.rebuild_next = True
 
     def reset_simulation(self):
@@ -247,7 +265,6 @@ class Simulation:
             nw['start'] = (w['start'][0] - center_x, w['start'][1] - center_y)
             nw['end'] = (w['end'][0] - center_x, w['end'][1] - center_y)
             
-            # Normalize animation reference points if they exist
             if 'anim' in nw and nw['anim']:
                 anim = nw['anim']
                 rs = anim['ref_start']; re = anim['ref_end']
@@ -298,10 +315,12 @@ class Simulation:
                 'ref_start': w['start'],
                 'ref_end': w['end']
             }
+            self.rebuild_static_atoms()
 
     def update_animations(self, dt):
-        """Updates geometry for animated walls."""
-        dirty = False
+        """Updates geometry for animated walls for RENDERING purposes."""
+        # Note: Physics atoms are updated in Numba sub-steps. 
+        # This function updates the 'walls' definitions so UI lines match the atoms.
         for w in self.walls:
             anim = w.get('anim')
             if anim and anim['type'] == 'rotate':
@@ -329,10 +348,6 @@ class Simulation:
                 
                 w['start'] = tuple(rot_s)
                 w['end'] = tuple(rot_e)
-                dirty = True
-                
-        if dirty:
-            self.rebuild_static_atoms()
 
     def add_particles_brush(self, x, y, radius):
         sigma = self.sigma
@@ -378,7 +393,7 @@ class Simulation:
         r2 = radius**2
         keep_indices = []
         for i in range(self.count):
-            if self.is_static[i] == 1:
+            if self.is_static[i] == 1 or self.is_static[i] == 2:
                 keep_indices.append(i)
                 continue
             dx = self.pos_x[i] - x
@@ -396,7 +411,7 @@ class Simulation:
             'sigma': config.ATOM_SIGMA,
             'epsilon': config.ATOM_EPSILON,
             'spacing': 0.7 * config.ATOM_SIGMA,
-            'anim': None # Initialize with no animation
+            'anim': None
         })
         self.rebuild_static_atoms()
 
@@ -437,6 +452,29 @@ class Simulation:
             w_sigma = wall.get('sigma', 1.0)
             w_eps_sqrt = math.sqrt(wall.get('epsilon', 1.0))
             
+            # Check animation status
+            anim = wall.get('anim')
+            is_rotating = False
+            pivot = np.zeros(2)
+            omega = 0.0
+            
+            if anim and anim['type'] == 'rotate':
+                is_rotating = True
+                omega = math.radians(anim['speed']) # Convert deg/s to rad/s for physics
+                
+                # Determine pivot
+                rs = np.array(anim['ref_start'])
+                re = np.array(anim['ref_end'])
+                # Need to use CURRENT geometry for initial placement, but Pivot is relative to CURRENT geometry
+                # Actually, easier: Determine Pivot based on CURRENT endpoints.
+                # Since 'update_animations' keeps 'start'/'end' updated, we can use them.
+                w_s = np.array(wall['start'])
+                w_e = np.array(wall['end'])
+                
+                if anim['pivot'] == 'start': pivot = w_s
+                elif anim['pivot'] == 'end': pivot = w_e
+                else: pivot = (w_s + w_e) * 0.5
+
             for k in range(num_atoms):
                 if self.count >= self.capacity: self._resize_arrays()
                 t = k / max(1, num_atoms - 1) if num_atoms > 1 else 0.5
@@ -445,7 +483,16 @@ class Simulation:
                 self.pos_y[self.count] = pos[1]
                 self.vel_x[self.count] = 0.0
                 self.vel_y[self.count] = 0.0
-                self.is_static[self.count] = 1
+                
+                if is_rotating:
+                    self.is_static[self.count] = 2
+                    self.kinematic_props[self.count, 0] = pivot[0]
+                    self.kinematic_props[self.count, 1] = pivot[1]
+                    self.kinematic_props[self.count, 2] = omega
+                else:
+                    self.is_static[self.count] = 1
+                    self.kinematic_props[self.count, :] = 0.0
+
                 self.atom_sigma[self.count] = w_sigma
                 self.atom_eps_sqrt[self.count] = w_eps_sqrt
                 self.count += 1
@@ -459,6 +506,7 @@ class Simulation:
         self.vel_x[:new_count] = self.vel_x[indices]
         self.vel_y[:new_count] = self.vel_y[indices]
         self.is_static[:new_count] = self.is_static[indices]
+        self.kinematic_props[:new_count] = self.kinematic_props[indices] # Added
         self.atom_sigma[:new_count] = self.atom_sigma[indices]
         self.atom_eps_sqrt[:new_count] = self.atom_eps_sqrt[indices]
         self.count = new_count
@@ -474,15 +522,6 @@ class Simulation:
             
         # Update derived skin parameters if skin changed
         self._update_derived_params()
-        
-        # 1. Update Animations (Rotations)
-        # Note: We update animation once per frame (or step block), not per sub-step,
-        # to keep overhead low. 'dt' here effectively represents frame time 
-        # but integrated over the steps.
-        # Actually, if steps_to_run corresponds to dt * steps, we should use that.
-        # For simplicity, we use the global dt * steps_to_run as the time delta.
-        total_dt = self.dt * steps_to_run
-        self.update_animations(total_dt)
 
         if self.total_steps % 100 == 0 and self.count > 0:
             spatial_sort(
@@ -490,6 +529,7 @@ class Simulation:
                 self.vel_x[:self.count], self.vel_y[:self.count],
                 self.force_x[:self.count], self.force_y[:self.count],
                 self.is_static[:self.count],
+                self.kinematic_props[:self.count], # Added
                 self.atom_sigma[:self.count], self.atom_eps_sqrt[:self.count],
                 self.world_size, self.cell_size
             )
@@ -530,6 +570,7 @@ class Simulation:
                 self.force_x[:self.count], self.force_y[:self.count],
                 self.last_x[:self.count], self.last_y[:self.count],
                 self.is_static[:self.count],
+                self.kinematic_props[:self.count], # Added
                 self.atom_sigma[:self.count], self.atom_eps_sqrt[:self.count], 
                 np.float32(config.ATOM_MASS),
                 self.pair_i, self.pair_j, self.pair_count,
@@ -540,6 +581,11 @@ class Simulation:
             
             self.total_steps += steps_done
             self.steps_accumulator += steps_done
+            
+            # --- Update UI Walls to match Physics ---
+            total_dt = self.dt * steps_done
+            self.update_animations(total_dt)
+            
             now = time.time()
             elapsed = now - self.last_sps_update
             if elapsed >= 0.5:
@@ -574,6 +620,7 @@ class Simulation:
         self.force_x = np.resize(self.force_x, self.capacity)
         self.force_y = np.resize(self.force_y, self.capacity)
         self.is_static = np.resize(self.is_static, self.capacity)
+        self.kinematic_props = np.resize(self.kinematic_props, (self.capacity, 3)) # Added
         self.atom_sigma = np.resize(self.atom_sigma, self.capacity)
         self.atom_eps_sqrt = np.resize(self.atom_eps_sqrt, self.capacity)
         self.last_x = np.resize(self.last_x, self.capacity)

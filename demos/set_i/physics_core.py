@@ -86,6 +86,7 @@ def integrate_n_steps(
     pos_x, pos_y, vel_x, vel_y, force_x, force_y,
     last_x, last_y,
     is_static,
+    kinematic_props, # New: [pivot_x, pivot_y, omega]
     atom_sigma, atom_eps_sqrt, mass,
     pair_i, pair_j, pair_count,
     dt, gravity, r_cut2_base,
@@ -109,7 +110,9 @@ def integrate_n_steps(
 
         # 1. Integration (Pos + Half Vel)
         for i in range(N):
-            if is_static[i] == 0:
+            st = is_static[i]
+            if st == 0:
+                # Dynamic Particle Integration
                 xi = pos_x[i] + vel_x[i] * dt + force_x[i] * dt2_2m
                 yi = pos_y[i] + vel_y[i] * dt + force_y[i] * dt2_2m
                 
@@ -132,6 +135,33 @@ def integrate_n_steps(
                 pos_y[i] = yi
                 vel_x[i] += force_x[i] * inv_mass * half_dt
                 vel_y[i] += force_y[i] * inv_mass * half_dt
+            
+            elif st == 2:
+                # Kinematic (Rotating) Particle Update
+                # This ensures the wall moves 'smoothly' during sub-steps
+                pivot_x = kinematic_props[i, 0]
+                pivot_y = kinematic_props[i, 1]
+                omega = kinematic_props[i, 2] # radians per step unit (dt)
+                
+                d_theta = omega * dt
+                c = math.cos(d_theta)
+                s = math.sin(d_theta)
+                
+                # Relative pos
+                rx = pos_x[i] - pivot_x
+                ry = pos_y[i] - pivot_y
+                
+                # Rotate
+                pos_x[i] = pivot_x + rx * c - ry * s
+                pos_y[i] = pivot_y + rx * s + ry * c
+                
+                # Update Velocity (Tangential) for correct momentum transfer
+                # V = omega x r = (-omega*y, omega*x)
+                # Use updated relative position
+                rx = pos_x[i] - pivot_x
+                ry = pos_y[i] - pivot_y
+                vel_x[i] = -omega * ry
+                vel_y[i] =  omega * rx
 
         # 2. Reset Forces
         for i in range(N):
@@ -151,12 +181,8 @@ def integrate_n_steps(
             r2 = dx*dx + dy*dy
             
             if r2 < r_cut2_base:
-                # Arithmetic mean for Sigma
                 s_ij = 0.5 * (atom_sigma[i] + atom_sigma[j])
                 s_ij2 = s_ij * s_ij
-                
-                # Geometric mean for Epsilon (pre-sqrt optimization)
-                # epsilon_ij = sqrt(eps_i * eps_j) = sqrt_eps_i * sqrt_eps_j
                 e_ij = atom_eps_sqrt[i] * atom_eps_sqrt[j]
                 e_24 = 24.0 * e_ij
                 
@@ -169,7 +195,7 @@ def integrate_n_steps(
                 force_x[j] -= fx
                 force_y[j] -= fy
 
-        # 4. Integration (Half Vel)
+        # 4. Integration (Half Vel for Dynamic)
         for i in range(N):
             if is_static[i] == 0:
                 vel_x[i] += force_x[i] * inv_mass * half_dt
@@ -180,7 +206,7 @@ def integrate_n_steps(
     return steps_done
 
 @njit(fastmath=True)
-def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, atom_sigma, atom_eps_sqrt, world_size, cell_size):
+def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, kinematic_props, atom_sigma, atom_eps_sqrt, world_size, cell_size):
     N = pos_x.shape[0]
     n_cells = int(world_size // cell_size) + 1
     inv_cell = 1.0 / cell_size
@@ -199,6 +225,7 @@ def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, atom_s
     force_x[:] = force_x[perm]
     force_y[:] = force_y[perm]
     is_static[:] = is_static[perm]
+    kinematic_props[:] = kinematic_props[perm] # Keep props synced
     atom_sigma[:] = atom_sigma[perm]
     atom_eps_sqrt[:] = atom_eps_sqrt[perm]
 
