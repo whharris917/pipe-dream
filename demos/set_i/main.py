@@ -3,7 +3,7 @@ import numpy as np
 import config
 import math
 from simulation_state import Simulation
-from ui_widgets import SmartSlider, Button, InputField
+from ui_widgets import SmartSlider, Button, InputField, ContextMenu, PropertiesDialog
 
 # --- Layout Constants ---
 LEFT_X = 0
@@ -73,7 +73,6 @@ def main():
     rp_width = RIGHT_W - 2 * rp_margin
     rp_start_x = RIGHT_X + rp_margin
     
-    # Metrics space
     rp_curr_y += 100 
     
     slider_gravity = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.0, 50.0, config.DEFAULT_GRAVITY, "Gravity", hard_min=0.0)
@@ -91,24 +90,20 @@ def main():
     
     ui_elements.extend([slider_gravity, slider_temp, slider_damping, slider_sigma, slider_epsilon, slider_M])
     
-    # Toggles
     btn_w = (rp_width - 10) // 2
     btn_thermostat = Button(rp_start_x, rp_curr_y, btn_w, 30, "Thermostat", active=False)
     btn_boundaries = Button(rp_start_x + btn_w + 10, rp_curr_y, btn_w, 30, "Bounds", active=False)
     ui_elements.extend([btn_thermostat, btn_boundaries])
     rp_curr_y += 40
     
-    # Tools (Handled Manually for Radio Logic)
     btn_tool_brush = Button(rp_start_x, rp_curr_y, btn_w, 30, "Brush", active=True, toggle=False)
     btn_tool_wall = Button(rp_start_x + btn_w + 10, rp_curr_y, btn_w, 30, "Wall", active=False, toggle=False)
-    # Note: NOT adding to ui_elements list to avoid double processing loop
     rp_curr_y += 40
     
     slider_brush_size = SmartSlider(rp_start_x, rp_curr_y, rp_width, 1.0, 10.0, 2.0, "Brush Radius", hard_min=0.5)
     ui_elements.append(slider_brush_size)
     rp_curr_y += 60
     
-    # World Resize
     lbl_resize = font.render("World Size:", True, (200, 200, 200))
     input_world = InputField(rp_start_x + 80, rp_curr_y, 60, 25, str(config.DEFAULT_WORLD_SIZE))
     btn_resize = Button(rp_start_x + 150, rp_curr_y, rp_width - 150, 25, "Resize & Restart", active=False, toggle=False)
@@ -116,19 +111,22 @@ def main():
     rp_curr_y += 40
     
     # --- APP STATE ---
-    current_tool = 0 # 0=Brush, 1=Wall
+    current_tool = 0 
     zoom = 1.0
     pan_x = 0.0
     pan_y = 0.0
     is_panning = False
     last_mouse_pos = (0, 0)
-    
     is_painting = False
     is_erasing = False
-    
     wall_mode = None
     wall_idx = -1
     wall_pt = -1
+    
+    # Modal States
+    context_menu = None
+    prop_dialog = None
+    context_wall_idx = -1
     
     def calculate_current_temp(vel_x, vel_y, count, mass):
         if count == 0: return 0.0
@@ -142,17 +140,41 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             
+            # --- MODAL HANDLING ---
+            if context_menu:
+                if context_menu.handle_event(event):
+                    action = context_menu.action
+                    if action == "Delete":
+                        sim.remove_wall(context_wall_idx)
+                        context_menu = None
+                    elif action == "Properties":
+                        # Open Properties Dialog
+                        wall_data = sim.walls[context_wall_idx]
+                        # Center dialog on screen
+                        prop_dialog = PropertiesDialog(config.WINDOW_WIDTH//2 - 125, config.WINDOW_HEIGHT//2 - 100, wall_data)
+                        context_menu = None
+                    elif action == "CLOSE":
+                        context_menu = None
+                continue # Consume events if menu is open
+                
+            if prop_dialog:
+                if prop_dialog.handle_event(event):
+                    if prop_dialog.apply:
+                        new_props = prop_dialog.get_values()
+                        sim.update_wall_props(context_wall_idx, new_props)
+                        prop_dialog.apply = False # Reset flag
+                    if prop_dialog.done:
+                        prop_dialog = None
+                continue # Consume events if dialog is open
+
             # --- UI EVENTS ---
             mouse_in_ui = (event.type == pygame.MOUSEBUTTONDOWN and (event.pos[0] > RIGHT_X or event.pos[0] < LEFT_W))
-            
             ui_captured = False
             
-            # 1. Handle Generic UI
             for el in ui_elements:
                 if el.handle_event(event): ui_captured = True
             if input_world.handle_event(event): ui_captured = True
             
-            # 2. Handle Tool Radio Buttons (Manual Logic)
             if btn_tool_brush.handle_event(event):
                 current_tool = 0
                 btn_tool_brush.active = True
@@ -166,7 +188,6 @@ def main():
                 ui_captured = True
             
             if mouse_in_ui or ui_captured:
-                # Logic Hooks
                 if btn_reset.clicked:
                     sim.reset_simulation()
                     input_world.set_value(config.DEFAULT_WORLD_SIZE)
@@ -178,13 +199,10 @@ def main():
                     btn_thermostat.active = False
                     btn_boundaries.active = False
                     zoom = 1.0; pan_x = 0; pan_y = 0
-                    
                 if btn_clear.clicked: sim.clear_particles()
-                
                 if btn_resize.clicked:
                     sim.resize_world(input_world.get_value(50.0))
                     zoom = 1.0; pan_x = 0; pan_y = 0
-                
                 continue 
 
             # --- WORLD INTERACTION ---
@@ -196,11 +214,31 @@ def main():
                 if event.button == 2:
                     is_panning = True
                     last_mouse_pos = event.pos
+                
+                # RIGHT CLICK - Context Menu
                 elif event.button == 3:
-                    is_erasing = True
+                    # Check for wall hit
+                    mx, my = event.pos
+                    if LEFT_X < mx < RIGHT_X:
+                        sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, sim.world_size)
+                        rad_sim = 5.0 / ( ((MID_W - 50) / sim.world_size) * zoom )
+                        hit_wall = -1
+                        # Check handles first
+                        for i, w in enumerate(sim.walls):
+                            if math.hypot(w['start'][0]-sim_x, w['start'][1]-sim_y) < rad_sim or \
+                               math.hypot(w['end'][0]-sim_x, w['end'][1]-sim_y) < rad_sim:
+                                hit_wall = i
+                                break
+                        
+                        if hit_wall != -1:
+                            context_menu = ContextMenu(mx, my, ["Properties", "Delete"])
+                            context_wall_idx = hit_wall
+                        else:
+                            # Default behavior (Erase)
+                            is_erasing = True
+
                 elif event.button == 1:
                     mx, my = event.pos
-                    # Restrict clicks to Middle Panel
                     if LEFT_X < mx < RIGHT_X:
                         sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, sim.world_size)
                         
@@ -208,9 +246,7 @@ def main():
                             is_painting = True
                         elif current_tool == 1: # Wall
                             hit = -1; endp = -1
-                            # Calc visual radius for hit detection
-                            rad_sim = 5.0 / ( ((MID_W - 50) / sim.world_size) * zoom ) # Approx 5 screen pixels converted to sim
-                            
+                            rad_sim = 5.0 / ( ((MID_W - 50) / sim.world_size) * zoom )
                             for i, w in enumerate(sim.walls):
                                 if math.hypot(w['start'][0]-sim_x, w['start'][1]-sim_y) < rad_sim:
                                     hit=i; endp=0; break
@@ -246,27 +282,29 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE: btn_play.active = not btn_play.active
 
-        # --- UPDATE ---
-        sim.paused = not btn_play.active
-        sim.gravity = slider_gravity.val
-        sim.target_temp = slider_temp.val
-        sim.damping = slider_damping.val
-        sim.sigma = slider_sigma.val
-        sim.epsilon = slider_epsilon.val
-        sim.use_thermostat = btn_thermostat.active
-        sim.use_boundaries = btn_boundaries.active
-        
-        steps = int(slider_M.val)
-        
-        mx, my = pygame.mouse.get_pos()
-        if is_painting or is_erasing:
-             if LEFT_X < mx < RIGHT_X:
-                sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, sim.world_size)
-                if is_painting: sim.add_particles_brush(sim_x, sim_y, slider_brush_size.val)
-                elif is_erasing: sim.delete_particles_brush(sim_x, sim_y, slider_brush_size.val)
+        # --- PHYSICS UPDATE ---
+        # Only run physics if modal dialog is NOT open
+        if not prop_dialog:
+            sim.paused = not btn_play.active
+            sim.gravity = slider_gravity.val
+            sim.target_temp = slider_temp.val
+            sim.damping = slider_damping.val
+            sim.sigma = slider_sigma.val
+            sim.epsilon = slider_epsilon.val
+            sim.use_thermostat = btn_thermostat.active
+            sim.use_boundaries = btn_boundaries.active
+            
+            steps = int(slider_M.val)
+            
+            mx, my = pygame.mouse.get_pos()
+            if is_painting or is_erasing:
+                 if LEFT_X < mx < RIGHT_X:
+                    sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, sim.world_size)
+                    if is_painting: sim.add_particles_brush(sim_x, sim_y, slider_brush_size.val)
+                    elif is_erasing: sim.delete_particles_brush(sim_x, sim_y, slider_brush_size.val)
 
-        if not sim.paused:
-            sim.step(steps)
+            if not sim.paused:
+                sim.step(steps)
             
         # --- RENDER ---
         screen.fill(config.BACKGROUND_COLOR)
@@ -284,8 +322,9 @@ def main():
             if 0 < sx < config.WINDOW_WIDTH and 0 < sy < config.WINDOW_HEIGHT:
                 is_stat = sim.is_static[i]
                 col = config.COLOR_STATIC if is_stat else config.COLOR_DYNAMIC
-                # Rad calc matches logic
-                rad = max(2, int(sim.sigma * config.PARTICLE_RADIUS_SCALE * ((MID_W-50)/sim.world_size) * zoom))
+                # Use individual atom sigma for drawing
+                atom_sig = sim.atom_sigma[i]
+                rad = max(2, int(atom_sig * config.PARTICLE_RADIUS_SCALE * ((MID_W-50)/sim.world_size) * zoom))
                 pygame.draw.circle(screen, col, (sx, sy), rad)
         
         for w in sim.walls:
@@ -317,12 +356,15 @@ def main():
         
         for el in ui_elements: el.draw(screen, font)
         
-        # Manually Draw Tools (since removed from loop)
         btn_tool_brush.draw(screen, font)
         btn_tool_wall.draw(screen, font)
         
         screen.blit(lbl_resize, (RIGHT_X + 15, input_world.rect.y + 4))
         input_world.draw(screen, font)
+        
+        # Draw Overlays
+        if context_menu: context_menu.draw(screen, font)
+        if prop_dialog: prop_dialog.draw(screen, font)
         
         pygame.display.flip()
         clock.tick(60)

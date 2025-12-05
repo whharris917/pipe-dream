@@ -3,21 +3,23 @@ import numpy as np
 from numba import njit
 
 @njit(fastmath=True)
-def force_LJ_scalar(r2, sigma2, epsilon24):
+def force_LJ_mixed(r2, s_ij2, e_24):
     """
-    Standard LJ Force calculation using scalar constants.
-    Includes a force cap to prevent explosions at r -> 0.
+    LJ Force for mixed particle types.
+    s_ij2: (sigma_i + sigma_j)/2 squared
+    e_24: 24 * sqrt(eps_i * eps_j)
     """
-    min_r2 = 0.64 * sigma2
+    # 1. Clamp r2 to avoid singularity. 
+    # Use a fraction of s_ij2 as the hard core limit.
+    min_r2 = 0.64 * s_ij2
     eff_r2 = r2 if r2 > min_r2 else min_r2
 
     inv_r2 = 1.0 / eff_r2
-    s2_inv_r2 = sigma2 * inv_r2
+    s2_inv_r2 = s_ij2 * inv_r2
     inv_r6 = s2_inv_r2 * s2_inv_r2 * s2_inv_r2
     inv_r12 = inv_r6 * inv_r6
     
-    force_val = epsilon24 * (2.0 * inv_r12 - inv_r6) * inv_r2
-    return force_val
+    return e_24 * (2.0 * inv_r12 - inv_r6) * inv_r2
 
 @njit(fastmath=True)
 def check_displacement(pos_x, pos_y, last_x, last_y, limit_sq):
@@ -84,7 +86,7 @@ def integrate_n_steps(
     pos_x, pos_y, vel_x, vel_y, force_x, force_y,
     last_x, last_y,
     is_static,
-    sigma, epsilon, mass,
+    atom_sigma, atom_eps_sqrt, mass,
     pair_i, pair_j, pair_count,
     dt, gravity, r_cut2_base,
     skin_limit_sq,
@@ -97,9 +99,6 @@ def integrate_n_steps(
     dt2_2m = 0.5 * dt * dt / mass
     inv_mass = 1.0 / mass
     
-    sigma2 = sigma * sigma
-    epsilon24 = 24.0 * epsilon
-    
     steps_done = 0
     
     for step in range(steps_to_run):
@@ -108,14 +107,13 @@ def integrate_n_steps(
             if check_displacement(pos_x, pos_y, last_x, last_y, skin_limit_sq):
                 return steps_done
 
-        # 1. Integration (Pos + Half Vel) + Optional Boundaries
+        # 1. Integration (Pos + Half Vel)
         for i in range(N):
             if is_static[i] == 0:
-                # Update Position
                 xi = pos_x[i] + vel_x[i] * dt + force_x[i] * dt2_2m
                 yi = pos_y[i] + vel_y[i] * dt + force_y[i] * dt2_2m
                 
-                # Reflective Boundaries (Conditional)
+                # Boundaries
                 if use_boundaries:
                     if xi >= world_size:
                         xi = 2.0 * world_size - xi
@@ -123,7 +121,6 @@ def integrate_n_steps(
                     elif xi < 0.0:
                         xi = -xi
                         vel_x[i] = -vel_x[i] * wall_damping
-                        
                     if yi >= world_size:
                         yi = 2.0 * world_size - yi
                         vel_y[i] = -vel_y[i] * wall_damping
@@ -133,12 +130,10 @@ def integrate_n_steps(
                 
                 pos_x[i] = xi
                 pos_y[i] = yi
-                
-                # Update Velocity (Half Step)
                 vel_x[i] += force_x[i] * inv_mass * half_dt
                 vel_y[i] += force_y[i] * inv_mass * half_dt
 
-        # 2. Reset Forces & Gravity
+        # 2. Reset Forces
         for i in range(N):
             force_x[i] = 0.0
             if is_static[i] == 0:
@@ -146,7 +141,7 @@ def integrate_n_steps(
             else:
                 force_y[i] = 0.0
 
-        # 3. Forces
+        # 3. Forces (Mixed Properties)
         for k in range(pair_count):
             i = pair_i[k]
             j = pair_j[k]
@@ -156,7 +151,16 @@ def integrate_n_steps(
             r2 = dx*dx + dy*dy
             
             if r2 < r_cut2_base:
-                f_scal = force_LJ_scalar(r2, sigma2, epsilon24)
+                # Arithmetic mean for Sigma
+                s_ij = 0.5 * (atom_sigma[i] + atom_sigma[j])
+                s_ij2 = s_ij * s_ij
+                
+                # Geometric mean for Epsilon (pre-sqrt optimization)
+                # epsilon_ij = sqrt(eps_i * eps_j) = sqrt_eps_i * sqrt_eps_j
+                e_ij = atom_eps_sqrt[i] * atom_eps_sqrt[j]
+                e_24 = 24.0 * e_ij
+                
+                f_scal = force_LJ_mixed(r2, s_ij2, e_24)
                 fx = f_scal * dx
                 fy = f_scal * dy
                 
@@ -176,7 +180,7 @@ def integrate_n_steps(
     return steps_done
 
 @njit(fastmath=True)
-def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, world_size, cell_size):
+def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, atom_sigma, atom_eps_sqrt, world_size, cell_size):
     N = pos_x.shape[0]
     n_cells = int(world_size // cell_size) + 1
     inv_cell = 1.0 / cell_size
@@ -186,6 +190,8 @@ def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, world_
         cy = int(pos_y[i] * inv_cell)
         keys[i] = cy * n_cells + cx
     perm = np.argsort(keys)
+    
+    # Shuffle all arrays including props
     pos_x[:] = pos_x[perm]
     pos_y[:] = pos_y[perm]
     vel_x[:] = vel_x[perm]
@@ -193,6 +199,8 @@ def spatial_sort(pos_x, pos_y, vel_x, vel_y, force_x, force_y, is_static, world_
     force_x[:] = force_x[perm]
     force_y[:] = force_y[perm]
     is_static[:] = is_static[perm]
+    atom_sigma[:] = atom_sigma[perm]
+    atom_eps_sqrt[:] = atom_eps_sqrt[perm]
 
 @njit(fastmath=True)
 def apply_thermostat(vel_x, vel_y, mass, is_static, target_temp, mix):

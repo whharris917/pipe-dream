@@ -28,11 +28,9 @@ class InputField:
             elif event.key == pygame.K_BACKSPACE:
                 self.text = self.text[:-1]
             else:
-                # Allow numbers, point, and minus
                 if event.unicode.isdigit() or event.unicode in ('.', '-'):
                     self.text += event.unicode
             changed = True
-            
         return changed
 
     def get_value(self, default=0.0):
@@ -42,14 +40,10 @@ class InputField:
             return default
 
     def set_value(self, val):
-        # Only update text if not currently being edited to prevent fighting
         if not self.active:
-            # Format nicely: remove trailing zeros if int
             val = float(val)
-            if val.is_integer():
-                self.text = str(int(val))
-            else:
-                self.text = f"{val:.2f}"
+            if val.is_integer(): self.text = str(int(val))
+            else: self.text = f"{val:.2f}"
 
     def draw(self, screen, font):
         color = self.color_active if self.active else self.color_inactive
@@ -60,7 +54,6 @@ class InputField:
             self.last_text = self.text
             self.cached_surf = font.render(self.text, True, self.text_color)
             
-        # Center vertically
         text_y = self.rect.y + (self.rect.height - self.cached_surf.get_height()) // 2
         screen.blit(self.cached_surf, (self.rect.x + 5, text_y))
 
@@ -69,8 +62,7 @@ class SmartSlider:
         self.x = x
         self.y = y
         self.w = w
-        self.h = 50 # Height of the entire widget block
-        
+        self.h = 50
         self.min_val = min_val
         self.max_val = max_val
         self.val = initial_val
@@ -78,19 +70,13 @@ class SmartSlider:
         self.hard_max = hard_max
         self.label = label
         
-        # Layout:
-        # Line 1: Label ........ ValueInput
-        # Line 2: MinInput --[Slider]-- MaxInput
-        
         self.input_w = 50
         self.input_h = 20
         
-        # Inputs
         self.input_val = InputField(x + w - self.input_w, y, self.input_w, self.input_h, str(initial_val))
         self.input_min = InputField(x, y + 25, self.input_w, self.input_h, str(min_val), text_color=(150, 150, 150))
         self.input_max = InputField(x + w - self.input_w, y + 25, self.input_w, self.input_h, str(max_val), text_color=(150, 150, 150))
         
-        # Slider Bar Rect
         slider_start_x = x + self.input_w + 5
         slider_width = w - (2 * self.input_w) - 10
         self.slider_rect = pygame.Rect(slider_start_x, y + 25, slider_width, self.input_h)
@@ -99,30 +85,25 @@ class SmartSlider:
 
     def handle_event(self, event):
         changed = False
-        
-        # 1. Handle Inputs
         if self.input_val.handle_event(event):
             new_val = self.input_val.get_value(self.val)
             self.val = self.clamp(new_val, self.min_val, self.max_val)
             changed = True
-            
         if self.input_min.handle_event(event):
             new_min = self.input_min.get_value(self.min_val)
             if self.hard_min is not None: new_min = max(new_min, self.hard_min)
             if new_min < self.max_val:
                 self.min_val = new_min
-                self.val = max(self.val, self.min_val) # Clamp val to new bounds
+                self.val = max(self.val, self.min_val)
             changed = True
-            
         if self.input_max.handle_event(event):
             new_max = self.input_max.get_value(self.max_val)
             if self.hard_max is not None: new_max = min(new_max, self.hard_max)
             if new_max > self.min_val:
                 self.max_val = new_max
-                self.val = min(self.val, self.max_val) # Clamp val to new bounds
+                self.val = min(self.val, self.max_val)
             changed = True
 
-        # 2. Handle Slider Drag
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.slider_rect.collidepoint(event.pos):
                 self.dragging = True
@@ -135,10 +116,8 @@ class SmartSlider:
                 self.update_from_mouse(event.pos[0])
                 changed = True
         
-        # Sync inputs if slider moved
         if changed and not self.input_val.active:
             self.input_val.set_value(self.val)
-            
         return changed
 
     def update_from_mouse(self, mx):
@@ -159,23 +138,15 @@ class SmartSlider:
         self.input_max.set_value(max_v)
 
     def draw(self, screen, font):
-        # Draw Label
         lbl = font.render(self.label, True, (200, 200, 200))
         screen.blit(lbl, (self.x, self.y + 2))
-        
-        # Draw Inputs
         self.input_val.draw(screen, font)
         self.input_min.draw(screen, font)
         self.input_max.draw(screen, font)
-        
-        # Draw Track
         pygame.draw.rect(screen, (60, 60, 70), self.slider_rect, border_radius=4)
-        
-        # Draw Handle
         if self.max_val == self.min_val: pct = 0.0
         else: pct = (self.val - self.min_val) / (self.max_val - self.min_val)
         pct = max(0.0, min(1.0, pct))
-        
         handle_x = self.slider_rect.x + pct * self.slider_rect.width - self.handle_w / 2
         handle_rect = pygame.Rect(int(handle_x), self.slider_rect.y - 2, self.handle_w, self.slider_rect.height + 4)
         pygame.draw.rect(screen, (150, 180, 220), handle_rect, border_radius=2)
@@ -208,9 +179,111 @@ class Button:
         color = self.c_active if self.active else self.c_inactive
         pygame.draw.rect(screen, color, self.rect, border_radius=5)
         pygame.draw.rect(screen, (200, 200, 200), self.rect, 1, border_radius=5)
-        
         if self.cached_surf is None:
             self.cached_surf = font.render(self.text, True, (255, 255, 255))
-            
         txt_rect = self.cached_surf.get_rect(center=self.rect.center)
         screen.blit(self.cached_surf, txt_rect)
+
+class ContextMenu:
+    def __init__(self, x, y, options):
+        self.x = x
+        self.y = y
+        self.options = options # list of strings
+        self.width = 100
+        self.height = len(options) * 30
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.selected_idx = -1
+        self.action = None
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEMOTION:
+            if self.rect.collidepoint(event.pos):
+                rel_y = event.pos[1] - self.y
+                self.selected_idx = rel_y // 30
+            else:
+                self.selected_idx = -1
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                rel_y = event.pos[1] - self.y
+                idx = rel_y // 30
+                if 0 <= idx < len(self.options):
+                    self.action = self.options[idx]
+                    return True
+            else:
+                # Clicked outside, close
+                self.action = "CLOSE"
+                return True
+        return False
+
+    def draw(self, screen, font):
+        pygame.draw.rect(screen, (40, 40, 50), self.rect)
+        pygame.draw.rect(screen, (150, 150, 150), self.rect, 1)
+        for i, opt in enumerate(self.options):
+            bg_col = (60, 60, 80) if i == self.selected_idx else (40, 40, 50)
+            item_rect = pygame.Rect(self.x, self.y + i*30, self.width, 30)
+            pygame.draw.rect(screen, bg_col, item_rect)
+            txt = font.render(opt, True, (255, 255, 255))
+            screen.blit(txt, (self.x + 10, self.y + i*30 + 5))
+
+class PropertiesDialog:
+    def __init__(self, x, y, wall_data):
+        self.rect = pygame.Rect(x, y, 250, 200)
+        self.wall_data = wall_data
+        self.done = False
+        self.apply = False
+        
+        # Inputs
+        self.in_sigma = InputField(x + 100, y + 40, 100, 25, str(wall_data.get('sigma', 1.0)))
+        self.in_epsilon = InputField(x + 100, y + 75, 100, 25, str(wall_data.get('epsilon', 1.0)))
+        self.in_spacing = InputField(x + 100, y + 110, 100, 25, str(wall_data.get('spacing', 0.7)))
+        
+        self.btn_apply = Button(x + 20, y + 160, 80, 30, "Apply", toggle=False)
+        self.btn_ok = Button(x + 150, y + 160, 80, 30, "OK", toggle=False)
+
+    def handle_event(self, event):
+        if self.in_sigma.handle_event(event): return True
+        if self.in_epsilon.handle_event(event): return True
+        if self.in_spacing.handle_event(event): return True
+        
+        if self.btn_apply.handle_event(event):
+            self.apply = True
+            return True
+            
+        if self.btn_ok.handle_event(event):
+            self.apply = True
+            self.done = True
+            return True
+            
+        return False
+
+    def get_values(self):
+        return {
+            'sigma': self.in_sigma.get_value(1.0),
+            'epsilon': self.in_epsilon.get_value(1.0),
+            'spacing': self.in_spacing.get_value(0.7)
+        }
+
+    def draw(self, screen, font):
+        # Shadow
+        shadow = self.rect.copy()
+        shadow.x += 5; shadow.y += 5
+        pygame.draw.rect(screen, (0, 0, 0), shadow)
+        
+        # Main body
+        pygame.draw.rect(screen, (50, 50, 60), self.rect)
+        pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
+        
+        # Title
+        title = font.render("Wall Properties", True, (255, 255, 255))
+        screen.blit(title, (self.rect.x + 10, self.rect.y + 10))
+        
+        # Labels
+        screen.blit(font.render("Sigma:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 45))
+        screen.blit(font.render("Epsilon:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 80))
+        screen.blit(font.render("Spacing:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 115))
+        
+        self.in_sigma.draw(screen, font)
+        self.in_epsilon.draw(screen, font)
+        self.in_spacing.draw(screen, font)
+        self.btn_apply.draw(screen, font)
+        self.btn_ok.draw(screen, font)
