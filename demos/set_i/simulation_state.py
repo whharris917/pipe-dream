@@ -224,6 +224,46 @@ class Simulation:
         self._update_derived_params()
         self.clear_particles(snapshot=False)
 
+    # --- ASSET MANAGEMENT ---
+    def export_asset_data(self):
+        """Returns a list of walls relative to the geometric center of the asset."""
+        if not self.walls:
+            return None
+            
+        # Calculate bounding box to find center
+        min_x = float('inf'); max_x = float('-inf')
+        min_y = float('inf'); max_y = float('-inf')
+        
+        for w in self.walls:
+            for p in [w['start'], w['end']]:
+                min_x = min(min_x, p[0]); max_x = max(max_x, p[0])
+                min_y = min(min_y, p[1]); max_y = max(max_y, p[1])
+                
+        center_x = (min_x + max_x) / 2.0
+        center_y = (min_y + max_y) / 2.0
+        
+        normalized_walls = []
+        for w in self.walls:
+            # Create a copy and subtract center
+            nw = copy.deepcopy(w)
+            nw['start'] = (w['start'][0] - center_x, w['start'][1] - center_y)
+            nw['end'] = (w['end'][0] - center_x, w['end'][1] - center_y)
+            normalized_walls.append(nw)
+            
+        return normalized_walls
+
+    def place_asset(self, asset_walls, x, y):
+        """Adds asset walls to the current simulation at (x,y)."""
+        self.snapshot()
+        for w in asset_walls:
+            # Shift by placement position
+            new_w = copy.deepcopy(w)
+            new_w['start'] = (w['start'][0] + x, w['start'][1] + y)
+            new_w['end'] = (w['end'][0] + x, w['end'][1] + y)
+            self.walls.append(new_w)
+        
+        self.rebuild_static_atoms()
+
     def add_particles_brush(self, x, y, radius):
         sigma = self.sigma
         spacing = 1.12246 * sigma  
