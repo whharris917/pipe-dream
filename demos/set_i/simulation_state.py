@@ -226,11 +226,10 @@ class Simulation:
 
     # --- ASSET MANAGEMENT ---
     def export_asset_data(self):
-        """Returns a list of walls relative to the geometric center of the asset."""
+        """Returns a list of walls relative to the geometric center."""
         if not self.walls:
             return None
             
-        # Calculate bounding box to find center
         min_x = float('inf'); max_x = float('-inf')
         min_y = float('inf'); max_y = float('-inf')
         
@@ -244,10 +243,17 @@ class Simulation:
         
         normalized_walls = []
         for w in self.walls:
-            # Create a copy and subtract center
             nw = copy.deepcopy(w)
             nw['start'] = (w['start'][0] - center_x, w['start'][1] - center_y)
             nw['end'] = (w['end'][0] - center_x, w['end'][1] - center_y)
+            
+            # Normalize animation reference points if they exist
+            if 'anim' in nw and nw['anim']:
+                anim = nw['anim']
+                rs = anim['ref_start']; re = anim['ref_end']
+                anim['ref_start'] = (rs[0] - center_x, rs[1] - center_y)
+                anim['ref_end'] = (re[0] - center_x, re[1] - center_y)
+                
             normalized_walls.append(nw)
             
         return normalized_walls
@@ -256,13 +262,77 @@ class Simulation:
         """Adds asset walls to the current simulation at (x,y)."""
         self.snapshot()
         for w in asset_walls:
-            # Shift by placement position
             new_w = copy.deepcopy(w)
+            # Shift geometry
             new_w['start'] = (w['start'][0] + x, w['start'][1] + y)
             new_w['end'] = (w['end'][0] + x, w['end'][1] + y)
+            
+            # Shift animation reference points
+            if 'anim' in new_w and new_w['anim']:
+                anim = new_w['anim']
+                rs = anim['ref_start']; re = anim['ref_end']
+                anim['ref_start'] = (rs[0] + x, rs[1] + y)
+                anim['ref_end'] = (re[0] + x, re[1] + y)
+                
             self.walls.append(new_w)
         
         self.rebuild_static_atoms()
+
+    def set_wall_rotation(self, index, params):
+        """Initializes or updates rotation animation for a wall."""
+        if 0 <= index < len(self.walls):
+            w = self.walls[index]
+            speed = params['speed']
+            pivot = params['pivot']
+            
+            if abs(speed) < 1e-5:
+                w['anim'] = None # Disable if 0 speed
+                return
+
+            # Capture current state as reference to avoid drift
+            w['anim'] = {
+                'type': 'rotate',
+                'speed': speed,
+                'pivot': pivot,
+                'angle': 0.0,
+                'ref_start': w['start'],
+                'ref_end': w['end']
+            }
+
+    def update_animations(self, dt):
+        """Updates geometry for animated walls."""
+        dirty = False
+        for w in self.walls:
+            anim = w.get('anim')
+            if anim and anim['type'] == 'rotate':
+                d_angle = anim['speed'] * dt
+                anim['angle'] += d_angle
+                
+                # Rotation Matrix
+                rad = math.radians(anim['angle'])
+                c = math.cos(rad); s = math.sin(rad)
+                
+                # Determine pivot in Ref Coords
+                rs = np.array(anim['ref_start'])
+                re = np.array(anim['ref_end'])
+                
+                if anim['pivot'] == 'start': pivot = rs
+                elif anim['pivot'] == 'end': pivot = re
+                else: pivot = (rs + re) * 0.5
+                
+                # Rotate
+                v_s = rs - pivot
+                v_e = re - pivot
+                
+                rot_s = np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c]) + pivot
+                rot_e = np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c]) + pivot
+                
+                w['start'] = tuple(rot_s)
+                w['end'] = tuple(rot_e)
+                dirty = True
+                
+        if dirty:
+            self.rebuild_static_atoms()
 
     def add_particles_brush(self, x, y, radius):
         sigma = self.sigma
@@ -325,7 +395,8 @@ class Simulation:
             'end': end_pos,
             'sigma': config.ATOM_SIGMA,
             'epsilon': config.ATOM_EPSILON,
-            'spacing': 0.7 * config.ATOM_SIGMA
+            'spacing': 0.7 * config.ATOM_SIGMA,
+            'anim': None # Initialize with no animation
         })
         self.rebuild_static_atoms()
 
@@ -402,8 +473,16 @@ class Simulation:
             self.atom_eps_sqrt[:self.count][is_dyn] = math.sqrt(self.epsilon)
             
         # Update derived skin parameters if skin changed
-        # (Usually done when setting the prop, but ensure consistency here if needed)
         self._update_derived_params()
+        
+        # 1. Update Animations (Rotations)
+        # Note: We update animation once per frame (or step block), not per sub-step,
+        # to keep overhead low. 'dt' here effectively represents frame time 
+        # but integrated over the steps.
+        # Actually, if steps_to_run corresponds to dt * steps, we should use that.
+        # For simplicity, we use the global dt * steps_to_run as the time delta.
+        total_dt = self.dt * steps_to_run
+        self.update_animations(total_dt)
 
         if self.total_steps % 100 == 0 and self.count > 0:
             spatial_sort(

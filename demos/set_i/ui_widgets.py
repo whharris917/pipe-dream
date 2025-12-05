@@ -274,6 +274,70 @@ class PropertiesDialog:
         self.btn_apply.draw(screen, font)
         self.btn_ok.draw(screen, font)
 
+class RotationDialog:
+    def __init__(self, x, y, anim_data):
+        self.rect = pygame.Rect(x, y, 250, 200)
+        self.done = False
+        self.apply = False
+        
+        speed = 0.0
+        pivot = "center"
+        if anim_data:
+            speed = anim_data.get('speed', 0.0)
+            pivot = anim_data.get('pivot', 'center')
+
+        self.in_speed = InputField(x + 100, y + 60, 100, 25, str(speed))
+        
+        self.pivots = ["center", "start", "end"]
+        try:
+            self.pivot_idx = self.pivots.index(pivot)
+        except:
+            self.pivot_idx = 0
+            
+        self.btn_pivot = Button(x + 100, y + 100, 100, 25, f"Pivot: {self.pivots[self.pivot_idx].title()}", toggle=False, color_inactive=(70, 70, 90))
+        
+        self.btn_apply = Button(x + 20, y + 160, 80, 30, "Apply", toggle=False)
+        self.btn_ok = Button(x + 150, y + 160, 80, 30, "OK", toggle=False)
+
+    def handle_event(self, event):
+        if self.in_speed.handle_event(event): return True
+        
+        if self.btn_pivot.handle_event(event):
+            self.pivot_idx = (self.pivot_idx + 1) % len(self.pivots)
+            self.btn_pivot.text = f"Pivot: {self.pivots[self.pivot_idx].title()}"
+            self.btn_pivot.cached_surf = None
+            return True
+            
+        if self.btn_apply.handle_event(event):
+            self.apply = True; return True
+        if self.btn_ok.handle_event(event):
+            self.apply = True; self.done = True; return True
+        return False
+
+    def get_values(self):
+        return {
+            'speed': self.in_speed.get_value(0.0),
+            'pivot': self.pivots[self.pivot_idx]
+        }
+
+    def draw(self, screen, font):
+        shadow = self.rect.copy(); shadow.x += 5; shadow.y += 5
+        pygame.draw.rect(screen, (0, 0, 0), shadow)
+        pygame.draw.rect(screen, (50, 50, 60), self.rect)
+        pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
+        
+        title = font.render("Rotation Animation", True, (255, 255, 255))
+        screen.blit(title, (self.rect.x + 10, self.rect.y + 10))
+        
+        screen.blit(font.render("Speed (deg/s):", True, (200, 200, 200)), (self.rect.x + 10, self.rect.y + 65))
+        self.in_speed.draw(screen, font)
+        
+        screen.blit(font.render("Axis:", True, (200, 200, 200)), (self.rect.x + 10, self.rect.y + 105))
+        self.btn_pivot.draw(screen, font)
+        
+        self.btn_apply.draw(screen, font)
+        self.btn_ok.draw(screen, font)
+
 class MenuBar:
     def __init__(self, w, h=30):
         self.rect = pygame.Rect(0, 0, w, h)

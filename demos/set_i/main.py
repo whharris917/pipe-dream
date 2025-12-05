@@ -8,7 +8,7 @@ import copy # Added missing import
 import time # Added for status message timing
 from tkinter import filedialog, Tk
 from simulation_state import Simulation
-from ui_widgets import SmartSlider, Button, InputField, ContextMenu, PropertiesDialog, MenuBar
+from ui_widgets import SmartSlider, Button, InputField, ContextMenu, PropertiesDialog, MenuBar, RotationDialog
 
 # --- Layout Constants ---
 TOP_MENU_H = 30
@@ -258,6 +258,7 @@ def main():
     
     context_menu = None
     prop_dialog = None
+    rot_dialog = None # NEW: Rotation Dialog
     context_wall_idx = -1
     
     # Asset Placement State
@@ -275,10 +276,6 @@ def main():
 
     def enter_editor_mode():
         nonlocal app_mode, zoom, pan_x, pan_y, status_msg, status_time
-        # Backup current sim? For now, we just clear for a clean slate, 
-        # assuming the user knows "New Asset" creates a new context.
-        # But if we want to return to sim state, we should back it up.
-        # Ideally, asset editor is a separate scratchpad.
         sim_backup_state = {
             'count': sim.count,
             'pos_x': np.copy(sim.pos_x[:sim.count]),
@@ -422,6 +419,7 @@ def main():
                 if menu_clicked: continue
 
                 # --- PRIORITY 2: Modals ---
+                # Check for context menu
                 if context_menu:
                     if context_menu.handle_event(event):
                         action = context_menu.action
@@ -431,6 +429,12 @@ def main():
                         elif action == "Properties":
                             wall_data = sim.walls[context_wall_idx]
                             prop_dialog = PropertiesDialog(config.WINDOW_WIDTH//2 - 125, config.WINDOW_HEIGHT//2 - 100, wall_data)
+                            context_menu = None
+                        elif action == "Set Rotation...":
+                            wall_data = sim.walls[context_wall_idx]
+                            # Pass existing animation data if present
+                            anim_data = wall_data.get('anim', None)
+                            rot_dialog = RotationDialog(config.WINDOW_WIDTH//2 - 125, config.WINDOW_HEIGHT//2 - 100, anim_data)
                             context_menu = None
                         elif action == "CLOSE":
                             context_menu = None
@@ -444,6 +448,16 @@ def main():
                             prop_dialog.apply = False
                         if prop_dialog.done:
                             prop_dialog = None
+                    continue
+
+                if rot_dialog:
+                    if rot_dialog.handle_event(event):
+                        if rot_dialog.apply:
+                            rot_vals = rot_dialog.get_values()
+                            sim.set_wall_rotation(context_wall_idx, rot_vals)
+                            rot_dialog.apply = False
+                        if rot_dialog.done:
+                            rot_dialog = None
                     continue
 
                 # --- PRIORITY 3: Standard UI ---
@@ -546,7 +560,7 @@ def main():
                                         break
                                 
                                 if hit_wall != -1:
-                                    context_menu = ContextMenu(mx, my, ["Properties", "Delete"])
+                                    context_menu = ContextMenu(mx, my, ["Properties", "Set Rotation...", "Delete"])
                                     context_wall_idx = hit_wall
                                 else:
                                     is_erasing = True
@@ -610,7 +624,7 @@ def main():
                     if event.key == pygame.K_SPACE: btn_play.active = not btn_play.active
 
             # --- UPDATE ---
-            if not prop_dialog:
+            if not prop_dialog and not rot_dialog:
                 # Physics only in Sim Mode
                 if app_mode == MODE_SIM:
                     sim.paused = not btn_play.active
@@ -749,6 +763,7 @@ def main():
             
             if context_menu: context_menu.draw(screen, font)
             if prop_dialog: prop_dialog.draw(screen, font)
+            if rot_dialog: rot_dialog.draw(screen, font) # New Dialog
             
             pygame.display.flip()
             clock.tick(60)
