@@ -19,6 +19,9 @@ class Simulation:
         self.sigma = config.ATOM_SIGMA
         self.epsilon = config.ATOM_EPSILON
         
+        # New: Mutable Skin Distance
+        self.skin_distance = config.DEFAULT_SKIN_DISTANCE
+        
         # Physics State Arrays
         self.pos_x = np.zeros(self.capacity, dtype=np.float32)
         self.pos_y = np.zeros(self.capacity, dtype=np.float32)
@@ -28,7 +31,7 @@ class Simulation:
         self.force_y = np.zeros(self.capacity, dtype=np.float32)
         self.is_static = np.zeros(self.capacity, dtype=np.int32)
         
-        # New: Per-Particle Properties
+        # Per-Particle Properties
         self.atom_sigma = np.zeros(self.capacity, dtype=np.float32)
         self.atom_eps_sqrt = np.zeros(self.capacity, dtype=np.float32)
         
@@ -53,12 +56,9 @@ class Simulation:
         self.use_thermostat = False
         self.damping = config.DEFAULT_DAMPING
         
-        self.r_skin = 0.3
         self.r_cut_base = 2.5
-        self.r_list = self.r_cut_base + self.r_skin
-        self.r_list2 = self.r_list**2
-        self.r_skin_sq_limit = (0.5 * self.r_skin)**2
-        self.cell_size = self.r_list
+        # r_list, r_list2, r_skin_sq_limit, cell_size are now derived from skin_distance dynamically in step() or updated here
+        self._update_derived_params()
         
         self.total_steps = 0
         
@@ -72,12 +72,17 @@ class Simulation:
         
         self._warmup_compiler()
 
+    def _update_derived_params(self):
+        self.r_list = self.r_cut_base + self.skin_distance
+        self.r_list2 = self.r_list**2
+        self.r_skin_sq_limit = (0.5 * self.skin_distance)**2
+        self.cell_size = self.r_list
+
     def _warmup_compiler(self):
         print("Warming up Numba compiler...")
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
-        # Fill props for warmup
         self.atom_sigma[:2] = 1.0
         self.atom_eps_sqrt[:2] = 1.0
         
@@ -114,9 +119,7 @@ class Simulation:
         self.clear_particles()
         print("Warmup complete.")
 
-    # --- HISTORY MANAGEMENT ---
     def snapshot(self):
-        """Saves current state to undo stack. Clears redo stack."""
         state = {
             'count': self.count,
             'pos_x': np.copy(self.pos_x[:self.count]),
@@ -130,22 +133,17 @@ class Simulation:
             'world_size': self.world_size
         }
         self.undo_stack.append(state)
-        # Limit stack size to prevent memory hogging
         if len(self.undo_stack) > 50:
             self.undo_stack.pop(0)
         self.redo_stack.clear()
 
     def restore_state(self, state):
-        """Restores simulation from a state dictionary."""
         self.count = state['count']
-        
-        # Ensure capacity
         if self.count > self.capacity:
             while self.capacity < self.count:
                 self.capacity *= 2
             self._resize_arrays()
             
-        # Restore arrays
         self.pos_x[:self.count] = state['pos_x']
         self.pos_y[:self.count] = state['pos_y']
         self.vel_x[:self.count] = state['vel_x']
@@ -158,13 +156,10 @@ class Simulation:
         self.world_size = state['world_size']
         
         self.rebuild_next = True
-        self.pair_count = 0 # Force rebuild
+        self.pair_count = 0 
 
     def undo(self):
-        if not self.undo_stack:
-            return
-        
-        # Save current state to redo stack first
+        if not self.undo_stack: return
         current_state = {
             'count': self.count,
             'pos_x': np.copy(self.pos_x[:self.count]),
@@ -178,16 +173,11 @@ class Simulation:
             'world_size': self.world_size
         }
         self.redo_stack.append(current_state)
-        
-        # Pop previous state
         prev_state = self.undo_stack.pop()
         self.restore_state(prev_state)
 
     def redo(self):
-        if not self.redo_stack:
-            return
-            
-        # Save current to undo
+        if not self.redo_stack: return
         current_state = {
             'count': self.count,
             'pos_x': np.copy(self.pos_x[:self.count]),
@@ -201,13 +191,11 @@ class Simulation:
             'world_size': self.world_size
         }
         self.undo_stack.append(current_state)
-        
-        # Pop next state
         next_state = self.redo_stack.pop()
         self.restore_state(next_state)
 
     def resize_world(self, new_size):
-        self.snapshot() # Save before action
+        self.snapshot()
         if new_size < 100.0: new_size = 100.0
         self.world_size = new_size
         self.clear_particles(snapshot=False)
@@ -232,13 +220,11 @@ class Simulation:
         self.use_boundaries = False
         self.sigma = config.ATOM_SIGMA
         self.epsilon = config.ATOM_EPSILON
+        self.skin_distance = config.DEFAULT_SKIN_DISTANCE # Reset Skin
+        self._update_derived_params()
         self.clear_particles(snapshot=False)
 
     def add_particles_brush(self, x, y, radius):
-        # We don't snapshot on every single frame of brushing, 
-        # that would be too much. The caller (UI) should snapshot ONCE
-        # when the mouse is pressed.
-        
         sigma = self.sigma
         spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025 
@@ -264,7 +250,6 @@ class Simulation:
                             self.pos_y[idx] = y_curr
                             self.vel_x[idx] = 0.0; self.vel_y[idx] = 0.0
                             self.is_static[idx] = 0 
-                            # Initialize props
                             self.atom_sigma[idx] = self.sigma
                             self.atom_eps_sqrt[idx] = math.sqrt(self.epsilon)
                             self.count += 1
@@ -281,7 +266,6 @@ class Simulation:
 
     def delete_particles_brush(self, x, y, radius):
         r2 = radius**2
-        
         keep_indices = []
         for i in range(self.count):
             if self.is_static[i] == 1:
@@ -291,13 +275,11 @@ class Simulation:
             dy = self.pos_y[i] - y
             if dx*dx + dy*dy > r2:
                 keep_indices.append(i)
-                
         if len(keep_indices) < self.count:
             self._compact_arrays(keep_indices)
             self.rebuild_next = True
 
     def add_wall(self, start_pos, end_pos):
-        # Caller snapshots before calling this? No, caller should snapshot on MouseDown.
         self.walls.append({
             'start': start_pos, 
             'end': end_pos,
@@ -329,22 +311,18 @@ class Simulation:
             self.rebuild_static_atoms()
 
     def rebuild_static_atoms(self):
-        # Keep dynamic atoms
         is_dynamic = self.is_static[:self.count] == 0
         dyn_indices = np.where(is_dynamic)[0]
         self._compact_arrays(dyn_indices)
         
         for wall in self.walls:
-            p1 = np.array(wall['start'])
-            p2 = np.array(wall['end'])
+            p1 = np.array(wall['start']); p2 = np.array(wall['end'])
             spacing = wall.get('spacing', 0.7)
-            
             vec = p2 - p1
             length = np.linalg.norm(vec)
             if length < 1e-4: continue 
             
             num_atoms = max(1, int(length / spacing) + 1)
-            
             w_sigma = wall.get('sigma', 1.0)
             w_eps_sqrt = math.sqrt(wall.get('epsilon', 1.0))
             
@@ -357,11 +335,8 @@ class Simulation:
                 self.vel_x[self.count] = 0.0
                 self.vel_y[self.count] = 0.0
                 self.is_static[self.count] = 1
-                
-                # Apply wall props
                 self.atom_sigma[self.count] = w_sigma
                 self.atom_eps_sqrt[self.count] = w_eps_sqrt
-                
                 self.count += 1
         self.rebuild_next = True
 
@@ -380,11 +355,15 @@ class Simulation:
     def step(self, steps_to_run):
         if self.paused: return
 
-        # 1. SYNC DYNAMIC PARTICLES WITH GLOBAL SLIDERS
+        # Sync dynamic atoms to global sliders
         is_dyn = self.is_static[:self.count] == 0
         if np.any(is_dyn):
             self.atom_sigma[:self.count][is_dyn] = self.sigma
             self.atom_eps_sqrt[:self.count][is_dyn] = math.sqrt(self.epsilon)
+            
+        # Update derived skin parameters if skin changed
+        # (Usually done when setting the prop, but ensure consistency here if needed)
+        self._update_derived_params()
 
         if self.total_steps % 100 == 0 and self.count > 0:
             spatial_sort(
@@ -458,8 +437,7 @@ class Simulation:
                     np.float32(self.target_temp), np.float32(0.1)
                 )
             
-            active_x = self.pos_x[:self.count]
-            active_y = self.pos_y[:self.count]
+            active_x = self.pos_x[:self.count]; active_y = self.pos_y[:self.count]
             w = self.world_size
             is_inside = (active_x >= 0) & (active_x <= w) & (active_y >= 0) & (active_y <= w)
             if not np.all(is_inside):

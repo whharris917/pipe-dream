@@ -188,8 +188,8 @@ class ContextMenu:
     def __init__(self, x, y, options):
         self.x = x
         self.y = y
-        self.options = options # list of strings
-        self.width = 100
+        self.options = options
+        self.width = 120
         self.height = len(options) * 30
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.selected_idx = -1
@@ -210,12 +210,16 @@ class ContextMenu:
                     self.action = self.options[idx]
                     return True
             else:
-                # Clicked outside, close
                 self.action = "CLOSE"
                 return True
         return False
 
     def draw(self, screen, font):
+        # Draw Shadow
+        shadow = self.rect.copy()
+        shadow.x += 3; shadow.y += 3
+        pygame.draw.rect(screen, (0, 0, 0), shadow)
+        
         pygame.draw.rect(screen, (40, 40, 50), self.rect)
         pygame.draw.rect(screen, (150, 150, 150), self.rect, 1)
         for i, opt in enumerate(self.options):
@@ -231,12 +235,9 @@ class PropertiesDialog:
         self.wall_data = wall_data
         self.done = False
         self.apply = False
-        
-        # Inputs
         self.in_sigma = InputField(x + 100, y + 40, 100, 25, str(wall_data.get('sigma', 1.0)))
         self.in_epsilon = InputField(x + 100, y + 75, 100, 25, str(wall_data.get('epsilon', 1.0)))
         self.in_spacing = InputField(x + 100, y + 110, 100, 25, str(wall_data.get('spacing', 0.7)))
-        
         self.btn_apply = Button(x + 20, y + 160, 80, 30, "Apply", toggle=False)
         self.btn_ok = Button(x + 150, y + 160, 80, 30, "OK", toggle=False)
 
@@ -244,16 +245,10 @@ class PropertiesDialog:
         if self.in_sigma.handle_event(event): return True
         if self.in_epsilon.handle_event(event): return True
         if self.in_spacing.handle_event(event): return True
-        
         if self.btn_apply.handle_event(event):
-            self.apply = True
-            return True
-            
+            self.apply = True; return True
         if self.btn_ok.handle_event(event):
-            self.apply = True
-            self.done = True
-            return True
-            
+            self.apply = True; self.done = True; return True
         return False
 
     def get_values(self):
@@ -264,26 +259,95 @@ class PropertiesDialog:
         }
 
     def draw(self, screen, font):
-        # Shadow
-        shadow = self.rect.copy()
-        shadow.x += 5; shadow.y += 5
+        shadow = self.rect.copy(); shadow.x += 5; shadow.y += 5
         pygame.draw.rect(screen, (0, 0, 0), shadow)
-        
-        # Main body
         pygame.draw.rect(screen, (50, 50, 60), self.rect)
         pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
-        
-        # Title
         title = font.render("Wall Properties", True, (255, 255, 255))
         screen.blit(title, (self.rect.x + 10, self.rect.y + 10))
-        
-        # Labels
         screen.blit(font.render("Sigma:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 45))
         screen.blit(font.render("Epsilon:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 80))
         screen.blit(font.render("Spacing:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 115))
-        
         self.in_sigma.draw(screen, font)
         self.in_epsilon.draw(screen, font)
         self.in_spacing.draw(screen, font)
         self.btn_apply.draw(screen, font)
         self.btn_ok.draw(screen, font)
+
+class MenuBar:
+    def __init__(self, w, h=30):
+        self.rect = pygame.Rect(0, 0, w, h)
+        self.items = {"File": ["(empty)"], "Tools": ["(empty)"], "Help": ["(empty)"]}
+        self.active_menu = None # Key of active menu
+        self.dropdown_rect = None
+        self.hover_item = None
+        
+        # Calculate X positions
+        self.item_rects = {}
+        curr_x = 10
+        for key in self.items:
+            # We'll calculate widths dynamically in draw if needed, 
+            # but for simplicity assume 60px width
+            r = pygame.Rect(curr_x, 0, 60, h)
+            self.item_rects[key] = r
+            curr_x += 60
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Check top bar clicks
+            for key, r in self.item_rects.items():
+                if r.collidepoint(event.pos):
+                    if self.active_menu == key:
+                        self.active_menu = None # Toggle off
+                    else:
+                        self.active_menu = key
+                    return True
+            
+            # Check Dropdown clicks
+            if self.active_menu and self.dropdown_rect:
+                if self.dropdown_rect.collidepoint(event.pos):
+                    # Clicked inside dropdown
+                    self.active_menu = None # Close on selection
+                    return True
+                else:
+                    # Clicked outside, close menu
+                    self.active_menu = None
+                    return False
+        
+        elif event.type == pygame.MOUSEMOTION:
+            if self.active_menu:
+                # Hover logic if desired
+                pass
+                
+        return False
+
+    def draw(self, screen, font):
+        pygame.draw.rect(screen, (40, 40, 45), self.rect)
+        pygame.draw.line(screen, (80, 80, 80), (0, 29), (self.rect.width, 29))
+        
+        for key, r in self.item_rects.items():
+            if self.active_menu == key:
+                pygame.draw.rect(screen, (60, 60, 70), r)
+            
+            txt = font.render(key, True, (220, 220, 220))
+            screen.blit(txt, (r.x + 10, r.y + 8))
+            
+        # Draw Active Dropdown
+        if self.active_menu:
+            opts = self.items[self.active_menu]
+            r = self.item_rects[self.active_menu]
+            
+            dd_w = 120
+            dd_h = len(opts) * 30
+            self.dropdown_rect = pygame.Rect(r.x, r.height, dd_w, dd_h)
+            
+            # Shadow
+            s = self.dropdown_rect.copy(); s.x+=3; s.y+=3
+            pygame.draw.rect(screen, (0,0,0), s)
+            
+            pygame.draw.rect(screen, (50, 50, 55), self.dropdown_rect)
+            pygame.draw.rect(screen, (100, 100, 100), self.dropdown_rect, 1)
+            
+            for i, opt in enumerate(opts):
+                otxt = font.render(opt, True, (200, 200, 200))
+                screen.blit(otxt, (self.dropdown_rect.x + 10, self.dropdown_rect.y + i*30 + 5))

@@ -3,9 +3,10 @@ import numpy as np
 import config
 import math
 from simulation_state import Simulation
-from ui_widgets import SmartSlider, Button, InputField, ContextMenu, PropertiesDialog
+from ui_widgets import SmartSlider, Button, InputField, ContextMenu, PropertiesDialog, MenuBar
 
 # --- Layout Constants ---
+TOP_MENU_H = 30
 LEFT_X = 0
 LEFT_W = config.PANEL_LEFT_WIDTH
 
@@ -14,13 +15,13 @@ RIGHT_X = config.WINDOW_WIDTH - RIGHT_W
 
 MID_X = LEFT_W
 MID_W = config.WINDOW_WIDTH - LEFT_W - RIGHT_W
-MID_H = config.WINDOW_HEIGHT
+MID_H = config.WINDOW_HEIGHT - TOP_MENU_H # Reduce height for top bar
 
 def sim_to_screen(x, y, zoom, pan_x, pan_y, world_size):
     cx_world = world_size / 2.0
     cy_world = world_size / 2.0
     cx_screen = MID_X + (MID_W / 2.0)
-    cy_screen = MID_H / 2.0
+    cy_screen = TOP_MENU_H + (MID_H / 2.0) # Offset by Menu Height
     base_scale = (MID_W - 50) / world_size
     final_scale = base_scale * zoom
     sx = cx_screen + (x - cx_world) * final_scale + pan_x
@@ -31,7 +32,7 @@ def screen_to_sim(sx, sy, zoom, pan_x, pan_y, world_size):
     cx_world = world_size / 2.0
     cy_world = world_size / 2.0
     cx_screen = MID_X + (MID_W / 2.0)
-    cy_screen = MID_H / 2.0
+    cy_screen = TOP_MENU_H + (MID_H / 2.0)
     base_scale = (MID_W - 50) / world_size
     final_scale = base_scale * zoom
     x = (sx - pan_x - cx_screen) / final_scale + cx_world
@@ -51,11 +52,14 @@ def main():
     # --- UI SETUP ---
     ui_elements = []
     
+    # Top Menu
+    menu_bar = MenuBar(config.WINDOW_WIDTH, TOP_MENU_H)
+    
     # -- Left Panel --
     lp_margin = 10
     lp_w = LEFT_W - 2 * lp_margin
     lp_h = 40 
-    lp_curr_y = 20
+    lp_curr_y = TOP_MENU_H + 20
     
     btn_play = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Play/Pause", active=False, color_active=(50, 200, 50), color_inactive=(200, 50, 50))
     lp_curr_y += lp_h + 20
@@ -66,7 +70,6 @@ def main():
     btn_reset = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Reset", active=False, toggle=False, color_inactive=(150, 50, 50))
     lp_curr_y += lp_h + 20
     
-    # New Undo/Redo Buttons
     btn_undo = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Undo", active=False, toggle=False)
     lp_curr_y += lp_h + 10
     btn_redo = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Redo", active=False, toggle=False)
@@ -75,17 +78,22 @@ def main():
 
     # -- Right Panel --
     rp_margin = 15
-    rp_curr_y = 20
+    rp_curr_y = TOP_MENU_H + 20
     rp_width = RIGHT_W - 2 * rp_margin
     rp_start_x = RIGHT_X + rp_margin
     
+    # Metrics
     rp_curr_y += 100 
     
+    # Sliders
+    # Added slider_dt for Time Step
     slider_gravity = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.0, 50.0, config.DEFAULT_GRAVITY, "Gravity", hard_min=0.0)
     rp_curr_y += 60
     slider_temp = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.0, 5.0, 0.5, "Temperature", hard_min=0.0)
     rp_curr_y += 60
     slider_damping = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.90, 1.0, config.DEFAULT_DAMPING, "Damping", hard_min=0.0, hard_max=1.0)
+    rp_curr_y += 60
+    slider_dt = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.0001, 0.01, config.DEFAULT_DT, "Time Step (dt)", hard_min=0.00001)
     rp_curr_y += 60
     slider_sigma = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.5, 2.0, config.ATOM_SIGMA, "Sigma (Size)", hard_min=0.1)
     rp_curr_y += 60
@@ -93,8 +101,10 @@ def main():
     rp_curr_y += 60
     slider_M = SmartSlider(rp_start_x, rp_curr_y, rp_width, 1.0, 100.0, float(config.DEFAULT_DRAW_M), "Speed (Steps/Frame)", hard_min=1.0)
     rp_curr_y += 60
+    slider_skin = SmartSlider(rp_start_x, rp_curr_y, rp_width, 0.1, 2.0, config.DEFAULT_SKIN_DISTANCE, "Skin Distance", hard_min=0.05)
+    rp_curr_y += 60
     
-    ui_elements.extend([slider_gravity, slider_temp, slider_damping, slider_sigma, slider_epsilon, slider_M])
+    ui_elements.extend([slider_gravity, slider_temp, slider_damping, slider_dt, slider_sigma, slider_epsilon, slider_M, slider_skin])
     
     btn_w = (rp_width - 10) // 2
     btn_thermostat = Button(rp_start_x, rp_curr_y, btn_w, 30, "Thermostat", active=False)
@@ -129,12 +139,6 @@ def main():
     wall_idx = -1
     wall_pt = -1
     
-    # History Helper Flags
-    was_painting = False
-    was_erasing = False
-    was_dragging_wall = False
-    
-    # Modal States
     context_menu = None
     prop_dialog = None
     context_wall_idx = -1
@@ -151,14 +155,18 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             
-            # --- GLOBAL SHORTCUTS ---
+            # Global
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_z and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                     sim.undo()
                 elif event.key == pygame.K_y and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                     sim.redo()
             
-            # --- MODAL HANDLING ---
+            # Menu Bar
+            if menu_bar.handle_event(event):
+                continue
+
+            # Modals
             if context_menu:
                 if context_menu.handle_event(event):
                     action = context_menu.action
@@ -166,27 +174,25 @@ def main():
                         sim.remove_wall(context_wall_idx)
                         context_menu = None
                     elif action == "Properties":
-                        # Open Properties Dialog
                         wall_data = sim.walls[context_wall_idx]
-                        # Center dialog on screen
                         prop_dialog = PropertiesDialog(config.WINDOW_WIDTH//2 - 125, config.WINDOW_HEIGHT//2 - 100, wall_data)
                         context_menu = None
                     elif action == "CLOSE":
                         context_menu = None
-                continue # Consume events if menu is open
+                continue 
                 
             if prop_dialog:
                 if prop_dialog.handle_event(event):
                     if prop_dialog.apply:
                         new_props = prop_dialog.get_values()
                         sim.update_wall_props(context_wall_idx, new_props)
-                        prop_dialog.apply = False # Reset flag
+                        prop_dialog.apply = False
                     if prop_dialog.done:
                         prop_dialog = None
-                continue # Consume events if dialog is open
+                continue
 
-            # --- UI EVENTS ---
-            mouse_in_ui = (event.type == pygame.MOUSEBUTTONDOWN and (event.pos[0] > RIGHT_X or event.pos[0] < LEFT_W))
+            # UI
+            mouse_in_ui = (event.type == pygame.MOUSEBUTTONDOWN and (event.pos[0] > RIGHT_X or event.pos[0] < LEFT_W or event.pos[1] < TOP_MENU_H))
             ui_captured = False
             
             for el in ui_elements:
@@ -214,6 +220,8 @@ def main():
                     slider_damping.reset(config.DEFAULT_DAMPING, 0.9, 1.0)
                     slider_sigma.reset(config.ATOM_SIGMA, 0.5, 2.0)
                     slider_epsilon.reset(config.ATOM_EPSILON, 0.1, 5.0)
+                    slider_dt.reset(config.DEFAULT_DT, 0.0001, 0.01)
+                    slider_skin.reset(config.DEFAULT_SKIN_DISTANCE, 0.1, 2.0)
                     btn_thermostat.active = False
                     btn_boundaries.active = False
                     zoom = 1.0; pan_x = 0; pan_y = 0
@@ -222,13 +230,11 @@ def main():
                     sim.resize_world(input_world.get_value(50.0))
                     zoom = 1.0; pan_x = 0; pan_y = 0
                 
-                # Undo/Redo Buttons
                 if btn_undo.clicked: sim.undo()
                 if btn_redo.clicked: sim.redo()
-                
                 continue 
 
-            # --- WORLD INTERACTION ---
+            # World
             if event.type == pygame.MOUSEWHEEL:
                 factor = 1.1 if event.y > 0 else 0.9
                 zoom = max(0.1, min(zoom * factor, 50.0))
@@ -238,15 +244,12 @@ def main():
                     is_panning = True
                     last_mouse_pos = event.pos
                 
-                # RIGHT CLICK - Context Menu
                 elif event.button == 3:
-                    # Check for wall hit
                     mx, my = event.pos
                     if LEFT_X < mx < RIGHT_X:
                         sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, sim.world_size)
                         rad_sim = 5.0 / ( ((MID_W - 50) / sim.world_size) * zoom )
                         hit_wall = -1
-                        # Check handles first
                         for i, w in enumerate(sim.walls):
                             if math.hypot(w['start'][0]-sim_x, w['start'][1]-sim_y) < rad_sim or \
                                math.hypot(w['end'][0]-sim_x, w['end'][1]-sim_y) < rad_sim:
@@ -257,19 +260,18 @@ def main():
                             context_menu = ContextMenu(mx, my, ["Properties", "Delete"])
                             context_wall_idx = hit_wall
                         else:
-                            # Default behavior (Erase)
                             is_erasing = True
-                            sim.snapshot() # Snapshot start of erase action
+                            sim.snapshot()
 
                 elif event.button == 1:
                     mx, my = event.pos
                     if LEFT_X < mx < RIGHT_X:
                         sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, sim.world_size)
                         
-                        if current_tool == 0: # Brush
+                        if current_tool == 0:
                             is_painting = True
-                            sim.snapshot() # Snapshot start of paint action
-                        elif current_tool == 1: # Wall
+                            sim.snapshot()
+                        elif current_tool == 1:
                             hit = -1; endp = -1
                             rad_sim = 5.0 / ( ((MID_W - 50) / sim.world_size) * zoom )
                             for i, w in enumerate(sim.walls):
@@ -280,10 +282,10 @@ def main():
                             
                             if hit != -1:
                                 wall_mode = 'EDIT'; wall_idx = hit; wall_pt = endp
-                                sim.snapshot() # Snapshot before editing wall
+                                sim.snapshot()
                             else:
                                 wall_mode = 'NEW'
-                                sim.snapshot() # Snapshot before adding wall
+                                sim.snapshot()
                                 sim.add_wall((sim_x, sim_y), (sim_x, sim_y))
                                 wall_idx = len(sim.walls)-1; wall_pt = 1
             
@@ -309,15 +311,16 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE: btn_play.active = not btn_play.active
 
-        # --- PHYSICS UPDATE ---
-        # Only run physics if modal dialog is NOT open
+        # --- UPDATE ---
         if not prop_dialog:
             sim.paused = not btn_play.active
             sim.gravity = slider_gravity.val
             sim.target_temp = slider_temp.val
             sim.damping = slider_damping.val
+            sim.dt = slider_dt.val
             sim.sigma = slider_sigma.val
             sim.epsilon = slider_epsilon.val
+            sim.skin_distance = slider_skin.val
             sim.use_thermostat = btn_thermostat.active
             sim.use_boundaries = btn_boundaries.active
             
@@ -336,8 +339,7 @@ def main():
         # --- RENDER ---
         screen.fill(config.BACKGROUND_COLOR)
         
-        # 1. Middle
-        sim_rect = pygame.Rect(MID_X, 0, MID_W, MID_H)
+        sim_rect = pygame.Rect(MID_X, TOP_MENU_H, MID_W, MID_H)
         screen.set_clip(sim_rect)
         
         tl = sim_to_screen(0, 0, zoom, pan_x, pan_y, sim.world_size)
@@ -349,7 +351,6 @@ def main():
             if 0 < sx < config.WINDOW_WIDTH and 0 < sy < config.WINDOW_HEIGHT:
                 is_stat = sim.is_static[i]
                 col = config.COLOR_STATIC if is_stat else config.COLOR_DYNAMIC
-                # Use individual atom sigma for drawing
                 atom_sig = sim.atom_sigma[i]
                 rad = max(2, int(atom_sig * config.PARTICLE_RADIUS_SCALE * ((MID_W-50)/sim.world_size) * zoom))
                 pygame.draw.circle(screen, col, (sx, sy), rad)
@@ -362,24 +363,23 @@ def main():
             
         screen.set_clip(None)
         
-        # 2. Left
-        pygame.draw.rect(screen, config.PANEL_BG_COLOR, (0, 0, LEFT_W, config.WINDOW_HEIGHT))
-        pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (LEFT_W, 0), (LEFT_W, config.WINDOW_HEIGHT))
+        # Panels
+        pygame.draw.rect(screen, config.PANEL_BG_COLOR, (0, TOP_MENU_H, LEFT_W, config.WINDOW_HEIGHT))
+        pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (LEFT_W, TOP_MENU_H), (LEFT_W, config.WINDOW_HEIGHT))
         
-        # 3. Right
-        pygame.draw.rect(screen, config.PANEL_BG_COLOR, (RIGHT_X, 0, RIGHT_W, config.WINDOW_HEIGHT))
-        pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (RIGHT_X, 0), (RIGHT_X, config.WINDOW_HEIGHT))
+        pygame.draw.rect(screen, config.PANEL_BG_COLOR, (RIGHT_X, TOP_MENU_H, RIGHT_W, config.WINDOW_HEIGHT))
+        pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (RIGHT_X, TOP_MENU_H), (RIGHT_X, config.WINDOW_HEIGHT))
         
         # Metrics
-        pygame.draw.rect(screen, (40, 40, 45), (RIGHT_X, 0, RIGHT_W, 90))
-        pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (RIGHT_X, 90), (config.WINDOW_WIDTH, 90))
+        pygame.draw.rect(screen, (40, 40, 45), (RIGHT_X, TOP_MENU_H, RIGHT_W, 90))
+        pygame.draw.line(screen, config.PANEL_BORDER_COLOR, (RIGHT_X, TOP_MENU_H + 90), (config.WINDOW_WIDTH, TOP_MENU_H + 90))
         
         curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)
         
         metric_x = RIGHT_X + 15
-        screen.blit(big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, 10))
-        screen.blit(font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, 40))
-        screen.blit(font.render(f"SPS: {int(sim.sps)}  FPS: {clock.get_fps():.1f}", True, (100, 255, 100)), (metric_x, 60))
+        screen.blit(big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, TOP_MENU_H + 10))
+        screen.blit(font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, TOP_MENU_H + 40))
+        screen.blit(font.render(f"SPS: {int(sim.sps)}  FPS: {clock.get_fps():.1f}", True, (100, 255, 100)), (metric_x, TOP_MENU_H + 60))
         
         for el in ui_elements: el.draw(screen, font)
         
@@ -389,7 +389,8 @@ def main():
         screen.blit(lbl_resize, (RIGHT_X + 15, input_world.rect.y + 4))
         input_world.draw(screen, font)
         
-        # Draw Overlays
+        menu_bar.draw(screen, font)
+        
         if context_menu: context_menu.draw(screen, font)
         if prop_dialog: prop_dialog.draw(screen, font)
         
