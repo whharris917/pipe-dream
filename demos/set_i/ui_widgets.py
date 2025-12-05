@@ -303,16 +303,9 @@ class MenuBar:
                         self.active_menu = key
                     return True
             
-            # Check Dropdown clicks
-            if self.active_menu and self.dropdown_rect:
-                if self.dropdown_rect.collidepoint(event.pos):
-                    # Clicked inside dropdown
-                    self.active_menu = None # Close on selection
-                    return True
-                else:
-                    # Clicked outside, close menu
-                    self.active_menu = None
-                    return False
+            # --- FIX: Removed logic that consumed dropdown clicks here ---
+            # Dropdown clicks are now handled in the main loop to ensure 
+            # the corresponding logic triggers correctly.
         
         elif event.type == pygame.MOUSEMOTION:
             if self.active_menu:
