@@ -2,6 +2,7 @@ import numpy as np
 import random
 import math
 import time
+import copy
 import config
 from physics_core import integrate_n_steps, build_neighbor_list, check_displacement, apply_thermostat, spatial_sort
 
@@ -65,6 +66,10 @@ class Simulation:
         self.steps_accumulator = 0
         self.last_sps_update = time.time()
         
+        # History Stacks
+        self.undo_stack = []
+        self.redo_stack = []
+        
         self._warmup_compiler()
 
     def _warmup_compiler(self):
@@ -109,12 +114,106 @@ class Simulation:
         self.clear_particles()
         print("Warmup complete.")
 
+    # --- HISTORY MANAGEMENT ---
+    def snapshot(self):
+        """Saves current state to undo stack. Clears redo stack."""
+        state = {
+            'count': self.count,
+            'pos_x': np.copy(self.pos_x[:self.count]),
+            'pos_y': np.copy(self.pos_y[:self.count]),
+            'vel_x': np.copy(self.vel_x[:self.count]),
+            'vel_y': np.copy(self.vel_y[:self.count]),
+            'is_static': np.copy(self.is_static[:self.count]),
+            'atom_sigma': np.copy(self.atom_sigma[:self.count]),
+            'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
+            'walls': copy.deepcopy(self.walls),
+            'world_size': self.world_size
+        }
+        self.undo_stack.append(state)
+        # Limit stack size to prevent memory hogging
+        if len(self.undo_stack) > 50:
+            self.undo_stack.pop(0)
+        self.redo_stack.clear()
+
+    def restore_state(self, state):
+        """Restores simulation from a state dictionary."""
+        self.count = state['count']
+        
+        # Ensure capacity
+        if self.count > self.capacity:
+            while self.capacity < self.count:
+                self.capacity *= 2
+            self._resize_arrays()
+            
+        # Restore arrays
+        self.pos_x[:self.count] = state['pos_x']
+        self.pos_y[:self.count] = state['pos_y']
+        self.vel_x[:self.count] = state['vel_x']
+        self.vel_y[:self.count] = state['vel_y']
+        self.is_static[:self.count] = state['is_static']
+        self.atom_sigma[:self.count] = state['atom_sigma']
+        self.atom_eps_sqrt[:self.count] = state['atom_eps_sqrt']
+        
+        self.walls = copy.deepcopy(state['walls'])
+        self.world_size = state['world_size']
+        
+        self.rebuild_next = True
+        self.pair_count = 0 # Force rebuild
+
+    def undo(self):
+        if not self.undo_stack:
+            return
+        
+        # Save current state to redo stack first
+        current_state = {
+            'count': self.count,
+            'pos_x': np.copy(self.pos_x[:self.count]),
+            'pos_y': np.copy(self.pos_y[:self.count]),
+            'vel_x': np.copy(self.vel_x[:self.count]),
+            'vel_y': np.copy(self.vel_y[:self.count]),
+            'is_static': np.copy(self.is_static[:self.count]),
+            'atom_sigma': np.copy(self.atom_sigma[:self.count]),
+            'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
+            'walls': copy.deepcopy(self.walls),
+            'world_size': self.world_size
+        }
+        self.redo_stack.append(current_state)
+        
+        # Pop previous state
+        prev_state = self.undo_stack.pop()
+        self.restore_state(prev_state)
+
+    def redo(self):
+        if not self.redo_stack:
+            return
+            
+        # Save current to undo
+        current_state = {
+            'count': self.count,
+            'pos_x': np.copy(self.pos_x[:self.count]),
+            'pos_y': np.copy(self.pos_y[:self.count]),
+            'vel_x': np.copy(self.vel_x[:self.count]),
+            'vel_y': np.copy(self.vel_y[:self.count]),
+            'is_static': np.copy(self.is_static[:self.count]),
+            'atom_sigma': np.copy(self.atom_sigma[:self.count]),
+            'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
+            'walls': copy.deepcopy(self.walls),
+            'world_size': self.world_size
+        }
+        self.undo_stack.append(current_state)
+        
+        # Pop next state
+        next_state = self.redo_stack.pop()
+        self.restore_state(next_state)
+
     def resize_world(self, new_size):
+        self.snapshot() # Save before action
         if new_size < 100.0: new_size = 100.0
         self.world_size = new_size
-        self.clear_particles()
+        self.clear_particles(snapshot=False)
 
-    def clear_particles(self):
+    def clear_particles(self, snapshot=True):
+        if snapshot: self.snapshot()
         self.count = 0
         self.pair_count = 0
         self.walls = []
@@ -124,6 +223,7 @@ class Simulation:
         self.rebuild_next = True
 
     def reset_simulation(self):
+        self.snapshot()
         self.world_size = config.DEFAULT_WORLD_SIZE
         self.dt = config.DEFAULT_DT
         self.gravity = config.DEFAULT_GRAVITY
@@ -132,9 +232,13 @@ class Simulation:
         self.use_boundaries = False
         self.sigma = config.ATOM_SIGMA
         self.epsilon = config.ATOM_EPSILON
-        self.clear_particles()
+        self.clear_particles(snapshot=False)
 
     def add_particles_brush(self, x, y, radius):
+        # We don't snapshot on every single frame of brushing, 
+        # that would be too much. The caller (UI) should snapshot ONCE
+        # when the mouse is pressed.
+        
         sigma = self.sigma
         spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025 
@@ -178,8 +282,6 @@ class Simulation:
     def delete_particles_brush(self, x, y, radius):
         r2 = radius**2
         
-        # Don't delete wall handles via brush anymore, use context menu
-        # Just delete dynamic particles
         keep_indices = []
         for i in range(self.count):
             if self.is_static[i] == 1:
@@ -195,7 +297,7 @@ class Simulation:
             self.rebuild_next = True
 
     def add_wall(self, start_pos, end_pos):
-        # Default props
+        # Caller snapshots before calling this? No, caller should snapshot on MouseDown.
         self.walls.append({
             'start': start_pos, 
             'end': end_pos,
@@ -212,11 +314,13 @@ class Simulation:
             self.rebuild_static_atoms()
 
     def remove_wall(self, index):
+        self.snapshot()
         if 0 <= index < len(self.walls):
             self.walls.pop(index)
             self.rebuild_static_atoms()
 
     def update_wall_props(self, index, props):
+        self.snapshot()
         if 0 <= index < len(self.walls):
             w = self.walls[index]
             w['sigma'] = props['sigma']
@@ -233,7 +337,6 @@ class Simulation:
         for wall in self.walls:
             p1 = np.array(wall['start'])
             p2 = np.array(wall['end'])
-            # Use wall-specific spacing
             spacing = wall.get('spacing', 0.7)
             
             vec = p2 - p1
@@ -278,10 +381,8 @@ class Simulation:
         if self.paused: return
 
         # 1. SYNC DYNAMIC PARTICLES WITH GLOBAL SLIDERS
-        # This allows real-time tuning of gas properties
         is_dyn = self.is_static[:self.count] == 0
         if np.any(is_dyn):
-            # Fill dynamic atoms with current global sigma/epsilon
             self.atom_sigma[:self.count][is_dyn] = self.sigma
             self.atom_eps_sqrt[:self.count][is_dyn] = math.sqrt(self.epsilon)
 

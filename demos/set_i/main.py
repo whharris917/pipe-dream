@@ -64,8 +64,14 @@ def main():
     lp_curr_y += lp_h + 20
     
     btn_reset = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Reset", active=False, toggle=False, color_inactive=(150, 50, 50))
+    lp_curr_y += lp_h + 20
     
-    ui_elements.extend([btn_play, btn_clear, btn_reset])
+    # New Undo/Redo Buttons
+    btn_undo = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Undo", active=False, toggle=False)
+    lp_curr_y += lp_h + 10
+    btn_redo = Button(LEFT_X + lp_margin, lp_curr_y, lp_w, lp_h, "Redo", active=False, toggle=False)
+    
+    ui_elements.extend([btn_play, btn_clear, btn_reset, btn_undo, btn_redo])
 
     # -- Right Panel --
     rp_margin = 15
@@ -123,6 +129,11 @@ def main():
     wall_idx = -1
     wall_pt = -1
     
+    # History Helper Flags
+    was_painting = False
+    was_erasing = False
+    was_dragging_wall = False
+    
     # Modal States
     context_menu = None
     prop_dialog = None
@@ -139,6 +150,13 @@ def main():
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
+            
+            # --- GLOBAL SHORTCUTS ---
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_z and (pygame.key.get_mods() & pygame.KMOD_CTRL):
+                    sim.undo()
+                elif event.key == pygame.K_y and (pygame.key.get_mods() & pygame.KMOD_CTRL):
+                    sim.redo()
             
             # --- MODAL HANDLING ---
             if context_menu:
@@ -203,6 +221,11 @@ def main():
                 if btn_resize.clicked:
                     sim.resize_world(input_world.get_value(50.0))
                     zoom = 1.0; pan_x = 0; pan_y = 0
+                
+                # Undo/Redo Buttons
+                if btn_undo.clicked: sim.undo()
+                if btn_redo.clicked: sim.redo()
+                
                 continue 
 
             # --- WORLD INTERACTION ---
@@ -236,6 +259,7 @@ def main():
                         else:
                             # Default behavior (Erase)
                             is_erasing = True
+                            sim.snapshot() # Snapshot start of erase action
 
                 elif event.button == 1:
                     mx, my = event.pos
@@ -244,6 +268,7 @@ def main():
                         
                         if current_tool == 0: # Brush
                             is_painting = True
+                            sim.snapshot() # Snapshot start of paint action
                         elif current_tool == 1: # Wall
                             hit = -1; endp = -1
                             rad_sim = 5.0 / ( ((MID_W - 50) / sim.world_size) * zoom )
@@ -255,8 +280,10 @@ def main():
                             
                             if hit != -1:
                                 wall_mode = 'EDIT'; wall_idx = hit; wall_pt = endp
+                                sim.snapshot() # Snapshot before editing wall
                             else:
                                 wall_mode = 'NEW'
+                                sim.snapshot() # Snapshot before adding wall
                                 sim.add_wall((sim_x, sim_y), (sim_x, sim_y))
                                 wall_idx = len(sim.walls)-1; wall_pt = 1
             
