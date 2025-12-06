@@ -67,6 +67,7 @@ class InputField:
         
         if self.cached_surf is None or self.text != self.last_text:
             self.last_text = self.text
+            # Anti-aliasing = True
             self.cached_surf = font.render(self.text, True, self.text_color)
             
         text_y = self.rect.y + (self.rect.height - self.cached_surf.get_height()) // 2
@@ -168,7 +169,7 @@ class SmartSlider:
 
     def draw(self, screen, font):
         # Label
-        lbl = font.render(self.label, True, THEME_TEXT)
+        lbl = font.render(self.label, True, THEME_TEXT) # True = antialias
         screen.blit(lbl, (self.x, self.y + 2))
         
         # Inputs
@@ -232,6 +233,7 @@ class Button:
             pygame.draw.rect(screen, (80, 80, 80), self.rect, 1, border_radius=4)
             
         if self.cached_surf is None:
+            # Antialias = True
             self.cached_surf = font.render(self.text, True, (255, 255, 255))
         txt_rect = self.cached_surf.get_rect(center=self.rect.center)
         screen.blit(self.cached_surf, txt_rect)
@@ -288,6 +290,7 @@ class ContextMenu:
             if i == self.selected_idx:
                 pygame.draw.rect(screen, bg_col, item_rect, border_radius=3)
             
+            # Antialias = True
             txt = font.render(opt, True, (255, 255, 255))
             screen.blit(txt, (self.x + 10, self.y + 5 + i*30 + 5))
 
@@ -331,6 +334,7 @@ class PropertiesDialog:
         pygame.draw.rect(screen, (45, 45, 48), self.rect, border_radius=6)
         pygame.draw.rect(screen, THEME_ACCENT, self.rect, 1, border_radius=6)
         
+        # Antialias = True for all font renders
         title = font.render("Wall Properties", True, (255, 255, 255))
         screen.blit(title, (self.rect.x + 15, self.rect.y + 10))
         
@@ -401,6 +405,7 @@ class RotationDialog:
         pygame.draw.rect(screen, (45, 45, 48), self.rect, border_radius=6)
         pygame.draw.rect(screen, THEME_ACCENT, self.rect, 1, border_radius=6)
         
+        # Antialias = True for all font renders
         title = font.render("Rotation Animation", True, (255, 255, 255))
         screen.blit(title, (self.rect.x + 15, self.rect.y + 10))
         
@@ -476,6 +481,7 @@ class MenuBar:
             if self.active_menu == key:
                 pygame.draw.rect(screen, (50, 50, 50), r)
             
+            # Antialias = True
             txt = font.render(key, True, (200, 200, 200))
             screen.blit(txt, (r.x + 10, r.y + 8))
             
@@ -506,5 +512,6 @@ class MenuBar:
                     y = self.dropdown_rect.y + 5 + i*30 + 15
                     pygame.draw.line(screen, (60, 60, 60), (self.dropdown_rect.x + 10, y), (self.dropdown_rect.right - 10, y))
                 else:
+                    # Antialias = True
                     otxt = font.render(opt, True, (220, 220, 220))
                     screen.blit(otxt, (self.dropdown_rect.x + 15, self.dropdown_rect.y + 5 + i*30 + 5))

@@ -5,6 +5,7 @@ import time
 import copy
 import config
 from physics_core import integrate_n_steps, build_neighbor_list, check_displacement, apply_thermostat, spatial_sort
+from constraint_solver import solve_constraints # New Import
 
 class Simulation:
     def __init__(self):
@@ -41,6 +42,7 @@ class Simulation:
         self.atom_eps_sqrt = np.zeros(self.capacity, dtype=np.float32)
         
         self.walls = [] # List of dicts
+        self.constraints = [] # New: List of constraint dicts
         
         # Neighbors
         self.max_pairs = self.capacity * 100
@@ -138,6 +140,7 @@ class Simulation:
             'atom_sigma': np.copy(self.atom_sigma[:self.count]),
             'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls),
+            'constraints': copy.deepcopy(self.constraints), # Added
             'world_size': self.world_size
         }
         self.undo_stack.append(state)
@@ -158,7 +161,6 @@ class Simulation:
         self.vel_y[:self.count] = state['vel_y']
         self.is_static[:self.count] = state['is_static']
         
-        # Handle restore of new prop if it exists, else zero
         if 'kinematic_props' in state:
             self.kinematic_props[:self.count] = state['kinematic_props']
         else:
@@ -168,6 +170,7 @@ class Simulation:
         self.atom_eps_sqrt[:self.count] = state['atom_eps_sqrt']
         
         self.walls = copy.deepcopy(state['walls'])
+        self.constraints = copy.deepcopy(state.get('constraints', [])) # Added
         self.world_size = state['world_size']
         
         self.rebuild_next = True
@@ -186,6 +189,7 @@ class Simulation:
             'atom_sigma': np.copy(self.atom_sigma[:self.count]),
             'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls),
+            'constraints': copy.deepcopy(self.constraints),
             'world_size': self.world_size
         }
         self.redo_stack.append(current_state)
@@ -205,6 +209,7 @@ class Simulation:
             'atom_sigma': np.copy(self.atom_sigma[:self.count]),
             'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls),
+            'constraints': copy.deepcopy(self.constraints),
             'world_size': self.world_size
         }
         self.undo_stack.append(current_state)
@@ -222,6 +227,7 @@ class Simulation:
         self.count = 0
         self.pair_count = 0
         self.walls = []
+        self.constraints = []
         self.pos_x.fill(0); self.pos_y.fill(0)
         self.vel_x.fill(0); self.vel_y.fill(0)
         self.is_static.fill(0)
@@ -244,69 +250,74 @@ class Simulation:
 
     # --- ASSET MANAGEMENT ---
     def export_asset_data(self):
-        """Returns a list of walls relative to the geometric center."""
-        if not self.walls:
-            return None
-            
+        if not self.walls: return None
         min_x = float('inf'); max_x = float('-inf')
         min_y = float('inf'); max_y = float('-inf')
-        
         for w in self.walls:
             for p in [w['start'], w['end']]:
                 min_x = min(min_x, p[0]); max_x = max(max_x, p[0])
                 min_y = min(min_y, p[1]); max_y = max(max_y, p[1])
-                
         center_x = (min_x + max_x) / 2.0
         center_y = (min_y + max_y) / 2.0
-        
         normalized_walls = []
         for w in self.walls:
             nw = copy.deepcopy(w)
             nw['start'] = (w['start'][0] - center_x, w['start'][1] - center_y)
             nw['end'] = (w['end'][0] - center_x, w['end'][1] - center_y)
-            
             if 'anim' in nw and nw['anim']:
                 anim = nw['anim']
                 rs = anim['ref_start']; re = anim['ref_end']
                 anim['ref_start'] = (rs[0] - center_x, rs[1] - center_y)
                 anim['ref_end'] = (re[0] - center_x, re[1] - center_y)
-                
             normalized_walls.append(nw)
-            
-        return normalized_walls
+        # We also need to export constraints, but indices refer to wall list index
+        # which is preserved.
+        return {'walls': normalized_walls, 'constraints': self.constraints}
 
-    def place_asset(self, asset_walls, x, y):
-        """Adds asset walls to the current simulation at (x,y)."""
+    def place_asset(self, asset_data, x, y):
         self.snapshot()
-        for w in asset_walls:
+        walls_to_add = asset_data.get('walls', [])
+        constraints_to_add = asset_data.get('constraints', [])
+        
+        base_index = len(self.walls)
+        
+        for w in walls_to_add:
             new_w = copy.deepcopy(w)
-            # Shift geometry
             new_w['start'] = (w['start'][0] + x, w['start'][1] + y)
             new_w['end'] = (w['end'][0] + x, w['end'][1] + y)
-            
-            # Shift animation reference points
             if 'anim' in new_w and new_w['anim']:
                 anim = new_w['anim']
                 rs = anim['ref_start']; re = anim['ref_end']
                 anim['ref_start'] = (rs[0] + x, rs[1] + y)
                 anim['ref_end'] = (re[0] + x, re[1] + y)
-                
             self.walls.append(new_w)
+            
+        # Offset constraint indices
+        for c in constraints_to_add:
+            new_c = copy.deepcopy(c)
+            # Indices structure varies by type: 
+            # COINCIDENT: [(w,p), (w,p)]
+            # LENGTH: [w]
+            # EQUAL/PAR/PERP: [w, w]
+            new_indices = []
+            for idx in new_c['indices']:
+                if isinstance(idx, (list, tuple)):
+                    new_indices.append((idx[0] + base_index, idx[1]))
+                else:
+                    new_indices.append(idx + base_index)
+            new_c['indices'] = new_indices
+            self.constraints.append(new_c)
         
         self.rebuild_static_atoms()
 
     def set_wall_rotation(self, index, params):
-        """Initializes or updates rotation animation for a wall."""
         if 0 <= index < len(self.walls):
             w = self.walls[index]
             speed = params['speed']
             pivot = params['pivot']
-            
             if abs(speed) < 1e-5:
-                w['anim'] = None # Disable if 0 speed
+                w['anim'] = None
                 return
-
-            # Capture current state as reference to avoid drift
             w['anim'] = {
                 'type': 'rotate',
                 'speed': speed,
@@ -318,36 +329,53 @@ class Simulation:
             self.rebuild_static_atoms()
 
     def update_animations(self, dt):
-        """Updates geometry for animated walls for RENDERING purposes."""
-        # Note: Physics atoms are updated in Numba sub-steps. 
-        # This function updates the 'walls' definitions so UI lines match the atoms.
         for w in self.walls:
             anim = w.get('anim')
             if anim and anim['type'] == 'rotate':
                 d_angle = anim['speed'] * dt
                 anim['angle'] += d_angle
-                
-                # Rotation Matrix
                 rad = math.radians(anim['angle'])
                 c = math.cos(rad); s = math.sin(rad)
-                
-                # Determine pivot in Ref Coords
                 rs = np.array(anim['ref_start'])
                 re = np.array(anim['ref_end'])
-                
                 if anim['pivot'] == 'start': pivot = rs
                 elif anim['pivot'] == 'end': pivot = re
                 else: pivot = (rs + re) * 0.5
-                
-                # Rotate
                 v_s = rs - pivot
                 v_e = re - pivot
-                
                 rot_s = np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c]) + pivot
                 rot_e = np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c]) + pivot
-                
                 w['start'] = tuple(rot_s)
                 w['end'] = tuple(rot_e)
+
+    # --- GEOMETRY SOLVER ---
+    def apply_constraints(self):
+        if self.constraints:
+            solve_constraints(self.walls, self.constraints, iterations=20)
+            self.rebuild_static_atoms() # Update physics atoms to match new wall positions
+
+    def add_constraint(self, c_type, indices, value=None):
+        self.snapshot()
+        c = {'type': c_type, 'indices': indices}
+        if value is not None: c['value'] = value
+        self.constraints.append(c)
+        self.apply_constraints() # Solve immediately
+
+    def remove_wall(self, index):
+        self.snapshot()
+        if 0 <= index < len(self.walls):
+            # Remove associated constraints
+            self.constraints = [c for c in self.constraints if not self._constraint_involves(c, index)]
+            self.walls.pop(index)
+            self.rebuild_static_atoms()
+
+    def _constraint_involves(self, c, wall_idx):
+        for idx in c['indices']:
+            if isinstance(idx, (list, tuple)):
+                if idx[0] == wall_idx: return True
+            else:
+                if idx == wall_idx: return True
+        return False
 
     def add_particles_brush(self, x, y, radius):
         sigma = self.sigma
@@ -356,10 +384,8 @@ class Simulation:
         r_sq = radius * radius
         n_rows = int(radius / row_height) + 1
         n_cols = int(radius / spacing) + 1
-        
         estimated_add = int(3.14159 * radius * radius / (spacing * row_height)) + 10
         if self.count + estimated_add >= self.capacity: self._resize_arrays()
-
         for row in range(-n_rows, n_rows + 1):
             offset_x = 0.5 * spacing if (row % 2 != 0) else 0.0
             y_curr = y + row * row_height
@@ -421,12 +447,6 @@ class Simulation:
             self.walls[index]['end'] = end_pos
             self.rebuild_static_atoms()
 
-    def remove_wall(self, index):
-        self.snapshot()
-        if 0 <= index < len(self.walls):
-            self.walls.pop(index)
-            self.rebuild_static_atoms()
-
     def update_wall_props(self, index, props):
         self.snapshot()
         if 0 <= index < len(self.walls):
@@ -440,41 +460,27 @@ class Simulation:
         is_dynamic = self.is_static[:self.count] == 0
         dyn_indices = np.where(is_dynamic)[0]
         self._compact_arrays(dyn_indices)
-        
         for wall in self.walls:
             p1 = np.array(wall['start']); p2 = np.array(wall['end'])
             spacing = wall.get('spacing', 0.7)
             vec = p2 - p1
             length = np.linalg.norm(vec)
             if length < 1e-4: continue 
-            
             num_atoms = max(1, int(length / spacing) + 1)
             w_sigma = wall.get('sigma', 1.0)
             w_eps_sqrt = math.sqrt(wall.get('epsilon', 1.0))
-            
-            # Check animation status
             anim = wall.get('anim')
             is_rotating = False
             pivot = np.zeros(2)
             omega = 0.0
-            
             if anim and anim['type'] == 'rotate':
                 is_rotating = True
-                omega = math.radians(anim['speed']) # Convert deg/s to rad/s for physics
-                
-                # Determine pivot
-                rs = np.array(anim['ref_start'])
-                re = np.array(anim['ref_end'])
-                # Need to use CURRENT geometry for initial placement, but Pivot is relative to CURRENT geometry
-                # Actually, easier: Determine Pivot based on CURRENT endpoints.
-                # Since 'update_animations' keeps 'start'/'end' updated, we can use them.
+                omega = math.radians(anim['speed'])
                 w_s = np.array(wall['start'])
                 w_e = np.array(wall['end'])
-                
                 if anim['pivot'] == 'start': pivot = w_s
                 elif anim['pivot'] == 'end': pivot = w_e
                 else: pivot = (w_s + w_e) * 0.5
-
             for k in range(num_atoms):
                 if self.count >= self.capacity: self._resize_arrays()
                 t = k / max(1, num_atoms - 1) if num_atoms > 1 else 0.5
@@ -483,7 +489,6 @@ class Simulation:
                 self.pos_y[self.count] = pos[1]
                 self.vel_x[self.count] = 0.0
                 self.vel_y[self.count] = 0.0
-                
                 if is_rotating:
                     self.is_static[self.count] = 2
                     self.kinematic_props[self.count, 0] = pivot[0]
@@ -492,7 +497,6 @@ class Simulation:
                 else:
                     self.is_static[self.count] = 1
                     self.kinematic_props[self.count, :] = 0.0
-
                 self.atom_sigma[self.count] = w_sigma
                 self.atom_eps_sqrt[self.count] = w_eps_sqrt
                 self.count += 1
@@ -506,22 +510,21 @@ class Simulation:
         self.vel_x[:new_count] = self.vel_x[indices]
         self.vel_y[:new_count] = self.vel_y[indices]
         self.is_static[:new_count] = self.is_static[indices]
-        self.kinematic_props[:new_count] = self.kinematic_props[indices] # Added
+        self.kinematic_props[:new_count] = self.kinematic_props[indices]
         self.atom_sigma[:new_count] = self.atom_sigma[indices]
         self.atom_eps_sqrt[:new_count] = self.atom_eps_sqrt[indices]
         self.count = new_count
 
     def step(self, steps_to_run):
         if self.paused: return
-
-        # Sync dynamic atoms to global sliders
         is_dyn = self.is_static[:self.count] == 0
         if np.any(is_dyn):
             self.atom_sigma[:self.count][is_dyn] = self.sigma
             self.atom_eps_sqrt[:self.count][is_dyn] = math.sqrt(self.epsilon)
-            
-        # Update derived skin parameters if skin changed
         self._update_derived_params()
+        
+        total_dt = self.dt * steps_to_run
+        self.update_animations(total_dt)
 
         if self.total_steps % 100 == 0 and self.count > 0:
             spatial_sort(
@@ -529,7 +532,7 @@ class Simulation:
                 self.vel_x[:self.count], self.vel_y[:self.count],
                 self.force_x[:self.count], self.force_y[:self.count],
                 self.is_static[:self.count],
-                self.kinematic_props[:self.count], # Added
+                self.kinematic_props[:self.count],
                 self.atom_sigma[:self.count], self.atom_eps_sqrt[:self.count],
                 self.world_size, self.cell_size
             )
@@ -570,7 +573,7 @@ class Simulation:
                 self.force_x[:self.count], self.force_y[:self.count],
                 self.last_x[:self.count], self.last_y[:self.count],
                 self.is_static[:self.count],
-                self.kinematic_props[:self.count], # Added
+                self.kinematic_props[:self.count],
                 self.atom_sigma[:self.count], self.atom_eps_sqrt[:self.count], 
                 np.float32(config.ATOM_MASS),
                 self.pair_i, self.pair_j, self.pair_count,
@@ -578,30 +581,23 @@ class Simulation:
                 np.float32(self.r_skin_sq_limit), np.float32(self.world_size), 
                 self.use_boundaries, np.float32(self.damping)
             )
-            
             self.total_steps += steps_done
             self.steps_accumulator += steps_done
-            
-            # --- Update UI Walls to match Physics ---
             total_dt = self.dt * steps_done
             self.update_animations(total_dt)
-            
             now = time.time()
             elapsed = now - self.last_sps_update
             if elapsed >= 0.5:
                 self.sps = self.steps_accumulator / elapsed
                 self.steps_accumulator = 0
                 self.last_sps_update = now
-            
             if steps_done < steps_to_run: self.rebuild_next = True
-
             if self.use_thermostat:
                 apply_thermostat(
                     self.vel_x[:self.count], self.vel_y[:self.count],
                     np.float32(config.ATOM_MASS), self.is_static[:self.count],
                     np.float32(self.target_temp), np.float32(0.1)
                 )
-            
             active_x = self.pos_x[:self.count]; active_y = self.pos_y[:self.count]
             w = self.world_size
             is_inside = (active_x >= 0) & (active_x <= w) & (active_y >= 0) & (active_y <= w)
@@ -620,7 +616,7 @@ class Simulation:
         self.force_x = np.resize(self.force_x, self.capacity)
         self.force_y = np.resize(self.force_y, self.capacity)
         self.is_static = np.resize(self.is_static, self.capacity)
-        self.kinematic_props = np.resize(self.kinematic_props, (self.capacity, 3)) # Added
+        self.kinematic_props = np.resize(self.kinematic_props, (self.capacity, 3))
         self.atom_sigma = np.resize(self.atom_sigma, self.capacity)
         self.atom_eps_sqrt = np.resize(self.atom_eps_sqrt, self.capacity)
         self.last_x = np.resize(self.last_x, self.capacity)
