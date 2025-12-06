@@ -307,9 +307,12 @@ class Simulation:
         spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025 
         r_sq = radius * radius
-        n_rows = int(radius / row_height) + 1; n_cols = int(radius / spacing) + 1
+        n_rows = int(radius / row_height) + 1
+        n_cols = int(radius / spacing) + 1
+        
         estimated_add = int(3.14159 * radius * radius / (spacing * row_height)) + 10
         if self.count + estimated_add >= self.capacity: self._resize_arrays()
+
         for row in range(-n_rows, n_rows + 1):
             offset_x = 0.5 * spacing if (row % 2 != 0) else 0.0
             y_curr = y + row * row_height
@@ -321,17 +324,20 @@ class Simulation:
                         if not self._check_overlap(x_curr, y_curr, 0.8 * sigma):
                             if self.count >= self.capacity: self._resize_arrays()
                             idx = self.count
-                            self.pos_x[idx] = x_curr; self.pos_y[idx] = y_curr
+                            self.pos_x[idx] = x_curr
+                            self.pos_y[idx] = y_curr
                             self.vel_x[idx] = 0.0; self.vel_y[idx] = 0.0
                             self.is_static[idx] = 0 
-                            self.atom_sigma[idx] = self.sigma; self.atom_eps_sqrt[idx] = math.sqrt(self.epsilon)
+                            self.atom_sigma[idx] = self.sigma
+                            self.atom_eps_sqrt[idx] = math.sqrt(self.epsilon)
                             self.count += 1
         self.rebuild_next = True
 
     def _check_overlap(self, x, y, threshold):
         if self.count == 0: return False
         threshold_sq = threshold * threshold
-        dx = self.pos_x[:self.count] - x; dy = self.pos_y[:self.count] - y
+        dx = self.pos_x[:self.count] - x
+        dy = self.pos_y[:self.count] - y
         dist_sq = dx*dx + dy*dy
         if np.any(dist_sq < threshold_sq): return True
         return False
@@ -341,16 +347,31 @@ class Simulation:
         keep_indices = []
         for i in range(self.count):
             if self.is_static[i] == 1 or self.is_static[i] == 2:
-                keep_indices.append(i); continue
-            dx = self.pos_x[i] - x; dy = self.pos_y[i] - y
-            if dx*dx + dy*dy > r2: keep_indices.append(i)
+                keep_indices.append(i)
+                continue
+            dx = self.pos_x[i] - x
+            dy = self.pos_y[i] - y
+            if dx*dx + dy*dy > r2:
+                keep_indices.append(i)
         if len(keep_indices) < self.count:
             self._compact_arrays(keep_indices)
             self.rebuild_next = True
 
     def add_wall(self, start_pos, end_pos):
-        self.walls.append({'start': start_pos, 'end': end_pos, 'sigma': config.ATOM_SIGMA, 'epsilon': config.ATOM_EPSILON, 'spacing': 0.7 * config.ATOM_SIGMA, 'anim': None})
+        self.walls.append({
+            'start': start_pos, 'end': end_pos, 
+            'sigma': config.ATOM_SIGMA, 'epsilon': config.ATOM_EPSILON, 'spacing': 0.7 * config.ATOM_SIGMA, 
+            'anim': None, 'anchored': [False, False]
+        })
         self.rebuild_static_atoms()
+
+    def toggle_anchor(self, wall_idx, pt_idx):
+        if 0 <= wall_idx < len(self.walls):
+            w = self.walls[wall_idx]
+            if 'anchored' not in w: w['anchored'] = [False, False]
+            w['anchored'][pt_idx] = not w['anchored'][pt_idx]
+            self.snapshot()
+            self.rebuild_static_atoms()
 
     def update_wall(self, index, start_pos, end_pos):
         if 0 <= index < len(self.walls):
