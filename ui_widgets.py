@@ -8,6 +8,7 @@ THEME_ACCENT = (0, 122, 204) # VS Blue
 THEME_TEXT = (220, 220, 220)
 THEME_TEXT_DIM = (150, 150, 150)
 THEME_BORDER = (80, 80, 80)
+THEME_HOVER = (60, 60, 65) # Lighter gray for hover
 
 class InputField:
     def __init__(self, x, y, w, h, initial_text="", text_color=THEME_TEXT):
@@ -418,7 +419,7 @@ class MenuBar:
         self.items = {"File": ["(empty)"], "Tools": ["(empty)"], "Help": ["(empty)"]}
         self.active_menu = None 
         self.dropdown_rect = None
-        self.hover_item = None
+        self.hover_item_idx = -1 # Track hovered dropdown item index
         
         self.item_rects = {}
         curr_x = 10
@@ -431,13 +432,39 @@ class MenuBar:
         self.rect.width = w
 
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEMOTION:
+            # Check if mouse is over dropdown
+            if self.active_menu and self.dropdown_rect:
+                if self.dropdown_rect.collidepoint(event.pos):
+                    # Calculate index
+                    rel_y = event.pos[1] - self.dropdown_rect.y - 5
+                    if rel_y >= 0:
+                        idx = rel_y // 30
+                        # Check bounds
+                        if 0 <= idx < len(self.items[self.active_menu]):
+                            # Don't hover separators
+                            if self.items[self.active_menu][idx] != "---":
+                                self.hover_item_idx = idx
+                            else:
+                                self.hover_item_idx = -1
+                        else:
+                            self.hover_item_idx = -1
+                    else:
+                        self.hover_item_idx = -1
+                else:
+                    self.hover_item_idx = -1
+            else:
+                self.hover_item_idx = -1
+                
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             for key, r in self.item_rects.items():
                 if r.collidepoint(event.pos):
                     if self.active_menu == key:
                         self.active_menu = None
+                        self.hover_item_idx = -1
                     else:
                         self.active_menu = key
+                        self.hover_item_idx = -1
                     return True
         return False
 
@@ -470,6 +497,11 @@ class MenuBar:
             pygame.draw.rect(screen, (60, 60, 60), self.dropdown_rect, 1, border_radius=4)
             
             for i, opt in enumerate(opts):
+                # Hover Highlight
+                if i == self.hover_item_idx and opt != "---":
+                    h_rect = pygame.Rect(self.dropdown_rect.x + 2, self.dropdown_rect.y + 5 + i*30, self.dropdown_rect.width - 4, 30)
+                    pygame.draw.rect(screen, THEME_HOVER, h_rect, border_radius=2)
+
                 if opt == "---":
                     y = self.dropdown_rect.y + 5 + i*30 + 15
                     pygame.draw.line(screen, (60, 60, 60), (self.dropdown_rect.x + 10, y), (self.dropdown_rect.right - 10, y))
