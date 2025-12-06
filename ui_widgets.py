@@ -11,6 +11,10 @@ class InputField:
         self.cached_surf = None
         self.last_text = None
         
+    def move(self, dx, dy):
+        self.rect.x += dx
+        self.rect.y += dy
+
     def handle_event(self, event):
         changed = False
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -82,6 +86,15 @@ class SmartSlider:
         self.slider_rect = pygame.Rect(slider_start_x, y + 25, slider_width, self.input_h)
         self.dragging = False
         self.handle_w = 10
+
+    def move(self, dx, dy):
+        self.x += dx
+        self.y += dy
+        self.input_val.move(dx, dy)
+        self.input_min.move(dx, dy)
+        self.input_max.move(dx, dy)
+        self.slider_rect.x += dx
+        self.slider_rect.y += dy
 
     def handle_event(self, event):
         changed = False
@@ -161,7 +174,11 @@ class Button:
         self.c_active = color_active
         self.c_inactive = color_inactive
         self.cached_surf = None
-        
+    
+    def move(self, dx, dy):
+        self.rect.x += dx
+        self.rect.y += dy
+
     def handle_event(self, event):
         action = False
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -355,6 +372,9 @@ class MenuBar:
             r = pygame.Rect(curr_x, 0, 60, h)
             self.item_rects[key] = r
             curr_x += 60
+
+    def resize(self, w):
+        self.rect.width = w
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
