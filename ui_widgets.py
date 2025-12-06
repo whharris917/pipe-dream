@@ -1,12 +1,19 @@
 import pygame
 
+# Modern Theme Colors (Internal to widgets for self-containment)
+THEME_BG = (37, 37, 38)
+THEME_INPUT_BG = (60, 60, 60)
+THEME_INPUT_ACTIVE = (70, 70, 70)
+THEME_ACCENT = (0, 122, 204) # VS Blue
+THEME_TEXT = (220, 220, 220)
+THEME_TEXT_DIM = (150, 150, 150)
+THEME_BORDER = (80, 80, 80)
+
 class InputField:
-    def __init__(self, x, y, w, h, initial_text="", text_color=(255, 255, 255)):
+    def __init__(self, x, y, w, h, initial_text="", text_color=THEME_TEXT):
         self.rect = pygame.Rect(x, y, w, h)
         self.text = str(initial_text)
         self.active = False
-        self.color_active = (50, 50, 70)
-        self.color_inactive = (30, 30, 35)
         self.text_color = text_color
         self.cached_surf = None
         self.last_text = None
@@ -50,16 +57,22 @@ class InputField:
             else: self.text = f"{val:.2f}"
 
     def draw(self, screen, font):
-        color = self.color_active if self.active else self.color_inactive
-        pygame.draw.rect(screen, color, self.rect)
-        pygame.draw.rect(screen, (100, 100, 120), self.rect, 1)
+        # Flat modern look
+        bg = THEME_INPUT_ACTIVE if self.active else THEME_INPUT_BG
+        border = THEME_ACCENT if self.active else THEME_BORDER
+        
+        pygame.draw.rect(screen, bg, self.rect, border_radius=3)
+        pygame.draw.rect(screen, border, self.rect, 1, border_radius=3)
         
         if self.cached_surf is None or self.text != self.last_text:
             self.last_text = self.text
             self.cached_surf = font.render(self.text, True, self.text_color)
             
         text_y = self.rect.y + (self.rect.height - self.cached_surf.get_height()) // 2
+        # Clip text if too long
+        screen.set_clip(self.rect)
         screen.blit(self.cached_surf, (self.rect.x + 5, text_y))
+        screen.set_clip(None)
 
 class SmartSlider:
     def __init__(self, x, y, w, min_val, max_val, initial_val, label, hard_min=None, hard_max=None):
@@ -75,17 +88,17 @@ class SmartSlider:
         self.label = label
         
         self.input_w = 50
-        self.input_h = 20
+        self.input_h = 24 # Slightly taller inputs
         
         self.input_val = InputField(x + w - self.input_w, y, self.input_w, self.input_h, str(initial_val))
-        self.input_min = InputField(x, y + 25, self.input_w, self.input_h, str(min_val), text_color=(150, 150, 150))
-        self.input_max = InputField(x + w - self.input_w, y + 25, self.input_w, self.input_h, str(max_val), text_color=(150, 150, 150))
+        self.input_min = InputField(x, y + 25, self.input_w, self.input_h, str(min_val), text_color=THEME_TEXT_DIM)
+        self.input_max = InputField(x + w - self.input_w, y + 25, self.input_w, self.input_h, str(max_val), text_color=THEME_TEXT_DIM)
         
-        slider_start_x = x + self.input_w + 5
-        slider_width = w - (2 * self.input_w) - 10
+        slider_start_x = x + self.input_w + 10
+        slider_width = w - (2 * self.input_w) - 20
         self.slider_rect = pygame.Rect(slider_start_x, y + 25, slider_width, self.input_h)
         self.dragging = False
-        self.handle_w = 10
+        self.handle_radius = 6
 
     def move(self, dx, dy):
         self.x += dx
@@ -118,7 +131,9 @@ class SmartSlider:
             changed = True
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.slider_rect.collidepoint(event.pos):
+            # Check collision with a relaxed hitbox around the slider track
+            hitbox = self.slider_rect.inflate(0, 10)
+            if hitbox.collidepoint(event.pos):
                 self.dragging = True
                 self.update_from_mouse(event.pos[0])
                 changed = True
@@ -151,21 +166,35 @@ class SmartSlider:
         self.input_max.set_value(max_v)
 
     def draw(self, screen, font):
-        lbl = font.render(self.label, True, (200, 200, 200))
+        # Label
+        lbl = font.render(self.label, True, THEME_TEXT)
         screen.blit(lbl, (self.x, self.y + 2))
+        
+        # Inputs
         self.input_val.draw(screen, font)
         self.input_min.draw(screen, font)
         self.input_max.draw(screen, font)
-        pygame.draw.rect(screen, (60, 60, 70), self.slider_rect, border_radius=4)
+        
+        # Slider Track
+        track_y = self.slider_rect.centery
+        pygame.draw.line(screen, (80, 80, 80), (self.slider_rect.left, track_y), (self.slider_rect.right, track_y), 2)
+        
+        # Calculate Handle
         if self.max_val == self.min_val: pct = 0.0
         else: pct = (self.val - self.min_val) / (self.max_val - self.min_val)
         pct = max(0.0, min(1.0, pct))
-        handle_x = self.slider_rect.x + pct * self.slider_rect.width - self.handle_w / 2
-        handle_rect = pygame.Rect(int(handle_x), self.slider_rect.y - 2, self.handle_w, self.slider_rect.height + 4)
-        pygame.draw.rect(screen, (150, 180, 220), handle_rect, border_radius=2)
+        
+        handle_x = self.slider_rect.x + pct * self.slider_rect.width
+        
+        # Filled Track (Accent)
+        pygame.draw.line(screen, THEME_ACCENT, (self.slider_rect.left, track_y), (handle_x, track_y), 2)
+        
+        # Handle (Circle)
+        pygame.draw.circle(screen, (200, 200, 200), (int(handle_x), int(track_y)), self.handle_radius)
+        pygame.draw.circle(screen, THEME_ACCENT, (int(handle_x), int(track_y)), self.handle_radius-2)
 
 class Button:
-    def __init__(self, x, y, w, h, text, active=False, toggle=True, color_active=(90, 200, 90), color_inactive=(80, 80, 80)):
+    def __init__(self, x, y, w, h, text, active=False, toggle=True, color_active=THEME_ACCENT, color_inactive=(60, 60, 60)):
         self.rect = pygame.Rect(x, y, w, h)
         self.text = text
         self.active = active
@@ -194,8 +223,13 @@ class Button:
 
     def draw(self, screen, font):
         color = self.c_active if self.active else self.c_inactive
-        pygame.draw.rect(screen, color, self.rect, border_radius=5)
-        pygame.draw.rect(screen, (200, 200, 200), self.rect, 1, border_radius=5)
+        # Modern Flat Button
+        pygame.draw.rect(screen, color, self.rect, border_radius=4)
+        
+        # Optional: Subtle border if inactive to distinguish from BG
+        if not self.active:
+            pygame.draw.rect(screen, (80, 80, 80), self.rect, 1, border_radius=4)
+            
         if self.cached_surf is None:
             self.cached_surf = font.render(self.text, True, (255, 255, 255))
         txt_rect = self.cached_surf.get_rect(center=self.rect.center)
@@ -206,8 +240,8 @@ class ContextMenu:
         self.x = x
         self.y = y
         self.options = options
-        self.width = 120
-        self.height = len(options) * 30
+        self.width = 140
+        self.height = len(options) * 30 + 10
         self.rect = pygame.Rect(x, y, self.width, self.height)
         self.selected_idx = -1
         self.action = None
@@ -215,13 +249,16 @@ class ContextMenu:
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             if self.rect.collidepoint(event.pos):
-                rel_y = event.pos[1] - self.y
-                self.selected_idx = rel_y // 30
+                rel_y = event.pos[1] - (self.y + 5)
+                if rel_y >= 0:
+                    self.selected_idx = rel_y // 30
+                else:
+                    self.selected_idx = -1
             else:
                 self.selected_idx = -1
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(event.pos):
-                rel_y = event.pos[1] - self.y
+                rel_y = event.pos[1] - (self.y + 5)
                 idx = rel_y // 30
                 if 0 <= idx < len(self.options):
                     self.action = self.options[idx]
@@ -232,23 +269,30 @@ class ContextMenu:
         return False
 
     def draw(self, screen, font):
-        # Draw Shadow
+        # Drop Shadow
         shadow = self.rect.copy()
-        shadow.x += 3; shadow.y += 3
-        pygame.draw.rect(screen, (0, 0, 0), shadow)
+        shadow.x += 4; shadow.y += 4
+        s_surf = pygame.Surface((shadow.width, shadow.height), pygame.SRCALPHA)
+        pygame.draw.rect(s_surf, (0, 0, 0, 100), s_surf.get_rect(), border_radius=4)
+        screen.blit(s_surf, shadow)
         
-        pygame.draw.rect(screen, (40, 40, 50), self.rect)
-        pygame.draw.rect(screen, (150, 150, 150), self.rect, 1)
+        # Main Body
+        pygame.draw.rect(screen, (45, 45, 48), self.rect, border_radius=4)
+        pygame.draw.rect(screen, (80, 80, 80), self.rect, 1, border_radius=4)
+        
         for i, opt in enumerate(self.options):
-            bg_col = (60, 60, 80) if i == self.selected_idx else (40, 40, 50)
-            item_rect = pygame.Rect(self.x, self.y + i*30, self.width, 30)
-            pygame.draw.rect(screen, bg_col, item_rect)
+            bg_col = (0, 122, 204) if i == self.selected_idx else (45, 45, 48)
+            item_rect = pygame.Rect(self.x + 2, self.y + 5 + i*30, self.width - 4, 28)
+            
+            if i == self.selected_idx:
+                pygame.draw.rect(screen, bg_col, item_rect, border_radius=3)
+            
             txt = font.render(opt, True, (255, 255, 255))
-            screen.blit(txt, (self.x + 10, self.y + i*30 + 5))
+            screen.blit(txt, (self.x + 10, self.y + 5 + i*30 + 5))
 
 class PropertiesDialog:
     def __init__(self, x, y, wall_data):
-        self.rect = pygame.Rect(x, y, 250, 200)
+        self.rect = pygame.Rect(x, y, 250, 210)
         self.wall_data = wall_data
         self.done = False
         self.apply = False
@@ -276,15 +320,23 @@ class PropertiesDialog:
         }
 
     def draw(self, screen, font):
+        # Shadow
         shadow = self.rect.copy(); shadow.x += 5; shadow.y += 5
-        pygame.draw.rect(screen, (0, 0, 0), shadow)
-        pygame.draw.rect(screen, (50, 50, 60), self.rect)
-        pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
+        s_surf = pygame.Surface((shadow.width, shadow.height), pygame.SRCALPHA)
+        pygame.draw.rect(s_surf, (0, 0, 0, 100), s_surf.get_rect(), border_radius=6)
+        screen.blit(s_surf, shadow)
+        
+        # BG
+        pygame.draw.rect(screen, (45, 45, 48), self.rect, border_radius=6)
+        pygame.draw.rect(screen, THEME_ACCENT, self.rect, 1, border_radius=6)
+        
         title = font.render("Wall Properties", True, (255, 255, 255))
-        screen.blit(title, (self.rect.x + 10, self.rect.y + 10))
-        screen.blit(font.render("Sigma:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 45))
-        screen.blit(font.render("Epsilon:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 80))
-        screen.blit(font.render("Spacing:", True, (200, 200, 200)), (self.rect.x + 20, self.rect.y + 115))
+        screen.blit(title, (self.rect.x + 15, self.rect.y + 10))
+        
+        screen.blit(font.render("Sigma:", True, THEME_TEXT), (self.rect.x + 20, self.rect.y + 45))
+        screen.blit(font.render("Epsilon:", True, THEME_TEXT), (self.rect.x + 20, self.rect.y + 80))
+        screen.blit(font.render("Spacing:", True, THEME_TEXT), (self.rect.x + 20, self.rect.y + 115))
+        
         self.in_sigma.draw(screen, font)
         self.in_epsilon.draw(screen, font)
         self.in_spacing.draw(screen, font)
@@ -293,7 +345,7 @@ class PropertiesDialog:
 
 class RotationDialog:
     def __init__(self, x, y, anim_data):
-        self.rect = pygame.Rect(x, y, 250, 200)
+        self.rect = pygame.Rect(x, y, 250, 210)
         self.done = False
         self.apply = False
         
@@ -311,7 +363,7 @@ class RotationDialog:
         except:
             self.pivot_idx = 0
             
-        self.btn_pivot = Button(x + 100, y + 100, 100, 25, f"Pivot: {self.pivots[self.pivot_idx].title()}", toggle=False, color_inactive=(70, 70, 90))
+        self.btn_pivot = Button(x + 100, y + 100, 100, 25, f"{self.pivots[self.pivot_idx].title()}", toggle=False, color_inactive=(60, 60, 70))
         
         self.btn_apply = Button(x + 20, y + 160, 80, 30, "Apply", toggle=False)
         self.btn_ok = Button(x + 150, y + 160, 80, 30, "OK", toggle=False)
@@ -321,7 +373,7 @@ class RotationDialog:
         
         if self.btn_pivot.handle_event(event):
             self.pivot_idx = (self.pivot_idx + 1) % len(self.pivots)
-            self.btn_pivot.text = f"Pivot: {self.pivots[self.pivot_idx].title()}"
+            self.btn_pivot.text = f"{self.pivots[self.pivot_idx].title()}"
             self.btn_pivot.cached_surf = None
             return True
             
@@ -338,18 +390,23 @@ class RotationDialog:
         }
 
     def draw(self, screen, font):
+        # Shadow
         shadow = self.rect.copy(); shadow.x += 5; shadow.y += 5
-        pygame.draw.rect(screen, (0, 0, 0), shadow)
-        pygame.draw.rect(screen, (50, 50, 60), self.rect)
-        pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
+        s_surf = pygame.Surface((shadow.width, shadow.height), pygame.SRCALPHA)
+        pygame.draw.rect(s_surf, (0, 0, 0, 100), s_surf.get_rect(), border_radius=6)
+        screen.blit(s_surf, shadow)
+        
+        # BG
+        pygame.draw.rect(screen, (45, 45, 48), self.rect, border_radius=6)
+        pygame.draw.rect(screen, THEME_ACCENT, self.rect, 1, border_radius=6)
         
         title = font.render("Rotation Animation", True, (255, 255, 255))
-        screen.blit(title, (self.rect.x + 10, self.rect.y + 10))
+        screen.blit(title, (self.rect.x + 15, self.rect.y + 10))
         
-        screen.blit(font.render("Speed (deg/s):", True, (200, 200, 200)), (self.rect.x + 10, self.rect.y + 65))
+        screen.blit(font.render("Speed:", True, THEME_TEXT), (self.rect.x + 20, self.rect.y + 65))
         self.in_speed.draw(screen, font)
         
-        screen.blit(font.render("Axis:", True, (200, 200, 200)), (self.rect.x + 10, self.rect.y + 105))
+        screen.blit(font.render("Axis:", True, THEME_TEXT), (self.rect.x + 20, self.rect.y + 105))
         self.btn_pivot.draw(screen, font)
         
         self.btn_apply.draw(screen, font)
@@ -359,16 +416,13 @@ class MenuBar:
     def __init__(self, w, h=30):
         self.rect = pygame.Rect(0, 0, w, h)
         self.items = {"File": ["(empty)"], "Tools": ["(empty)"], "Help": ["(empty)"]}
-        self.active_menu = None # Key of active menu
+        self.active_menu = None 
         self.dropdown_rect = None
         self.hover_item = None
         
-        # Calculate X positions
         self.item_rects = {}
         curr_x = 10
         for key in self.items:
-            # We'll calculate widths dynamically in draw if needed, 
-            # but for simplicity assume 60px width
             r = pygame.Rect(curr_x, 0, 60, h)
             self.item_rects[key] = r
             curr_x += 60
@@ -378,53 +432,47 @@ class MenuBar:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Check top bar clicks
             for key, r in self.item_rects.items():
                 if r.collidepoint(event.pos):
                     if self.active_menu == key:
-                        self.active_menu = None # Toggle off
+                        self.active_menu = None
                     else:
                         self.active_menu = key
                     return True
-            
-            # --- FIX: Removed logic that consumed dropdown clicks here ---
-            # Dropdown clicks are now handled in the main loop to ensure 
-            # the corresponding logic triggers correctly.
-        
-        elif event.type == pygame.MOUSEMOTION:
-            if self.active_menu:
-                # Hover logic if desired
-                pass
-                
         return False
 
     def draw(self, screen, font):
-        pygame.draw.rect(screen, (40, 40, 45), self.rect)
-        pygame.draw.line(screen, (80, 80, 80), (0, 29), (self.rect.width, 29))
+        pygame.draw.rect(screen, (30, 30, 30), self.rect) # Darker BG
+        # No bottom line, cleaner
         
         for key, r in self.item_rects.items():
             if self.active_menu == key:
-                pygame.draw.rect(screen, (60, 60, 70), r)
+                pygame.draw.rect(screen, (50, 50, 50), r)
             
-            txt = font.render(key, True, (220, 220, 220))
+            txt = font.render(key, True, (200, 200, 200))
             screen.blit(txt, (r.x + 10, r.y + 8))
             
-        # Draw Active Dropdown
         if self.active_menu:
             opts = self.items[self.active_menu]
             r = self.item_rects[self.active_menu]
             
-            dd_w = 120
-            dd_h = len(opts) * 30
+            dd_w = 160
+            dd_h = len(opts) * 30 + 10
             self.dropdown_rect = pygame.Rect(r.x, r.height, dd_w, dd_h)
             
             # Shadow
-            s = self.dropdown_rect.copy(); s.x+=3; s.y+=3
-            pygame.draw.rect(screen, (0,0,0), s)
+            s = self.dropdown_rect.copy(); s.x+=4; s.y+=4
+            s_surf = pygame.Surface((s.width, s.height), pygame.SRCALPHA)
+            pygame.draw.rect(s_surf, (0, 0, 0, 100), s_surf.get_rect(), border_radius=4)
+            screen.blit(s_surf, s)
             
-            pygame.draw.rect(screen, (50, 50, 55), self.dropdown_rect)
-            pygame.draw.rect(screen, (100, 100, 100), self.dropdown_rect, 1)
+            pygame.draw.rect(screen, (37, 37, 38), self.dropdown_rect, border_radius=4)
+            pygame.draw.rect(screen, (60, 60, 60), self.dropdown_rect, 1, border_radius=4)
             
             for i, opt in enumerate(opts):
-                otxt = font.render(opt, True, (200, 200, 200))
-                screen.blit(otxt, (self.dropdown_rect.x + 10, self.dropdown_rect.y + i*30 + 5))
+                if opt == "---":
+                    y = self.dropdown_rect.y + 5 + i*30 + 15
+                    pygame.draw.line(screen, (60, 60, 60), (self.dropdown_rect.x + 10, y), (self.dropdown_rect.right - 10, y))
+                else:
+                    otxt = font.render(opt, True, (220, 220, 220))
+                    screen.blit(otxt, (self.dropdown_rect.x + 15, self.dropdown_rect.y + 5 + i*30 + 5))

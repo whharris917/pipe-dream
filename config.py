@@ -2,7 +2,7 @@ import numpy as np
 
 # Window Layout
 WINDOW_WIDTH = 1400
-WINDOW_HEIGHT = 930 # Increased for Menu Bar (30px)
+WINDOW_HEIGHT = 930 
 PANEL_LEFT_WIDTH = 120
 PANEL_RIGHT_WIDTH = 350
 
@@ -16,12 +16,12 @@ DEFAULT_DAMPING = 1.0
 DEFAULT_DRAW_M = 10
 DEFAULT_SKIN_DISTANCE = 0.5
 
-# Rendering
+# Rendering - Modern Dark Theme
 PARTICLE_RADIUS_SCALE = 0.4
-BACKGROUND_COLOR = (10, 12, 16)
-GRID_COLOR = (30, 30, 40)
-PANEL_BG_COLOR = (25, 25, 30)
-PANEL_BORDER_COLOR = (50, 50, 60)
+BACKGROUND_COLOR = (30, 30, 30)      # #1e1e1e (Editor Background)
+GRID_COLOR = (50, 50, 50)            # Subtle Grid
+PANEL_BG_COLOR = (37, 37, 38)        # #252526 (Side Panel Background)
+PANEL_BORDER_COLOR = (60, 60, 60)    # Soft borders
 
 # Single Atom Definition
 ATOM_SIGMA = 1.0
@@ -29,5 +29,5 @@ ATOM_EPSILON = 1.0
 ATOM_MASS = 1.0
 
 # Visuals
-COLOR_DYNAMIC = (90, 200, 255)
-COLOR_STATIC = (150, 150, 150)
+COLOR_DYNAMIC = (86, 156, 214)       # #569cd6 (VS Blue)
+COLOR_STATIC = (206, 145, 120)       # #ce9178 (VS Orange/Red)
