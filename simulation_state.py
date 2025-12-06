@@ -357,11 +357,12 @@ class Simulation:
             self._compact_arrays(keep_indices)
             self.rebuild_next = True
 
-    def add_wall(self, start_pos, end_pos):
+    def add_wall(self, start_pos, end_pos, is_ref=False):
         self.walls.append({
             'start': start_pos, 'end': end_pos, 
             'sigma': config.ATOM_SIGMA, 'epsilon': config.ATOM_EPSILON, 'spacing': 0.7 * config.ATOM_SIGMA, 
-            'anim': None, 'anchored': [False, False]
+            'anim': None, 'anchored': [False, False],
+            'ref': is_ref
         })
         self.rebuild_static_atoms()
 
@@ -391,6 +392,9 @@ class Simulation:
         dyn_indices = np.where(is_dynamic)[0]
         self._compact_arrays(dyn_indices)
         for wall in self.walls:
+            # Check for Reference Line - do not generate atoms
+            if wall.get('ref'): continue
+
             p1 = np.array(wall['start']); p2 = np.array(wall['end'])
             spacing = wall.get('spacing', 0.7)
             vec = p2 - p1; length = np.linalg.norm(vec)
