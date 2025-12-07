@@ -5,7 +5,8 @@ import time
 import copy
 import config
 from physics_core import integrate_n_steps, build_neighbor_list, check_displacement, apply_thermostat, spatial_sort
-from constraint_solver import solve_constraints
+from geometry import Line, Point
+from constraints import create_constraint, Constraint, Length
 
 class Simulation:
     def __init__(self):
@@ -16,35 +17,27 @@ class Simulation:
         self.world_size = config.DEFAULT_WORLD_SIZE
         self.use_boundaries = False
         
-        # Global Physics Parameters (for Gas)
         self.sigma = config.ATOM_SIGMA
         self.epsilon = config.ATOM_EPSILON
         
-        # New: Mutable Skin Distance
         self.skin_distance = config.DEFAULT_SKIN_DISTANCE
         
-        # Physics State Arrays
+        # Arrays
         self.pos_x = np.zeros(self.capacity, dtype=np.float32)
         self.pos_y = np.zeros(self.capacity, dtype=np.float32)
         self.vel_x = np.zeros(self.capacity, dtype=np.float32)
         self.vel_y = np.zeros(self.capacity, dtype=np.float32)
         self.force_x = np.zeros(self.capacity, dtype=np.float32)
         self.force_y = np.zeros(self.capacity, dtype=np.float32)
-        
-        # 0=Dynamic, 1=Static, 2=Kinematic
         self.is_static = np.zeros(self.capacity, dtype=np.int32)
-        
-        # Kinematic Props: [pivot_x, pivot_y, omega]
         self.kinematic_props = np.zeros((self.capacity, 3), dtype=np.float32)
-        
-        # Per-Particle Properties
         self.atom_sigma = np.zeros(self.capacity, dtype=np.float32)
         self.atom_eps_sqrt = np.zeros(self.capacity, dtype=np.float32)
         
-        self.walls = [] # List of dicts
-        self.constraints = [] # List of constraint dicts
+        # --- REFACTORED: Objects instead of Dicts ---
+        self.walls = [] # List of Line objects
+        self.constraints = [] # List of Constraint objects
         
-        # Neighbors
         self.max_pairs = self.capacity * 100
         self.pair_i = np.zeros(self.max_pairs, dtype=np.int32)
         self.pair_j = np.zeros(self.max_pairs, dtype=np.int32)
@@ -52,10 +45,8 @@ class Simulation:
         self.last_x = np.zeros(self.capacity, dtype=np.float32)
         self.last_y = np.zeros(self.capacity, dtype=np.float32)
         
-        # Control flags
         self.rebuild_next = False
         
-        # Settings
         self.paused = True
         self.dt = config.DEFAULT_DT
         self.gravity = config.DEFAULT_GRAVITY
@@ -87,22 +78,16 @@ class Simulation:
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
-        self.atom_sigma[:2] = 1.0
-        self.atom_eps_sqrt[:2] = 1.0
+        self.atom_sigma[:2] = 1.0; self.atom_eps_sqrt[:2] = 1.0
         build_neighbor_list(self.pos_x[:2], self.pos_y[:2], self.r_list2, self.cell_size, self.world_size, self.pair_i, self.pair_j)
-        f32_mass = np.float32(config.ATOM_MASS)
-        f32_dt = np.float32(self.dt)
-        f32_gravity = np.float32(self.gravity)
-        f32_rcut2 = np.float32(self.r_cut_base**2)
-        f32_skin_sq = np.float32(self.r_skin_sq_limit)
-        f32_world = np.float32(self.world_size)
-        f32_damping = np.float32(self.damping)
-        integrate_n_steps(1, self.pos_x[:2], self.pos_y[:2], self.vel_x[:2], self.vel_y[:2], self.force_x[:2], self.force_y[:2], self.last_x[:2], self.last_y[:2], self.is_static[:2], self.kinematic_props[:2], self.atom_sigma[:2], self.atom_eps_sqrt[:2], f32_mass, self.pair_i, self.pair_j, self.pair_count, f32_dt, f32_gravity, f32_rcut2, f32_skin_sq, f32_world, self.use_boundaries, f32_damping)
+        f32_vals = [np.float32(x) for x in [config.ATOM_MASS, self.dt, self.gravity, self.r_cut_base**2, self.r_skin_sq_limit, self.world_size, self.damping]]
+        integrate_n_steps(1, self.pos_x[:2], self.pos_y[:2], self.vel_x[:2], self.vel_y[:2], self.force_x[:2], self.force_y[:2], self.last_x[:2], self.last_y[:2], self.is_static[:2], self.kinematic_props[:2], self.atom_sigma[:2], self.atom_eps_sqrt[:2], f32_vals[0], self.pair_i, self.pair_j, self.pair_count, f32_vals[1], f32_vals[2], f32_vals[3], f32_vals[4], f32_vals[5], self.use_boundaries, f32_vals[6])
         spatial_sort(self.pos_x[:2], self.pos_y[:2], self.vel_x[:2], self.vel_y[:2], self.force_x[:2], self.force_y[:2], self.is_static[:2], self.kinematic_props[:2], self.atom_sigma[:2], self.atom_eps_sqrt[:2], self.world_size, self.cell_size)
         self.clear_particles()
         print("Warmup complete.")
 
     def snapshot(self):
+        # We can use deepcopy on the objects for runtime snapshots
         state = {
             'count': self.count,
             'pos_x': np.copy(self.pos_x[:self.count]),
@@ -135,6 +120,7 @@ class Simulation:
         else: self.kinematic_props[:self.count] = 0.0
         self.atom_sigma[:self.count] = state['atom_sigma']
         self.atom_eps_sqrt[:self.count] = state['atom_eps_sqrt']
+        
         self.walls = copy.deepcopy(state['walls'])
         self.constraints = copy.deepcopy(state.get('constraints', []))
         self.world_size = state['world_size']
@@ -143,25 +129,36 @@ class Simulation:
 
     def undo(self):
         if not self.undo_stack: return
-        current_state = {
-            'count': self.count, 'pos_x': np.copy(self.pos_x[:self.count]), 'pos_y': np.copy(self.pos_y[:self.count]), 'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
-            'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]), 'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
-            'walls': copy.deepcopy(self.walls), 'constraints': copy.deepcopy(self.constraints), 'world_size': self.world_size
-        }
-        self.redo_stack.append(current_state)
+        self._push_redo()
         prev_state = self.undo_stack.pop()
         self.restore_state(prev_state)
 
     def redo(self):
         if not self.redo_stack: return
+        self._push_undo_internal()
+        next_state = self.redo_stack.pop()
+        self.restore_state(next_state)
+
+    def _push_redo(self):
         current_state = {
-            'count': self.count, 'pos_x': np.copy(self.pos_x[:self.count]), 'pos_y': np.copy(self.pos_y[:self.count]), 'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
-            'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]), 'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
+            'count': self.count, 'pos_x': np.copy(self.pos_x[:self.count]), 'pos_y': np.copy(self.pos_y[:self.count]), 
+            'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
+            'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]), 
+            'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
+            'walls': copy.deepcopy(self.walls), 'constraints': copy.deepcopy(self.constraints), 'world_size': self.world_size
+        }
+        self.redo_stack.append(current_state)
+
+    def _push_undo_internal(self):
+        # Similar to snapshot but doesn't clear redo
+        current_state = {
+            'count': self.count, 'pos_x': np.copy(self.pos_x[:self.count]), 'pos_y': np.copy(self.pos_y[:self.count]), 
+            'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
+            'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]), 
+            'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
             'walls': copy.deepcopy(self.walls), 'constraints': copy.deepcopy(self.constraints), 'world_size': self.world_size
         }
         self.undo_stack.append(current_state)
-        next_state = self.redo_stack.pop()
-        self.restore_state(next_state)
 
     def resize_world(self, new_size):
         self.snapshot()
@@ -197,91 +194,113 @@ class Simulation:
 
     def export_asset_data(self):
         if not self.walls: return None
+        # Normalize to center
         min_x = float('inf'); max_x = float('-inf'); min_y = float('inf'); max_y = float('-inf')
         for w in self.walls:
-            for p in [w['start'], w['end']]:
-                min_x = min(min_x, p[0]); max_x = max(max_x, p[0]); min_y = min(min_y, p[1]); max_y = max(max_y, p[1])
+            p1, p2 = w.start, w.end
+            min_x = min(min_x, p1[0], p2[0]); max_x = max(max_x, p1[0], p2[0])
+            min_y = min(min_y, p1[1], p2[1]); max_y = max(max_y, p1[1], p2[1])
+            
         center_x = (min_x + max_x) / 2.0; center_y = (min_y + max_y) / 2.0
+        
+        # Serialize objects to dicts
         normalized_walls = []
         for w in self.walls:
-            nw = copy.deepcopy(w)
-            nw['start'] = (w['start'][0] - center_x, w['start'][1] - center_y)
-            nw['end'] = (w['end'][0] - center_x, w['end'][1] - center_y)
-            if 'anim' in nw and nw['anim']:
-                anim = nw['anim']
-                rs = anim['ref_start']; re = anim['ref_end']
-                anim['ref_start'] = (rs[0] - center_x, rs[1] - center_y); anim['ref_end'] = (re[0] - center_x, re[1] - center_y)
-            normalized_walls.append(nw)
-        return {'walls': normalized_walls, 'constraints': self.constraints}
+            d = w.to_dict()
+            d['start'][0] -= center_x; d['start'][1] -= center_y
+            d['end'][0] -= center_x; d['end'][1] -= center_y
+            if d.get('anim'):
+                # Also normalize animation refs if any
+                pass 
+            normalized_walls.append(d)
+            
+        serialized_constraints = [c.to_dict() for c in self.constraints]
+        return {'walls': normalized_walls, 'constraints': serialized_constraints}
 
     def place_asset(self, asset_data, x, y):
         self.snapshot()
-        walls_to_add = asset_data.get('walls', [])
-        constraints_to_add = asset_data.get('constraints', [])
+        walls_data = asset_data.get('walls', [])
+        constraints_data = asset_data.get('constraints', [])
+        
         base_index = len(self.walls)
-        for w in walls_to_add:
-            new_w = copy.deepcopy(w)
-            new_w['start'] = (w['start'][0] + x, w['start'][1] + y)
-            new_w['end'] = (w['end'][0] + x, w['end'][1] + y)
-            if 'anim' in new_w and new_w['anim']:
-                anim = new_w['anim']
-                rs = anim['ref_start']; re = anim['ref_end']
-                anim['ref_start'] = (rs[0] + x, rs[1] + y); anim['ref_end'] = (re[0] + x, re[1] + y)
-            self.walls.append(new_w)
-        for c in constraints_to_add:
-            new_c = copy.deepcopy(c)
+        
+        for wd in walls_data:
+            # Reconstruct Object
+            w = Line.from_dict(wd)
+            # Offset
+            w.move(x, y)
+            self.walls.append(w)
+            
+        for cd in constraints_data:
+            # Shift Indices
             new_indices = []
-            for idx in new_c['indices']:
-                if isinstance(idx, (list, tuple)): new_indices.append((idx[0] + base_index, idx[1]))
-                else: new_indices.append(idx + base_index)
-            new_c['indices'] = new_indices
-            self.constraints.append(new_c)
+            for idx in cd['indices']:
+                if isinstance(idx, (list, tuple)):
+                    new_indices.append((idx[0] + base_index, idx[1]))
+                else:
+                    new_indices.append(idx + base_index)
+            
+            # Create Constraint Object
+            temp_data = cd.copy()
+            temp_data['indices'] = new_indices
+            c_obj = create_constraint(temp_data)
+            if c_obj: self.constraints.append(c_obj)
+            
         self.rebuild_static_atoms()
 
     def set_wall_rotation(self, index, params):
         if 0 <= index < len(self.walls):
             w = self.walls[index]
             speed = params['speed']; pivot = params['pivot']
-            if abs(speed) < 1e-5: w['anim'] = None; return
-            w['anim'] = {'type': 'rotate', 'speed': speed, 'pivot': pivot, 'angle': 0.0, 'ref_start': w['start'], 'ref_end': w['end']}
+            if abs(speed) < 1e-5: w.anim = None; return
+            w.anim = {'type': 'rotate', 'speed': speed, 'pivot': pivot, 'angle': 0.0, 'ref_start': w.start.copy(), 'ref_end': w.end.copy()}
             self.rebuild_static_atoms()
 
     def update_animations(self, dt):
         for w in self.walls:
-            anim = w.get('anim')
+            anim = w.anim
             if anim and anim['type'] == 'rotate':
                 anim['angle'] += anim['speed'] * dt
                 rad = math.radians(anim['angle']); c = math.cos(rad); s = math.sin(rad)
-                rs = np.array(anim['ref_start']); re = np.array(anim['ref_end'])
+                rs = anim['ref_start']; re = anim['ref_end']
                 if anim['pivot'] == 'start': pivot = rs
                 elif anim['pivot'] == 'end': pivot = re
                 else: pivot = (rs + re) * 0.5
                 v_s = rs - pivot; v_e = re - pivot
-                w['start'] = tuple(np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c]) + pivot)
-                w['end'] = tuple(np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c]) + pivot)
+                w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
+                w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
 
     def apply_constraints(self):
         if self.constraints:
-            solve_constraints(self.walls, self.constraints, iterations=20)
+            for _ in range(20):
+                for c in self.constraints:
+                    c.solve(self.walls)
             self.rebuild_static_atoms()
 
-    def add_constraint(self, c_type, indices, value=None):
+    def add_constraint_object(self, c_obj):
         self.snapshot()
-        c = {'type': c_type, 'indices': indices}
-        if value is not None: c['value'] = value
-        self.constraints.append(c)
+        self.constraints.append(c_obj)
         self.apply_constraints()
 
     def remove_wall(self, index):
         self.snapshot()
         if 0 <= index < len(self.walls):
-            # 1. Remove constraints involving this wall
-            self.constraints = [c for c in self.constraints if not self._constraint_involves(c, index)]
+            # 1. Filter constraints
+            keep = []
+            for c in self.constraints:
+                involves = False
+                for idx in c.indices:
+                    if isinstance(idx, (list, tuple)):
+                        if idx[0] == index: involves = True
+                    else:
+                        if idx == index: involves = True
+                if not involves: keep.append(c)
+            self.constraints = keep
             
             # 2. Shift indices for remaining constraints
             for c in self.constraints:
                 new_indices = []
-                for idx in c['indices']:
+                for idx in c.indices:
                     if isinstance(idx, (list, tuple)):
                         w_idx, pt_idx = idx
                         if w_idx > index: w_idx -= 1
@@ -289,20 +308,13 @@ class Simulation:
                     else:
                         if idx > index: idx -= 1
                         new_indices.append(idx)
-                c['indices'] = new_indices
+                c.indices = new_indices
 
             self.walls.pop(index)
             self.rebuild_static_atoms()
 
-    def _constraint_involves(self, c, wall_idx):
-        for idx in c['indices']:
-            if isinstance(idx, (list, tuple)):
-                if idx[0] == wall_idx: return True
-            else:
-                if idx == wall_idx: return True
-        return False
-
     def add_particles_brush(self, x, y, radius):
+        # ... (Same logic, but use self.sigma) ...
         sigma = self.sigma
         spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025 
@@ -358,33 +370,33 @@ class Simulation:
             self.rebuild_next = True
 
     def add_wall(self, start_pos, end_pos, is_ref=False):
-        self.walls.append({
-            'start': start_pos, 'end': end_pos, 
-            'sigma': config.ATOM_SIGMA, 'epsilon': config.ATOM_EPSILON, 'spacing': 0.7 * config.ATOM_SIGMA, 
-            'anim': None, 'anchored': [False, False],
-            'ref': is_ref
-        })
+        w = Line(start_pos, end_pos, is_ref)
+        w.sigma = config.ATOM_SIGMA
+        w.epsilon = config.ATOM_EPSILON
+        w.spacing = 0.7 * config.ATOM_SIGMA
+        self.walls.append(w)
         self.rebuild_static_atoms()
 
     def toggle_anchor(self, wall_idx, pt_idx):
         if 0 <= wall_idx < len(self.walls):
             w = self.walls[wall_idx]
-            if 'anchored' not in w: w['anchored'] = [False, False]
-            w['anchored'][pt_idx] = not w['anchored'][pt_idx]
+            w.anchored[pt_idx] = not w.anchored[pt_idx]
             self.snapshot()
             self.rebuild_static_atoms()
 
     def update_wall(self, index, start_pos, end_pos):
         if 0 <= index < len(self.walls):
-            self.walls[index]['start'] = start_pos
-            self.walls[index]['end'] = end_pos
+            self.walls[index].start[:] = start_pos
+            self.walls[index].end[:] = end_pos
             self.rebuild_static_atoms()
 
     def update_wall_props(self, index, props):
         self.snapshot()
         if 0 <= index < len(self.walls):
             w = self.walls[index]
-            w['sigma'] = props['sigma']; w['epsilon'] = props['epsilon']; w['spacing'] = props['spacing']
+            w.sigma = props['sigma']
+            w.epsilon = props['epsilon']
+            w.spacing = props['spacing']
             self.rebuild_static_atoms()
 
     def rebuild_static_atoms(self):
@@ -393,21 +405,23 @@ class Simulation:
         self._compact_arrays(dyn_indices)
         for wall in self.walls:
             # Check for Reference Line - do not generate atoms
-            if wall.get('ref'): continue
+            if wall.ref: continue
 
-            p1 = np.array(wall['start']); p2 = np.array(wall['end'])
-            spacing = wall.get('spacing', 0.7)
+            p1 = wall.start; p2 = wall.end
+            spacing = wall.spacing
             vec = p2 - p1; length = np.linalg.norm(vec)
             if length < 1e-4: continue 
             num_atoms = max(1, int(length / spacing) + 1)
-            w_sigma = wall.get('sigma', 1.0); w_eps_sqrt = math.sqrt(wall.get('epsilon', 1.0))
-            anim = wall.get('anim'); is_rotating = False; pivot = np.zeros(2); omega = 0.0
+            w_sigma = wall.sigma; w_eps_sqrt = math.sqrt(wall.epsilon)
+            
+            anim = wall.anim; is_rotating = False; pivot = np.zeros(2); omega = 0.0
             if anim and anim['type'] == 'rotate':
                 is_rotating = True; omega = math.radians(anim['speed'])
-                w_s = np.array(wall['start']); w_e = np.array(wall['end'])
+                w_s = wall.start; w_e = wall.end
                 if anim['pivot'] == 'start': pivot = w_s
                 elif anim['pivot'] == 'end': pivot = w_e
                 else: pivot = (w_s + w_e) * 0.5
+            
             for k in range(num_atoms):
                 if self.count >= self.capacity: self._resize_arrays()
                 t = k / max(1, num_atoms - 1) if num_atoms > 1 else 0.5

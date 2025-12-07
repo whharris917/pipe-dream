@@ -1,0 +1,242 @@
+import math
+import numpy as np
+
+class Constraint:
+    def __init__(self, type_name):
+        self.type = type_name
+        self.temp = False # For temporary drag constraints
+
+    def solve(self, entities):
+        raise NotImplementedError
+
+    def to_dict(self):
+        raise NotImplementedError
+
+class Coincident(Constraint):
+    def __init__(self, entity_idx1, pt_idx1, entity_idx2, pt_idx2):
+        super().__init__('COINCIDENT')
+        self.indices = [(entity_idx1, pt_idx1), (entity_idx2, pt_idx2)]
+
+    def solve(self, entities):
+        # Indices are (entity_index, point_index)
+        try:
+            e1 = entities[self.indices[0][0]]
+            e2 = entities[self.indices[1][0]]
+        except IndexError: return # Entity deleted
+
+        idx1, idx2 = self.indices[0][1], self.indices[1][1]
+        
+        p1 = e1.get_point(idx1)
+        p2 = e2.get_point(idx2)
+        
+        w1 = e1.get_inv_mass(idx1)
+        w2 = e2.get_inv_mass(idx2)
+        w_sum = w1 + w2
+        
+        if w_sum == 0: return
+
+        # Calculate weighted average target
+        avg_x = (p1[0]*w1 + p2[0]*w2) / w_sum
+        avg_y = (p1[1]*w1 + p2[1]*w2) / w_sum
+        target = np.array([avg_x, avg_y])
+        
+        # Snap strictly if one is anchored to avoid drift
+        if w1 == 0: target = p1
+        elif w2 == 0: target = p2
+
+        if w1 > 0: e1.set_point(idx1, target)
+        if w2 > 0: e2.set_point(idx2, target)
+
+    def to_dict(self):
+        return {'type': 'COINCIDENT', 'indices': self.indices}
+
+class Length(Constraint):
+    def __init__(self, entity_idx, target_length):
+        super().__init__('LENGTH')
+        self.indices = [entity_idx]
+        self.value = target_length
+
+    def solve(self, entities):
+        try: e = entities[self.indices[0]]
+        except IndexError: return
+
+        p1 = e.get_point(0)
+        p2 = e.get_point(1)
+        w1 = e.get_inv_mass(0)
+        w2 = e.get_inv_mass(1)
+        
+        if w1 + w2 == 0: return
+        
+        curr_vec = p2 - p1
+        curr_len = np.linalg.norm(curr_vec)
+        if curr_len < 1e-6: return
+        
+        diff = curr_len - self.value
+        correction = (curr_vec / curr_len) * diff
+        
+        if w1 > 0: e.set_point(0, p1 + correction * (w1 / (w1+w2)))
+        if w2 > 0: e.set_point(1, p2 - correction * (w2 / (w1+w2)))
+
+    def to_dict(self):
+        return {'type': 'LENGTH', 'indices': self.indices, 'value': self.value}
+
+class EqualLength(Constraint):
+    def __init__(self, entity_idx1, entity_idx2):
+        super().__init__('EQUAL')
+        self.indices = [entity_idx1, entity_idx2]
+
+    def solve(self, entities):
+        try:
+            e1 = entities[self.indices[0]]
+            e2 = entities[self.indices[1]]
+        except IndexError: return
+
+        l1 = e1.length()
+        l2 = e2.length()
+        
+        # Weighted average based on total inverse mass
+        im1 = e1.get_inv_mass(0) + e1.get_inv_mass(1)
+        im2 = e2.get_inv_mass(0) + e2.get_inv_mass(1)
+        
+        if im1 + im2 == 0: return
+        
+        target = (l1 * im2 + l2 * im1) / (im1 + im2)
+        
+        self._apply_len(e1, target)
+        self._apply_len(e2, target)
+
+    def _apply_len(self, e, target):
+        p1 = e.get_point(0); p2 = e.get_point(1)
+        w1 = e.get_inv_mass(0); w2 = e.get_inv_mass(1)
+        if w1 + w2 == 0: return
+        
+        vec = p2 - p1
+        cur = np.linalg.norm(vec)
+        if cur < 1e-6: return
+        diff = cur - target
+        corr = (vec / cur) * diff
+        
+        if w1 > 0: e.set_point(0, p1 + corr * (w1 / (w1+w2)))
+        if w2 > 0: e.set_point(1, p2 - corr * (w2 / (w1+w2)))
+
+    def to_dict(self):
+        return {'type': 'EQUAL', 'indices': self.indices}
+
+class Angle(Constraint):
+    def __init__(self, type_name, entity_idx1, entity_idx2=None):
+        super().__init__(type_name) # PARALLEL, PERPENDICULAR, HORIZONTAL, VERTICAL
+        if entity_idx2 is not None:
+            self.indices = [entity_idx1, entity_idx2]
+        else:
+            self.indices = [entity_idx1]
+
+    def solve(self, entities):
+        if self.type in ['HORIZONTAL', 'VERTICAL']:
+            try: e = entities[self.indices[0]]
+            except IndexError: return
+            
+            p1 = e.get_point(0); p2 = e.get_point(1)
+            w1 = e.get_inv_mass(0); w2 = e.get_inv_mass(1)
+            if w1 + w2 == 0: return
+            
+            if self.type == 'HORIZONTAL':
+                avg_y = (p1[1] + p2[1]) / 2.0
+                if w1 == 0: avg_y = p1[1]
+                elif w2 == 0: avg_y = p2[1]
+                
+                if w1 > 0: e.set_point(0, [p1[0], avg_y])
+                if w2 > 0: e.set_point(1, [p2[0], avg_y])
+            else:
+                avg_x = (p1[0] + p2[0]) / 2.0
+                if w1 == 0: avg_x = p1[0]
+                elif w2 == 0: avg_x = p2[0]
+                
+                if w1 > 0: e.set_point(0, [avg_x, p1[1]])
+                if w2 > 0: e.set_point(1, [avg_x, p2[1]])
+                
+        elif self.type in ['PARALLEL', 'PERPENDICULAR']:
+            try:
+                e1 = entities[self.indices[0]]
+                e2 = entities[self.indices[1]]
+            except IndexError: return
+            
+            self._solve_dual_angle(e1, e2)
+
+    def _solve_dual_angle(self, e1, e2):
+        v1 = e1.end - e1.start; v2 = e2.end - e2.start
+        a1 = math.atan2(v1[1], v1[0])
+        a2 = math.atan2(v2[1], v2[0])
+        
+        target_a1, target_a2 = a1, a2
+        
+        if self.type == 'PARALLEL':
+            if abs(a1 - a2) > math.pi/2:
+                if a2 < a1: a2 += math.pi 
+                else: a2 -= math.pi
+            avg = (a1 + a2) / 2.0
+            target_a1, target_a2 = avg, avg
+        elif self.type == 'PERPENDICULAR':
+            diff = a2 - a1
+            while diff > math.pi: diff -= 2*math.pi
+            while diff < -math.pi: diff += 2*math.pi
+            goal = math.pi/2 if diff > 0 else -math.pi/2
+            corr = (goal - diff) / 2.0
+            target_a1 = a1 - corr
+            target_a2 = a2 + corr
+
+        fixed1 = (e1.get_inv_mass(0) == 0 and e1.get_inv_mass(1) == 0)
+        fixed2 = (e2.get_inv_mass(0) == 0 and e2.get_inv_mass(1) == 0)
+        
+        if fixed1 and fixed2: return
+        if fixed1: 
+            target_a1 = a1
+            target_a2 = a1 if self.type == 'PARALLEL' else a1 + (math.pi/2 if a2>a1 else -math.pi/2)
+        elif fixed2:
+            target_a2 = a2
+            target_a1 = a2 if self.type == 'PARALLEL' else a2 - (math.pi/2 if a2>a1 else -math.pi/2)
+
+        stiffness = 0.5
+        if not fixed1: self._rotate_entity(e1, target_a1, stiffness)
+        if not fixed2: self._rotate_entity(e2, target_a2, stiffness)
+
+    def _rotate_entity(self, e, target, stiffness):
+        v = e.end - e.start
+        curr_ang = math.atan2(v[1], v[0])
+        diff = target - curr_ang
+        while diff > math.pi: diff -= 2*math.pi
+        while diff < -math.pi: diff += 2*math.pi
+        
+        final = curr_ang + diff * stiffness
+        length = np.linalg.norm(v)
+        
+        if e.get_inv_mass(0) == 0: pivot = e.start
+        elif e.get_inv_mass(1) == 0: pivot = e.end
+        else: pivot = (e.start + e.end) * 0.5
+        
+        c = math.cos(final); s = math.sin(final)
+        
+        if np.array_equal(pivot, e.start):
+            e.set_point(1, e.start + np.array([c*length, s*length]))
+        elif np.array_equal(pivot, e.end):
+            e.set_point(0, e.end - np.array([c*length, s*length]))
+        else:
+            half = length / 2.0
+            e.set_point(0, pivot - np.array([c*half, s*half]))
+            e.set_point(1, pivot + np.array([c*half, s*half]))
+
+    def to_dict(self):
+        return {'type': self.type, 'indices': self.indices}
+
+def create_constraint(data):
+    t = data['type']
+    idx = data['indices']
+    if t == 'COINCIDENT':
+        return Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
+    elif t == 'LENGTH':
+        return Length(idx[0], data['value'])
+    elif t == 'EQUAL':
+        return EqualLength(idx[0], idx[1])
+    elif t in ['HORIZONTAL', 'VERTICAL', 'PARALLEL', 'PERPENDICULAR']:
+        if len(idx) == 2: return Angle(t, idx[0], idx[1])
+        else: return Angle(t, idx[0])
+    return None
