@@ -7,7 +7,7 @@ class Entity:
         self.sigma = 1.0
         self.epsilon = 1.0
         self.spacing = 0.7
-        self.anim = None # {'type': 'rotate', 'speed': x, 'pivot': y, ...}
+        self.anim = None 
 
     def render(self, screen, transform_func, is_selected=False, is_pending=False):
         raise NotImplementedError
@@ -44,23 +44,17 @@ class Point(Entity):
         return self.pos
 
     def set_point(self, index, pos):
-        self.pos[0] = pos[0]
-        self.pos[1] = pos[1]
+        self.pos[0] = pos[0]; self.pos[1] = pos[1]
 
     def get_inv_mass(self, index):
         return 0.0 if self.anchored else 1.0
 
     def move(self, dx, dy, indices=None):
         if not self.anchored:
-            self.pos[0] += dx
-            self.pos[1] += dy
+            self.pos[0] += dx; self.pos[1] += dy
 
     def to_dict(self):
-        return {
-            'type': 'point',
-            'x': float(self.pos[0]), 'y': float(self.pos[1]),
-            'anchored': self.anchored
-        }
+        return {'type': 'point', 'x': float(self.pos[0]), 'y': float(self.pos[1]), 'anchored': self.anchored}
 
     @staticmethod
     def from_dict(data):
@@ -72,7 +66,7 @@ class Line(Entity):
         self.start = np.array(start, dtype=np.float64)
         self.end = np.array(end, dtype=np.float64)
         self.ref = is_ref
-        self.anchored = [False, False] # Start, End
+        self.anchored = [False, False]
 
     def length(self):
         return np.linalg.norm(self.end - self.start)
@@ -81,10 +75,8 @@ class Line(Entity):
         return self.start if index == 0 else self.end
 
     def set_point(self, index, pos):
-        if index == 0:
-            self.start[0] = pos[0]; self.start[1] = pos[1]
-        else:
-            self.end[0] = pos[0]; self.end[1] = pos[1]
+        if index == 0: self.start[:] = pos
+        else: self.end[:] = pos
 
     def get_inv_mass(self, index):
         return 0.0 if self.anchored[index] else 1.0
@@ -99,27 +91,21 @@ class Line(Entity):
     def render(self, screen, transform_func, is_selected=False, is_pending=False):
         s1 = transform_func(self.start[0], self.start[1])
         s2 = transform_func(self.end[0], self.end[1])
-        
         color = (255, 255, 255)
         if is_selected: color = (255, 200, 50)
         elif is_pending: color = (100, 255, 100)
-        
         width = 3 if (is_selected or is_pending) else 1
         
-        if self.ref:
-            self._draw_dashed(screen, color, s1, s2, width)
-        else:
-            pygame.draw.line(screen, color, s1, s2, width)
+        if self.ref: self._draw_dashed(screen, color, s1, s2, width)
+        else: pygame.draw.line(screen, color, s1, s2, width)
 
     def _draw_dashed(self, surf, color, start_pos, end_pos, width=1, dash_length=10):
-        x1, y1 = start_pos
-        x2, y2 = end_pos
+        x1, y1 = start_pos; x2, y2 = end_pos
         length = math.hypot(x2 - x1, y2 - y1)
         if length == 0: return
         dash_amount = int(length / dash_length)
         if dash_amount == 0: return
-        dx = (x2 - x1) / length
-        dy = (y2 - y1) / length
+        dx = (x2 - x1) / length; dy = (y2 - y1) / length
         for i in range(0, dash_amount, 2):
             s = (x1 + dx * i * dash_length, y1 + dy * i * dash_length)
             e = (x1 + dx * (i + 1) * dash_length, y1 + dy * (i + 1) * dash_length)
@@ -127,23 +113,65 @@ class Line(Entity):
 
     def to_dict(self):
         return {
-            'type': 'line',
-            'start': self.start.tolist(),
-            'end': self.end.tolist(),
-            'ref': self.ref,
-            'anchored': self.anchored,
-            'sigma': self.sigma,
-            'epsilon': self.epsilon,
-            'spacing': self.spacing,
-            'anim': self.anim
+            'type': 'line', 'start': self.start.tolist(), 'end': self.end.tolist(),
+            'ref': self.ref, 'anchored': self.anchored,
+            'sigma': self.sigma, 'epsilon': self.epsilon, 'spacing': self.spacing, 'anim': self.anim
         }
 
     @staticmethod
     def from_dict(data):
         l = Line(data['start'], data['end'], data.get('ref', False))
         l.anchored = data.get('anchored', [False, False])
-        l.sigma = data.get('sigma', 1.0)
-        l.epsilon = data.get('epsilon', 1.0)
-        l.spacing = data.get('spacing', 0.7)
-        l.anim = data.get('anim', None)
+        l.sigma = data.get('sigma', 1.0); l.epsilon = data.get('epsilon', 1.0)
+        l.spacing = data.get('spacing', 0.7); l.anim = data.get('anim', None)
         return l
+
+class Circle(Entity):
+    def __init__(self, center, radius):
+        super().__init__()
+        self.center = np.array(center, dtype=np.float64)
+        self.radius = float(radius)
+        self.anchored = [False] # Center only
+
+    def get_point(self, index):
+        return self.center # Index 0 is center
+
+    def set_point(self, index, pos):
+        if index == 0: self.center[:] = pos
+
+    def get_inv_mass(self, index):
+        return 0.0 if self.anchored[0] else 1.0
+
+    def move(self, dx, dy, indices=None):
+        if not self.anchored[0]:
+            self.center[0] += dx; self.center[1] += dy
+
+    def render(self, screen, transform_func, is_selected=False, is_pending=False):
+        sx, sy = transform_func(self.center[0], self.center[1])
+        # Need to calculate radius in screen space. 
+        # Transform (0,0) and (r,0) to measure distance
+        p0 = transform_func(0, 0)
+        pr = transform_func(self.radius, 0)
+        s_radius = abs(pr[0] - p0[0])
+        
+        color = (255, 255, 255)
+        if is_selected: color = (255, 200, 50)
+        elif is_pending: color = (100, 255, 100)
+        width = 3 if (is_selected or is_pending) else 1
+        
+        pygame.draw.circle(screen, color, (int(sx), int(sy)), int(s_radius), width)
+
+    def to_dict(self):
+        return {
+            'type': 'circle', 'center': self.center.tolist(), 'radius': self.radius,
+            'anchored': self.anchored,
+            'sigma': self.sigma, 'epsilon': self.epsilon, 'spacing': self.spacing, 'anim': self.anim
+        }
+
+    @staticmethod
+    def from_dict(data):
+        c = Circle(data['center'], data['radius'])
+        c.anchored = data.get('anchored', [False])
+        c.sigma = data.get('sigma', 1.0); c.epsilon = data.get('epsilon', 1.0)
+        c.spacing = data.get('spacing', 0.7); c.anim = data.get('anim', None)
+        return c
