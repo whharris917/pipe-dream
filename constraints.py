@@ -50,6 +50,55 @@ class Coincident(Constraint):
     def to_dict(self):
         return {'type': 'COINCIDENT', 'indices': self.indices}
 
+class Midpoint(Constraint):
+    def __init__(self, pt_wall_idx, pt_idx, line_wall_idx):
+        super().__init__('MIDPOINT')
+        # indices[0] is the point (wall_idx, pt_idx)
+        # indices[1] is the line (wall_idx)
+        self.indices = [(pt_wall_idx, pt_idx), line_wall_idx]
+
+    def solve(self, entities):
+        try:
+            pt_ent = entities[self.indices[0][0]]
+            line_ent = entities[self.indices[1]]
+        except IndexError: return
+
+        pt_idx = self.indices[0][1]
+        
+        # P is the point, A and B are line endpoints
+        P = pt_ent.get_point(pt_idx)
+        A = line_ent.get_point(0)
+        B = line_ent.get_point(1)
+        
+        w_p = pt_ent.get_inv_mass(pt_idx)
+        w_a = line_ent.get_inv_mass(0)
+        w_b = line_ent.get_inv_mass(1)
+        
+        # Constraint: P - (A+B)/2 = 0
+        # Derived gradients lead to this denominator for PBD
+        denom = w_p + 0.25 * (w_a + w_b)
+        if denom == 0: return
+        
+        # Current midpoint of the line
+        M = (A + B) * 0.5
+        
+        # The gap we need to close
+        diff = M - P
+        
+        lambda_val = diff / denom
+        
+        if w_p > 0:
+            pt_ent.set_point(pt_idx, P + w_p * lambda_val)
+        
+        # Line endpoints move half as much because moving them affects midpoint by 0.5
+        if w_a > 0:
+            line_ent.set_point(0, A - 0.5 * w_a * lambda_val)
+        if w_b > 0:
+            line_ent.set_point(1, B - 0.5 * w_b * lambda_val)
+
+    def to_dict(self):
+        return {'type': 'MIDPOINT', 'indices': self.indices}
+
 class Length(Constraint):
     def __init__(self, entity_idx, target_length):
         super().__init__('LENGTH')
@@ -232,6 +281,8 @@ def create_constraint(data):
     idx = data['indices']
     if t == 'COINCIDENT':
         return Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
+    elif t == 'MIDPOINT':
+        return Midpoint(idx[0][0], idx[0][1], idx[1])
     elif t == 'LENGTH':
         return Length(idx[0], data['value'])
     elif t == 'EQUAL':
