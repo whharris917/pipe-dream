@@ -24,15 +24,22 @@ class Renderer:
         # 3. Draw Geometry (Walls/Shapes)
         self._draw_geometry(app, sim, layout)
         
-        # 4. Draw Editor Specifics (Points, Selection Highlights)
+        # 4. Draw Tool Overlays (Ghost shapes, etc)
+        if app.current_tool:
+            app.current_tool.draw_overlay(self.screen, self)
+        
+        # 5. Draw Editor Specifics (Points, Selection Highlights)
         if app.mode == config.MODE_EDITOR:
             self._draw_editor_overlays(app, sim, layout)
             
-        # 5. Draw Placement Preview (if importing geometry)
+        # 6. Draw Placement Preview (if importing geometry)
         if app.placing_geo_data:
             self._draw_placement_preview(app, sim, layout)
 
-        # 6. Draw UI Panels & Widgets
+        # 7. Draw Snapping Feedback (Green Dot) - NEW
+        self._draw_snap_indicator(app, sim, layout)
+
+        # 8. Draw UI Panels & Widgets
         self.screen.set_clip(None) # Reset clip to draw UI over everything
         self._draw_panels(layout)
         self._draw_stats(app, sim, layout)
@@ -40,14 +47,31 @@ class Renderer:
         for el in ui_list:
             el.draw(self.screen, self.font)
             
-        # 7. Draw Tool Specific UI
+        # 9. Draw Tool Specific UI
         if app.mode == config.MODE_SIM:
             self.screen.blit(self.font.render("World Size:", True, (200, 200, 200)), 
                              (layout['RIGHT_X'] + 15, app.input_world.rect.y + 4))
             app.input_world.draw(self.screen, self.font)
 
-        # 8. Status Message
+        # 10. Status Message
         self._draw_status(app, layout)
+
+    def _draw_snap_indicator(self, app, sim, layout):
+        if app.current_snap_target:
+            # snap_target is (wall_idx, pt_idx)
+            # Or creating new wall snap, stored as coordinate tuple sometimes?
+            # utils.get_snapped_pos returns (x, y, snap_target_tuple)
+            # The tool stores `app.current_snap_target` as the tuple (idx, pt)
+            
+            w_idx, pt_idx = app.current_snap_target
+            if w_idx < len(sim.walls):
+                ent = sim.walls[w_idx]
+                pt_pos = ent.get_point(pt_idx)
+                sx, sy = sim_to_screen(pt_pos[0], pt_pos[1], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
+                
+                # Draw green indicator
+                pygame.draw.circle(self.screen, (0, 255, 0), (sx, sy), 6)
+                pygame.draw.circle(self.screen, (255, 255, 255), (sx, sy), 8, 1)
 
     def _draw_viewport(self, app, sim, layout):
         sim_rect = pygame.Rect(layout['MID_X'], config.TOP_MENU_H, layout['MID_W'], layout['MID_H'])
