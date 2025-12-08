@@ -243,9 +243,13 @@ class Simulation:
                 w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
                 w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
 
-    def apply_constraints(self):
+    def apply_constraints(self, iterations=20):
+        """
+        Solves geometric constraints.
+        iterations: Number of solver passes. Increase for hard constraints or large changes.
+        """
         if self.constraints:
-            for _ in range(20):
+            for _ in range(iterations):
                 for c in self.constraints:
                     c.solve(self.walls)
             self.rebuild_static_atoms()
@@ -253,7 +257,13 @@ class Simulation:
     def add_constraint_object(self, c_obj):
         self.snapshot()
         self.constraints.append(c_obj)
-        self.apply_constraints()
+        # "Nudge" the solver with high iterations to ensure immediate satisfaction
+        # of the new constraint, preventing ghost geometry after large changes.
+        self.apply_constraints(iterations=500)
+
+    def nudge_geometry(self):
+        """Manual high-iteration solve helper."""
+        self.apply_constraints(iterations=500)
 
     def remove_wall(self, index):
         self.snapshot()
