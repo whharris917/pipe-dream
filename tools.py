@@ -216,12 +216,16 @@ class CircleTool(GeometryTool):
             mx, my = event.pos
             if layout['LEFT_X'] < mx < layout['RIGHT_X']:
                 self.sim.snapshot()
-                sx, sy, _ = self.get_snapped(mx, my, layout)
+                sx, sy, snap = self.get_snapped(mx, my, layout)
                 self.sim.add_circle((sx, sy), 0.1)
                 self.circle_idx = len(self.sim.walls) - 1
                 self.created_indices = [self.circle_idx]
                 self.dragging = True
                 self.app.state = InteractionState.DRAGGING_GEOMETRY
+                
+                # Auto-Coincident start
+                if snap and (pygame.key.get_mods() & pygame.KMOD_CTRL):
+                    self.sim.add_constraint_object(Coincident(self.circle_idx, 0, snap[0], snap[1]))
                 return True
 
         elif event.type == pygame.MOUSEMOTION and self.dragging:
