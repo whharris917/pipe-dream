@@ -3,6 +3,7 @@ import numpy as np
 import math
 import config
 import utils
+import time
 from geometry import Line, Circle
 from constraints import Coincident, Length
 from app_state import InteractionState
@@ -58,6 +59,7 @@ class BrushTool(Tool):
         return False
 
 class GeometryTool(Tool):
+    """Base class for tools that create geometry (Line, Rect, etc.)"""
     def __init__(self, app, sim, name):
         super().__init__(app, sim, name)
         self.dragging = False
@@ -72,6 +74,7 @@ class GeometryTool(Tool):
 
     def cancel(self):
         if self.dragging:
+            # Remove walls created during this drag in reverse order
             for _ in self.created_indices:
                 if self.sim.walls:
                     self.sim.walls.pop()
@@ -100,6 +103,7 @@ class LineTool(GeometryTool):
                 self.dragging = True
                 self.app.state = InteractionState.DRAGGING_GEOMETRY
                 
+                # Auto-Coincident start
                 if snap and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                     self.sim.add_constraint_object(Coincident(self.current_wall_idx, 0, snap[0], snap[1]))
                 return True
@@ -108,6 +112,7 @@ class LineTool(GeometryTool):
             mx, my = event.pos
             if self.current_wall_idx < len(self.sim.walls):
                 w = self.sim.walls[self.current_wall_idx]
+                # Snap end point
                 sx, sy, snap = self.get_snapped(mx, my, layout, w.start, self.current_wall_idx)
                 
                 self.sim.update_wall(self.current_wall_idx, w.start, (sx, sy))
@@ -118,14 +123,17 @@ class LineTool(GeometryTool):
             return True
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.dragging:
+            # Finalize
             mx, my = event.pos
             if self.current_wall_idx < len(self.sim.walls):
                 w = self.sim.walls[self.current_wall_idx]
                 sx, sy, snap = self.get_snapped(mx, my, layout, w.start, self.current_wall_idx)
                 
+                # Auto-Coincident end
                 if snap and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                     self.sim.add_constraint_object(Coincident(self.current_wall_idx, 1, snap[0], snap[1]))
                 
+                # Auto-Axis Align (Shift)
                 if pygame.key.get_mods() & pygame.KMOD_SHIFT:
                      dx = abs(w.start[0] - w.end[0])
                      dy = abs(w.start[1] - w.end[1])
@@ -156,6 +164,7 @@ class RectTool(GeometryTool):
                 self.rect_start_pos = (sx, sy)
                 
                 self.base_idx = len(self.sim.walls)
+                # Create 4 lines
                 for _ in range(4): self.sim.add_wall((sx, sy), (sx, sy))
                 self.created_indices = [self.base_idx + i for i in range(4)]
                 self.dragging = True
@@ -167,13 +176,18 @@ class RectTool(GeometryTool):
             cur_x, cur_y = self.get_world_pos(mx, my, layout)
             sx, sy = self.rect_start_pos
             
+            # Top
             self.sim.update_wall(self.base_idx, (sx, sy), (cur_x, sy))
+            # Right
             self.sim.update_wall(self.base_idx+1, (cur_x, sy), (cur_x, cur_y))
+            # Bottom
             self.sim.update_wall(self.base_idx+2, (cur_x, cur_y), (sx, cur_y))
+            # Left
             self.sim.update_wall(self.base_idx+3, (sx, cur_y), (sx, sy))
             return True
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.dragging:
+            # Apply constraints
             base = self.base_idx
             from constraints import Angle, Coincident
             self.sim.add_constraint_object(Coincident(base, 1, base+1, 0))
@@ -246,11 +260,17 @@ class PointTool(GeometryTool):
 class SelectTool(Tool):
     def __init__(self, app, sim):
         super().__init__(app, sim, "Select")
-        self.mode = None 
+        self.mode = None # 'MOVE_WALL', 'MOVE_GROUP', 'EDIT', 'RESIZE_CIRCLE'
         self.target_idx = -1
         self.target_pt = -1
         self.group_indices = []
         self.drag_start_mouse = (0, 0)
+        
+        # Double Click Handling
+        self.last_click_time = 0.0
+        self.last_click_pos = (0, 0)
+        self.DOUBLE_CLICK_TIME = 0.3
+        self.DOUBLE_CLICK_DIST = 5
 
     def handle_event(self, event, layout):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -267,12 +287,8 @@ class SelectTool(Tool):
             if event.button == 1 and self.mode:
                 # Apply constraint if snapped during EDIT move
                 if self.mode == 'EDIT' and self.app.current_snap_target:
-                    # current_snap_target = (wall_idx, pt_idx)
-                    # We want to constrain self.target_idx/pt to current_snap_target
-                    
                     # Prevent self-snap
                     if not (self.target_idx == self.app.current_snap_target[0] and self.target_pt == self.app.current_snap_target[1]):
-                        # Add constraint
                         c = Coincident(
                             self.target_idx, self.target_pt,
                             self.app.current_snap_target[0], self.app.current_snap_target[1]
@@ -299,11 +315,27 @@ class SelectTool(Tool):
         self.app.set_status("Move Cancelled")
 
     def _handle_left_click(self, mx, my, layout):
+        now = time.time()
+        is_double = False
+        dist = math.hypot(mx - self.last_click_pos[0], my - self.last_click_pos[1])
+        if (now - self.last_click_time < self.DOUBLE_CLICK_TIME) and (dist < self.DOUBLE_CLICK_DIST):
+            is_double = True
+        
+        self.last_click_time = now
+        self.last_click_pos = (mx, my)
+
+        # 1. Check Points
         point_map = utils.get_grouped_points(self.sim, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout)
         hit_pt = self._hit_test_points(mx, my, point_map)
         
         if hit_pt:
-            self._select_point(hit_pt)
+            # Fix: Don't deselect if dragging an already selected point
+            if hit_pt in self.app.selected_points:
+                if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                    self._select_point(hit_pt) # Toggle off
+            else:
+                self._select_point(hit_pt)
+
             self.mode = 'EDIT'
             self.target_idx = hit_pt[0]
             self.target_pt = hit_pt[1]
@@ -311,18 +343,49 @@ class SelectTool(Tool):
             self.app.state = InteractionState.DRAGGING_GEOMETRY
             return True
             
+        # 2. Check Walls
         hit_wall = self._hit_test_walls(mx, my, layout)
         if hit_wall != -1:
-            self._select_wall(hit_wall)
-            target_group = utils.get_connected_group(self.sim, hit_wall)
+            w = self.sim.walls[hit_wall]
             
-            if not utils.is_group_anchored(self.sim, list(target_group)):
+            # --- Double Click Logic: Select Connected Group ---
+            if is_double:
+                group = utils.get_connected_group(self.sim, hit_wall)
+                self.app.selected_walls.update(group)
+                self.app.set_status("Group Selected")
+                return True
+
+            # --- Single Click Logic ---
+            # Fix: Do not deselect if dragging an already selected wall
+            if hit_wall in self.app.selected_walls:
+                if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                    self._select_wall(hit_wall) # Toggle off
+            else:
+                self._select_wall(hit_wall)
+            
+            if isinstance(w, Circle):
+                # Clicking circle perimeter -> RESIZE
+                self.mode = 'RESIZE_CIRCLE'
+                self.target_idx = hit_wall
+                self.sim.snapshot()
+                self.drag_start_mouse = (mx, my)
+                self.app.state = InteractionState.DRAGGING_GEOMETRY
+                return True
+            
+            # Line / Move Logic
+            # Only MOVE_GROUP if the clicked wall is part of a selection that covers the group AND unanchored
+            target_group = utils.get_connected_group(self.sim, hit_wall)
+            group_set = set(target_group)
+            
+            # Check if entire group is selected
+            is_fully_selected = group_set.issubset(self.app.selected_walls)
+            
+            if is_fully_selected and not utils.is_group_anchored(self.sim, target_group):
                 self.mode = 'MOVE_GROUP'
-                self.group_indices = list(target_group)
+                self.group_indices = target_group
             else:
                 self.mode = 'MOVE_WALL'
                 self.target_idx = hit_wall
-                w = self.sim.walls[hit_wall]
                 if isinstance(w, Line) and self.app.mode == config.MODE_EDITOR:
                     l = np.linalg.norm(w.end - w.start)
                     c = Length(hit_wall, l); c.temp = True
@@ -334,6 +397,7 @@ class SelectTool(Tool):
             self.app.state = InteractionState.DRAGGING_GEOMETRY
             return True
             
+        # 3. Clicked Empty -> Deselect
         if not (pygame.key.get_mods() & pygame.KMOD_SHIFT):
             self.app.selected_walls.clear()
             self.app.selected_points.clear()
@@ -341,8 +405,10 @@ class SelectTool(Tool):
 
     def _handle_drag(self, mouse_pos, layout):
         mx, my = mouse_pos
+        curr_sim = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout)
         
         if self.mode == 'EDIT':
+            # Dragging Endpoint / Center Point
             if self.target_idx >= len(self.sim.walls): return False
             w = self.sim.walls[self.target_idx]
             if isinstance(w, Line):
@@ -350,21 +416,28 @@ class SelectTool(Tool):
                 dest_x, dest_y, snap = utils.get_snapped_pos(mx, my, self.sim, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout, anchor, self.target_idx)
                 
                 self.app.current_snap_target = snap 
-                
                 if self.target_pt == 0: self.sim.update_wall(self.target_idx, (dest_x, dest_y), w.end)
                 else: self.sim.update_wall(self.target_idx, w.start, (dest_x, dest_y))
             
             elif isinstance(w, Circle):
+                # Moving center
                 dest_x, dest_y, snap = utils.get_snapped_pos(mx, my, self.sim, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout, None, self.target_idx)
                 self.app.current_snap_target = snap
                 self.sim.update_wall(self.target_idx, (dest_x, dest_y), None)
             
-            if self.app.mode == config.MODE_EDITOR:
-                self.sim.apply_constraints()
+            if self.app.mode == config.MODE_EDITOR: self.sim.apply_constraints()
+            return True
+
+        elif self.mode == 'RESIZE_CIRCLE':
+            # Strictly changing radius based on mouse distance from center
+            w = self.sim.walls[self.target_idx]
+            if isinstance(w, Circle):
+                new_r = math.hypot(curr_sim[0] - w.center[0], curr_sim[1] - w.center[1])
+                w.radius = max(0.1, new_r)
+                self.sim.rebuild_static_atoms()
             return True
 
         elif self.mode in ['MOVE_WALL', 'MOVE_GROUP']:
-            curr_sim = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout)
             prev_sim = utils.screen_to_sim(self.drag_start_mouse[0], self.drag_start_mouse[1], self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout)
             dx = curr_sim[0] - prev_sim[0]
             dy = curr_sim[1] - prev_sim[1]
