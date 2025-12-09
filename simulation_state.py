@@ -256,6 +256,25 @@ class Simulation:
 
     def add_constraint_object(self, c_obj):
         self.snapshot()
+        
+        # Conflict Resolution:
+        # If adding an Angle constraint (Parallel/Perpendicular/Horizontal/Vertical),
+        # remove any existing Angle constraint that applies to the exact same set of entities.
+        angle_types = ['PARALLEL', 'PERPENDICULAR', 'HORIZONTAL', 'VERTICAL']
+        if hasattr(c_obj, 'type') and c_obj.type in angle_types:
+            new_indices = set(c_obj.indices) if isinstance(c_obj.indices, (list, tuple)) else {c_obj.indices}
+            
+            # Filter loop
+            non_conflicting = []
+            for c in self.constraints:
+                is_angle = getattr(c, 'type', '') in angle_types
+                if is_angle:
+                    old_indices = set(c.indices) if isinstance(c.indices, (list, tuple)) else {c.indices}
+                    if old_indices == new_indices:
+                        continue # Skip (remove) the conflicting constraint
+                non_conflicting.append(c)
+            self.constraints = non_conflicting
+
         self.constraints.append(c_obj)
         # "Nudge" the solver with high iterations to ensure immediate satisfaction
         # of the new constraint, preventing ghost geometry after large changes.
@@ -377,7 +396,9 @@ class Simulation:
         
         for w in self.walls:
             if isinstance(w, Line):
+                # 2. Ignored in physics
                 if w.ref: continue
+                
                 p1 = w.start; p2 = w.end; spacing = w.spacing
                 vec = p2 - p1; length = np.linalg.norm(vec)
                 if length < 1e-4: continue 

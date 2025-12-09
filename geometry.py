@@ -38,6 +38,11 @@ class Point(Entity):
         color = (255, 255, 255)
         if is_selected: color = (0, 255, 255)
         elif is_pending: color = (100, 255, 100)
+        
+        # Anchor visual feedback
+        if self.anchored:
+            pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 6)
+        
         pygame.draw.circle(screen, color, (int(sx), int(sy)), 4)
 
     def get_point(self, index):
@@ -66,6 +71,7 @@ class Line(Entity):
         self.start = np.array(start, dtype=np.float64)
         self.end = np.array(end, dtype=np.float64)
         self.ref = is_ref
+        # Anchors for start(0) and end(1) points
         self.anchored = [False, False]
 
     def length(self):
@@ -79,6 +85,8 @@ class Line(Entity):
         else: self.end[:] = pos
 
     def get_inv_mass(self, index):
+        # Treated exactly like ordinary lines in constraints
+        # Only infinite mass (0.0) if strictly anchored by the user.
         return 0.0 if self.anchored[index] else 1.0
 
     def move(self, dx, dy, indices=None):
@@ -91,13 +99,22 @@ class Line(Entity):
     def render(self, screen, transform_func, is_selected=False, is_pending=False):
         s1 = transform_func(self.start[0], self.start[1])
         s2 = transform_func(self.end[0], self.end[1])
+        
         color = (255, 255, 255)
         if is_selected: color = (255, 200, 50)
         elif is_pending: color = (100, 255, 100)
+        
         width = 3 if (is_selected or is_pending) else 1
         
-        if self.ref: self._draw_dashed(screen, color, s1, s2, width)
-        else: pygame.draw.line(screen, color, s1, s2, width)
+        # 1. Render Dotted if Reference Line
+        if self.ref: 
+            self._draw_dashed(screen, color, s1, s2, width)
+        else: 
+            pygame.draw.line(screen, color, s1, s2, width)
+
+        # Draw Anchor dots
+        if self.anchored[0]: pygame.draw.circle(screen, (255, 50, 50), s1, 3)
+        if self.anchored[1]: pygame.draw.circle(screen, (255, 50, 50), s2, 3)
 
     def _draw_dashed(self, surf, color, start_pos, end_pos, width=1, dash_length=10):
         x1, y1 = start_pos; x2, y2 = end_pos
@@ -158,6 +175,9 @@ class Circle(Entity):
         if is_selected: color = (255, 200, 50)
         elif is_pending: color = (100, 255, 100)
         width = 3 if (is_selected or is_pending) else 1
+        
+        # Anchor feedback
+        if self.anchored[0]: pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 4)
         
         pygame.draw.circle(screen, color, (int(sx), int(sy)), int(s_radius), width)
 

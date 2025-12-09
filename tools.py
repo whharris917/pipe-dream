@@ -391,10 +391,17 @@ class SelectTool(Tool):
                 return True
 
             # --- Single Click Logic ---
+            # Don't deselect if dragging already selected wall
             if hit_wall in self.app.selected_walls:
                 if pygame.key.get_mods() & pygame.KMOD_SHIFT:
                     self._select_wall(hit_wall) # Toggle off
             else:
+                # If we aren't adding to selection (Shift), verify we aren't just clicking on a single item 
+                # in a group to drag the whole group.
+                if not (pygame.key.get_mods() & pygame.KMOD_SHIFT):
+                     # Standard behavior: clicking an unselected item clears others
+                     self.app.selected_walls.clear()
+                     self.app.selected_points.clear()
                 self._select_wall(hit_wall)
             
             if isinstance(w, Circle):
@@ -407,16 +414,16 @@ class SelectTool(Tool):
                 return True
             
             # Line / Move Logic
-            # Only MOVE_GROUP if fully selected
-            target_group = utils.get_connected_group(self.sim, hit_wall)
-            group_set = set(target_group)
+            # Check if clicked wall is part of current selection group
+            is_part_of_selection = hit_wall in self.app.selected_walls
             
-            is_fully_selected = group_set.issubset(self.app.selected_walls)
-            
-            if is_fully_selected and not utils.is_group_anchored(self.sim, target_group):
+            # If part of selection, we move the whole selection
+            if is_part_of_selection and len(self.app.selected_walls) > 1:
+                # Move Group
                 self.mode = 'MOVE_GROUP'
-                self.group_indices = target_group
+                self.group_indices = list(self.app.selected_walls)
             else:
+                # Single Wall Move
                 self.mode = 'MOVE_WALL'
                 self.target_idx = hit_wall
                 if isinstance(w, Line) and self.app.mode == config.MODE_EDITOR:
@@ -452,6 +459,7 @@ class SelectTool(Tool):
                 else: self.sim.update_wall(self.target_idx, w.start, (dest_x, dest_y))
             
             elif isinstance(w, Circle):
+                # Moving center
                 dest_x, dest_y, snap = utils.get_snapped_pos(mx, my, self.sim, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout, None, self.target_idx)
                 self.app.current_snap_target = snap
                 self.sim.update_wall(self.target_idx, (dest_x, dest_y), None)
