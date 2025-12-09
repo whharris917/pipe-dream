@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from geometry import Line, Circle
 
 class Constraint:
     def __init__(self, type_name):
@@ -50,51 +51,85 @@ class Coincident(Constraint):
             if w1 > 0: e1.set_point(idx1, target)
             if w2 > 0: e2.set_point(idx2, target)
 
-        # --- Case 2: Point-Line Coincidence (STRICT: On Segment) ---
+        # --- Case 2: Point-Entity Coincidence ---
         else:
             if idx1 == -1:
-                line_ent, pt_ent = e1, e2
+                target_ent, pt_ent = e1, e2
                 pt_idx_local = idx2
             else:
-                line_ent, pt_ent = e2, e1
+                target_ent, pt_ent = e2, e1
                 pt_idx_local = idx1
 
-            P = pt_ent.get_point(pt_idx_local)
-            A = line_ent.get_point(0)
-            B = line_ent.get_point(1)
-            
-            u = B - A
-            len_sq = np.dot(u, u)
-            
-            if len_sq < 1e-8: return # Degenerate line ignored
+            # --- Subcase 2A: Point on Circle Perimeter ---
+            if isinstance(target_ent, Circle):
+                P = pt_ent.get_point(pt_idx_local)
+                C = target_ent.center
+                R = target_ent.radius
+                
+                # Vector from Center to Point
+                diff = P - C
+                dist = np.linalg.norm(diff)
+                
+                # Handle center overlap (singularity)
+                if dist < 1e-6:
+                    diff = np.array([1.0, 0.0])
+                    dist = 1.0
+                
+                # We want dist to be R. Error = current - target
+                error = dist - R
+                dir_vec = diff / dist
+                
+                w_p = pt_ent.get_inv_mass(pt_idx_local)
+                w_c = target_ent.get_inv_mass(0) # Circle center mass
+                w_sum = w_p + w_c
+                
+                if w_sum == 0: return
+                
+                correction = dir_vec * error
+                
+                # Move Point P towards circle surface (opposite to error direction relative to P)
+                if w_p > 0:
+                    pt_ent.set_point(pt_idx_local, P - correction * (w_p / w_sum))
+                
+                # Move Circle Center C towards P to satisfy radius (same direction as error vector)
+                if w_c > 0:
+                    target_ent.set_point(0, C + correction * (w_c / w_sum))
 
-            v = P - A
-            t = np.dot(v, u) / len_sq
-            
-            # CLAMP t to [0, 1] for strict coincidence on segment
-            t_clamped = max(0.0, min(1.0, t))
-            
-            S = A + t_clamped * u
-            err = S - P
-            
-            w_p = pt_ent.get_inv_mass(pt_idx_local)
-            w_a = line_ent.get_inv_mass(0)
-            w_b = line_ent.get_inv_mass(1)
-            
-            # Effective mass at point S on the line
-            W = w_p + w_a * (1.0 - t_clamped)**2 + w_b * t_clamped**2
-            
-            if W == 0: return
-            lambda_val = 1.0 / W
-            
-            if w_p > 0:
-                pt_ent.set_point(pt_idx_local, P + w_p * lambda_val * err)
-            
-            if w_a > 0:
-                line_ent.set_point(0, A - w_a * (1.0 - t_clamped) * lambda_val * err)
-            
-            if w_b > 0:
-                line_ent.set_point(1, B - w_b * t_clamped * lambda_val * err)
+            # --- Subcase 2B: Point on Line Segment ---
+            elif isinstance(target_ent, Line):
+                P = pt_ent.get_point(pt_idx_local)
+                A = target_ent.get_point(0)
+                B = target_ent.get_point(1)
+                
+                u = B - A
+                len_sq = np.dot(u, u)
+                
+                if len_sq < 1e-8: return 
+
+                v = P - A
+                t = np.dot(v, u) / len_sq
+                
+                # CLAMP t to [0, 1] for strict coincidence on segment
+                t_clamped = max(0.0, min(1.0, t))
+                
+                S = A + t_clamped * u
+                err = S - P
+                
+                w_p = pt_ent.get_inv_mass(pt_idx_local)
+                w_a = target_ent.get_inv_mass(0)
+                w_b = target_ent.get_inv_mass(1)
+                
+                W = w_p + w_a * (1.0 - t_clamped)**2 + w_b * t_clamped**2
+                
+                if W == 0: return
+                lambda_val = 1.0 / W
+                
+                if w_p > 0:
+                    pt_ent.set_point(pt_idx_local, P + w_p * lambda_val * err)
+                if w_a > 0:
+                    target_ent.set_point(0, A - w_a * (1.0 - t_clamped) * lambda_val * err)
+                if w_b > 0:
+                    target_ent.set_point(1, B - w_b * t_clamped * lambda_val * err)
 
     def to_dict(self):
         return {'type': 'COINCIDENT', 'indices': self.indices}
