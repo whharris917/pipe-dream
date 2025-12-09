@@ -137,13 +137,13 @@ class Renderer:
             idx = group_counts[key]
             group_counts[key] += 1
             
-            # Stack vertically around center
+            # Stack HORIZONTALLY around center
             total_in_group = len(grouped[key])
-            spacing = 28
-            start_y = -((total_in_group - 1) * spacing) / 2.0
-            final_offset_y = start_y + idx * spacing
+            spacing = 30 # Slightly wider for horizontal text
+            start_x = -((total_in_group - 1) * spacing) / 2.0
+            final_offset_x = start_x + idx * spacing
             
-            c.render(self.screen, transform, sim.walls, self.font, offset=(0, final_offset_y))
+            c.render(self.screen, transform, sim.walls, self.font, offset=(final_offset_x, 0))
 
     def _draw_editor_overlays(self, app, sim, layout):
         point_map = get_grouped_points(sim, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
