@@ -81,19 +81,27 @@ class Coincident(Constraint):
                 
                 w_p = pt_ent.get_inv_mass(pt_idx_local)
                 w_c = target_ent.get_inv_mass(0) # Circle center mass
-                w_sum = w_p + w_c
+                w_r = 1.0 # Radius inverse mass (allow resizing)
+                
+                w_sum = w_p + w_c + w_r
                 
                 if w_sum == 0: return
                 
-                correction = dir_vec * error
+                # Scalar correction amount
+                lambda_val = error / w_sum
                 
                 # Move Point P towards circle surface (opposite to error direction relative to P)
                 if w_p > 0:
-                    pt_ent.set_point(pt_idx_local, P - correction * (w_p / w_sum))
+                    pt_ent.set_point(pt_idx_local, P - dir_vec * (w_p * lambda_val))
                 
                 # Move Circle Center C towards P to satisfy radius (same direction as error vector)
                 if w_c > 0:
-                    target_ent.set_point(0, C + correction * (w_c / w_sum))
+                    target_ent.set_point(0, C + dir_vec * (w_c * lambda_val))
+                    
+                # Adjust Radius
+                # If error > 0 (dist > R), R should increase.
+                if w_r > 0:
+                    target_ent.radius += w_r * lambda_val
 
             # --- Subcase 2B: Point on Line Segment ---
             elif isinstance(target_ent, Line):
