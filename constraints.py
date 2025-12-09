@@ -15,8 +15,12 @@ class Constraint:
     def to_dict(self):
         raise NotImplementedError
 
-    def render(self, screen, transform_func, entities, font):
-        # Default empty render
+    def get_visual_center(self, transform_func, entities):
+        """Returns the preferred (x, y) screen coordinates for the icon."""
+        return (0, 0)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        """Draws the constraint. Offset is applied to the icon position for stacking."""
         pass
 
     def hit_test(self, mx, my):
@@ -122,28 +126,31 @@ class Coincident(Constraint):
                 if w_a > 0: target_ent.set_point(0, A - w_a * (1.0 - t_clamped) * lambda_val * err)
                 if w_b > 0: target_ent.set_point(1, B - w_b * t_clamped * lambda_val * err)
 
-    def render(self, screen, transform_func, entities, font):
-        # We only render Point-Entity coincidence clearly. 
-        # Pt-Pt is usually implicit by geometry.
+    def get_visual_center(self, transform_func, entities):
+        idx1, idx2 = self.indices[0][1], self.indices[1][1]
+        if idx1 == -1 or idx2 == -1:
+            ent_idx = self.indices[0][0] if idx1 == -1 else self.indices[1][0]
+            pt_ref = self.indices[1] if idx1 == -1 else self.indices[0]
+            c_pos = self._get_entity_center_screen(ent_idx, entities, transform_func)
+            p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
+            return ((c_pos[0] + p_pos[0]) // 2, (c_pos[1] + p_pos[1]) // 2)
+        else:
+            p_pos = self._get_point_screen(self.indices[0][0], idx1, entities, transform_func)
+            return (p_pos[0] + 15, p_pos[1] - 15)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
         idx1, idx2 = self.indices[0][1], self.indices[1][1]
         
         if idx1 == -1 or idx2 == -1:
-            # Pt-Entity
+            # Draw connector for Pt-Entity
             ent_idx = self.indices[0][0] if idx1 == -1 else self.indices[1][0]
             pt_ref = self.indices[1] if idx1 == -1 else self.indices[0]
-            
             c_pos = self._get_entity_center_screen(ent_idx, entities, transform_func)
             p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
-            
-            mid_x = (c_pos[0] + p_pos[0]) // 2
-            mid_y = (c_pos[1] + p_pos[1]) // 2
-            
             self._draw_connector(screen, c_pos, p_pos)
-            self._draw_icon(screen, mid_x, mid_y, "C", font, color=(100, 255, 255))
-        else:
-            # Pt-Pt: Draw small icon near the point
-            p_pos = self._get_point_screen(self.indices[0][0], idx1, entities, transform_func)
-            self._draw_icon(screen, p_pos[0] + 15, p_pos[1] - 15, "C", font, color=(100, 255, 255))
+            
+        self._draw_icon(screen, cx + offset[0], cy + offset[1], "C", font, color=(100, 255, 255))
 
     def to_dict(self):
         return {'type': 'COINCIDENT', 'indices': self.indices}
@@ -175,18 +182,24 @@ class Collinear(Constraint):
         if w_a > 0: line_ent.set_point(0, A - w_a * (1.0 - t) * lambda_val * err)
         if w_b > 0: line_ent.set_point(1, B - w_b * t * lambda_val * err)
 
-    def render(self, screen, transform_func, entities, font):
+    def get_visual_center(self, transform_func, entities):
         pt_ref = self.indices[0]
         line_idx = self.indices[1]
+        p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
+        l_pos = self._get_entity_center_screen(line_idx, entities, transform_func)
+        return ((p_pos[0] + l_pos[0]) // 2, (p_pos[1] + l_pos[1]) // 2)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
         
+        # Re-get positions for connector (not affected by offset)
+        pt_ref = self.indices[0]
+        line_idx = self.indices[1]
         p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
         l_pos = self._get_entity_center_screen(line_idx, entities, transform_func)
         
-        mid_x = (p_pos[0] + l_pos[0]) // 2
-        mid_y = (p_pos[1] + l_pos[1]) // 2
-        
         self._draw_connector(screen, p_pos, l_pos, (100, 150, 100))
-        self._draw_icon(screen, mid_x, mid_y, "CL", font, color=(150, 255, 150))
+        self._draw_icon(screen, cx + offset[0], cy + offset[1], "CL", font, color=(150, 255, 150))
 
     def to_dict(self):
         return {'type': 'COLLINEAR', 'indices': self.indices}
@@ -214,18 +227,23 @@ class Midpoint(Constraint):
         if w_a > 0: line_ent.set_point(0, A - 0.5 * w_a * lambda_val)
         if w_b > 0: line_ent.set_point(1, B - 0.5 * w_b * lambda_val)
 
-    def render(self, screen, transform_func, entities, font):
+    def get_visual_center(self, transform_func, entities):
         pt_ref = self.indices[0]
         line_idx = self.indices[1]
+        p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
+        l_pos = self._get_entity_center_screen(line_idx, entities, transform_func)
+        return ((p_pos[0] + l_pos[0]) // 2, (p_pos[1] + l_pos[1]) // 2)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
         
+        pt_ref = self.indices[0]
+        line_idx = self.indices[1]
         p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
         l_pos = self._get_entity_center_screen(line_idx, entities, transform_func)
         
-        mid_x = (p_pos[0] + l_pos[0]) // 2
-        mid_y = (p_pos[1] + l_pos[1]) // 2
-        
         self._draw_connector(screen, p_pos, l_pos, (100, 100, 150))
-        self._draw_icon(screen, mid_x, mid_y, "M", font, color=(150, 150, 255))
+        self._draw_icon(screen, cx + offset[0], cy + offset[1], "M", font, color=(150, 150, 255))
 
     def to_dict(self):
         return {'type': 'MIDPOINT', 'indices': self.indices}
@@ -248,10 +266,13 @@ class Length(Constraint):
         if w1 > 0: e.set_point(0, p1 + correction * (w1 / (w1+w2)))
         if w2 > 0: e.set_point(1, p2 - correction * (w2 / (w1+w2)))
 
-    def render(self, screen, transform_func, entities, font):
+    def get_visual_center(self, transform_func, entities):
         c_pos = self._get_entity_center_screen(self.indices[0], entities, transform_func)
-        # Offset slightly
-        self._draw_icon(screen, c_pos[0], c_pos[1] + 15, f"{self.value:.1f}", font, color=(255, 200, 100))
+        return (c_pos[0], c_pos[1] + 15)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
+        self._draw_icon(screen, cx + offset[0], cy + offset[1], f"{self.value:.1f}", font, color=(255, 200, 100))
 
     def to_dict(self):
         return {'type': 'LENGTH', 'indices': self.indices, 'value': self.value}
@@ -280,12 +301,19 @@ class EqualLength(Constraint):
         if w1 > 0: e.set_point(0, p1 + corr * (w1 / (w1+w2)))
         if w2 > 0: e.set_point(1, p2 - corr * (w2 / (w1+w2)))
 
-    def render(self, screen, transform_func, entities, font):
+    def get_visual_center(self, transform_func, entities):
         c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
         c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
-        mx, my = (c1[0]+c2[0])//2, (c1[1]+c2[1])//2
+        return ((c1[0]+c2[0])//2, (c1[1]+c2[1])//2)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
+        
+        c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+        c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
+        
         self._draw_connector(screen, c1, c2)
-        self._draw_icon(screen, mx, my, "=", font)
+        self._draw_icon(screen, cx + offset[0], cy + offset[1], "=", font)
 
     def to_dict(self):
         return {'type': 'EQUAL', 'indices': self.indices}
@@ -369,18 +397,29 @@ class Angle(Constraint):
             e.set_point(0, pivot - np.array([c*half, s*half]))
             e.set_point(1, pivot + np.array([c*half, s*half]))
 
-    def render(self, screen, transform_func, entities, font):
+    def get_visual_center(self, transform_func, entities):
         if self.type in ['HORIZONTAL', 'VERTICAL']:
             c_pos = self._get_entity_center_screen(self.indices[0], entities, transform_func)
-            sym = "H" if self.type == 'HORIZONTAL' else "V"
-            self._draw_icon(screen, c_pos[0], c_pos[1] - 15, sym, font)
+            return (c_pos[0], c_pos[1] - 15)
         else:
             c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
             c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
-            mx, my = (c1[0]+c2[0])//2, (c1[1]+c2[1])//2
+            return ((c1[0]+c2[0])//2, (c1[1]+c2[1])//2)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
+        
+        if self.type in ['HORIZONTAL', 'VERTICAL']:
+            sym = "H" if self.type == 'HORIZONTAL' else "V"
+            self._draw_icon(screen, cx + offset[0], cy + offset[1], sym, font)
+        else:
+            c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+            c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
+            
             self._draw_connector(screen, c1, c2)
+            
             sym = "//" if self.type == 'PARALLEL' else "T"
-            self._draw_icon(screen, mx, my, sym, font)
+            self._draw_icon(screen, cx + offset[0], cy + offset[1], sym, font)
 
     def to_dict(self):
         return {'type': self.type, 'indices': self.indices}

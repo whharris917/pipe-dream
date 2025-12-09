@@ -1,4 +1,5 @@
 import pygame
+import math
 import config
 from utils import sim_to_screen, screen_to_sim, get_grouped_points, calculate_current_temp
 from geometry import Line, Circle
@@ -105,8 +106,44 @@ class Renderer:
 
     def _draw_constraints(self, app, sim, layout):
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
+        
+        # Spatial grouping to prevent overlaps
+        # Map of (x,y) -> list of constraints
+        grouped = {}
+        threshold = 20 # pixels
+        
+        # 1. Calculate positions and group
+        layout_data = []
         for c in sim.constraints:
-            c.render(self.screen, transform, sim.walls, self.font)
+            cx, cy = c.get_visual_center(transform, sim.walls)
+            # Find close group
+            found_group = None
+            for key in grouped:
+                if math.hypot(key[0]-cx, key[1]-cy) < threshold:
+                    found_group = key
+                    break
+            
+            if found_group:
+                grouped[found_group].append(c)
+                layout_data.append((c, found_group))
+            else:
+                grouped[(cx, cy)] = [c]
+                layout_data.append((c, (cx, cy)))
+
+        # 2. Draw with offsets
+        group_counts = {k: 0 for k in grouped}
+        
+        for c, key in layout_data:
+            idx = group_counts[key]
+            group_counts[key] += 1
+            
+            # Stack vertically around center
+            total_in_group = len(grouped[key])
+            spacing = 28
+            start_y = -((total_in_group - 1) * spacing) / 2.0
+            final_offset_y = start_y + idx * spacing
+            
+            c.render(self.screen, transform, sim.walls, self.font, offset=(0, final_offset_y))
 
     def _draw_editor_overlays(self, app, sim, layout):
         point_map = get_grouped_points(sim, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
