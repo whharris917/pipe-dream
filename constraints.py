@@ -1,11 +1,13 @@
 import math
 import numpy as np
+import pygame
 from geometry import Line, Circle
 
 class Constraint:
     def __init__(self, type_name):
         self.type = type_name
         self.temp = False # For temporary drag constraints
+        self.icon_rect = None # For hit testing
 
     def solve(self, entities):
         raise NotImplementedError
@@ -13,131 +15,135 @@ class Constraint:
     def to_dict(self):
         raise NotImplementedError
 
+    def render(self, screen, transform_func, entities, font):
+        # Default empty render
+        pass
+
+    def hit_test(self, mx, my):
+        if self.icon_rect:
+            return self.icon_rect.collidepoint(mx, my)
+        return False
+
+    def _draw_icon(self, screen, cx, cy, symbol, font, color=(255, 255, 255), bg_color=(50, 50, 50)):
+        # Draw a small box with a symbol
+        text = font.render(symbol, True, color)
+        w, h = text.get_width() + 8, text.get_height() + 4
+        self.icon_rect = pygame.Rect(cx - w//2, cy - h//2, w, h)
+        
+        # Shadow
+        s_rect = self.icon_rect.copy()
+        s_rect.x += 2; s_rect.y += 2
+        pygame.draw.rect(screen, (0,0,0), s_rect, border_radius=4)
+        
+        # Main Box
+        pygame.draw.rect(screen, bg_color, self.icon_rect, border_radius=4)
+        pygame.draw.rect(screen, (100, 100, 100), self.icon_rect, 1, border_radius=4)
+        
+        # Text
+        screen.blit(text, (self.icon_rect.x + 4, self.icon_rect.y + 2))
+
+    def _draw_connector(self, screen, p1, p2, color=(100, 100, 100)):
+        pygame.draw.line(screen, color, p1, p2, 1)
+
+    def _get_entity_center_screen(self, entity_idx, entities, transform_func):
+        if entity_idx < 0 or entity_idx >= len(entities): return (0,0)
+        e = entities[entity_idx]
+        if isinstance(e, Line):
+            p1 = transform_func(e.start[0], e.start[1])
+            p2 = transform_func(e.end[0], e.end[1])
+            return ((p1[0]+p2[0])//2, (p1[1]+p2[1])//2)
+        elif isinstance(e, Circle):
+            return transform_func(e.center[0], e.center[1])
+        return (0,0)
+
+    def _get_point_screen(self, ent_idx, pt_idx, entities, transform_func):
+        if ent_idx < 0 or ent_idx >= len(entities): return (0,0)
+        e = entities[ent_idx]
+        pt = e.get_point(pt_idx)
+        return transform_func(pt[0], pt[1])
+
 class Coincident(Constraint):
     def __init__(self, entity_idx1, pt_idx1, entity_idx2, pt_idx2):
         super().__init__('COINCIDENT')
-        # indices are [(entity_idx, point_idx), (entity_idx, point_idx)]
-        # If point_idx is -1, it indicates the constraint applies to the whole entity (e.g. the line itself)
         self.indices = [(entity_idx1, pt_idx1), (entity_idx2, pt_idx2)]
 
     def solve(self, entities):
         try:
             e1 = entities[self.indices[0][0]]
             e2 = entities[self.indices[1][0]]
-        except IndexError: return # Entity deleted
+        except IndexError: return
 
         idx1, idx2 = self.indices[0][1], self.indices[1][1]
 
-        # --- Case 1: Point-Point Coincidence ---
+        # Case 1: Point-Point
         if idx1 != -1 and idx2 != -1:
-            p1 = e1.get_point(idx1)
-            p2 = e2.get_point(idx2)
-            
-            w1 = e1.get_inv_mass(idx1)
-            w2 = e2.get_inv_mass(idx2)
+            p1 = e1.get_point(idx1); p2 = e2.get_point(idx2)
+            w1 = e1.get_inv_mass(idx1); w2 = e2.get_inv_mass(idx2)
             w_sum = w1 + w2
-            
             if w_sum == 0: return
-
-            # Weighted Average
             avg_x = (p1[0]*w1 + p2[0]*w2) / w_sum
             avg_y = (p1[1]*w1 + p2[1]*w2) / w_sum
             target = np.array([avg_x, avg_y])
-            
-            # Snap strictly if one is anchored to avoid drift
             if w1 == 0: target = p1
             elif w2 == 0: target = p2
-
             if w1 > 0: e1.set_point(idx1, target)
             if w2 > 0: e2.set_point(idx2, target)
 
-        # --- Case 2: Point-Entity Coincidence ---
+        # Case 2: Point-Entity
         else:
-            if idx1 == -1:
-                target_ent, pt_ent = e1, e2
-                pt_idx_local = idx2
-            else:
-                target_ent, pt_ent = e2, e1
-                pt_idx_local = idx1
+            if idx1 == -1: target_ent, pt_ent = e1, e2; pt_idx_local = idx2
+            else: target_ent, pt_ent = e2, e1; pt_idx_local = idx1
 
-            # --- Subcase 2A: Point on Circle Perimeter ---
             if isinstance(target_ent, Circle):
-                P = pt_ent.get_point(pt_idx_local)
-                C = target_ent.center
-                R = target_ent.radius
-                
-                # Vector from Center to Point
-                diff = P - C
-                dist = np.linalg.norm(diff)
-                
-                # Handle center overlap (singularity)
-                if dist < 1e-6:
-                    diff = np.array([1.0, 0.0])
-                    dist = 1.0
-                
-                # We want dist to be R. Error = current - target
-                error = dist - R
-                dir_vec = diff / dist
-                
-                w_p = pt_ent.get_inv_mass(pt_idx_local)
-                w_c = target_ent.get_inv_mass(0) # Circle center mass
-                w_r = 1.0 # Radius inverse mass (allow resizing)
-                
+                P = pt_ent.get_point(pt_idx_local); C = target_ent.center; R = target_ent.radius
+                diff = P - C; dist = np.linalg.norm(diff)
+                if dist < 1e-6: diff = np.array([1.0, 0.0]); dist = 1.0
+                error = dist - R; dir_vec = diff / dist
+                w_p = pt_ent.get_inv_mass(pt_idx_local); w_c = target_ent.get_inv_mass(0); w_r = 1.0
                 w_sum = w_p + w_c + w_r
-                
                 if w_sum == 0: return
-                
-                # Scalar correction amount
                 lambda_val = error / w_sum
-                
-                # Move Point P towards circle surface (opposite to error direction relative to P)
-                if w_p > 0:
-                    pt_ent.set_point(pt_idx_local, P - dir_vec * (w_p * lambda_val))
-                
-                # Move Circle Center C towards P to satisfy radius (same direction as error vector)
-                if w_c > 0:
-                    target_ent.set_point(0, C + dir_vec * (w_c * lambda_val))
-                    
-                # Adjust Radius
-                # If error > 0 (dist > R), R should increase.
-                if w_r > 0:
-                    target_ent.radius += w_r * lambda_val
+                if w_p > 0: pt_ent.set_point(pt_idx_local, P - dir_vec * (w_p * lambda_val))
+                if w_c > 0: target_ent.set_point(0, C + dir_vec * (w_c * lambda_val))
+                if w_r > 0: target_ent.radius += w_r * lambda_val
 
-            # --- Subcase 2B: Point on Line Segment ---
             elif isinstance(target_ent, Line):
-                P = pt_ent.get_point(pt_idx_local)
-                A = target_ent.get_point(0)
-                B = target_ent.get_point(1)
-                
-                u = B - A
-                len_sq = np.dot(u, u)
-                
+                P = pt_ent.get_point(pt_idx_local); A = target_ent.get_point(0); B = target_ent.get_point(1)
+                u = B - A; len_sq = np.dot(u, u)
                 if len_sq < 1e-8: return 
-
-                v = P - A
-                t = np.dot(v, u) / len_sq
-                
-                # CLAMP t to [0, 1] for strict coincidence on segment
+                v = P - A; t = np.dot(v, u) / len_sq
                 t_clamped = max(0.0, min(1.0, t))
-                
-                S = A + t_clamped * u
-                err = S - P
-                
-                w_p = pt_ent.get_inv_mass(pt_idx_local)
-                w_a = target_ent.get_inv_mass(0)
-                w_b = target_ent.get_inv_mass(1)
-                
+                S = A + t_clamped * u; err = S - P
+                w_p = pt_ent.get_inv_mass(pt_idx_local); w_a = target_ent.get_inv_mass(0); w_b = target_ent.get_inv_mass(1)
                 W = w_p + w_a * (1.0 - t_clamped)**2 + w_b * t_clamped**2
-                
                 if W == 0: return
                 lambda_val = 1.0 / W
-                
-                if w_p > 0:
-                    pt_ent.set_point(pt_idx_local, P + w_p * lambda_val * err)
-                if w_a > 0:
-                    target_ent.set_point(0, A - w_a * (1.0 - t_clamped) * lambda_val * err)
-                if w_b > 0:
-                    target_ent.set_point(1, B - w_b * t_clamped * lambda_val * err)
+                if w_p > 0: pt_ent.set_point(pt_idx_local, P + w_p * lambda_val * err)
+                if w_a > 0: target_ent.set_point(0, A - w_a * (1.0 - t_clamped) * lambda_val * err)
+                if w_b > 0: target_ent.set_point(1, B - w_b * t_clamped * lambda_val * err)
+
+    def render(self, screen, transform_func, entities, font):
+        # We only render Point-Entity coincidence clearly. 
+        # Pt-Pt is usually implicit by geometry.
+        idx1, idx2 = self.indices[0][1], self.indices[1][1]
+        
+        if idx1 == -1 or idx2 == -1:
+            # Pt-Entity
+            ent_idx = self.indices[0][0] if idx1 == -1 else self.indices[1][0]
+            pt_ref = self.indices[1] if idx1 == -1 else self.indices[0]
+            
+            c_pos = self._get_entity_center_screen(ent_idx, entities, transform_func)
+            p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
+            
+            mid_x = (c_pos[0] + p_pos[0]) // 2
+            mid_y = (c_pos[1] + p_pos[1]) // 2
+            
+            self._draw_connector(screen, c_pos, p_pos)
+            self._draw_icon(screen, mid_x, mid_y, "C", font, color=(100, 255, 255))
+        else:
+            # Pt-Pt: Draw small icon near the point
+            p_pos = self._get_point_screen(self.indices[0][0], idx1, entities, transform_func)
+            self._draw_icon(screen, p_pos[0] + 15, p_pos[1] - 15, "C", font, color=(100, 255, 255))
 
     def to_dict(self):
         return {'type': 'COINCIDENT', 'indices': self.indices}
@@ -154,40 +160,33 @@ class Collinear(Constraint):
         except IndexError: return
 
         pt_idx = self.indices[0][1]
-        
         P = pt_ent.get_point(pt_idx)
-        A = line_ent.get_point(0)
-        B = line_ent.get_point(1)
-        
-        u = B - A
-        len_sq = np.dot(u, u)
-        
+        A = line_ent.get_point(0); B = line_ent.get_point(1)
+        u = B - A; len_sq = np.dot(u, u)
         if len_sq < 1e-8: return
-
-        v = P - A
-        t = np.dot(v, u) / len_sq
-        
-        # UNCLAMPED t for infinite line
-        S = A + t * u
-        err = S - P
-        
+        v = P - A; t = np.dot(v, u) / len_sq
+        S = A + t * u; err = S - P
         w_p = pt_ent.get_inv_mass(pt_idx)
-        w_a = line_ent.get_inv_mass(0)
-        w_b = line_ent.get_inv_mass(1)
-        
+        w_a = line_ent.get_inv_mass(0); w_b = line_ent.get_inv_mass(1)
         W = w_p + w_a * (1.0 - t)**2 + w_b * t**2
-        
         if W == 0: return
         lambda_val = 1.0 / W
+        if w_p > 0: pt_ent.set_point(pt_idx, P + w_p * lambda_val * err)
+        if w_a > 0: line_ent.set_point(0, A - w_a * (1.0 - t) * lambda_val * err)
+        if w_b > 0: line_ent.set_point(1, B - w_b * t * lambda_val * err)
+
+    def render(self, screen, transform_func, entities, font):
+        pt_ref = self.indices[0]
+        line_idx = self.indices[1]
         
-        if w_p > 0:
-            pt_ent.set_point(pt_idx, P + w_p * lambda_val * err)
+        p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
+        l_pos = self._get_entity_center_screen(line_idx, entities, transform_func)
         
-        if w_a > 0:
-            line_ent.set_point(0, A - w_a * (1.0 - t) * lambda_val * err)
+        mid_x = (p_pos[0] + l_pos[0]) // 2
+        mid_y = (p_pos[1] + l_pos[1]) // 2
         
-        if w_b > 0:
-            line_ent.set_point(1, B - w_b * t * lambda_val * err)
+        self._draw_connector(screen, p_pos, l_pos, (100, 150, 100))
+        self._draw_icon(screen, mid_x, mid_y, "CL", font, color=(150, 255, 150))
 
     def to_dict(self):
         return {'type': 'COLLINEAR', 'indices': self.indices}
@@ -204,29 +203,29 @@ class Midpoint(Constraint):
         except IndexError: return
 
         pt_idx = self.indices[0][1]
-        
         P = pt_ent.get_point(pt_idx)
-        A = line_ent.get_point(0)
-        B = line_ent.get_point(1)
-        
+        A = line_ent.get_point(0); B = line_ent.get_point(1)
         w_p = pt_ent.get_inv_mass(pt_idx)
-        w_a = line_ent.get_inv_mass(0)
-        w_b = line_ent.get_inv_mass(1)
-        
+        w_a = line_ent.get_inv_mass(0); w_b = line_ent.get_inv_mass(1)
         denom = w_p + 0.25 * (w_a + w_b)
         if denom == 0: return
+        M = (A + B) * 0.5; diff = M - P; lambda_val = diff / denom
+        if w_p > 0: pt_ent.set_point(pt_idx, P + w_p * lambda_val)
+        if w_a > 0: line_ent.set_point(0, A - 0.5 * w_a * lambda_val)
+        if w_b > 0: line_ent.set_point(1, B - 0.5 * w_b * lambda_val)
+
+    def render(self, screen, transform_func, entities, font):
+        pt_ref = self.indices[0]
+        line_idx = self.indices[1]
         
-        M = (A + B) * 0.5
-        diff = M - P
-        lambda_val = diff / denom
+        p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform_func)
+        l_pos = self._get_entity_center_screen(line_idx, entities, transform_func)
         
-        if w_p > 0:
-            pt_ent.set_point(pt_idx, P + w_p * lambda_val)
+        mid_x = (p_pos[0] + l_pos[0]) // 2
+        mid_y = (p_pos[1] + l_pos[1]) // 2
         
-        if w_a > 0:
-            line_ent.set_point(0, A - 0.5 * w_a * lambda_val)
-        if w_b > 0:
-            line_ent.set_point(1, B - 0.5 * w_b * lambda_val)
+        self._draw_connector(screen, p_pos, l_pos, (100, 100, 150))
+        self._draw_icon(screen, mid_x, mid_y, "M", font, color=(150, 150, 255))
 
     def to_dict(self):
         return {'type': 'MIDPOINT', 'indices': self.indices}
@@ -240,23 +239,19 @@ class Length(Constraint):
     def solve(self, entities):
         try: e = entities[self.indices[0]]
         except IndexError: return
-
-        p1 = e.get_point(0)
-        p2 = e.get_point(1)
-        w1 = e.get_inv_mass(0)
-        w2 = e.get_inv_mass(1)
-        
+        p1 = e.get_point(0); p2 = e.get_point(1)
+        w1 = e.get_inv_mass(0); w2 = e.get_inv_mass(1)
         if w1 + w2 == 0: return
-        
-        curr_vec = p2 - p1
-        curr_len = np.linalg.norm(curr_vec)
+        curr_vec = p2 - p1; curr_len = np.linalg.norm(curr_vec)
         if curr_len < 1e-6: return
-        
-        diff = curr_len - self.value
-        correction = (curr_vec / curr_len) * diff
-        
+        diff = curr_len - self.value; correction = (curr_vec / curr_len) * diff
         if w1 > 0: e.set_point(0, p1 + correction * (w1 / (w1+w2)))
         if w2 > 0: e.set_point(1, p2 - correction * (w2 / (w1+w2)))
+
+    def render(self, screen, transform_func, entities, font):
+        c_pos = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+        # Offset slightly
+        self._draw_icon(screen, c_pos[0], c_pos[1] + 15, f"{self.value:.1f}", font, color=(255, 200, 100))
 
     def to_dict(self):
         return {'type': 'LENGTH', 'indices': self.indices, 'value': self.value}
@@ -267,146 +262,125 @@ class EqualLength(Constraint):
         self.indices = [entity_idx1, entity_idx2]
 
     def solve(self, entities):
-        try:
-            e1 = entities[self.indices[0]]
-            e2 = entities[self.indices[1]]
+        try: e1 = entities[self.indices[0]]; e2 = entities[self.indices[1]]
         except IndexError: return
-
-        l1 = e1.length()
-        l2 = e2.length()
-        
-        im1 = e1.get_inv_mass(0) + e1.get_inv_mass(1)
-        im2 = e2.get_inv_mass(0) + e2.get_inv_mass(1)
-        
+        l1 = e1.length(); l2 = e2.length()
+        im1 = e1.get_inv_mass(0) + e1.get_inv_mass(1); im2 = e2.get_inv_mass(0) + e2.get_inv_mass(1)
         if im1 + im2 == 0: return
-        
         target = (l1 * im2 + l2 * im1) / (im1 + im2)
-        
-        self._apply_len(e1, target)
-        self._apply_len(e2, target)
+        self._apply_len(e1, target); self._apply_len(e2, target)
 
     def _apply_len(self, e, target):
         p1 = e.get_point(0); p2 = e.get_point(1)
         w1 = e.get_inv_mass(0); w2 = e.get_inv_mass(1)
         if w1 + w2 == 0: return
-        
-        vec = p2 - p1
-        cur = np.linalg.norm(vec)
+        vec = p2 - p1; cur = np.linalg.norm(vec)
         if cur < 1e-6: return
-        diff = cur - target
-        corr = (vec / cur) * diff
-        
+        diff = cur - target; corr = (vec / cur) * diff
         if w1 > 0: e.set_point(0, p1 + corr * (w1 / (w1+w2)))
         if w2 > 0: e.set_point(1, p2 - corr * (w2 / (w1+w2)))
+
+    def render(self, screen, transform_func, entities, font):
+        c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+        c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
+        mx, my = (c1[0]+c2[0])//2, (c1[1]+c2[1])//2
+        self._draw_connector(screen, c1, c2)
+        self._draw_icon(screen, mx, my, "=", font)
 
     def to_dict(self):
         return {'type': 'EQUAL', 'indices': self.indices}
 
 class Angle(Constraint):
     def __init__(self, type_name, entity_idx1, entity_idx2=None):
-        super().__init__(type_name) # PARALLEL, PERPENDICULAR, HORIZONTAL, VERTICAL
-        if entity_idx2 is not None:
-            self.indices = [entity_idx1, entity_idx2]
-        else:
-            self.indices = [entity_idx1]
+        super().__init__(type_name) 
+        if entity_idx2 is not None: self.indices = [entity_idx1, entity_idx2]
+        else: self.indices = [entity_idx1]
 
     def solve(self, entities):
         if self.type in ['HORIZONTAL', 'VERTICAL']:
             try: e = entities[self.indices[0]]
             except IndexError: return
-            
             p1 = e.get_point(0); p2 = e.get_point(1)
             w1 = e.get_inv_mass(0); w2 = e.get_inv_mass(1)
             if w1 + w2 == 0: return
-            
             if self.type == 'HORIZONTAL':
                 avg_y = (p1[1] + p2[1]) / 2.0
                 if w1 == 0: avg_y = p1[1]
                 elif w2 == 0: avg_y = p2[1]
-                
                 if w1 > 0: e.set_point(0, [p1[0], avg_y])
                 if w2 > 0: e.set_point(1, [p2[0], avg_y])
             else:
                 avg_x = (p1[0] + p2[0]) / 2.0
                 if w1 == 0: avg_x = p1[0]
                 elif w2 == 0: avg_x = p2[0]
-                
                 if w1 > 0: e.set_point(0, [avg_x, p1[1]])
                 if w2 > 0: e.set_point(1, [avg_x, p2[1]])
                 
         elif self.type in ['PARALLEL', 'PERPENDICULAR']:
-            try:
-                e1 = entities[self.indices[0]]
-                e2 = entities[self.indices[1]]
+            try: e1 = entities[self.indices[0]]; e2 = entities[self.indices[1]]
             except IndexError: return
-            
             self._solve_dual_angle(e1, e2)
 
     def _solve_dual_angle(self, e1, e2):
         v1 = e1.end - e1.start; v2 = e2.end - e2.start
         if np.linalg.norm(v1) < 1e-6 or np.linalg.norm(v2) < 1e-6: return
-
-        a1 = math.atan2(v1[1], v1[0])
-        a2 = math.atan2(v2[1], v2[0])
-        
+        a1 = math.atan2(v1[1], v1[0]); a2 = math.atan2(v2[1], v2[0])
         target_a1, target_a2 = a1, a2
         
         if self.type == 'PARALLEL':
             if abs(a1 - a2) > math.pi/2:
                 if a2 < a1: a2 += math.pi 
                 else: a2 -= math.pi
-            avg = (a1 + a2) / 2.0
-            target_a1, target_a2 = avg, avg
+            avg = (a1 + a2) / 2.0; target_a1, target_a2 = avg, avg
         elif self.type == 'PERPENDICULAR':
             diff = a2 - a1
             while diff > math.pi: diff -= 2*math.pi
             while diff < -math.pi: diff += 2*math.pi
             goal = math.pi/2 if diff > 0 else -math.pi/2
-            corr = (goal - diff) / 2.0
-            target_a1 = a1 - corr
-            target_a2 = a2 + corr
+            corr = (goal - diff) / 2.0; target_a1 = a1 - corr; target_a2 = a2 + corr
 
         fixed1 = (e1.get_inv_mass(0) == 0 and e1.get_inv_mass(1) == 0)
         fixed2 = (e2.get_inv_mass(0) == 0 and e2.get_inv_mass(1) == 0)
         
         if fixed1 and fixed2: return
-        if fixed1: 
-            target_a1 = a1
-            target_a2 = a1 if self.type == 'PARALLEL' else a1 + (math.pi/2 if a2>a1 else -math.pi/2)
-        elif fixed2:
-            target_a2 = a2
-            target_a1 = a2 if self.type == 'PARALLEL' else a2 - (math.pi/2 if a2>a1 else -math.pi/2)
+        if fixed1: target_a1 = a1; target_a2 = a1 if self.type == 'PARALLEL' else a1 + (math.pi/2 if a2>a1 else -math.pi/2)
+        elif fixed2: target_a2 = a2; target_a1 = a2 if self.type == 'PARALLEL' else a2 - (math.pi/2 if a2>a1 else -math.pi/2)
 
         stiffness = 0.5
         if not fixed1: self._rotate_entity(e1, target_a1, stiffness)
         if not fixed2: self._rotate_entity(e2, target_a2, stiffness)
 
     def _rotate_entity(self, e, target, stiffness):
-        v = e.end - e.start
-        length = np.linalg.norm(v)
+        v = e.end - e.start; length = np.linalg.norm(v)
         if length < 1e-6: return
-
         curr_ang = math.atan2(v[1], v[0])
         diff = target - curr_ang
         while diff > math.pi: diff -= 2*math.pi
         while diff < -math.pi: diff += 2*math.pi
-        
         final = curr_ang + diff * stiffness
-        
         if e.get_inv_mass(0) == 0: pivot = e.start
         elif e.get_inv_mass(1) == 0: pivot = e.end
         else: pivot = (e.start + e.end) * 0.5
-        
         c = math.cos(final); s = math.sin(final)
-        
-        if np.array_equal(pivot, e.start):
-            e.set_point(1, e.start + np.array([c*length, s*length]))
-        elif np.array_equal(pivot, e.end):
-            e.set_point(0, e.end - np.array([c*length, s*length]))
+        if np.array_equal(pivot, e.start): e.set_point(1, e.start + np.array([c*length, s*length]))
+        elif np.array_equal(pivot, e.end): e.set_point(0, e.end - np.array([c*length, s*length]))
         else:
             half = length / 2.0
             e.set_point(0, pivot - np.array([c*half, s*half]))
             e.set_point(1, pivot + np.array([c*half, s*half]))
+
+    def render(self, screen, transform_func, entities, font):
+        if self.type in ['HORIZONTAL', 'VERTICAL']:
+            c_pos = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+            sym = "H" if self.type == 'HORIZONTAL' else "V"
+            self._draw_icon(screen, c_pos[0], c_pos[1] - 15, sym, font)
+        else:
+            c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+            c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
+            mx, my = (c1[0]+c2[0])//2, (c1[1]+c2[1])//2
+            self._draw_connector(screen, c1, c2)
+            sym = "//" if self.type == 'PARALLEL' else "T"
+            self._draw_icon(screen, mx, my, sym, font)
 
     def to_dict(self):
         return {'type': self.type, 'indices': self.indices}
@@ -414,16 +388,11 @@ class Angle(Constraint):
 def create_constraint(data):
     t = data['type']
     idx = data['indices']
-    if t == 'COINCIDENT':
-        return Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
-    elif t == 'COLLINEAR':
-        return Collinear(idx[0][0], idx[0][1], idx[1])
-    elif t == 'MIDPOINT':
-        return Midpoint(idx[0][0], idx[0][1], idx[1])
-    elif t == 'LENGTH':
-        return Length(idx[0], data['value'])
-    elif t == 'EQUAL':
-        return EqualLength(idx[0], idx[1])
+    if t == 'COINCIDENT': return Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
+    elif t == 'COLLINEAR': return Collinear(idx[0][0], idx[0][1], idx[1])
+    elif t == 'MIDPOINT': return Midpoint(idx[0][0], idx[0][1], idx[1])
+    elif t == 'LENGTH': return Length(idx[0], data['value'])
+    elif t == 'EQUAL': return EqualLength(idx[0], idx[1])
     elif t in ['HORIZONTAL', 'VERTICAL', 'PARALLEL', 'PERPENDICULAR']:
         if len(idx) == 2: return Angle(t, idx[0], idx[1])
         else: return Angle(t, idx[0])

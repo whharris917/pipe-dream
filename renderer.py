@@ -28,15 +28,16 @@ class Renderer:
         if app.current_tool:
             app.current_tool.draw_overlay(self.screen, self)
         
-        # 5. Draw Editor Specifics (Points, Selection Highlights)
+        # 5. Draw Editor Specifics (Points, Selection Highlights, CONSTRAINTS)
         if app.mode == config.MODE_EDITOR:
+            self._draw_constraints(app, sim, layout)
             self._draw_editor_overlays(app, sim, layout)
             
         # 6. Draw Placement Preview (if importing geometry)
         if app.placing_geo_data:
             self._draw_placement_preview(app, sim, layout)
 
-        # 7. Draw Snapping Feedback (Green Dot) - NEW
+        # 7. Draw Snapping Feedback (Green Dot)
         self._draw_snap_indicator(app, sim, layout)
 
         # 8. Draw UI Panels & Widgets
@@ -58,18 +59,12 @@ class Renderer:
 
     def _draw_snap_indicator(self, app, sim, layout):
         if app.current_snap_target:
-            # snap_target is (wall_idx, pt_idx)
-            # Or creating new wall snap, stored as coordinate tuple sometimes?
-            # utils.get_snapped_pos returns (x, y, snap_target_tuple)
-            # The tool stores `app.current_snap_target` as the tuple (idx, pt)
-            
             w_idx, pt_idx = app.current_snap_target
             if w_idx < len(sim.walls):
                 ent = sim.walls[w_idx]
                 pt_pos = ent.get_point(pt_idx)
                 sx, sy = sim_to_screen(pt_pos[0], pt_pos[1], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
                 
-                # Draw green indicator
                 pygame.draw.circle(self.screen, (0, 255, 0), (sx, sy), 6)
                 pygame.draw.circle(self.screen, (255, 255, 255), (sx, sy), 8, 1)
 
@@ -86,17 +81,14 @@ class Renderer:
     def _draw_particles(self, app, sim, layout):
         for i in range(sim.count):
             sx, sy = sim_to_screen(sim.pos_x[i], sim.pos_y[i], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
-            # Simple cull check
             if layout['MID_X'] < sx < layout['RIGHT_X'] and config.TOP_MENU_H < sy < config.WINDOW_HEIGHT:
                 is_stat = sim.is_static[i]
                 col = config.COLOR_STATIC if is_stat else config.COLOR_DYNAMIC
                 atom_sig = sim.atom_sigma[i]
-                # Scale radius by zoom
                 rad = max(2, int(atom_sig * config.PARTICLE_RADIUS_SCALE * ((layout['MID_W']-50)/sim.world_size) * app.zoom))
                 pygame.draw.circle(self.screen, col, (sx, sy), rad)
 
     def _draw_editor_guides(self, app, sim, layout):
-        # Draw Center Crosshair
         cx, cy = sim_to_screen(sim.world_size/2, sim.world_size/2, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
         pygame.draw.line(self.screen, (50, 50, 50), (cx-10, cy), (cx+10, cy))
         pygame.draw.line(self.screen, (50, 50, 50), (cx, cy-10), (cx, cy+10))
@@ -105,12 +97,16 @@ class Renderer:
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
         for i, w in enumerate(sim.walls):
             if isinstance(w, Line) and w.start is not None and w.end is not None:
-                # Avoid drawing zero length lines if they glitch
                 pass 
             
             is_sel = (i in app.selected_walls)
             is_pend = (app.pending_constraint and i in app.pending_targets_walls)
             w.render(self.screen, transform, is_sel, is_pend)
+
+    def _draw_constraints(self, app, sim, layout):
+        transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
+        for c in sim.constraints:
+            c.render(self.screen, transform, sim.walls, self.font)
 
     def _draw_editor_overlays(self, app, sim, layout):
         point_map = get_grouped_points(sim, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
@@ -131,9 +127,13 @@ class Renderer:
                 pygame.draw.circle(self.screen, (30,30,30), (cx, cy), radius)
                 pygame.draw.circle(self.screen, color, (cx, cy), radius, 2)
                 
-                # Track anchors to draw red dot on top
                 w = sim.walls[w_idx]
-                if w.anchored[pt_idx]: anchored_points_draw_list.append((cx, cy))
+                # Handle Circle case where pt_idx is 0
+                is_anchored = False
+                if isinstance(w, Line): is_anchored = w.anchored[pt_idx]
+                elif isinstance(w, Circle): is_anchored = w.anchored[0]
+                
+                if is_anchored: anchored_points_draw_list.append((cx, cy))
         
         for pt in anchored_points_draw_list: 
             pygame.draw.circle(self.screen, (255, 50, 50), pt, 3)
@@ -159,15 +159,10 @@ class Renderer:
                         pygame.draw.circle(self.screen, (100, 255, 100), sc, int(sr), 2)
 
     def _draw_panels(self, layout):
-        # Left Panel
         pygame.draw.rect(self.screen, config.PANEL_BG_COLOR, (0, config.TOP_MENU_H, layout['LEFT_W'], layout['H']))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['LEFT_W'], config.TOP_MENU_H), (layout['LEFT_W'], layout['H']))
-        
-        # Right Panel
         pygame.draw.rect(self.screen, config.PANEL_BG_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], layout['H']))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H), (layout['RIGHT_X'], layout['H']))
-        
-        # Right Header (Stats Area)
         pygame.draw.rect(self.screen, (40, 40, 45), (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], 90))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H + 90), (layout['W'], config.TOP_MENU_H + 90))
 
@@ -177,7 +172,6 @@ class Renderer:
             curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)
             self.screen.blit(self.big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, config.TOP_MENU_H + 10))
             self.screen.blit(self.font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, config.TOP_MENU_H + 40))
-            fps = 0.0 # Placeholder or pass clock
             self.screen.blit(self.font.render(f"SPS: {int(sim.sps)}", True, (100, 255, 100)), (metric_x, config.TOP_MENU_H + 60))
         else:
             self.screen.blit(self.big_font.render("GEOMETRY EDITOR", True, (255, 200, 100)), (metric_x, config.TOP_MENU_H + 10))
