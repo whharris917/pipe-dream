@@ -15,46 +15,93 @@ class Constraint:
 class Coincident(Constraint):
     def __init__(self, entity_idx1, pt_idx1, entity_idx2, pt_idx2):
         super().__init__('COINCIDENT')
+        # indices are [(entity_idx, point_idx), (entity_idx, point_idx)]
+        # If point_idx is -1, it indicates the constraint applies to the whole entity (e.g. the line itself)
         self.indices = [(entity_idx1, pt_idx1), (entity_idx2, pt_idx2)]
 
     def solve(self, entities):
-        # Indices are (entity_index, point_index)
         try:
             e1 = entities[self.indices[0][0]]
             e2 = entities[self.indices[1][0]]
         except IndexError: return # Entity deleted
 
         idx1, idx2 = self.indices[0][1], self.indices[1][1]
-        
-        p1 = e1.get_point(idx1)
-        p2 = e2.get_point(idx2)
-        
-        w1 = e1.get_inv_mass(idx1)
-        w2 = e2.get_inv_mass(idx2)
-        w_sum = w1 + w2
-        
-        if w_sum == 0: return
 
-        # Calculate weighted average target
-        avg_x = (p1[0]*w1 + p2[0]*w2) / w_sum
-        avg_y = (p1[1]*w1 + p2[1]*w2) / w_sum
-        target = np.array([avg_x, avg_y])
-        
-        # Snap strictly if one is anchored to avoid drift
-        if w1 == 0: target = p1
-        elif w2 == 0: target = p2
+        # --- Case 1: Point-Point Coincidence ---
+        if idx1 != -1 and idx2 != -1:
+            p1 = e1.get_point(idx1)
+            p2 = e2.get_point(idx2)
+            
+            w1 = e1.get_inv_mass(idx1)
+            w2 = e2.get_inv_mass(idx2)
+            w_sum = w1 + w2
+            
+            if w_sum == 0: return
 
-        if w1 > 0: e1.set_point(idx1, target)
-        if w2 > 0: e2.set_point(idx2, target)
+            # Weighted Average
+            avg_x = (p1[0]*w1 + p2[0]*w2) / w_sum
+            avg_y = (p1[1]*w1 + p2[1]*w2) / w_sum
+            target = np.array([avg_x, avg_y])
+            
+            # Snap strictly if one is anchored to avoid drift
+            if w1 == 0: target = p1
+            elif w2 == 0: target = p2
+
+            if w1 > 0: e1.set_point(idx1, target)
+            if w2 > 0: e2.set_point(idx2, target)
+
+        # --- Case 2: Point-Line Coincidence (STRICT: On Segment) ---
+        else:
+            if idx1 == -1:
+                line_ent, pt_ent = e1, e2
+                pt_idx_local = idx2
+            else:
+                line_ent, pt_ent = e2, e1
+                pt_idx_local = idx1
+
+            P = pt_ent.get_point(pt_idx_local)
+            A = line_ent.get_point(0)
+            B = line_ent.get_point(1)
+            
+            u = B - A
+            len_sq = np.dot(u, u)
+            
+            if len_sq < 1e-8: return # Degenerate line ignored
+
+            v = P - A
+            t = np.dot(v, u) / len_sq
+            
+            # CLAMP t to [0, 1] for strict coincidence on segment
+            t_clamped = max(0.0, min(1.0, t))
+            
+            S = A + t_clamped * u
+            err = S - P
+            
+            w_p = pt_ent.get_inv_mass(pt_idx_local)
+            w_a = line_ent.get_inv_mass(0)
+            w_b = line_ent.get_inv_mass(1)
+            
+            # Effective mass at point S on the line
+            W = w_p + w_a * (1.0 - t_clamped)**2 + w_b * t_clamped**2
+            
+            if W == 0: return
+            lambda_val = 1.0 / W
+            
+            if w_p > 0:
+                pt_ent.set_point(pt_idx_local, P + w_p * lambda_val * err)
+            
+            if w_a > 0:
+                line_ent.set_point(0, A - w_a * (1.0 - t_clamped) * lambda_val * err)
+            
+            if w_b > 0:
+                line_ent.set_point(1, B - w_b * t_clamped * lambda_val * err)
 
     def to_dict(self):
         return {'type': 'COINCIDENT', 'indices': self.indices}
 
-class Midpoint(Constraint):
+class Collinear(Constraint):
     def __init__(self, pt_wall_idx, pt_idx, line_wall_idx):
-        super().__init__('MIDPOINT')
-        # indices[0] is the point (wall_idx, pt_idx)
-        # indices[1] is the line (wall_idx)
+        super().__init__('COLLINEAR')
         self.indices = [(pt_wall_idx, pt_idx), line_wall_idx]
 
     def solve(self, entities):
@@ -65,7 +112,56 @@ class Midpoint(Constraint):
 
         pt_idx = self.indices[0][1]
         
-        # P is the point, A and B are line endpoints
+        P = pt_ent.get_point(pt_idx)
+        A = line_ent.get_point(0)
+        B = line_ent.get_point(1)
+        
+        u = B - A
+        len_sq = np.dot(u, u)
+        
+        if len_sq < 1e-8: return
+
+        v = P - A
+        t = np.dot(v, u) / len_sq
+        
+        # UNCLAMPED t for infinite line
+        S = A + t * u
+        err = S - P
+        
+        w_p = pt_ent.get_inv_mass(pt_idx)
+        w_a = line_ent.get_inv_mass(0)
+        w_b = line_ent.get_inv_mass(1)
+        
+        W = w_p + w_a * (1.0 - t)**2 + w_b * t**2
+        
+        if W == 0: return
+        lambda_val = 1.0 / W
+        
+        if w_p > 0:
+            pt_ent.set_point(pt_idx, P + w_p * lambda_val * err)
+        
+        if w_a > 0:
+            line_ent.set_point(0, A - w_a * (1.0 - t) * lambda_val * err)
+        
+        if w_b > 0:
+            line_ent.set_point(1, B - w_b * t * lambda_val * err)
+
+    def to_dict(self):
+        return {'type': 'COLLINEAR', 'indices': self.indices}
+
+class Midpoint(Constraint):
+    def __init__(self, pt_wall_idx, pt_idx, line_wall_idx):
+        super().__init__('MIDPOINT')
+        self.indices = [(pt_wall_idx, pt_idx), line_wall_idx]
+
+    def solve(self, entities):
+        try:
+            pt_ent = entities[self.indices[0][0]]
+            line_ent = entities[self.indices[1]]
+        except IndexError: return
+
+        pt_idx = self.indices[0][1]
+        
         P = pt_ent.get_point(pt_idx)
         A = line_ent.get_point(0)
         B = line_ent.get_point(1)
@@ -74,23 +170,16 @@ class Midpoint(Constraint):
         w_a = line_ent.get_inv_mass(0)
         w_b = line_ent.get_inv_mass(1)
         
-        # Constraint: P - (A+B)/2 = 0
-        # Derived gradients lead to this denominator for PBD
         denom = w_p + 0.25 * (w_a + w_b)
         if denom == 0: return
         
-        # Current midpoint of the line
         M = (A + B) * 0.5
-        
-        # The gap we need to close
         diff = M - P
-        
         lambda_val = diff / denom
         
         if w_p > 0:
             pt_ent.set_point(pt_idx, P + w_p * lambda_val)
         
-        # Line endpoints move half as much because moving them affects midpoint by 0.5
         if w_a > 0:
             line_ent.set_point(0, A - 0.5 * w_a * lambda_val)
         if w_b > 0:
@@ -143,7 +232,6 @@ class EqualLength(Constraint):
         l1 = e1.length()
         l2 = e2.length()
         
-        # Weighted average based on total inverse mass
         im1 = e1.get_inv_mass(0) + e1.get_inv_mass(1)
         im2 = e2.get_inv_mass(0) + e2.get_inv_mass(1)
         
@@ -213,6 +301,8 @@ class Angle(Constraint):
 
     def _solve_dual_angle(self, e1, e2):
         v1 = e1.end - e1.start; v2 = e2.end - e2.start
+        if np.linalg.norm(v1) < 1e-6 or np.linalg.norm(v2) < 1e-6: return
+
         a1 = math.atan2(v1[1], v1[0])
         a2 = math.atan2(v2[1], v2[0])
         
@@ -250,13 +340,15 @@ class Angle(Constraint):
 
     def _rotate_entity(self, e, target, stiffness):
         v = e.end - e.start
+        length = np.linalg.norm(v)
+        if length < 1e-6: return
+
         curr_ang = math.atan2(v[1], v[0])
         diff = target - curr_ang
         while diff > math.pi: diff -= 2*math.pi
         while diff < -math.pi: diff += 2*math.pi
         
         final = curr_ang + diff * stiffness
-        length = np.linalg.norm(v)
         
         if e.get_inv_mass(0) == 0: pivot = e.start
         elif e.get_inv_mass(1) == 0: pivot = e.end
@@ -281,6 +373,8 @@ def create_constraint(data):
     idx = data['indices']
     if t == 'COINCIDENT':
         return Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
+    elif t == 'COLLINEAR':
+        return Collinear(idx[0][0], idx[0][1], idx[1])
     elif t == 'MIDPOINT':
         return Midpoint(idx[0][0], idx[0][1], idx[1])
     elif t == 'LENGTH':
