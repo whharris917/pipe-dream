@@ -66,6 +66,31 @@ class Constraint:
         pt = e.get_point(pt_idx)
         return transform_func(pt[0], pt[1])
 
+# --- Helper for Rotation ---
+def rotate_entity_by_angle(e, angle_delta, stiffness=0.5):
+    """Rotates entity e by angle_delta radians. Checks anchors to pick pivot."""
+    v = e.end - e.start; length = np.linalg.norm(v)
+    if length < 1e-6: return
+    
+    current_ang = math.atan2(v[1], v[0])
+    target = current_ang + angle_delta * stiffness
+    
+    # Determine Pivot
+    if e.get_inv_mass(0) == 0: pivot = e.start
+    elif e.get_inv_mass(1) == 0: pivot = e.end
+    else: pivot = (e.start + e.end) * 0.5
+    
+    c = math.cos(target); s = math.sin(target)
+    
+    if np.array_equal(pivot, e.start):
+        e.set_point(1, e.start + np.array([c*length, s*length]))
+    elif np.array_equal(pivot, e.end):
+        e.set_point(0, e.end - np.array([c*length, s*length]))
+    else:
+        half = length / 2.0
+        e.set_point(0, pivot - np.array([c*half, s*half]))
+        e.set_point(1, pivot + np.array([c*half, s*half]))
+
 class Coincident(Constraint):
     def __init__(self, entity_idx1, pt_idx1, entity_idx2, pt_idx2):
         super().__init__('COINCIDENT')
@@ -375,27 +400,8 @@ class Angle(Constraint):
         elif fixed2: target_a2 = a2; target_a1 = a2 if self.type == 'PARALLEL' else a2 - (math.pi/2 if a2>a1 else -math.pi/2)
 
         stiffness = 0.5
-        if not fixed1: self._rotate_entity(e1, target_a1, stiffness)
-        if not fixed2: self._rotate_entity(e2, target_a2, stiffness)
-
-    def _rotate_entity(self, e, target, stiffness):
-        v = e.end - e.start; length = np.linalg.norm(v)
-        if length < 1e-6: return
-        curr_ang = math.atan2(v[1], v[0])
-        diff = target - curr_ang
-        while diff > math.pi: diff -= 2*math.pi
-        while diff < -math.pi: diff += 2*math.pi
-        final = curr_ang + diff * stiffness
-        if e.get_inv_mass(0) == 0: pivot = e.start
-        elif e.get_inv_mass(1) == 0: pivot = e.end
-        else: pivot = (e.start + e.end) * 0.5
-        c = math.cos(final); s = math.sin(final)
-        if np.array_equal(pivot, e.start): e.set_point(1, e.start + np.array([c*length, s*length]))
-        elif np.array_equal(pivot, e.end): e.set_point(0, e.end - np.array([c*length, s*length]))
-        else:
-            half = length / 2.0
-            e.set_point(0, pivot - np.array([c*half, s*half]))
-            e.set_point(1, pivot + np.array([c*half, s*half]))
+        if not fixed1: rotate_entity_by_angle(e1, target_a1 - a1, stiffness)
+        if not fixed2: rotate_entity_by_angle(e2, target_a2 - a2, stiffness)
 
     def get_visual_center(self, transform_func, entities):
         if self.type in ['HORIZONTAL', 'VERTICAL']:
@@ -424,6 +430,70 @@ class Angle(Constraint):
     def to_dict(self):
         return {'type': self.type, 'indices': self.indices}
 
+class FixedAngle(Constraint):
+    def __init__(self, w1_idx, w2_idx, angle_deg):
+        super().__init__('ANGLE')
+        self.indices = [w1_idx, w2_idx]
+        self.value = angle_deg
+
+    def solve(self, entities):
+        try: 
+            e1 = entities[self.indices[0]]
+            e2 = entities[self.indices[1]]
+        except IndexError: return
+
+        v1 = e1.end - e1.start
+        v2 = e2.end - e2.start
+        if np.linalg.norm(v1) < 1e-6 or np.linalg.norm(v2) < 1e-6: return
+
+        # Current signed angle from v1 to v2
+        cross = v1[0]*v2[1] - v1[1]*v2[0]
+        dot = v1[0]*v2[0] + v1[1]*v2[1]
+        curr_rad = math.atan2(cross, dot)
+        
+        target_rad = math.radians(self.value)
+        diff = curr_rad - target_rad
+        # Normalize diff to [-pi, pi]
+        while diff > math.pi: diff -= 2*math.pi
+        while diff < -math.pi: diff += 2*math.pi
+        
+        fixed1 = (e1.get_inv_mass(0) == 0 and e1.get_inv_mass(1) == 0)
+        fixed2 = (e2.get_inv_mass(0) == 0 and e2.get_inv_mass(1) == 0)
+        
+        if fixed1 and fixed2: return
+        
+        # To reduce the angle difference:
+        # If we rotate v2 by -diff, angle becomes (curr - diff) = target.
+        # If we rotate v1 by +diff, angle becomes (curr - (+diff)) = target? 
+        # Angle = Theta2 - Theta1. 
+        # Target = (Theta2 - delta2) - (Theta1 + delta1)
+        # diff = (Theta2 - Theta1) - Target
+        # We need delta1 + delta2 = diff.
+        
+        stiffness = 0.5
+        if fixed1:
+            rotate_entity_by_angle(e2, -diff, stiffness)
+        elif fixed2:
+            rotate_entity_by_angle(e1, diff, stiffness)
+        else:
+            rotate_entity_by_angle(e1, diff * 0.5, stiffness)
+            rotate_entity_by_angle(e2, -diff * 0.5, stiffness)
+
+    def get_visual_center(self, transform_func, entities):
+        c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+        c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
+        return ((c1[0]+c2[0])//2, (c1[1]+c2[1])//2)
+
+    def render(self, screen, transform_func, entities, font, offset=(0,0)):
+        cx, cy = self.get_visual_center(transform_func, entities)
+        c1 = self._get_entity_center_screen(self.indices[0], entities, transform_func)
+        c2 = self._get_entity_center_screen(self.indices[1], entities, transform_func)
+        self._draw_connector(screen, c1, c2)
+        self._draw_icon(screen, cx + offset[0], cy + offset[1], f"{self.value:.0f}°", font, color=(255, 200, 200))
+
+    def to_dict(self):
+        return {'type': 'ANGLE', 'indices': self.indices, 'value': self.value}
+
 def create_constraint(data):
     t = data['type']
     idx = data['indices']
@@ -432,6 +502,7 @@ def create_constraint(data):
     elif t == 'MIDPOINT': return Midpoint(idx[0][0], idx[0][1], idx[1])
     elif t == 'LENGTH': return Length(idx[0], data['value'])
     elif t == 'EQUAL': return EqualLength(idx[0], idx[1])
+    elif t == 'ANGLE': return FixedAngle(idx[0], idx[1], data['value'])
     elif t in ['HORIZONTAL', 'VERTICAL', 'PARALLEL', 'PERPENDICULAR']:
         if len(idx) == 2: return Angle(t, idx[0], idx[1])
         else: return Angle(t, idx[0])
