@@ -175,12 +175,14 @@ class Simulation:
         for w in self.walls:
             d = w.to_dict()
             if d['type'] == 'line':
+                # Deep copy required to prevent modifying actual state
+                d = copy.deepcopy(d)
                 d['start'][0] -= center_x; d['start'][1] -= center_y
                 d['end'][0] -= center_x; d['end'][1] -= center_y
             elif d['type'] == 'circle':
+                d = copy.deepcopy(d)
                 d['center'][0] -= center_x; d['center'][1] -= center_y
             
-            # Animation normalization needed if used
             if d.get('anim') and d['anim']['type'] == 'rotate':
                 d['anim']['ref_start'][0] -= center_x; d['anim']['ref_start'][1] -= center_y
                 d['anim']['ref_end'][0] -= center_x; d['anim']['ref_end'][1] -= center_y
@@ -198,13 +200,34 @@ class Simulation:
         base_index = len(self.walls)
         
         for wd in walls_data:
+            # Important: we must add (x,y) to the relative coordinates in wd
             if wd['type'] == 'line':
-                w = Line.from_dict(wd)
-                w.move(x, y)
+                # Manually reconstruct to ensure clean state
+                start = np.array(wd['start']) + np.array([x, y])
+                end = np.array(wd['end']) + np.array([x, y])
+                w = Line(start, end, wd.get('ref', False))
+                w.anchored = wd.get('anchored', [False, False])
+                w.sigma = wd.get('sigma', 1.0)
+                w.epsilon = wd.get('epsilon', 1.0)
+                w.spacing = wd.get('spacing', 0.7)
+                
+                # Handle animation data if present
+                if wd.get('anim'):
+                    anim = copy.deepcopy(wd['anim'])
+                    if anim['type'] == 'rotate':
+                        anim['ref_start'][0] += x; anim['ref_start'][1] += y
+                        anim['ref_end'][0] += x; anim['ref_end'][1] += y
+                    w.anim = anim
+                    
                 self.walls.append(w)
+                
             elif wd['type'] == 'circle':
-                c = Circle.from_dict(wd)
-                c.move(x, y)
+                center = np.array(wd['center']) + np.array([x, y])
+                c = Circle(center, wd['radius'])
+                c.anchored = wd.get('anchored', [False])
+                c.sigma = wd.get('sigma', 1.0)
+                c.epsilon = wd.get('epsilon', 1.0)
+                c.spacing = wd.get('spacing', 0.7)
                 self.walls.append(c)
             
         for cd in constraints_data:
