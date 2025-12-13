@@ -23,7 +23,7 @@ class Tool:
     def handle_event(self, event, layout):
         return False
 
-    def update(self):
+    def update(self, dt, layout, ui):
         pass
 
     def draw_overlay(self, screen, renderer):
@@ -36,6 +36,19 @@ class BrushTool(Tool):
     def __init__(self, app, sim):
         super().__init__(app, sim, "Brush")
         self.brush_radius = 2.0 
+
+    def update(self, dt, layout, ui):
+        if self.app.state == InteractionState.PAINTING:
+            mx, my = pygame.mouse.get_pos()
+            # Ensure mouse is within the viewport (Middle Panel)
+            if layout['LEFT_X'] < mx < layout['RIGHT_X']:
+                sx, sy = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, layout)
+                radius = ui.sliders['brush_size'].val
+                
+                if pygame.mouse.get_pressed()[0]: 
+                    self.sim.add_particles_brush(sx, sy, radius)
+                elif pygame.mouse.get_pressed()[2]: 
+                    self.sim.delete_particles_brush(sx, sy, radius)
 
     def handle_event(self, event, layout):
         if self.app.mode != config.MODE_SIM: return False

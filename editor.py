@@ -176,12 +176,9 @@ class FastMDEditor:
             self.sim.use_thermostat = self.ui.buttons['thermostat'].active; self.sim.use_boundaries = self.ui.buttons['boundaries'].active
             if not self.sim.paused: self.sim.step(int(self.ui.sliders['speed'].val))
             
-            if self.app.state == InteractionState.PAINTING:
-                mx, my = pygame.mouse.get_pos()
-                if self.layout['LEFT_X'] < mx < self.layout['RIGHT_X']:
-                    sx, sy = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
-                    if pygame.mouse.get_pressed()[0]: self.sim.add_particles_brush(sx, sy, self.ui.sliders['brush_size'].val)
-                    elif pygame.mouse.get_pressed()[2]: self.sim.delete_particles_brush(sx, sy, self.ui.sliders['brush_size'].val)
+            # Delegate tool logic to the current tool
+            if self.app.current_tool:
+                self.app.current_tool.update(dt, self.layout, self.ui)
 
     def render(self):
         ui_list = [] 
