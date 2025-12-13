@@ -89,4 +89,4 @@ class AppState:
                 self.sim_tool = tool_id
             else:
                 self.editor_tool = tool_id
-            self.set_status(f"Tool: {self.current_tool.name}")
+            # REMOVED: self.set_status(f"Tool: {self.current_tool.name}")
