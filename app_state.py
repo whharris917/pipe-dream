@@ -15,11 +15,15 @@ class AppState:
         self.mode = config.MODE_SIM
         self.state = InteractionState.IDLE
         
-        # Camera
+        # Camera - Active
         self.zoom = 1.0
         self.pan_x = 0.0
         self.pan_y = 0.0
         self.last_mouse_pos = (0, 0)
+
+        # Camera - Stored States (Persistent per mode)
+        self.sim_view = {'zoom': 1.0, 'pan_x': 0.0, 'pan_y': 0.0}
+        self.editor_view = {'zoom': 1.5, 'pan_x': 0.0, 'pan_y': 0.0}
         
         # Selection
         self.selected_walls = set()
@@ -40,8 +44,16 @@ class AppState:
         
         # IO / Clipboard
         self.placing_geo_data = None
-        self.sim_backup_state = None
-        self.current_filepath = None
+        
+        # --- STATE STORAGE ---
+        # Sim State is backed up when leaving Sim Mode
+        self.sim_backup_state = None 
+        # Editor State (Walls/Constraints) is stored here when in Sim Mode
+        self.editor_storage = {'walls': [], 'constraints': []}
+        
+        # File Paths
+        self.current_sim_filepath = None
+        self.current_geom_filepath = None
         
         # Status Bar
         self.status_msg = ""
@@ -50,6 +62,9 @@ class AppState:
         # UI References
         self.input_world = None
         self.temp_constraint_active = False
+        
+        # Playback State
+        self.editor_paused = False
 
     def set_status(self, msg):
         self.status_msg = msg
