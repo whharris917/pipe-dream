@@ -145,7 +145,6 @@ class FastMDEditor:
             if self.app.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
-        # --- REFACTOR: Delegated hit test to Sim ---
         rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.app.zoom)
         hit_wall = self.sim.find_wall_at(sim_x, sim_y, rad_sim)
         
@@ -166,7 +165,6 @@ class FastMDEditor:
         if self.app.mode == config.MODE_EDITOR and not self.app.editor_paused:
             self.app.geo_time += dt
 
-        # --- REFACTOR: Delegated Constraint Animation to Sim ---
         self.sim.update_constraint_drivers(self.app.geo_time)
         
         if self.app.mode == config.MODE_EDITOR:
@@ -189,9 +187,7 @@ class FastMDEditor:
                     elif pygame.mouse.get_pressed()[2]: self.sim.delete_particles_brush(sx, sy, self.ui.sliders['brush_size'].val)
 
     def render(self):
-        ui_list = [] # Draw method now handles UI list internally or via UIManager if moved
-        # However, Renderer expects a list. UIManager doesn't have a simple 'get_all' yet.
-        # But UIManager.draw handles drawing all its elements.
+        ui_list = [] 
         
         held_constraints = self.sim.constraints
         if self.app.mode == config.MODE_EDITOR and not self.app.show_constraints:
@@ -401,7 +397,7 @@ class FastMDEditor:
             if walls:
                 count = 0
                 for w_idx in walls:
-                    if self.try_apply_constraint(ctype, [w_idx], []): count += 1
+                    if self.sim.attempt_apply_constraint(ctype, [w_idx], []): count += 1
                 if count > 0:
                     self.app.set_status(f"Applied {ctype} to {count} items")
                     self.app.selected_walls.clear(); self.app.selected_points.clear()
@@ -409,7 +405,7 @@ class FastMDEditor:
         
         if is_multi: return
         walls = list(self.app.selected_walls); pts = list(self.app.selected_points)
-        if self.try_apply_constraint(ctype, walls, pts):
+        if self.sim.attempt_apply_constraint(ctype, walls, pts):
             self.app.set_status(f"Applied {ctype}")
             self.app.selected_walls.clear(); self.app.selected_points.clear()
             self.app.pending_constraint = None
@@ -428,7 +424,7 @@ class FastMDEditor:
         if wall_idx is not None and wall_idx not in self.app.pending_targets_walls: self.app.pending_targets_walls.append(wall_idx)
         if pt_idx is not None and pt_idx not in self.app.pending_targets_points: self.app.pending_targets_points.append(pt_idx)
         
-        if self.try_apply_constraint(self.app.pending_constraint, self.app.pending_targets_walls, self.app.pending_targets_points):
+        if self.sim.attempt_apply_constraint(self.app.pending_constraint, self.app.pending_targets_walls, self.app.pending_targets_points):
             self.app.set_status(f"Applied {self.app.pending_constraint}")
             self.app.pending_constraint = None
             for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
@@ -436,14 +432,3 @@ class FastMDEditor:
         else:
             ctype = self.app.pending_constraint; msg = CONSTRAINT_DEFS[ctype][0]['msg']
             self.app.set_status(f"{ctype} ({len(self.app.pending_targets_walls)}W, {len(self.app.pending_targets_points)}P): {msg}")
-
-    def try_apply_constraint(self, ctype, wall_idxs, pt_idxs):
-        rules = CONSTRAINT_DEFS.get(ctype, [])
-        for r in rules:
-            if len(wall_idxs) == r['w'] and len(pt_idxs) == r['p']:
-                valid = True
-                if r.get('t'):
-                    for w_idx in wall_idxs:
-                        if not isinstance(self.sim.walls[w_idx], r['t']): valid = False; break
-                if valid: self.sim.add_constraint_object(r['f'](self.sim, wall_idxs, pt_idxs)); return True
-        return False

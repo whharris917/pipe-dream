@@ -7,6 +7,7 @@ import config
 from physics_core import integrate_n_steps, build_neighbor_list, check_displacement, apply_thermostat, spatial_sort
 from geometry import Line, Point, Circle
 from constraints import create_constraint, Constraint, Length
+from definitions import CONSTRAINT_DEFS  # New Import
 
 class Simulation:
     def __init__(self):
@@ -335,6 +336,26 @@ class Simulation:
                     break
         
         return hit_wall
+
+    def attempt_apply_constraint(self, ctype, wall_idxs, pt_idxs):
+        """
+        Validates and applies a constraint based on rules in definitions.py.
+        Returns True if successful, False if requirements (args) not met.
+        """
+        rules = CONSTRAINT_DEFS.get(ctype, [])
+        for r in rules:
+            if len(wall_idxs) == r['w'] and len(pt_idxs) == r['p']:
+                valid = True
+                if r.get('t'):
+                    for w_idx in wall_idxs:
+                        if not isinstance(self.walls[w_idx], r['t']): 
+                            valid = False; break
+                if valid:
+                    # 'f' is the lambda in CONSTRAINT_DEFS that instantiates the class
+                    c_obj = r['f'](self, wall_idxs, pt_idxs)
+                    self.add_constraint_object(c_obj)
+                    return True
+        return False
 
     def apply_constraints(self, iterations=20):
         """
