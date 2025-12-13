@@ -145,14 +145,9 @@ class FastMDEditor:
             if self.app.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
-        hit_wall = -1; rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.app.zoom)
-        for i, w in enumerate(self.sim.walls):
-            if isinstance(w, Line):
-                p1=w.start; p2=w.end; p3=np.array([sim_x, sim_y]); d_vec = p2-p1; len_sq = np.dot(d_vec, d_vec)
-                dist = np.linalg.norm(p3-p1) if len_sq == 0 else np.linalg.norm(p3 - (p1 + max(0, min(1, np.dot(p3-p1, d_vec)/len_sq))*d_vec))
-                if dist < rad_sim: hit_wall = i; break
-            elif isinstance(w, Circle):
-                if abs(math.hypot(sim_x - w.center[0], sim_y - w.center[1]) - w.radius) < rad_sim: hit_wall = i; break
+        # --- REFACTOR: Delegated hit test to Sim ---
+        rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.app.zoom)
+        hit_wall = self.sim.find_wall_at(sim_x, sim_y, rad_sim)
         
         if hit_wall != -1:
             if self.app.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
@@ -171,21 +166,8 @@ class FastMDEditor:
         if self.app.mode == config.MODE_EDITOR and not self.app.editor_paused:
             self.app.geo_time += dt
 
-        t = self.app.geo_time
-        for c in self.sim.constraints:
-            if hasattr(c, 'driver') and c.driver:
-                d = c.driver
-                if c.base_value is None: c.base_value = c.value
-                
-                base = c.base_value
-                t0 = getattr(c, 'base_time', 0.0)
-                dt_drive = t - t0
-                
-                if d['type'] == 'sin':
-                    offset = d['amp'] * math.sin(2 * math.pi * d['freq'] * dt_drive + math.radians(d['phase']))
-                    c.value = base + offset
-                elif d['type'] == 'lin':
-                    c.value = base + d['rate'] * dt_drive
+        # --- REFACTOR: Delegated Constraint Animation to Sim ---
+        self.sim.update_constraint_drivers(self.app.geo_time)
         
         if self.app.mode == config.MODE_EDITOR:
             self.sim.apply_constraints()

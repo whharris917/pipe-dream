@@ -287,6 +287,54 @@ class Simulation:
                 v_s = rs - pivot; v_e = re - pivot
                 w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
                 w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
+    
+    def update_constraint_drivers(self, current_time):
+        """Updates constraint values based on attached drivers (motors/oscillators)."""
+        for c in self.constraints:
+            if hasattr(c, 'driver') and c.driver:
+                d = c.driver
+                if c.base_value is None: c.base_value = c.value
+                
+                base = c.base_value
+                t0 = getattr(c, 'base_time', 0.0)
+                dt_drive = current_time - t0
+                
+                if d['type'] == 'sin':
+                    offset = d['amp'] * math.sin(2 * math.pi * d['freq'] * dt_drive + math.radians(d['phase']))
+                    c.value = base + offset
+                elif d['type'] == 'lin':
+                    c.value = base + d['rate'] * dt_drive
+
+    def find_wall_at(self, x, y, radius):
+        """Returns the index of a wall or circle intersecting the given point (x,y) with radius."""
+        hit_wall = -1
+        p3 = np.array([x, y])
+        
+        for i, w in enumerate(self.walls):
+            if isinstance(w, Line):
+                p1 = w.start; p2 = w.end
+                d_vec = p2 - p1
+                len_sq = np.dot(d_vec, d_vec)
+                
+                if len_sq == 0:
+                    dist = np.linalg.norm(p3 - p1)
+                else:
+                    # Projection to find closest point on segment
+                    t = max(0, min(1, np.dot(p3 - p1, d_vec) / len_sq))
+                    closest = p1 + t * d_vec
+                    dist = np.linalg.norm(p3 - closest)
+                
+                if dist < radius:
+                    hit_wall = i
+                    break
+                    
+            elif isinstance(w, Circle):
+                dist = math.hypot(x - w.center[0], y - w.center[1])
+                if abs(dist - w.radius) < radius:
+                    hit_wall = i
+                    break
+        
+        return hit_wall
 
     def apply_constraints(self, iterations=20):
         """
