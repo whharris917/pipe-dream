@@ -8,12 +8,18 @@ class Constraint:
         self.type = type_name
         self.temp = False # For temporary drag constraints
         self.icon_rect = None # For hit testing
+        self.driver = None # For animation/forcing
+        self.base_value = None # Original value before driving
 
     def solve(self, entities):
         raise NotImplementedError
 
     def to_dict(self):
-        raise NotImplementedError
+        d = {'type': self.type, 'indices': self.indices}
+        if hasattr(self, 'value'): d['value'] = self.value
+        if self.driver: d['driver'] = self.driver
+        if self.base_value is not None: d['base_value'] = self.base_value
+        return d
 
     def get_visual_center(self, transform_func, entities):
         """Returns the preferred (x, y) screen coordinates for the icon."""
@@ -177,9 +183,6 @@ class Coincident(Constraint):
             
         self._draw_icon(screen, cx + offset[0], cy + offset[1], "C", font, color=(100, 255, 255))
 
-    def to_dict(self):
-        return {'type': 'COINCIDENT', 'indices': self.indices}
-
 class Collinear(Constraint):
     def __init__(self, pt_wall_idx, pt_idx, line_wall_idx):
         super().__init__('COLLINEAR')
@@ -226,9 +229,6 @@ class Collinear(Constraint):
         self._draw_connector(screen, p_pos, l_pos, (100, 150, 100))
         self._draw_icon(screen, cx + offset[0], cy + offset[1], "CL", font, color=(150, 255, 150))
 
-    def to_dict(self):
-        return {'type': 'COLLINEAR', 'indices': self.indices}
-
 class Midpoint(Constraint):
     def __init__(self, pt_wall_idx, pt_idx, line_wall_idx):
         super().__init__('MIDPOINT')
@@ -270,9 +270,6 @@ class Midpoint(Constraint):
         self._draw_connector(screen, p_pos, l_pos, (100, 100, 150))
         self._draw_icon(screen, cx + offset[0], cy + offset[1], "M", font, color=(150, 150, 255))
 
-    def to_dict(self):
-        return {'type': 'MIDPOINT', 'indices': self.indices}
-
 class Length(Constraint):
     def __init__(self, entity_idx, target_length):
         super().__init__('LENGTH')
@@ -298,9 +295,6 @@ class Length(Constraint):
     def render(self, screen, transform_func, entities, font, offset=(0,0)):
         cx, cy = self.get_visual_center(transform_func, entities)
         self._draw_icon(screen, cx + offset[0], cy + offset[1], f"{self.value:.1f}", font, color=(255, 200, 100))
-
-    def to_dict(self):
-        return {'type': 'LENGTH', 'indices': self.indices, 'value': self.value}
 
 class EqualLength(Constraint):
     def __init__(self, entity_idx1, entity_idx2):
@@ -339,9 +333,6 @@ class EqualLength(Constraint):
         
         self._draw_connector(screen, c1, c2)
         self._draw_icon(screen, cx + offset[0], cy + offset[1], "=", font)
-
-    def to_dict(self):
-        return {'type': 'EQUAL', 'indices': self.indices}
 
 class Angle(Constraint):
     def __init__(self, type_name, entity_idx1, entity_idx2=None):
@@ -427,9 +418,6 @@ class Angle(Constraint):
             sym = "//" if self.type == 'PARALLEL' else "T"
             self._draw_icon(screen, cx + offset[0], cy + offset[1], sym, font)
 
-    def to_dict(self):
-        return {'type': self.type, 'indices': self.indices}
-
 class FixedAngle(Constraint):
     def __init__(self, w1_idx, w2_idx, angle_deg):
         super().__init__('ANGLE')
@@ -441,6 +429,8 @@ class FixedAngle(Constraint):
             e1 = entities[self.indices[0]]
             e2 = entities[self.indices[1]]
         except IndexError: return
+        
+        if not isinstance(e1, Line) or not isinstance(e2, Line): return
 
         v1 = e1.end - e1.start
         v2 = e2.end - e2.start
@@ -461,14 +451,6 @@ class FixedAngle(Constraint):
         fixed2 = (e2.get_inv_mass(0) == 0 and e2.get_inv_mass(1) == 0)
         
         if fixed1 and fixed2: return
-        
-        # To reduce the angle difference:
-        # If we rotate v2 by -diff, angle becomes (curr - diff) = target.
-        # If we rotate v1 by +diff, angle becomes (curr - (+diff)) = target? 
-        # Angle = Theta2 - Theta1. 
-        # Target = (Theta2 - delta2) - (Theta1 + delta1)
-        # diff = (Theta2 - Theta1) - Target
-        # We need delta1 + delta2 = diff.
         
         stiffness = 0.5
         if fixed1:
@@ -491,19 +473,23 @@ class FixedAngle(Constraint):
         self._draw_connector(screen, c1, c2)
         self._draw_icon(screen, cx + offset[0], cy + offset[1], f"{self.value:.0f}°", font, color=(255, 200, 200))
 
-    def to_dict(self):
-        return {'type': 'ANGLE', 'indices': self.indices, 'value': self.value}
-
 def create_constraint(data):
     t = data['type']
     idx = data['indices']
-    if t == 'COINCIDENT': return Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
-    elif t == 'COLLINEAR': return Collinear(idx[0][0], idx[0][1], idx[1])
-    elif t == 'MIDPOINT': return Midpoint(idx[0][0], idx[0][1], idx[1])
-    elif t == 'LENGTH': return Length(idx[0], data['value'])
-    elif t == 'EQUAL': return EqualLength(idx[0], idx[1])
-    elif t == 'ANGLE': return FixedAngle(idx[0], idx[1], data['value'])
+    
+    c = None
+    if t == 'COINCIDENT': c = Coincident(idx[0][0], idx[0][1], idx[1][0], idx[1][1])
+    elif t == 'COLLINEAR': c = Collinear(idx[0][0], idx[0][1], idx[1])
+    elif t == 'MIDPOINT': c = Midpoint(idx[0][0], idx[0][1], idx[1])
+    elif t == 'LENGTH': c = Length(idx[0], data['value'])
+    elif t == 'EQUAL': c = EqualLength(idx[0], idx[1])
+    elif t == 'ANGLE': c = FixedAngle(idx[0], idx[1], data['value'])
     elif t in ['HORIZONTAL', 'VERTICAL', 'PARALLEL', 'PERPENDICULAR']:
-        if len(idx) == 2: return Angle(t, idx[0], idx[1])
-        else: return Angle(t, idx[0])
-    return None
+        if len(idx) == 2: c = Angle(t, idx[0], idx[1])
+        else: c = Angle(t, idx[0])
+        
+    if c:
+        if 'driver' in data: c.driver = data['driver']
+        if 'base_value' in data: c.base_value = data['base_value']
+    
+    return c

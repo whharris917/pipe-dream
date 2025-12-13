@@ -175,7 +175,6 @@ class Simulation:
         for w in self.walls:
             d = w.to_dict()
             if d['type'] == 'line':
-                # Deep copy required to prevent modifying actual state
                 d = copy.deepcopy(d)
                 d['start'][0] -= center_x; d['start'][1] -= center_y
                 d['end'][0] -= center_x; d['end'][1] -= center_y
@@ -190,21 +189,32 @@ class Simulation:
             normalized_walls.append(d)
             
         serialized_constraints = [c.to_dict() for c in self.constraints]
-        return {'walls': normalized_walls, 'constraints': serialized_constraints}
+        
+        # Return both the normalized data and the offset used
+        return {
+            'walls': normalized_walls, 
+            'constraints': serialized_constraints,
+            'origin_offset': [center_x, center_y]
+        }
 
-    def place_geometry(self, geometry_data, x, y):
+    def place_geometry(self, geometry_data, x, y, use_original_coordinates=False):
         self.snapshot()
         walls_data = geometry_data.get('walls', [])
         constraints_data = geometry_data.get('constraints', [])
         
+        # If we want to restore original coordinates, we need the stored offset
+        offset_x, offset_y = x, y
+        if use_original_coordinates:
+            orig_offset = geometry_data.get('origin_offset', [0, 0])
+            offset_x, offset_y = orig_offset[0], orig_offset[1]
+        
         base_index = len(self.walls)
         
         for wd in walls_data:
-            # Important: we must add (x,y) to the relative coordinates in wd
             if wd['type'] == 'line':
                 # Manually reconstruct to ensure clean state
-                start = np.array(wd['start']) + np.array([x, y])
-                end = np.array(wd['end']) + np.array([x, y])
+                start = np.array(wd['start']) + np.array([offset_x, offset_y])
+                end = np.array(wd['end']) + np.array([offset_x, offset_y])
                 w = Line(start, end, wd.get('ref', False))
                 w.anchored = wd.get('anchored', [False, False])
                 w.sigma = wd.get('sigma', 1.0)
@@ -215,14 +225,14 @@ class Simulation:
                 if wd.get('anim'):
                     anim = copy.deepcopy(wd['anim'])
                     if anim['type'] == 'rotate':
-                        anim['ref_start'][0] += x; anim['ref_start'][1] += y
-                        anim['ref_end'][0] += x; anim['ref_end'][1] += y
+                        anim['ref_start'][0] += offset_x; anim['ref_start'][1] += offset_y
+                        anim['ref_end'][0] += offset_x; anim['ref_end'][1] += offset_y
                     w.anim = anim
                     
                 self.walls.append(w)
                 
             elif wd['type'] == 'circle':
-                center = np.array(wd['center']) + np.array([x, y])
+                center = np.array(wd['center']) + np.array([offset_x, offset_y])
                 c = Circle(center, wd['radius'])
                 c.anchored = wd.get('anchored', [False])
                 c.sigma = wd.get('sigma', 1.0)
