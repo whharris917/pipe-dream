@@ -306,6 +306,27 @@ class Simulation:
                 elif d['type'] == 'lin':
                     c.value = base + d['rate'] * dt_drive
 
+    def get_context_options(self, target_type, index):
+        """Returns a list of context menu options for a given target."""
+        opts = []
+        if target_type == 'constraint':
+            if 0 <= index < len(self.constraints):
+                c = self.constraints[index]
+                opts.append("Delete Constraint")
+                if getattr(c, 'type', '') == 'ANGLE':
+                    opts.insert(0, "Set Angle...")
+                    opts.insert(1, "Animate...")
+        elif target_type == 'wall':
+            if 0 <= index < len(self.walls):
+                w = self.walls[index]
+                opts = ["Properties", "Delete"]
+                if isinstance(w, Line):
+                    opts.extend(["Set Length...", "Set Rotation..."])
+        elif target_type == 'point':
+            opts = ["Anchor"]
+            
+        return opts
+
     def find_wall_at(self, x, y, radius):
         """Returns the index of a wall or circle intersecting the given point (x,y) with radius."""
         hit_wall = -1

@@ -127,10 +127,7 @@ class FastMDEditor:
             for i, c in enumerate(self.sim.constraints):
                 if c.hit_test(mx, my): 
                     self.ctx_vars['const'] = i
-                    opts = ["Delete Constraint"]
-                    if getattr(c, 'type', '') == 'ANGLE':
-                        opts.insert(0, "Set Angle...")
-                        opts.insert(1, "Animate...")
+                    opts = self.sim.get_context_options('constraint', i)
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
@@ -141,7 +138,8 @@ class FastMDEditor:
 
         if hit_pt:
             self.ctx_vars['wall'] = hit_pt[0]; self.ctx_vars['pt'] = hit_pt[1]
-            self.context_menu = ContextMenu(mx, my, ["Anchor"])
+            opts = self.sim.get_context_options('point', -1) # Index irrelevant for generic point opts currently
+            self.context_menu = ContextMenu(mx, my, opts)
             if self.app.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
@@ -152,8 +150,7 @@ class FastMDEditor:
             if self.app.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
             else:
                 self.ctx_vars['wall'] = hit_wall
-                opts = ["Properties", "Delete"]
-                if isinstance(self.sim.walls[hit_wall], Line): opts.extend(["Set Length...", "Set Rotation..."])
+                opts = self.sim.get_context_options('wall', hit_wall)
                 self.context_menu = ContextMenu(mx, my, opts)
         else:
             if self.app.mode == config.MODE_EDITOR: self.change_tool(config.TOOL_SELECT); self.app.set_status("Switched to Select Tool")
