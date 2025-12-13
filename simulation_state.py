@@ -254,9 +254,12 @@ class Simulation:
                 
             c_obj = create_constraint(temp_data)
             if c_obj:
-                # Stamp start time to decouple animations
+                # Stamp start time ONLY if it doesn't already exist from the loaded data
                 if hasattr(c_obj, 'driver') and c_obj.driver:
-                    c_obj.base_time = current_time
+                    if not hasattr(c_obj, 'base_time') or c_obj.base_time is None:
+                        c_obj.base_time = current_time
+                    # If base_time exists (loaded from file), we KEEP it to preserve relative sync
+                    
                 self.constraints.append(c_obj)
             
         self.rebuild_static_atoms()

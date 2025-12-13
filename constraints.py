@@ -10,6 +10,7 @@ class Constraint:
         self.icon_rect = None # For hit testing
         self.driver = None # For animation/forcing
         self.base_value = None # Original value before driving
+        # base_time is dynamic, added when a driver is attached/started
 
     def solve(self, entities):
         raise NotImplementedError
@@ -19,6 +20,10 @@ class Constraint:
         if hasattr(self, 'value'): d['value'] = self.value
         if self.driver: d['driver'] = self.driver
         if self.base_value is not None: d['base_value'] = self.base_value
+        
+        # --- UPDATE: Persist base_time ---
+        if hasattr(self, 'base_time'): d['base_time'] = self.base_time
+        
         return d
 
     def get_visual_center(self, transform_func, entities):
@@ -491,5 +496,7 @@ def create_constraint(data):
     if c:
         if 'driver' in data: c.driver = data['driver']
         if 'base_value' in data: c.base_value = data['base_value']
+        # --- UPDATE: Restore base_time if present ---
+        if 'base_time' in data: c.base_time = data['base_time']
     
     return c

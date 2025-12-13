@@ -15,7 +15,9 @@ def save_file(sim, app, filename):
     view_state = {
         'zoom': app.zoom,
         'pan_x': app.pan_x,
-        'pan_y': app.pan_y
+        'pan_y': app.pan_y,
+        # --- UPDATE: Capture editor time to allow full state restoration ---
+        'geo_time': getattr(app, 'geo_time', 0.0)
     }
 
     state = {
@@ -79,7 +81,9 @@ def save_geometry_file(sim, app, filename):
     view_state = {
         'zoom': app.zoom,
         'pan_x': app.pan_x,
-        'pan_y': app.pan_y
+        'pan_y': app.pan_y,
+        # --- UPDATE: Capture editor time ---
+        'geo_time': getattr(app, 'geo_time', 0.0)
     }
     
     wrapper = {
