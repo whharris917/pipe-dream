@@ -197,7 +197,7 @@ class Simulation:
             'origin_offset': [center_x, center_y]
         }
 
-    def place_geometry(self, geometry_data, x, y, use_original_coordinates=False):
+    def place_geometry(self, geometry_data, x, y, use_original_coordinates=False, current_time=0.0):
         self.snapshot()
         walls_data = geometry_data.get('walls', [])
         constraints_data = geometry_data.get('constraints', [])
@@ -247,8 +247,17 @@ class Simulation:
                 else: new_indices.append(idx + base_index)
             
             temp_data = cd.copy(); temp_data['indices'] = new_indices
+            
+            # Deep copy driver so imported instances are independent
+            if 'driver' in temp_data and temp_data['driver']:
+                temp_data['driver'] = copy.deepcopy(temp_data['driver'])
+                
             c_obj = create_constraint(temp_data)
-            if c_obj: self.constraints.append(c_obj)
+            if c_obj:
+                # Stamp start time to decouple animations
+                if hasattr(c_obj, 'driver') and c_obj.driver:
+                    c_obj.base_time = current_time
+                self.constraints.append(c_obj)
             
         self.rebuild_static_atoms()
 
