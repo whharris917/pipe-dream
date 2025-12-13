@@ -25,6 +25,10 @@ class AppState:
         self.sim_view = {'zoom': 1.0, 'pan_x': 0.0, 'pan_y': 0.0}
         self.editor_view = {'zoom': 1.5, 'pan_x': 0.0, 'pan_y': 0.0}
         
+        # Tool States (Persistent per mode)
+        self.sim_tool = config.TOOL_BRUSH
+        self.editor_tool = config.TOOL_SELECT
+        
         # Selection
         self.selected_walls = set()
         self.selected_points = set()
@@ -50,6 +54,9 @@ class AppState:
         self.sim_backup_state = None 
         # Editor State (Walls/Constraints) is stored here when in Sim Mode
         self.editor_storage = {'walls': [], 'constraints': []}
+        
+        # Simulation Running State Storage
+        self.was_sim_running = False
         
         # File Paths
         self.current_sim_filepath = None
@@ -77,4 +84,9 @@ class AppState:
         if tool_id in self.tools:
             self.current_tool = self.tools[tool_id]
             self.current_tool.activate()
+            # Store the tool selection based on current mode
+            if self.mode == config.MODE_SIM:
+                self.sim_tool = tool_id
+            else:
+                self.editor_tool = tool_id
             self.set_status(f"Tool: {self.current_tool.name}")
