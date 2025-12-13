@@ -19,164 +19,142 @@ from definitions import CONSTRAINT_DEFS
 
 class UIManager:
     """Helper to organize UI elements"""
-    def __init__(self):
+    def __init__(self, layout, app_input_world=None):
         self.sliders = {}
         self.buttons = {}
         self.tools = {}
         self.inputs = {}
-        self.menu = None
-
-class FastMDEditor:
-    def __init__(self):
-        # 1. System Setup
-        try: self.root_tk = Tk(); self.root_tk.withdraw()
-        except: self.root_tk = None
-
-        pygame.init()
-        # Initialize with config size, but allow resizing
-        self.screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_HEIGHT), pygame.RESIZABLE)
-        pygame.display.set_caption("Flow State - Chemical Engineering Simulation")
+        self.menu = MenuBar(layout['W'], config.TOP_MENU_H)
+        self.menu.items["File"] = ["New", "Open...", "Save", "Save As...", "---", "Import Geometry"] 
         
-        self.font = pygame.font.SysFont("segoeui", 15)
-        self.big_font = pygame.font.SysFont("segoeui", 22)
-        self.renderer = Renderer(self.screen, self.font, self.big_font)
-        self.clock = pygame.time.Clock()
-        self.running = True
+        self._init_elements(layout)
+        # Store or create the input field if not provided (legacy support)
+        if app_input_world:
+            self.inputs['world'] = app_input_world
+        else:
+            rp_x = layout['RIGHT_X'] + 15
+            rp_y_for_input = config.TOP_MENU_H + 120 + 480 + 160 + 60
+            self.inputs['world'] = InputField(rp_x + 80, rp_y_for_input, 60, 25, str(config.DEFAULT_WORLD_SIZE))
 
-        # 2. App Logic
-        self.sim = Simulation()
-        self.app = AppState()
-        self.ui = UIManager()
-        
-        # Adjust default view to show boundaries (Zoomed out slightly)
-        # Reduced editor zoom from 1.2 to 0.9 to match Sim view and fit in default window height
-        self.app.zoom = 0.9
-        self.app.sim_view['zoom'] = 0.9
-        self.app.editor_view['zoom'] = 0.9
-        
-        # Initialize Editor State
-        self.app.editor_paused = False
-        self.app.show_constraints = True
-        self.app.geo_time = 0.0
-        self.last_time = time.time()
-
-        # 3. State Holders for Dialogs
-        self.context_menu = None
-        self.prop_dialog = None
-        self.rot_dialog = None
-        self.anim_dialog = None
-        self.ctx_vars = {'wall': -1, 'pt': None, 'const': -1} # Store context indices
-
-        # 4. Initialization
-        w, h = self.screen.get_size()
-        self.init_layout(w, h)
-        self.init_ui_elements()
-        self.init_mappings() 
-        self.init_tools()    
-
-    def init_layout(self, w, h):
-        self.layout = {
-            'W': w, 'H': h,
-            'LEFT_X': 0, 'LEFT_W': config.PANEL_LEFT_WIDTH,
-            'RIGHT_W': config.PANEL_RIGHT_WIDTH, 'RIGHT_X': w - config.PANEL_RIGHT_WIDTH,
-            'MID_X': config.PANEL_LEFT_WIDTH, 'MID_W': w - config.PANEL_LEFT_WIDTH - config.PANEL_RIGHT_WIDTH,
-            'MID_H': h - config.TOP_MENU_H
-        }
-
-    def init_tools(self):
-        tool_registry = [
-            (config.TOOL_SELECT, SelectTool, None), (config.TOOL_BRUSH, BrushTool, None),
-            (config.TOOL_LINE, LineTool, None), (config.TOOL_RECT, RectTool, None),
-            (config.TOOL_CIRCLE, CircleTool, None), (config.TOOL_POINT, PointTool, None),
-            (config.TOOL_REF, LineTool, "Ref Line"), 
-        ]
-        for tid, cls, name in tool_registry:
-            self.app.tools[tid] = cls(self.app, self.sim)
-            if name: self.app.tools[tid].name = name
-        self.change_tool(config.TOOL_BRUSH)
-
-    def init_ui_elements(self):
-        # Menu
-        self.ui.menu = MenuBar(self.layout['W'], config.TOP_MENU_H)
-        self.ui.menu.items["File"] = ["New", "Open...", "Save", "Save As...", "---", "Import Geometry"] 
-        
+    def _init_elements(self, layout):
         # --- Mode Tabs (Top Center) ---
         tab_w = 200 # Made wider for tab feel
         tab_h = 28  # Slightly taller
         tab_y = 1   # Almost flush with top
-        center_x = self.layout['W'] // 2
+        center_x = layout['W'] // 2
         tab_inactive_col = (45, 45, 48)
         
-        self.ui.buttons['tab_sim'] = Button(center_x - tab_w, tab_y, tab_w, tab_h, "Simulation", toggle=False, active=True, color_inactive=tab_inactive_col)
-        self.ui.buttons['tab_edit'] = Button(center_x, tab_y, tab_w, tab_h, "Geometry Editor", toggle=False, active=False, color_inactive=tab_inactive_col)
+        self.buttons['tab_sim'] = Button(center_x - tab_w, tab_y, tab_w, tab_h, "Simulation", toggle=False, active=True, color_inactive=tab_inactive_col)
+        self.buttons['tab_edit'] = Button(center_x, tab_y, tab_w, tab_h, "Geometry Editor", toggle=False, active=False, color_inactive=tab_inactive_col)
 
         # Left Panel Buttons
         lp_y = config.TOP_MENU_H + 20; lp_m = 10
-        self.ui.buttons['play'] = Button(self.layout['LEFT_X'] + lp_m, lp_y, self.layout['LEFT_W']-20, 35, "Play/Pause", active=False, color_active=(60, 120, 60), color_inactive=(180, 60, 60)); lp_y += 50
-        self.ui.buttons['clear'] = Button(self.layout['LEFT_X'] + lp_m, lp_y, self.layout['LEFT_W']-20, 35, "Clear", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
-        self.ui.buttons['reset'] = Button(self.layout['LEFT_X'] + lp_m, lp_y, self.layout['LEFT_W']-20, 35, "Reset", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
-        self.ui.buttons['undo'] = Button(self.layout['LEFT_X'] + lp_m, lp_y, self.layout['LEFT_W']-20, 35, "Undo", active=False, toggle=False); lp_y += 45
-        self.ui.buttons['redo'] = Button(self.layout['LEFT_X'] + lp_m, lp_y, self.layout['LEFT_W']-20, 35, "Redo", active=False, toggle=False)
+        self.buttons['play'] = Button(layout['LEFT_X'] + lp_m, lp_y, layout['LEFT_W']-20, 35, "Play/Pause", active=False, color_active=(60, 120, 60), color_inactive=(180, 60, 60)); lp_y += 50
+        self.buttons['clear'] = Button(layout['LEFT_X'] + lp_m, lp_y, layout['LEFT_W']-20, 35, "Clear", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
+        self.buttons['reset'] = Button(layout['LEFT_X'] + lp_m, lp_y, layout['LEFT_W']-20, 35, "Reset", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
+        self.buttons['undo'] = Button(layout['LEFT_X'] + lp_m, lp_y, layout['LEFT_W']-20, 35, "Undo", active=False, toggle=False); lp_y += 45
+        self.buttons['redo'] = Button(layout['LEFT_X'] + lp_m, lp_y, layout['LEFT_W']-20, 35, "Redo", active=False, toggle=False)
 
         # Right Panel Sliders
-        rp_x = self.layout['RIGHT_X'] + 15; rp_w = self.layout['RIGHT_W'] - 30; rp_y = config.TOP_MENU_H + 120
-        self.ui.sliders = {
-            'gravity': SmartSlider(rp_x, rp_y, rp_w, 0.0, 50.0, config.DEFAULT_GRAVITY, "Gravity", hard_min=0.0),
-            'temp': SmartSlider(rp_x, rp_y+60, rp_w, 0.0, 5.0, 0.5, "Temperature", hard_min=0.0),
-            'damping': SmartSlider(rp_x, rp_y+120, rp_w, 0.90, 1.0, config.DEFAULT_DAMPING, "Damping", hard_min=0.0, hard_max=1.0),
-            'dt': SmartSlider(rp_x, rp_y+180, rp_w, 0.0001, 0.01, config.DEFAULT_DT, "Time Step (dt)", hard_min=0.00001),
-            'sigma': SmartSlider(rp_x, rp_y+240, rp_w, 0.5, 2.0, config.ATOM_SIGMA, "Sigma (Size)", hard_min=0.1),
-            'epsilon': SmartSlider(rp_x, rp_y+300, rp_w, 0.1, 5.0, config.ATOM_EPSILON, "Epsilon (Strength)", hard_min=0.0),
-            'speed': SmartSlider(rp_x, rp_y+360, rp_w, 1.0, 100.0, float(config.DEFAULT_DRAW_M), "Speed (Steps/Frame)", hard_min=1.0),
-            'skin': SmartSlider(rp_x, rp_y+420, rp_w, 0.1, 2.0, config.DEFAULT_SKIN_DISTANCE, "Skin Distance", hard_min=0.05)
-        }
+        rp_x = layout['RIGHT_X'] + 15; rp_w = layout['RIGHT_W'] - 30; rp_y = config.TOP_MENU_H + 120
+        self.sliders['gravity'] = SmartSlider(rp_x, rp_y, rp_w, 0.0, 50.0, config.DEFAULT_GRAVITY, "Gravity", hard_min=0.0)
+        self.sliders['temp'] = SmartSlider(rp_x, rp_y+60, rp_w, 0.0, 5.0, 0.5, "Temperature", hard_min=0.0)
+        self.sliders['damping'] = SmartSlider(rp_x, rp_y+120, rp_w, 0.90, 1.0, config.DEFAULT_DAMPING, "Damping", hard_min=0.0, hard_max=1.0)
+        self.sliders['dt'] = SmartSlider(rp_x, rp_y+180, rp_w, 0.0001, 0.01, config.DEFAULT_DT, "Time Step (dt)", hard_min=0.00001)
+        self.sliders['sigma'] = SmartSlider(rp_x, rp_y+240, rp_w, 0.5, 2.0, config.ATOM_SIGMA, "Sigma (Size)", hard_min=0.1)
+        self.sliders['epsilon'] = SmartSlider(rp_x, rp_y+300, rp_w, 0.1, 5.0, config.ATOM_EPSILON, "Epsilon (Strength)", hard_min=0.0)
+        self.sliders['speed'] = SmartSlider(rp_x, rp_y+360, rp_w, 1.0, 100.0, float(config.DEFAULT_DRAW_M), "Speed (Steps/Frame)", hard_min=1.0)
+        self.sliders['skin'] = SmartSlider(rp_x, rp_y+420, rp_w, 0.1, 2.0, config.DEFAULT_SKIN_DISTANCE, "Skin Distance", hard_min=0.05)
         rp_y += 480
         
         btn_half = (rp_w - 10) // 2
-        self.ui.buttons['thermostat'] = Button(rp_x, rp_y, btn_half, 30, "Thermostat", active=False)
-        self.ui.buttons['boundaries'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Bounds", active=False); rp_y += 40
+        self.buttons['thermostat'] = Button(rp_x, rp_y, btn_half, 30, "Thermostat", active=False)
+        self.buttons['boundaries'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Bounds", active=False); rp_y += 40
         
         # Tools
-        self.ui.tools = {
-            'brush': Button(rp_x, rp_y, btn_half, 30, "Brush", active=True, toggle=False),
-            'select': Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Select", active=False, toggle=False),
-            'line': Button(rp_x, rp_y+40, btn_half, 30, "Line", active=False, toggle=False),
-            'rect': Button(rp_x + btn_half + 10, rp_y+40, btn_half, 30, "Rectangle", active=False, toggle=False),
-            'circle': Button(rp_x, rp_y+80, btn_half, 30, "Circle", active=False, toggle=False),
-            'point': Button(rp_x + btn_half + 10, rp_y+80, btn_half, 30, "Point", active=False, toggle=False),
-            'ref': Button(rp_x, rp_y+120, btn_half, 30, "Ref Line", active=False, toggle=False)
-        }
+        self.tools['brush'] = Button(rp_x, rp_y, btn_half, 30, "Brush", active=True, toggle=False)
+        self.tools['select'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Select", active=False, toggle=False)
+        self.tools['line'] = Button(rp_x, rp_y+40, btn_half, 30, "Line", active=False, toggle=False)
+        self.tools['rect'] = Button(rp_x + btn_half + 10, rp_y+40, btn_half, 30, "Rectangle", active=False, toggle=False)
+        self.tools['circle'] = Button(rp_x, rp_y+80, btn_half, 30, "Circle", active=False, toggle=False)
+        self.tools['point'] = Button(rp_x + btn_half + 10, rp_y+80, btn_half, 30, "Point", active=False, toggle=False)
+        self.tools['ref'] = Button(rp_x, rp_y+120, btn_half, 30, "Ref Line", active=False, toggle=False)
         rp_y += 160
         
-        self.ui.sliders['brush_size'] = SmartSlider(rp_x, rp_y, rp_w, 1.0, 10.0, 2.0, "Brush Radius", hard_min=0.5); rp_y+=60
-        self.app.input_world = InputField(rp_x + 80, rp_y, 60, 25, str(config.DEFAULT_WORLD_SIZE))
-        self.ui.buttons['resize'] = Button(rp_x + 150, rp_y, rp_w - 150, 25, "Resize & Restart", active=False, toggle=False)
+        self.sliders['brush_size'] = SmartSlider(rp_x, rp_y, rp_w, 1.0, 10.0, 2.0, "Brush Radius", hard_min=0.5); rp_y+=60
+        # self.inputs['world'] created in __init__ or passed in
+        self.buttons['resize'] = Button(rp_x + 150, rp_y, rp_w - 150, 25, "Resize & Restart", active=False, toggle=False)
 
         # Editor Buttons
         ae_y = config.TOP_MENU_H + 40
-        self.ui.buttons['save_geo'] = Button(rp_x, ae_y, rp_w, 40, "Save Geometry", active=False, toggle=False, color_inactive=(50, 120, 50)); ae_y+=50
-        self.ui.buttons['discard_geo'] = Button(rp_x, ae_y, rp_w, 40, "Discard & Exit", active=False, toggle=False, color_inactive=(150, 50, 50)); ae_y+=50
+        self.buttons['save_geo'] = Button(rp_x, ae_y, rp_w, 40, "Save Geometry", active=False, toggle=False, color_inactive=(50, 120, 50)); ae_y+=50
+        self.buttons['discard_geo'] = Button(rp_x, ae_y, rp_w, 40, "Discard & Exit", active=False, toggle=False, color_inactive=(150, 50, 50)); ae_y+=50
         
-        self.ui.buttons['editor_play'] = Button(rp_x, ae_y, btn_half, 35, "Pause", active=False, toggle=False); 
-        self.ui.buttons['show_const'] = Button(rp_x + btn_half + 10, ae_y, btn_half, 35, "Hide Cnstr", active=False, toggle=False); ae_y+=45
+        self.buttons['editor_play'] = Button(rp_x, ae_y, btn_half, 35, "Pause", active=False, toggle=False); 
+        self.buttons['show_const'] = Button(rp_x + btn_half + 10, ae_y, btn_half, 35, "Hide Cnstr", active=False, toggle=False); ae_y+=45
 
         # Constraints
-        self.ui.buttons['const_coincident'] = Button(rp_x, ae_y, rp_w, 30, "Coincident (Pt-Pt/Ln/Circ)", toggle=False)
-        self.ui.buttons['const_collinear'] = Button(rp_x, ae_y+35, rp_w, 30, "Collinear (Pt-Ln)", toggle=False)
-        self.ui.buttons['const_midpoint'] = Button(rp_x, ae_y+70, rp_w, 30, "Midpoint (Pt-Ln)", toggle=False)
-        self.ui.buttons['const_length'] = Button(rp_x, ae_y+105, btn_half, 30, "Fix Length", toggle=False)
-        self.ui.buttons['const_equal'] = Button(rp_x + btn_half + 10, ae_y+105, btn_half, 30, "Equal Len", toggle=False)
-        self.ui.buttons['const_parallel'] = Button(rp_x, ae_y+140, btn_half, 30, "Parallel", toggle=False)
-        self.ui.buttons['const_perp'] = Button(rp_x + btn_half + 10, ae_y+140, btn_half, 30, "Perpendic", toggle=False)
-        self.ui.buttons['const_horiz'] = Button(rp_x, ae_y+175, btn_half, 30, "Horizontal", toggle=False)
-        self.ui.buttons['const_vert'] = Button(rp_x + btn_half + 10, ae_y+175, btn_half, 30, "Vertical", toggle=False)
-        self.ui.buttons['const_angle'] = Button(rp_x, ae_y+210, btn_half, 30, "Angle", toggle=False)
+        self.buttons['const_coincident'] = Button(rp_x, ae_y, rp_w, 30, "Coincident (Pt-Pt/Ln/Circ)", toggle=False)
+        self.buttons['const_collinear'] = Button(rp_x, ae_y+35, rp_w, 30, "Collinear (Pt-Ln)", toggle=False)
+        self.buttons['const_midpoint'] = Button(rp_x, ae_y+70, rp_w, 30, "Midpoint (Pt-Ln)", toggle=False)
+        self.buttons['const_length'] = Button(rp_x, ae_y+105, btn_half, 30, "Fix Length", toggle=False)
+        self.buttons['const_equal'] = Button(rp_x + btn_half + 10, ae_y+105, btn_half, 30, "Equal Len", toggle=False)
+        self.buttons['const_parallel'] = Button(rp_x, ae_y+140, btn_half, 30, "Parallel", toggle=False)
+        self.buttons['const_perp'] = Button(rp_x + btn_half + 10, ae_y+140, btn_half, 30, "Perpendic", toggle=False)
+        self.buttons['const_horiz'] = Button(rp_x, ae_y+175, btn_half, 30, "Horizontal", toggle=False)
+        self.buttons['const_vert'] = Button(rp_x + btn_half + 10, ae_y+175, btn_half, 30, "Vertical", toggle=False)
+        self.buttons['const_angle'] = Button(rp_x, ae_y+210, btn_half, 30, "Angle", toggle=False)
         
         ae_y += 210
-        self.ui.buttons['extend'] = Button(rp_x + btn_half + 10, ae_y, btn_half, 30, "Extend Infinite", toggle=False)
+        self.buttons['extend'] = Button(rp_x + btn_half + 10, ae_y, btn_half, 30, "Extend Infinite", toggle=False)
 
-    def init_mappings(self):
-        # 1. Tool Mapping
+    def draw(self, screen, font, mode):
+        # Determine active lists
+        sim_elements = [
+            self.buttons['play'], self.buttons['clear'], self.buttons['reset'], 
+            self.buttons['undo'], self.buttons['redo'],
+            *self.sliders.values(), self.buttons['thermostat'], self.buttons['boundaries'],
+            self.tools['brush'], self.tools['line'], self.buttons['resize'],
+            self.inputs['world']
+        ]
+        
+        editor_elements = [
+            self.buttons['save_geo'], self.buttons['discard_geo'], 
+            self.buttons['undo'], self.buttons['redo'], self.buttons['clear'],
+            self.buttons['editor_play'], self.buttons['show_const'],
+            *self.tools.values(), 
+            self.buttons['const_coincident'], self.buttons['const_collinear'], self.buttons['const_midpoint'],
+            self.buttons['const_length'], self.buttons['const_equal'], self.buttons['const_parallel'],
+            self.buttons['const_perp'], self.buttons['const_horiz'], self.buttons['const_vert'],
+            self.buttons['const_angle'], self.buttons['extend']
+        ]
+        
+        active_list = sim_elements if mode == config.MODE_SIM else editor_elements
+        
+        for el in active_list:
+            if el == self.inputs['world'] and mode == config.MODE_SIM:
+                screen.blit(font.render("World Size:", True, (200, 200, 200)), 
+                             (el.rect.x - 70, el.rect.y + 4))
+            el.draw(screen, font)
+
+        # Draw Menu (Background covers top area, Dropdowns cover buttons)
+        self.menu.draw(screen, font)
+
+        # Draw Tabs LAST so they appear on top of the Menu Background
+        self.buttons['tab_sim'].active = (mode == config.MODE_SIM)
+        self.buttons['tab_edit'].active = (mode == config.MODE_EDITOR)
+        self.buttons['tab_sim'].draw(screen, font)
+        self.buttons['tab_edit'].draw(screen, font)
+
+class InputHandler:
+    def __init__(self, editor):
+        self.editor = editor
+        self.app = editor.app
+        self.sim = editor.sim
+        self.ui = editor.ui
+        self.layout = editor.layout
+        
+        # Mappings
         self.tool_btn_map = {
             self.ui.tools['brush']: config.TOOL_BRUSH, self.ui.tools['select']: config.TOOL_SELECT,
             self.ui.tools['line']: config.TOOL_LINE, self.ui.tools['rect']: config.TOOL_RECT,
@@ -184,7 +162,6 @@ class FastMDEditor:
             self.ui.tools['ref']: config.TOOL_REF
         }
         
-        # 2. Constraint Mapping
         self.constraint_btn_map = {
             self.ui.buttons['const_length']: 'LENGTH', self.ui.buttons['const_equal']: 'EQUAL',
             self.ui.buttons['const_parallel']: 'PARALLEL', self.ui.buttons['const_perp']: 'PERPENDICULAR',
@@ -192,95 +169,72 @@ class FastMDEditor:
             self.ui.buttons['const_midpoint']: 'MIDPOINT', self.ui.buttons['const_horiz']: 'HORIZONTAL',
             self.ui.buttons['const_vert']: 'VERTICAL', self.ui.buttons['const_angle']: 'ANGLE'
         }
-
-        # 3. Actions Mapping
+        
+        # Action Map
         self.ui_action_map = {
             self.ui.buttons['reset']: lambda: self.sim.reset_simulation(),
             self.ui.buttons['clear']: lambda: self.sim.clear_particles(),
             self.ui.buttons['undo']: lambda: (self.sim.undo(), self.app.set_status("Undo")),
             self.ui.buttons['redo']: lambda: (self.sim.redo(), self.app.set_status("Redo")),
-            self.ui.buttons['resize']: lambda: self.sim.resize_world(self.app.input_world.get_value(50.0)),
-            self.ui.buttons['discard_geo']: lambda: self.exit_editor_mode(self.app.sim_backup_state),
-            self.ui.buttons['save_geo']: self.save_geo_dialog,
-            self.ui.buttons['extend']: self.toggle_extend,
-            self.ui.buttons['editor_play']: self.toggle_editor_play,
-            self.ui.buttons['show_const']: self.toggle_show_constraints,
-            self.ui.buttons['tab_sim']: lambda: self.switch_mode(config.MODE_SIM),
-            self.ui.buttons['tab_edit']: lambda: self.switch_mode(config.MODE_EDITOR)
+            self.ui.buttons['resize']: lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0)),
+            self.ui.buttons['discard_geo']: lambda: self.editor.exit_editor_mode(self.app.sim_backup_state),
+            self.ui.buttons['save_geo']: self.editor.save_geo_dialog,
+            self.ui.buttons['extend']: self.editor.toggle_extend,
+            self.ui.buttons['editor_play']: self.editor.toggle_editor_play,
+            self.ui.buttons['show_const']: self.editor.toggle_show_constraints,
+            self.ui.buttons['tab_sim']: lambda: self.editor.switch_mode(config.MODE_SIM),
+            self.ui.buttons['tab_edit']: lambda: self.editor.switch_mode(config.MODE_EDITOR)
         }
 
-        # 4. UI Groups
-        self.sim_elements = [
+    def handle_input(self):
+        # Refresh layout ref in case of resize
+        self.layout = self.editor.layout
+        
+        # Build active UI list for hit testing
+        sim_elements = [
             self.ui.buttons['play'], self.ui.buttons['clear'], self.ui.buttons['reset'], 
             self.ui.buttons['undo'], self.ui.buttons['redo'],
             self.ui.buttons['tab_sim'], self.ui.buttons['tab_edit'],
             *self.ui.sliders.values(), self.ui.buttons['thermostat'], self.ui.buttons['boundaries'],
-            self.ui.tools['brush'], self.ui.tools['line'], self.ui.buttons['resize']
+            self.ui.tools['brush'], self.ui.tools['line'], self.ui.buttons['resize'],
+            self.ui.inputs['world']
         ]
-        self.editor_elements = [
+        editor_elements = [
             self.ui.buttons['save_geo'], self.ui.buttons['discard_geo'], 
             self.ui.buttons['undo'], self.ui.buttons['redo'], self.ui.buttons['clear'],
             self.ui.buttons['editor_play'], self.ui.buttons['show_const'],
             self.ui.buttons['tab_sim'], self.ui.buttons['tab_edit'],
             *self.ui.tools.values(), *self.constraint_btn_map.keys(), self.ui.buttons['extend']
         ]
+        ui_list = sim_elements if self.app.mode == config.MODE_SIM else editor_elements
 
-    def handle_resize(self, w, h):
-        old_mid_w = self.layout['MID_W']
-        old_mid_h = self.layout['MID_H']
-        self.init_layout(w, h)
-        
-        if old_mid_w > 0 and old_mid_h > 0:
-            new_mid_w = self.layout['MID_W']
-            new_mid_h = self.layout['MID_H']
-            old_ar = old_mid_w / old_mid_h
-            new_ar = new_mid_w / new_mid_h
-            if abs(new_ar - old_ar) > 0.001:
-                correction = old_ar / new_ar
-                self.app.zoom *= correction
-                self.app.sim_view['zoom'] *= correction
-                self.app.editor_view['zoom'] *= correction
-
-        self.init_ui_elements()
-        self.init_mappings() 
-        self.ui.menu.resize(w)
-
-    def run(self):
-        while self.running:
-            self.handle_input()
-            self.update_physics()
-            self.render()
-            self.clock.tick()
-        if self.root_tk: self.root_tk.destroy()
-        pygame.quit()
-
-    def handle_input(self):
-        ui_list = self.sim_elements if self.app.mode == config.MODE_SIM else self.editor_elements
-        
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: self.running = False
-            elif event.type == pygame.VIDEORESIZE: self.handle_resize(event.w, event.h)
+            if event.type == pygame.QUIT: self.editor.running = False
+            elif event.type == pygame.VIDEORESIZE: self.editor.handle_resize(event.w, event.h)
             
             if self._handle_keys(event): continue
             
+            # Tool Switching
             tool_switched = False
             for btn, tid in self.tool_btn_map.items():
                 if btn.handle_event(event): 
-                    self.change_tool(tid); tool_switched = True
+                    self.editor.change_tool(tid); tool_switched = True
             if tool_switched: continue
 
             if self._handle_menus(event): continue
             if self._handle_dialogs(event): continue
 
+            # General UI
             ui_interacted = False
             for el in ui_list:
                 if el.handle_event(event):
                     ui_interacted = True
                     if self.app.mode == config.MODE_EDITOR and el in self.constraint_btn_map:
-                        self.trigger_constraint(self.constraint_btn_map[el])
+                        self.editor.trigger_constraint(self.constraint_btn_map[el])
                     elif el in self.ui_action_map:
                         self.ui_action_map[el]()
             
+            # Scene Interaction
             mouse_on_ui = (event.type == pygame.MOUSEBUTTONDOWN and 
                           (event.pos[0] > self.layout['RIGHT_X'] or event.pos[0] < self.layout['LEFT_W'] or event.pos[1] < config.TOP_MENU_H))
             
@@ -314,137 +268,61 @@ class FastMDEditor:
             if self.ui.menu.dropdown_rect and self.ui.menu.dropdown_rect.collidepoint(event.pos):
                 rel_y = event.pos[1] - self.ui.menu.dropdown_rect.y - 5; idx = rel_y // 30
                 opts = self.ui.menu.items[self.ui.menu.active_menu]
-                if 0 <= idx < len(opts): self._execute_menu(opts[idx])
+                if 0 <= idx < len(opts): self.editor._execute_menu(opts[idx])
             self.ui.menu.active_menu = None
             return True
         return False
 
-    def _execute_menu(self, selection):
-        if selection == "New": 
-            if self.app.mode == config.MODE_SIM:
-                self.sim.reset_simulation()
-                self.app.input_world.set_value(config.DEFAULT_WORLD_SIZE)
-                self.app.current_sim_filepath = None
-            else:
-                self.sim.walls = []
-                self.sim.constraints = []
-                self.app.current_geom_filepath = None
-                self.app.set_status("New Geometry Created")
-            self._update_window_title()
-        elif selection == "Import Geometry":
-            if self.root_tk:
-                f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom"), ("All Files", "*.*")])
-                if f:
-                    if f.endswith(".sim"):
-                        self.app.set_status("Error: Cannot import .sim file as geometry")
-                        return
-                    data, _ = file_io.load_geometry_file(f)
-                    if data: 
-                        self.app.placing_geo_data = data
-                        self.app.set_status("Place Geometry")
-        elif self.root_tk:
-            if selection == "Save As..." or (selection == "Save"):
-                is_save_as = (selection == "Save As...")
-                if self.app.mode == config.MODE_EDITOR:
-                    if is_save_as or not self.app.current_geom_filepath:
-                        f = filedialog.asksaveasfilename(defaultextension=".geom", filetypes=[("Geometry Files", "*.geom")])
-                        if f: self.app.current_geom_filepath = f
-                    if self.app.current_geom_filepath:
-                        self.app.set_status(file_io.save_geometry_file(self.sim, self.app, self.app.current_geom_filepath))
-                        self._update_window_title()
-                else:
-                    if is_save_as or not self.app.current_sim_filepath:
-                        f = filedialog.asksaveasfilename(defaultextension=".sim", filetypes=[("Simulation Files", "*.sim")])
-                        if f: self.app.current_sim_filepath = f
-                    if self.app.current_sim_filepath:
-                        self.app.set_status(file_io.save_file(self.sim, self.app, self.app.current_sim_filepath))
-                        self._update_window_title()
-            elif selection == "Open...":
-                if self.app.mode == config.MODE_EDITOR:
-                    f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom")])
-                    if f:
-                        if not f.endswith(".geom"):
-                            self.app.set_status("Error: Only .geom files allowed in Editor")
-                            return
-                        self.app.current_geom_filepath = f
-                        data, view_state = file_io.load_geometry_file(f)
-                        if data:
-                            self.sim.clear_particles(snapshot=False)
-                            self.sim.place_geometry(data, 0, 0, use_original_coordinates=True, current_time=self.app.geo_time)
-                            self.app.set_status(f"Loaded Geometry: {f}")
-                            if view_state:
-                                self.app.zoom = view_state['zoom']
-                                self.app.pan_x = view_state['pan_x']
-                                self.app.pan_y = view_state['pan_y']
-                        self._update_window_title()
-                else:
-                    f = filedialog.askopenfilename(filetypes=[("Simulation Files", "*.sim")])
-                    if f:
-                        if not f.endswith(".sim"):
-                            self.app.set_status("Error: Only .sim files allowed in Simulation")
-                            return
-                        self.app.current_sim_filepath = f
-                        success, msg, view_state = file_io.load_file(self.sim, f)
-                        self.app.set_status(msg)
-                        if success: 
-                            self.app.input_world.set_value(self.sim.world_size)
-                            if view_state:
-                                self.app.zoom = view_state['zoom']
-                                self.app.pan_x = view_state['pan_x']
-                                self.app.pan_y = view_state['pan_y']
-                        self._update_window_title()
-        pygame.event.pump()
-
     def _handle_dialogs(self, event):
         captured = False
-        if self.context_menu and self.context_menu.handle_event(event):
-            action = self.context_menu.action
+        if self.editor.context_menu and self.editor.context_menu.handle_event(event):
+            action = self.editor.context_menu.action
             if action == "Delete Constraint":
-                if 0 <= self.ctx_vars['const'] < len(self.sim.constraints):
-                    self.sim.snapshot(); self.sim.constraints.pop(self.ctx_vars['const']); self.sim.apply_constraints()
+                if 0 <= self.editor.ctx_vars['const'] < len(self.sim.constraints):
+                    self.sim.snapshot(); self.sim.constraints.pop(self.editor.ctx_vars['const']); self.sim.apply_constraints()
             elif action == "Set Angle...":
                 val = simpledialog.askfloat("Set Angle", "Enter target angle (degrees):")
                 if val is not None:
-                    if 0 <= self.ctx_vars['const'] < len(self.sim.constraints):
-                        self.sim.constraints[self.ctx_vars['const']].value = val
+                    if 0 <= self.editor.ctx_vars['const'] < len(self.sim.constraints):
+                        self.sim.constraints[self.editor.ctx_vars['const']].value = val
                         self.sim.apply_constraints()
             elif action == "Animate...":
-                c = self.sim.constraints[self.ctx_vars['const']]
+                c = self.sim.constraints[self.editor.ctx_vars['const']]
                 driver = getattr(c, 'driver', None)
-                self.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
+                self.editor.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
             elif action == "Delete": 
-                self.sim.remove_wall(self.ctx_vars['wall']); self.app.selected_walls.clear(); self.app.selected_points.clear()
+                self.sim.remove_wall(self.editor.ctx_vars['wall']); self.app.selected_walls.clear(); self.app.selected_points.clear()
             elif action == "Properties":
-                w_props = self.sim.walls[self.ctx_vars['wall']].to_dict()
-                self.prop_dialog = PropertiesDialog(self.layout['W']//2, self.layout['H']//2, w_props)
+                w_props = self.sim.walls[self.editor.ctx_vars['wall']].to_dict()
+                self.editor.prop_dialog = PropertiesDialog(self.layout['W']//2, self.layout['H']//2, w_props)
             elif action == "Set Rotation...":
-                self.rot_dialog = RotationDialog(self.layout['W']//2, self.layout['H']//2, self.sim.walls[self.ctx_vars['wall']].anim)
-            elif action == "Anchor": self.sim.toggle_anchor(self.ctx_vars['wall'], self.ctx_vars['pt'])
+                self.editor.rot_dialog = RotationDialog(self.layout['W']//2, self.layout['H']//2, self.sim.walls[self.editor.ctx_vars['wall']].anim)
+            elif action == "Anchor": self.sim.toggle_anchor(self.editor.ctx_vars['wall'], self.editor.ctx_vars['pt'])
             elif action == "Set Length...":
                 val = simpledialog.askfloat("Set Length", "Enter target length:")
-                if val: self.sim.add_constraint_object(Length(self.ctx_vars['wall'], val))
-            self.context_menu = None; captured = True
+                if val: self.sim.add_constraint_object(Length(self.editor.ctx_vars['wall'], val))
+            self.editor.context_menu = None; captured = True
 
-        if self.prop_dialog and self.prop_dialog.handle_event(event):
-            if self.prop_dialog.apply: self.sim.update_wall_props(self.ctx_vars['wall'], self.prop_dialog.get_values()); self.prop_dialog.apply = False
-            if self.prop_dialog.done: self.prop_dialog = None
+        if self.editor.prop_dialog and self.editor.prop_dialog.handle_event(event):
+            if self.editor.prop_dialog.apply: self.sim.update_wall_props(self.editor.ctx_vars['wall'], self.editor.prop_dialog.get_values()); self.editor.prop_dialog.apply = False
+            if self.editor.prop_dialog.done: self.editor.prop_dialog = None
             captured = True
-        if self.rot_dialog and self.rot_dialog.handle_event(event):
-            if self.rot_dialog.apply: self.sim.set_wall_rotation(self.ctx_vars['wall'], self.rot_dialog.get_values()); self.rot_dialog.apply = False
-            if self.rot_dialog.done: self.rot_dialog = None
+        if self.editor.rot_dialog and self.editor.rot_dialog.handle_event(event):
+            if self.editor.rot_dialog.apply: self.sim.set_wall_rotation(self.editor.ctx_vars['wall'], self.editor.rot_dialog.get_values()); self.editor.rot_dialog.apply = False
+            if self.editor.rot_dialog.done: self.editor.rot_dialog = None
             captured = True
-        if self.anim_dialog and self.anim_dialog.handle_event(event):
-            if self.anim_dialog.apply:
-                c = self.sim.constraints[self.ctx_vars['const']]
-                if self.anim_dialog.get_values() is None:
+        if self.editor.anim_dialog and self.editor.anim_dialog.handle_event(event):
+            if self.editor.anim_dialog.apply:
+                c = self.sim.constraints[self.editor.ctx_vars['const']]
+                if self.editor.anim_dialog.get_values() is None:
                     if hasattr(c, 'driver'): del c.driver
                     c.base_value = None
                 else:
-                    c.driver = self.anim_dialog.get_values()
+                    c.driver = self.editor.anim_dialog.get_values()
                     if c.base_value is None: c.base_value = c.value 
                     if c.driver['type'] == 'lin': c.base_time = self.app.geo_time 
-                self.anim_dialog.apply = False
-            if self.anim_dialog.done: self.anim_dialog = None
+                self.editor.anim_dialog.apply = False
+            if self.editor.anim_dialog.done: self.editor.anim_dialog = None
             captured = True
         return captured
 
@@ -474,9 +352,109 @@ class FastMDEditor:
         if self.app.current_tool:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 if self.app.state == InteractionState.DRAGGING_GEOMETRY: self.app.current_tool.cancel()
-                else: self._spawn_context_menu(event.pos)
+                else: self.editor._spawn_context_menu(event.pos)
             else:
                 self.app.current_tool.handle_event(event, self.layout)
+
+class FastMDEditor:
+    def __init__(self):
+        # 1. System Setup
+        try: self.root_tk = Tk(); self.root_tk.withdraw()
+        except: self.root_tk = None
+
+        pygame.init()
+        # Initialize with config size, but allow resizing
+        self.screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_HEIGHT), pygame.RESIZABLE)
+        pygame.display.set_caption("Flow State - Chemical Engineering Simulation")
+        
+        self.font = pygame.font.SysFont("segoeui", 15)
+        self.big_font = pygame.font.SysFont("segoeui", 22)
+        self.renderer = Renderer(self.screen, self.font, self.big_font)
+        self.clock = pygame.time.Clock()
+        self.running = True
+
+        # 2. App Logic
+        self.sim = Simulation()
+        self.app = AppState()
+        self.app.input_world = InputField(0, 0, 0, 0) # Placeholder, actual one in UIManager
+        
+        # Adjust default view to show boundaries (Zoomed out slightly)
+        # Reduced editor zoom from 1.2 to 0.9 to match Sim view and fit in default window height
+        self.app.zoom = 0.9
+        self.app.sim_view['zoom'] = 0.9
+        self.app.editor_view['zoom'] = 0.9
+        
+        # Initialize Editor State
+        self.app.editor_paused = False
+        self.app.show_constraints = True
+        self.app.geo_time = 0.0
+        self.last_time = time.time()
+
+        # 3. State Holders for Dialogs
+        self.context_menu = None
+        self.prop_dialog = None
+        self.rot_dialog = None
+        self.anim_dialog = None
+        self.ctx_vars = {'wall': -1, 'pt': None, 'const': -1} # Store context indices
+
+        # 4. Initialization
+        w, h = self.screen.get_size()
+        self.init_layout(w, h)
+        
+        self.ui = UIManager(self.layout, self.app.input_world)
+        self.input_handler = InputHandler(self)
+        
+        self.init_tools()    
+
+    def init_layout(self, w, h):
+        self.layout = {
+            'W': w, 'H': h,
+            'LEFT_X': 0, 'LEFT_W': config.PANEL_LEFT_WIDTH,
+            'RIGHT_W': config.PANEL_RIGHT_WIDTH, 'RIGHT_X': w - config.PANEL_RIGHT_WIDTH,
+            'MID_X': config.PANEL_LEFT_WIDTH, 'MID_W': w - config.PANEL_LEFT_WIDTH - config.PANEL_RIGHT_WIDTH,
+            'MID_H': h - config.TOP_MENU_H
+        }
+
+    def init_tools(self):
+        tool_registry = [
+            (config.TOOL_SELECT, SelectTool, None), (config.TOOL_BRUSH, BrushTool, None),
+            (config.TOOL_LINE, LineTool, None), (config.TOOL_RECT, RectTool, None),
+            (config.TOOL_CIRCLE, CircleTool, None), (config.TOOL_POINT, PointTool, None),
+            (config.TOOL_REF, LineTool, "Ref Line"), 
+        ]
+        for tid, cls, name in tool_registry:
+            self.app.tools[tid] = cls(self.app, self.sim)
+            if name: self.app.tools[tid].name = name
+        self.change_tool(config.TOOL_BRUSH)
+
+    def handle_resize(self, w, h):
+        old_mid_w = self.layout['MID_W']
+        old_mid_h = self.layout['MID_H']
+        self.init_layout(w, h)
+        
+        if old_mid_w > 0 and old_mid_h > 0:
+            new_mid_w = self.layout['MID_W']
+            new_mid_h = self.layout['MID_H']
+            old_ar = old_mid_w / old_mid_h
+            new_ar = new_mid_w / new_mid_h
+            if abs(new_ar - old_ar) > 0.001:
+                correction = old_ar / new_ar
+                self.app.zoom *= correction
+                self.app.sim_view['zoom'] *= correction
+                self.app.editor_view['zoom'] *= correction
+
+        self.ui = UIManager(self.layout, self.app.input_world) # Re-init UI with new layout
+        self.input_handler = InputHandler(self) # Re-bind input handler
+        self.ui.menu.resize(w)
+
+    def run(self):
+        while self.running:
+            self.input_handler.handle_input()
+            self.update_physics()
+            self.render()
+            self.clock.tick()
+        if self.root_tk: self.root_tk.destroy()
+        pygame.quit()
 
     def _spawn_context_menu(self, pos):
         mx, my = pos
@@ -566,22 +544,22 @@ class FastMDEditor:
                     elif pygame.mouse.get_pressed()[2]: self.sim.delete_particles_brush(sx, sy, self.ui.sliders['brush_size'].val)
 
     def render(self):
-        ui_list = self.sim_elements if self.app.mode == config.MODE_SIM else self.editor_elements
+        ui_list = [] # Draw method now handles UI list internally or via UIManager if moved
+        # However, Renderer expects a list. UIManager doesn't have a simple 'get_all' yet.
+        # But UIManager.draw handles drawing all its elements.
         
         held_constraints = self.sim.constraints
         if self.app.mode == config.MODE_EDITOR and not self.app.show_constraints:
             self.sim.constraints = []
             
-        self.renderer.draw_app(self.app, self.sim, self.layout, ui_list)
+        # Draw Scene
+        self.renderer.draw_app(self.app, self.sim, self.layout, []) # Pass empty list, draw UI separately
         
         if self.app.mode == config.MODE_EDITOR and not self.app.show_constraints:
             self.sim.constraints = held_constraints
 
-        self.ui.menu.draw(self.screen, self.font)
-        self.ui.buttons['tab_sim'].active = (self.app.mode == config.MODE_SIM)
-        self.ui.buttons['tab_edit'].active = (self.app.mode == config.MODE_EDITOR)
-        self.ui.buttons['tab_sim'].draw(self.screen, self.font)
-        self.ui.buttons['tab_edit'].draw(self.screen, self.font)
+        # Draw UI
+        self.ui.draw(self.screen, self.font, self.app.mode)
 
         if self.context_menu: self.context_menu.draw(self.screen, self.font)
         if self.prop_dialog: self.prop_dialog.draw(self.screen, self.font)
@@ -591,7 +569,9 @@ class FastMDEditor:
 
     def change_tool(self, tool_id):
         self.app.change_tool(tool_id) 
-        for btn, tid in self.tool_btn_map.items(): btn.active = (self.app.current_tool == self.app.tools.get(tid))
+        if hasattr(self, 'input_handler'):
+            for btn, tid in self.input_handler.tool_btn_map.items(): 
+                btn.active = (tid == tool_id)
 
     def _update_window_title(self):
         title = "Flow State - Chemical Engineering Simulation"
@@ -602,6 +582,82 @@ class FastMDEditor:
             name = self.app.current_geom_filepath.replace("\\", "/").split("/")[-1]
             title += f" - {name}"
         pygame.display.set_caption(title)
+
+    def _execute_menu(self, selection):
+        if selection == "New": 
+            if self.app.mode == config.MODE_SIM:
+                self.sim.reset_simulation()
+                self.app.input_world.set_value(config.DEFAULT_WORLD_SIZE)
+                self.app.current_sim_filepath = None
+            else:
+                self.sim.walls = []
+                self.sim.constraints = []
+                self.app.current_geom_filepath = None
+                self.app.set_status("New Geometry Created")
+            self._update_window_title()
+        elif selection == "Import Geometry":
+            if self.root_tk:
+                f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom"), ("All Files", "*.*")])
+                if f:
+                    if f.endswith(".sim"):
+                        self.app.set_status("Error: Cannot import .sim file as geometry")
+                        return
+                    data, _ = file_io.load_geometry_file(f)
+                    if data: 
+                        self.app.placing_geo_data = data
+                        self.app.set_status("Place Geometry")
+        elif self.root_tk:
+            if selection == "Save As..." or (selection == "Save"):
+                is_save_as = (selection == "Save As...")
+                if self.app.mode == config.MODE_EDITOR:
+                    if is_save_as or not self.app.current_geom_filepath:
+                        f = filedialog.asksaveasfilename(defaultextension=".geom", filetypes=[("Geometry Files", "*.geom")])
+                        if f: self.app.current_geom_filepath = f
+                    if self.app.current_geom_filepath:
+                        self.app.set_status(file_io.save_geometry_file(self.sim, self.app, self.app.current_geom_filepath))
+                        self._update_window_title()
+                else:
+                    if is_save_as or not self.app.current_sim_filepath:
+                        f = filedialog.asksaveasfilename(defaultextension=".sim", filetypes=[("Simulation Files", "*.sim")])
+                        if f: self.app.current_sim_filepath = f
+                    if self.app.current_sim_filepath:
+                        self.app.set_status(file_io.save_file(self.sim, self.app, self.app.current_sim_filepath))
+                        self._update_window_title()
+            elif selection == "Open...":
+                if self.app.mode == config.MODE_EDITOR:
+                    f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom")])
+                    if f:
+                        if not f.endswith(".geom"):
+                            self.app.set_status("Error: Only .geom files allowed in Editor")
+                            return
+                        self.app.current_geom_filepath = f
+                        data, view_state = file_io.load_geometry_file(f)
+                        if data:
+                            self.sim.clear_particles(snapshot=False)
+                            self.sim.place_geometry(data, 0, 0, use_original_coordinates=True, current_time=self.app.geo_time)
+                            self.app.set_status(f"Loaded Geometry: {f}")
+                            if view_state:
+                                self.app.zoom = view_state['zoom']
+                                self.app.pan_x = view_state['pan_x']
+                                self.app.pan_y = view_state['pan_y']
+                        self._update_window_title()
+                else:
+                    f = filedialog.askopenfilename(filetypes=[("Simulation Files", "*.sim")])
+                    if f:
+                        if not f.endswith(".sim"):
+                            self.app.set_status("Error: Only .sim files allowed in Simulation")
+                            return
+                        self.app.current_sim_filepath = f
+                        success, msg, view_state = file_io.load_file(self.sim, f)
+                        self.app.set_status(msg)
+                        if success: 
+                            self.app.input_world.set_value(self.sim.world_size)
+                            if view_state:
+                                self.app.zoom = view_state['zoom']
+                                self.app.pan_x = view_state['pan_x']
+                                self.app.pan_y = view_state['pan_y']
+                        self._update_window_title()
+        pygame.event.pump()
 
     def switch_mode(self, mode):
         if mode == self.app.mode: return
@@ -693,7 +749,7 @@ class FastMDEditor:
                 self._update_window_title()
 
     def trigger_constraint(self, ctype):
-        for btn, c_val in self.constraint_btn_map.items(): btn.active = (c_val == ctype)
+        for btn, c_val in self.input_handler.constraint_btn_map.items(): btn.active = (c_val == ctype)
         is_multi = False
         if ctype in CONSTRAINT_DEFS and CONSTRAINT_DEFS[ctype][0].get('multi'):
             walls = list(self.app.selected_walls)
@@ -712,7 +768,7 @@ class FastMDEditor:
             self.app.set_status(f"Applied {ctype}")
             self.app.selected_walls.clear(); self.app.selected_points.clear()
             self.app.pending_constraint = None
-            for btn in self.constraint_btn_map.keys(): btn.active = False
+            for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
             self.sim.apply_constraints()
         else:
             self.app.pending_constraint = ctype
@@ -730,7 +786,7 @@ class FastMDEditor:
         if self.try_apply_constraint(self.app.pending_constraint, self.app.pending_targets_walls, self.app.pending_targets_points):
             self.app.set_status(f"Applied {self.app.pending_constraint}")
             self.app.pending_constraint = None
-            for btn in self.constraint_btn_map.keys(): btn.active = False
+            for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
             self.sim.apply_constraints()
         else:
             ctype = self.app.pending_constraint; msg = CONSTRAINT_DEFS[ctype][0]['msg']
