@@ -192,7 +192,7 @@ class InputHandler:
                 if event.button == 1:
                     mx, my = event.pos
                     sx, sy = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
-                    self.sim.place_geometry(self.app.placing_geo_data, sx, sy, current_time=self.app.geo_time)
+                    self.sim.geo.place_geometry(self.app.placing_geo_data, sx, sy, current_time=self.app.geo_time) # Updated Call
                     self.app.placing_geo_data = None
                     self.app.set_status("Geometry Placed")
                 elif event.button == 3:

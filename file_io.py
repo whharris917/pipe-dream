@@ -75,7 +75,7 @@ def load_file(sim, filename):
 
 def save_geometry_file(sim, app, filename):
     if not filename: return "Cancelled"
-    geo_data = sim.export_geometry_data() 
+    geo_data = sim.geo.export_geometry_data()  # Updated Call
     if not geo_data: return "Empty Geometry"
     
     view_state = {

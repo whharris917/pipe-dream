@@ -127,7 +127,7 @@ class FastMDEditor:
             for i, c in enumerate(self.sim.constraints):
                 if c.hit_test(mx, my): 
                     self.ctx_vars['const'] = i
-                    opts = self.sim.get_context_options('constraint', i)
+                    opts = self.sim.geo.get_context_options('constraint', i) # Updated call
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
@@ -138,19 +138,19 @@ class FastMDEditor:
 
         if hit_pt:
             self.ctx_vars['wall'] = hit_pt[0]; self.ctx_vars['pt'] = hit_pt[1]
-            opts = self.sim.get_context_options('point', -1) # Index irrelevant for generic point opts currently
+            opts = self.sim.geo.get_context_options('point', -1) # Updated call
             self.context_menu = ContextMenu(mx, my, opts)
             if self.app.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
         rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.app.zoom)
-        hit_wall = self.sim.find_wall_at(sim_x, sim_y, rad_sim)
+        hit_wall = self.sim.geo.find_wall_at(sim_x, sim_y, rad_sim) # Updated call
         
         if hit_wall != -1:
             if self.app.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
             else:
                 self.ctx_vars['wall'] = hit_wall
-                opts = self.sim.get_context_options('wall', hit_wall)
+                opts = self.sim.geo.get_context_options('wall', hit_wall) # Updated call
                 self.context_menu = ContextMenu(mx, my, opts)
         else:
             if self.app.mode == config.MODE_EDITOR: self.change_tool(config.TOOL_SELECT); self.app.set_status("Switched to Select Tool")
@@ -269,7 +269,8 @@ class FastMDEditor:
                         data, view_state = file_io.load_geometry_file(f)
                         if data:
                             self.sim.clear_particles(snapshot=False)
-                            self.sim.place_geometry(data, 0, 0, use_original_coordinates=True, current_time=self.app.geo_time)
+                            # Updated call to use self.sim.geo.place_geometry
+                            self.sim.geo.place_geometry(data, 0, 0, use_original_coordinates=True, current_time=self.app.geo_time)
                             self.app.set_status(f"Loaded Geometry: {f}")
                             if view_state:
                                 self.app.zoom = view_state['zoom']

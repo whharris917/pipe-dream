@@ -7,7 +7,8 @@ import config
 from physics_core import integrate_n_steps, build_neighbor_list, check_displacement, apply_thermostat, spatial_sort
 from geometry import Line, Point, Circle
 from constraints import create_constraint, Constraint, Length
-from definitions import CONSTRAINT_DEFS  # New Import
+from definitions import CONSTRAINT_DEFS
+from simulation_geometry import GeometryManager  # New Import
 
 class Simulation:
     def __init__(self):
@@ -31,8 +32,11 @@ class Simulation:
         self.atom_sigma = np.zeros(self.capacity, dtype=np.float32)
         self.atom_eps_sqrt = np.zeros(self.capacity, dtype=np.float32)
         
-        self.walls = [] # Now holds Line OR Circle objects (Entities)
+        self.walls = [] 
         self.constraints = [] 
+        
+        # Initialize Geometry Helper
+        self.geo = GeometryManager(self)
         
         self.max_pairs = self.capacity * 100
         self.pair_i = np.zeros(self.max_pairs, dtype=np.int32)
@@ -157,118 +161,12 @@ class Simulation:
         self._update_derived_params()
         self.clear_particles(snapshot=False)
 
-    def export_geometry_data(self):
-        if not self.walls: return None
-        # Normalize to center
-        min_x = float('inf'); max_x = float('-inf'); min_y = float('inf'); max_y = float('-inf')
-        for w in self.walls:
-            if isinstance(w, Line):
-                p1, p2 = w.start, w.end
-                min_x = min(min_x, p1[0], p2[0]); max_x = max(max_x, p1[0], p2[0])
-                min_y = min(min_y, p1[1], p2[1]); max_y = max(max_y, p1[1], p2[1])
-            elif isinstance(w, Circle):
-                min_x = min(min_x, w.center[0] - w.radius); max_x = max(max_x, w.center[0] + w.radius)
-                min_y = min(min_y, w.center[1] - w.radius); max_y = max(max_y, w.center[1] + w.radius)
-            
-        center_x = (min_x + max_x) / 2.0; center_y = (min_y + max_y) / 2.0
-        
-        normalized_walls = []
-        for w in self.walls:
-            d = w.to_dict()
-            if d['type'] == 'line':
-                d = copy.deepcopy(d)
-                d['start'][0] -= center_x; d['start'][1] -= center_y
-                d['end'][0] -= center_x; d['end'][1] -= center_y
-            elif d['type'] == 'circle':
-                d = copy.deepcopy(d)
-                d['center'][0] -= center_x; d['center'][1] -= center_y
-            
-            if d.get('anim') and d['anim']['type'] == 'rotate':
-                d['anim']['ref_start'][0] -= center_x; d['anim']['ref_start'][1] -= center_y
-                d['anim']['ref_end'][0] -= center_x; d['anim']['ref_end'][1] -= center_y
-                
-            normalized_walls.append(d)
-            
-        serialized_constraints = [c.to_dict() for c in self.constraints]
-        
-        # Return both the normalized data and the offset used
-        return {
-            'walls': normalized_walls, 
-            'constraints': serialized_constraints,
-            'origin_offset': [center_x, center_y]
-        }
-
-    def place_geometry(self, geometry_data, x, y, use_original_coordinates=False, current_time=0.0):
-        self.snapshot()
-        walls_data = geometry_data.get('walls', [])
-        constraints_data = geometry_data.get('constraints', [])
-        
-        # If we want to restore original coordinates, we need the stored offset
-        offset_x, offset_y = x, y
-        if use_original_coordinates:
-            orig_offset = geometry_data.get('origin_offset', [0, 0])
-            offset_x, offset_y = orig_offset[0], orig_offset[1]
-        
-        base_index = len(self.walls)
-        
-        for wd in walls_data:
-            if wd['type'] == 'line':
-                # Manually reconstruct to ensure clean state
-                start = np.array(wd['start']) + np.array([offset_x, offset_y])
-                end = np.array(wd['end']) + np.array([offset_x, offset_y])
-                w = Line(start, end, wd.get('ref', False))
-                w.anchored = wd.get('anchored', [False, False])
-                w.sigma = wd.get('sigma', 1.0)
-                w.epsilon = wd.get('epsilon', 1.0)
-                w.spacing = wd.get('spacing', 0.7)
-                
-                # Handle animation data if present
-                if wd.get('anim'):
-                    anim = copy.deepcopy(wd['anim'])
-                    if anim['type'] == 'rotate':
-                        anim['ref_start'][0] += offset_x; anim['ref_start'][1] += offset_y
-                        anim['ref_end'][0] += offset_x; anim['ref_end'][1] += offset_y
-                    w.anim = anim
-                    
-                self.walls.append(w)
-                
-            elif wd['type'] == 'circle':
-                center = np.array(wd['center']) + np.array([offset_x, offset_y])
-                c = Circle(center, wd['radius'])
-                c.anchored = wd.get('anchored', [False])
-                c.sigma = wd.get('sigma', 1.0)
-                c.epsilon = wd.get('epsilon', 1.0)
-                c.spacing = wd.get('spacing', 0.7)
-                self.walls.append(c)
-            
-        for cd in constraints_data:
-            new_indices = []
-            for idx in cd['indices']:
-                if isinstance(idx, (list, tuple)): new_indices.append((idx[0] + base_index, idx[1]))
-                else: new_indices.append(idx + base_index)
-            
-            temp_data = cd.copy(); temp_data['indices'] = new_indices
-            
-            # Deep copy driver so imported instances are independent
-            if 'driver' in temp_data and temp_data['driver']:
-                temp_data['driver'] = copy.deepcopy(temp_data['driver'])
-                
-            c_obj = create_constraint(temp_data)
-            if c_obj:
-                # Stamp start time ONLY if it doesn't already exist from the loaded data
-                if hasattr(c_obj, 'driver') and c_obj.driver:
-                    if not hasattr(c_obj, 'base_time') or c_obj.base_time is None:
-                        c_obj.base_time = current_time
-                    # If base_time exists (loaded from file), we KEEP it to preserve relative sync
-                    
-                self.constraints.append(c_obj)
-            
-        self.rebuild_static_atoms()
+    # Note: export_geometry_data and place_geometry moved to GeometryManager
 
     def set_wall_rotation(self, index, params):
         if 0 <= index < len(self.walls):
             w = self.walls[index]
-            if isinstance(w, Circle): return # No rotation for circles yet
+            if isinstance(w, Circle): return 
             speed = params['speed']; pivot = params['pivot']
             if abs(speed) < 1e-5: w.anim = None; return
             w.anim = {'type': 'rotate', 'speed': speed, 'pivot': pivot, 'angle': 0.0, 'ref_start': w.start.copy(), 'ref_end': w.end.copy()}
@@ -306,57 +204,7 @@ class Simulation:
                 elif d['type'] == 'lin':
                     c.value = base + d['rate'] * dt_drive
 
-    def get_context_options(self, target_type, index):
-        """Returns a list of context menu options for a given target."""
-        opts = []
-        if target_type == 'constraint':
-            if 0 <= index < len(self.constraints):
-                c = self.constraints[index]
-                opts.append("Delete Constraint")
-                if getattr(c, 'type', '') == 'ANGLE':
-                    opts.insert(0, "Set Angle...")
-                    opts.insert(1, "Animate...")
-        elif target_type == 'wall':
-            if 0 <= index < len(self.walls):
-                w = self.walls[index]
-                opts = ["Properties", "Delete"]
-                if isinstance(w, Line):
-                    opts.extend(["Set Length...", "Set Rotation..."])
-        elif target_type == 'point':
-            opts = ["Anchor"]
-            
-        return opts
-
-    def find_wall_at(self, x, y, radius):
-        """Returns the index of a wall or circle intersecting the given point (x,y) with radius."""
-        hit_wall = -1
-        p3 = np.array([x, y])
-        
-        for i, w in enumerate(self.walls):
-            if isinstance(w, Line):
-                p1 = w.start; p2 = w.end
-                d_vec = p2 - p1
-                len_sq = np.dot(d_vec, d_vec)
-                
-                if len_sq == 0:
-                    dist = np.linalg.norm(p3 - p1)
-                else:
-                    # Projection to find closest point on segment
-                    t = max(0, min(1, np.dot(p3 - p1, d_vec) / len_sq))
-                    closest = p1 + t * d_vec
-                    dist = np.linalg.norm(p3 - closest)
-                
-                if dist < radius:
-                    hit_wall = i
-                    break
-                    
-            elif isinstance(w, Circle):
-                dist = math.hypot(x - w.center[0], y - w.center[1])
-                if abs(dist - w.radius) < radius:
-                    hit_wall = i
-                    break
-        
-        return hit_wall
+    # Note: find_wall_at moved to GeometryManager
 
     def attempt_apply_constraint(self, ctype, wall_idxs, pt_idxs):
         """
@@ -393,26 +241,21 @@ class Simulation:
         self.snapshot()
         
         # Conflict Resolution:
-        # If adding an Angle constraint (Parallel/Perpendicular/Horizontal/Vertical),
-        # remove any existing Angle constraint that applies to the exact same set of entities.
         angle_types = ['PARALLEL', 'PERPENDICULAR', 'HORIZONTAL', 'VERTICAL']
         if hasattr(c_obj, 'type') and c_obj.type in angle_types:
             new_indices = set(c_obj.indices) if isinstance(c_obj.indices, (list, tuple)) else {c_obj.indices}
             
-            # Filter loop
             non_conflicting = []
             for c in self.constraints:
                 is_angle = getattr(c, 'type', '') in angle_types
                 if is_angle:
                     old_indices = set(c.indices) if isinstance(c.indices, (list, tuple)) else {c.indices}
                     if old_indices == new_indices:
-                        continue # Skip (remove) the conflicting constraint
+                        continue 
                 non_conflicting.append(c)
             self.constraints = non_conflicting
 
         self.constraints.append(c_obj)
-        # "Nudge" the solver with high iterations to ensure immediate satisfaction
-        # of the new constraint, preventing ghost geometry after large changes.
         self.apply_constraints(iterations=500)
 
     def nudge_geometry(self):
