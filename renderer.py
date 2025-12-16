@@ -50,10 +50,11 @@ class Renderer:
             el.draw(self.screen, self.font)
             
         # 9. Draw Tool Specific UI
-        if app.mode == config.MODE_SIM:
-            self.screen.blit(self.font.render("World Size:", True, (200, 200, 200)), 
-                             (layout['RIGHT_X'] + 15, app.input_world.rect.y + 4))
-            app.input_world.draw(self.screen, self.font)
+        # Input World position is handled by UI Manager draw now, removed manual blit here to avoid duplication
+        # if app.mode == config.MODE_SIM:
+        #    self.screen.blit(self.font.render("World Size:", True, (200, 200, 200)), 
+        #                     (layout['RIGHT_X'] + 15, app.input_world.rect.y + 4))
+        #    app.input_world.draw(self.screen, self.font)
 
         # 10. Status Message
         self._draw_status(app, layout)
@@ -196,24 +197,34 @@ class Renderer:
                         pygame.draw.circle(self.screen, (100, 255, 100), sc, int(sr), 2)
 
     def _draw_panels(self, layout):
+        # Draw Left Panel
         pygame.draw.rect(self.screen, config.PANEL_BG_COLOR, (0, config.TOP_MENU_H, layout['LEFT_W'], layout['H']))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['LEFT_W'], config.TOP_MENU_H), (layout['LEFT_W'], layout['H']))
+        
+        # Draw Right Panel
         pygame.draw.rect(self.screen, config.PANEL_BG_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], layout['H']))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H), (layout['RIGHT_X'], layout['H']))
-        pygame.draw.rect(self.screen, (40, 40, 45), (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], 90))
-        pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H + 90), (layout['W'], config.TOP_MENU_H + 90))
+        
+        # REMOVED: Legacy header block that drew a dark grey box at the top of the right panel.
+        # This was causing the "divider" line issue behind the Editor buttons.
+        # pygame.draw.rect(self.screen, (40, 40, 45), (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], 90))
+        # pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H + 90), (layout['W'], config.TOP_MENU_H + 90))
 
     def _draw_stats(self, app, sim, layout):
-        metric_x = layout['RIGHT_X'] + 15
-        if app.mode == config.MODE_SIM:
-            curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)
-            self.screen.blit(self.big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, config.TOP_MENU_H + 10))
-            self.screen.blit(self.font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, config.TOP_MENU_H + 40))
-            self.screen.blit(self.font.render(f"SPS: {int(sim.sps)}", True, (100, 255, 100)), (metric_x, config.TOP_MENU_H + 60))
-        else:
-            self.screen.blit(self.big_font.render("GEOMETRY EDITOR", True, (255, 200, 100)), (metric_x, config.TOP_MENU_H + 10))
-            self.screen.blit(self.font.render(f"Entities: {len(sim.walls)}", True, (200, 200, 200)), (metric_x, config.TOP_MENU_H + 40))
-            self.screen.blit(self.font.render(f"Constrs: {len(sim.constraints)}", True, (150, 150, 150)), (metric_x, config.TOP_MENU_H + 60))
+        # Stats on LEFT panel (bottom)
+        metric_x = layout['LEFT_X'] + 15
+        stats_y = config.WINDOW_HEIGHT - 80
+        
+        curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)
+        self.screen.blit(self.big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, stats_y))
+        self.screen.blit(self.font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, stats_y + 30))
+        self.screen.blit(self.font.render(f"SPS: {int(sim.sps)}", True, (100, 255, 100)), (metric_x, stats_y + 50))
+
+        # Editor Header on Right (Optional)
+        if app.mode == config.MODE_EDITOR:
+            right_metric_x = layout['RIGHT_X'] + 15
+            # We can enable this if desired, but for now kept clean
+            # self.screen.blit(self.big_font.render("GEOMETRY EDITOR", True, (255, 200, 100)), (right_metric_x, config.TOP_MENU_H + 10))
 
     def _draw_status(self, app, layout):
         import time

@@ -8,6 +8,8 @@ class Entity:
         self.epsilon = 1.0
         self.spacing = 0.7
         self.anim = None 
+        # NEW: Physical flag for Atomizer
+        self.physical = False
 
     def render(self, screen, transform_func, is_selected=False, is_pending=False):
         raise NotImplementedError
@@ -39,7 +41,6 @@ class Point(Entity):
         if is_selected: color = (0, 255, 255)
         elif is_pending: color = (100, 255, 100)
         
-        # Anchor visual feedback
         if self.anchored:
             pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 6)
         
@@ -59,11 +60,13 @@ class Point(Entity):
             self.pos[0] += dx; self.pos[1] += dy
 
     def to_dict(self):
-        return {'type': 'point', 'x': float(self.pos[0]), 'y': float(self.pos[1]), 'anchored': self.anchored}
+        return {'type': 'point', 'x': float(self.pos[0]), 'y': float(self.pos[1]), 'anchored': self.anchored, 'physical': self.physical}
 
     @staticmethod
     def from_dict(data):
-        return Point(data['x'], data['y'], data.get('anchored', False))
+        p = Point(data['x'], data['y'], data.get('anchored', False))
+        p.physical = data.get('physical', False)
+        return p
 
 class Line(Entity):
     def __init__(self, start, end, is_ref=False):
@@ -71,7 +74,6 @@ class Line(Entity):
         self.start = np.array(start, dtype=np.float64)
         self.end = np.array(end, dtype=np.float64)
         self.ref = is_ref
-        # Anchors for start(0) and end(1) points
         self.anchored = [False, False]
 
     def length(self):
@@ -85,8 +87,6 @@ class Line(Entity):
         else: self.end[:] = pos
 
     def get_inv_mass(self, index):
-        # Treated exactly like ordinary lines in constraints
-        # Only infinite mass (0.0) if strictly anchored by the user.
         return 0.0 if self.anchored[index] else 1.0
 
     def move(self, dx, dy, indices=None):
@@ -104,15 +104,20 @@ class Line(Entity):
         if is_selected: color = (255, 200, 50)
         elif is_pending: color = (100, 255, 100)
         
+        # Ghost visual (Dotted/Alpha) if not physical? 
+        # For now, keep visual simple to avoid renderer breaks.
+        if not self.physical: 
+            # Could dim the color slightly to indicate "Ghost"
+            if not is_selected and not is_pending:
+                color = (180, 180, 180)
+        
         width = 3 if (is_selected or is_pending) else 1
         
-        # 1. Render Dotted if Reference Line
         if self.ref: 
             self._draw_dashed(screen, color, s1, s2, width)
         else: 
             pygame.draw.line(screen, color, s1, s2, width)
 
-        # Draw Anchor dots
         if self.anchored[0]: pygame.draw.circle(screen, (255, 50, 50), s1, 3)
         if self.anchored[1]: pygame.draw.circle(screen, (255, 50, 50), s2, 3)
 
@@ -132,7 +137,8 @@ class Line(Entity):
         return {
             'type': 'line', 'start': self.start.tolist(), 'end': self.end.tolist(),
             'ref': self.ref, 'anchored': self.anchored,
-            'sigma': self.sigma, 'epsilon': self.epsilon, 'spacing': self.spacing, 'anim': self.anim
+            'sigma': self.sigma, 'epsilon': self.epsilon, 'spacing': self.spacing, 'anim': self.anim,
+            'physical': self.physical
         }
 
     @staticmethod
@@ -141,6 +147,7 @@ class Line(Entity):
         l.anchored = data.get('anchored', [False, False])
         l.sigma = data.get('sigma', 1.0); l.epsilon = data.get('epsilon', 1.0)
         l.spacing = data.get('spacing', 0.7); l.anim = data.get('anim', None)
+        l.physical = data.get('physical', False)
         return l
 
 class Circle(Entity):
@@ -148,10 +155,10 @@ class Circle(Entity):
         super().__init__()
         self.center = np.array(center, dtype=np.float64)
         self.radius = float(radius)
-        self.anchored = [False] # Center only
+        self.anchored = [False] 
 
     def get_point(self, index):
-        return self.center # Index 0 is center
+        return self.center
 
     def set_point(self, index, pos):
         if index == 0: self.center[:] = pos
@@ -165,8 +172,6 @@ class Circle(Entity):
 
     def render(self, screen, transform_func, is_selected=False, is_pending=False):
         sx, sy = transform_func(self.center[0], self.center[1])
-        # Need to calculate radius in screen space. 
-        # Transform (0,0) and (r,0) to measure distance
         p0 = transform_func(0, 0)
         pr = transform_func(self.radius, 0)
         s_radius = abs(pr[0] - p0[0])
@@ -174,18 +179,22 @@ class Circle(Entity):
         color = (255, 255, 255)
         if is_selected: color = (255, 200, 50)
         elif is_pending: color = (100, 255, 100)
+        
+        if not self.physical:
+            if not is_selected and not is_pending:
+                color = (180, 180, 180)
+                
         width = 3 if (is_selected or is_pending) else 1
         
-        # Anchor feedback
         if self.anchored[0]: pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 4)
-        
         pygame.draw.circle(screen, color, (int(sx), int(sy)), int(s_radius), width)
 
     def to_dict(self):
         return {
             'type': 'circle', 'center': self.center.tolist(), 'radius': self.radius,
             'anchored': self.anchored,
-            'sigma': self.sigma, 'epsilon': self.epsilon, 'spacing': self.spacing, 'anim': self.anim
+            'sigma': self.sigma, 'epsilon': self.epsilon, 'spacing': self.spacing, 'anim': self.anim,
+            'physical': self.physical
         }
 
     @staticmethod
@@ -194,4 +203,5 @@ class Circle(Entity):
         c.anchored = data.get('anchored', [False])
         c.sigma = data.get('sigma', 1.0); c.epsilon = data.get('epsilon', 1.0)
         c.spacing = data.get('spacing', 0.7); c.anim = data.get('anim', None)
+        c.physical = data.get('physical', False)
         return c

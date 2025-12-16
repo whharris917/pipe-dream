@@ -3,7 +3,8 @@ import numpy as np
 # Window Layout
 WINDOW_WIDTH = 1400
 WINDOW_HEIGHT = 930 
-PANEL_LEFT_WIDTH = 120
+# UPDATED: Equal width for left and right panels to support unified UI
+PANEL_LEFT_WIDTH = 350 
 PANEL_RIGHT_WIDTH = 350
 TOP_MENU_H = 30 # Moved from main.py
 

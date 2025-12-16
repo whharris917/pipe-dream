@@ -19,14 +19,13 @@ from definitions import CONSTRAINT_DEFS
 from ui_manager import UIManager
 from input_handler import InputHandler
 
-class FastMDEditor:
+class FlowStateApp:
     def __init__(self):
         # 1. System Setup
         try: self.root_tk = Tk(); self.root_tk.withdraw()
         except: self.root_tk = None
 
         pygame.init()
-        # Initialize with config size, but allow resizing
         self.screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Flow State - Chemical Engineering Simulation")
         
@@ -39,33 +38,32 @@ class FastMDEditor:
         # 2. App Logic
         self.sim = Simulation()
         self.app = AppState()
-        self.app.input_world = InputField(0, 0, 0, 0) # Placeholder, actual one in UIManager
+        self.app.input_world = InputField(0, 0, 0, 0) # Placeholder
         
-        # Adjust default view to show boundaries (Zoomed out slightly)
-        # Reduced editor zoom from 1.2 to 0.9 to match Sim view and fit in default window height
+        # Default View Settings
         self.app.zoom = 0.9
         self.app.sim_view['zoom'] = 0.9
         self.app.editor_view['zoom'] = 0.9
         
-        # Initialize Editor State
-        self.app.editor_paused = False
+        # State
+        self.app.editor_paused = False # UI Pause state
         self.app.show_constraints = True
         self.app.geo_time = 0.0
         self.last_time = time.time()
 
-        # 3. State Holders for Dialogs
+        # 3. UI State
         self.context_menu = None
         self.prop_dialog = None
         self.rot_dialog = None
         self.anim_dialog = None
-        self.ctx_vars = {'wall': -1, 'pt': None, 'const': -1} # Store context indices
+        self.ctx_vars = {'wall': -1, 'pt': None, 'const': -1}
 
         # 4. Initialization
         w, h = self.screen.get_size()
         self.init_layout(w, h)
         
         self.ui = UIManager(self.layout, self.app.input_world)
-        self.input_handler = InputHandler(self)
+        self.input_handler = InputHandler(self) # Pass self as 'editor'
         
         self.init_tools()    
 
@@ -106,8 +104,8 @@ class FastMDEditor:
                 self.app.sim_view['zoom'] *= correction
                 self.app.editor_view['zoom'] *= correction
 
-        self.ui = UIManager(self.layout, self.app.input_world) # Re-init UI with new layout
-        self.input_handler = InputHandler(self) # Re-bind input handler
+        self.ui = UIManager(self.layout, self.app.input_world)
+        self.input_handler = InputHandler(self)
         self.ui.menu.resize(w)
 
     def run(self):
@@ -123,14 +121,16 @@ class FastMDEditor:
         mx, my = pos
         sim_x, sim_y = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
         
+        # 1. Constraints
         if self.app.show_constraints:
             for i, c in enumerate(self.sim.constraints):
                 if c.hit_test(mx, my): 
                     self.ctx_vars['const'] = i
-                    opts = self.sim.geo.get_context_options('constraint', i) # Updated call
+                    opts = self.sim.geo.get_context_options('constraint', i)
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
+        # 2. Points
         point_map = utils.get_grouped_points(self.sim, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
         hit_pt = None; base_r, step_r = 5, 4
         for center_pos, items in point_map.items():
@@ -138,59 +138,76 @@ class FastMDEditor:
 
         if hit_pt:
             self.ctx_vars['wall'] = hit_pt[0]; self.ctx_vars['pt'] = hit_pt[1]
-            opts = self.sim.geo.get_context_options('point', -1) # Updated call
+            # Updated to pass point index for Anchor/Un-Anchor context
+            opts = self.sim.geo.get_context_options('point', hit_pt[0], hit_pt[1])
             self.context_menu = ContextMenu(mx, my, opts)
             if self.app.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
+        # 3. Walls
         rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.app.zoom)
-        hit_wall = self.sim.geo.find_wall_at(sim_x, sim_y, rad_sim) # Updated call
+        hit_wall = self.sim.geo.find_wall_at(sim_x, sim_y, rad_sim)
         
         if hit_wall != -1:
             if self.app.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
             else:
                 self.ctx_vars['wall'] = hit_wall
-                opts = self.sim.geo.get_context_options('wall', hit_wall) # Updated call
+                opts = self.sim.geo.get_context_options('wall', hit_wall)
                 self.context_menu = ContextMenu(mx, my, opts)
         else:
-            if self.app.mode == config.MODE_EDITOR: self.change_tool(config.TOOL_SELECT); self.app.set_status("Switched to Select Tool")
+            if self.app.mode == config.MODE_EDITOR: 
+                self.change_tool(config.TOOL_SELECT)
+                self.app.set_status("Switched to Select Tool")
 
     def update_physics(self):
         now = time.time()
         dt = now - self.last_time
         self.last_time = now
-        if self.app.mode == config.MODE_EDITOR and not self.app.editor_paused:
+        
+        # Update Editor/Geometry Time
+        if not self.app.editor_paused:
             self.app.geo_time += dt
 
+        # Update Drivers (Motors)
         self.sim.update_constraint_drivers(self.app.geo_time)
         
-        if self.app.mode == config.MODE_EDITOR:
-            self.sim.apply_constraints()
+        # Solve Constraints (The 'Blueprint' layer)
+        # We solve constraints in both modes now, ensuring "Live" feel
+        self.sim.apply_constraints()
 
+        # Update Physics (The 'Fluid' layer)
         if self.app.mode == config.MODE_SIM:
+            # Sync Controls
             self.sim.paused = not self.ui.buttons['play'].active
-            self.sim.gravity = self.ui.sliders['gravity'].val; self.sim.target_temp = self.ui.sliders['temp'].val
-            self.sim.damping = self.ui.sliders['damping'].val; self.sim.dt = self.ui.sliders['dt'].val
-            self.sim.sigma = self.ui.sliders['sigma'].val; self.sim.epsilon = self.ui.sliders['epsilon'].val
+            self.sim.gravity = self.ui.sliders['gravity'].val
+            self.sim.target_temp = self.ui.sliders['temp'].val
+            self.sim.damping = self.ui.sliders['damping'].val
+            self.sim.dt = self.ui.sliders['dt'].val
+            self.sim.sigma = self.ui.sliders['sigma'].val
+            self.sim.epsilon = self.ui.sliders['epsilon'].val
             self.sim.skin_distance = self.ui.sliders['skin'].val
-            self.sim.use_thermostat = self.ui.buttons['thermostat'].active; self.sim.use_boundaries = self.ui.buttons['boundaries'].active
-            if not self.sim.paused: self.sim.step(int(self.ui.sliders['speed'].val))
+            self.sim.use_thermostat = self.ui.buttons['thermostat'].active
+            self.sim.use_boundaries = self.ui.buttons['boundaries'].active
             
-            # Delegate tool logic to the current tool
+            if not self.sim.paused:
+                self.sim.step(int(self.ui.sliders['speed'].val))
+            
+            # Tool Updates
             if self.app.current_tool:
                 self.app.current_tool.update(dt, self.layout, self.ui)
 
     def render(self):
         ui_list = [] 
         
+        # Temp hide constraints if disabled in UI
         held_constraints = self.sim.constraints
-        if self.app.mode == config.MODE_EDITOR and not self.app.show_constraints:
+        if not self.app.show_constraints:
+            # We temporarily mask constraints for the renderer
             self.sim.constraints = []
             
-        # Draw Scene
-        self.renderer.draw_app(self.app, self.sim, self.layout, []) # Pass empty list, draw UI separately
+        self.renderer.draw_app(self.app, self.sim, self.layout, [])
         
-        if self.app.mode == config.MODE_EDITOR and not self.app.show_constraints:
+        if not self.app.show_constraints:
             self.sim.constraints = held_constraints
 
         # Draw UI
@@ -219,151 +236,100 @@ class FastMDEditor:
         pygame.display.set_caption(title)
 
     def _execute_menu(self, selection):
+        # Unified Menu Logic
         if selection == "New": 
-            if self.app.mode == config.MODE_SIM:
-                self.sim.reset_simulation()
-                self.app.input_world.set_value(config.DEFAULT_WORLD_SIZE)
-                self.app.current_sim_filepath = None
-            else:
-                self.sim.walls = []
-                self.sim.constraints = []
-                self.app.current_geom_filepath = None
-                self.app.set_status("New Geometry Created")
+            # Clears EVERYTHING (Geometry + Physics)
+            self.sim.reset_simulation()
+            self.sim.sketch.clear() # Clear Sketch too
+            self.app.input_world.set_value(config.DEFAULT_WORLD_SIZE)
+            self.app.current_sim_filepath = None
+            self.app.current_geom_filepath = None
+            self.app.set_status("New Project Created")
             self._update_window_title()
+            
         elif selection == "Import Geometry":
             if self.root_tk:
                 f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom"), ("All Files", "*.*")])
                 if f:
-                    if f.endswith(".sim"):
-                        self.app.set_status("Error: Cannot import .sim file as geometry")
-                        return
                     data, _ = file_io.load_geometry_file(f)
                     if data: 
                         self.app.placing_geo_data = data
-                        self.app.set_status("Place Geometry")
+                        self.app.set_status("Place Model")
+                        
         elif self.root_tk:
             if selection == "Save As..." or (selection == "Save"):
+                # Unified Save: We just save the "Simulation" which now includes the Sketch
                 is_save_as = (selection == "Save As...")
-                if self.app.mode == config.MODE_EDITOR:
-                    if is_save_as or not self.app.current_geom_filepath:
-                        f = filedialog.asksaveasfilename(defaultextension=".geom", filetypes=[("Geometry Files", "*.geom")])
-                        if f: self.app.current_geom_filepath = f
-                    if self.app.current_geom_filepath:
-                        self.app.set_status(file_io.save_geometry_file(self.sim, self.app, self.app.current_geom_filepath))
-                        self._update_window_title()
-                else:
-                    if is_save_as or not self.app.current_sim_filepath:
-                        f = filedialog.asksaveasfilename(defaultextension=".sim", filetypes=[("Simulation Files", "*.sim")])
-                        if f: self.app.current_sim_filepath = f
-                    if self.app.current_sim_filepath:
-                        self.app.set_status(file_io.save_file(self.sim, self.app, self.app.current_sim_filepath))
-                        self._update_window_title()
+                if is_save_as or not self.app.current_sim_filepath:
+                    f = filedialog.asksaveasfilename(defaultextension=".sim", filetypes=[("Simulation Files", "*.sim")])
+                    if f: self.app.current_sim_filepath = f
+                
+                if self.app.current_sim_filepath:
+                    self.app.set_status(file_io.save_file(self.sim, self.app, self.app.current_sim_filepath))
+                    self._update_window_title()
+                    
             elif selection == "Open...":
-                if self.app.mode == config.MODE_EDITOR:
-                    f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom")])
-                    if f:
-                        if not f.endswith(".geom"):
-                            self.app.set_status("Error: Only .geom files allowed in Editor")
-                            return
-                        self.app.current_geom_filepath = f
-                        data, view_state = file_io.load_geometry_file(f)
-                        if data:
-                            self.sim.clear_particles(snapshot=False)
-                            # Updated call to use self.sim.geo.place_geometry
-                            self.sim.geo.place_geometry(data, 0, 0, use_original_coordinates=True, current_time=self.app.geo_time)
-                            self.app.set_status(f"Loaded Geometry: {f}")
-                            if view_state:
-                                self.app.zoom = view_state['zoom']
-                                self.app.pan_x = view_state['pan_x']
-                                self.app.pan_y = view_state['pan_y']
-                        self._update_window_title()
-                else:
-                    f = filedialog.askopenfilename(filetypes=[("Simulation Files", "*.sim")])
-                    if f:
-                        if not f.endswith(".sim"):
-                            self.app.set_status("Error: Only .sim files allowed in Simulation")
-                            return
-                        self.app.current_sim_filepath = f
-                        success, msg, view_state = file_io.load_file(self.sim, f)
-                        self.app.set_status(msg)
-                        if success: 
-                            self.app.input_world.set_value(self.sim.world_size)
-                            if view_state:
-                                self.app.zoom = view_state['zoom']
-                                self.app.pan_x = view_state['pan_x']
-                                self.app.pan_y = view_state['pan_y']
-                        self._update_window_title()
+                f = filedialog.askopenfilename(filetypes=[("Simulation Files", "*.sim")])
+                if f:
+                    self.app.current_sim_filepath = f
+                    success, msg, view_state = file_io.load_file(self.sim, f)
+                    self.app.set_status(msg)
+                    if success: 
+                        self.app.input_world.set_value(self.sim.world_size)
+                        if view_state:
+                            self.app.zoom = view_state['zoom']
+                            self.app.pan_x = view_state['pan_x']
+                            self.app.pan_y = view_state['pan_y']
+                    self._update_window_title()
         pygame.event.pump()
 
     def switch_mode(self, mode):
         if mode == self.app.mode: return
 
+        # Store previous view
         if self.app.mode == config.MODE_SIM:
             self.app.sim_view['zoom'] = self.app.zoom
             self.app.sim_view['pan_x'] = self.app.pan_x
             self.app.sim_view['pan_y'] = self.app.pan_y
-            self.exit_sim_mode_logic()
         else:
             self.app.editor_view['zoom'] = self.app.zoom
             self.app.editor_view['pan_x'] = self.app.pan_x
             self.app.editor_view['pan_y'] = self.app.pan_y
-            self.exit_editor_mode_logic()
 
         self.app.mode = mode
 
+        # Restore view & Configure UI
         if mode == config.MODE_SIM:
             self.app.zoom = self.app.sim_view['zoom']
             self.app.pan_x = self.app.sim_view['pan_x']
             self.app.pan_y = self.app.sim_view['pan_y']
-            self.enter_sim_mode_logic()
+            
+            # Entering Sim Mode: Enable Physics UI, maybe unpause?
+            self.ui.buttons['play'].active = False
+            self.sim.paused = True
+            self.change_tool(self.app.sim_tool)
+            
         else:
             self.app.zoom = self.app.editor_view['zoom']
             self.app.pan_x = self.app.editor_view['pan_x']
             self.app.pan_y = self.app.editor_view['pan_y']
-            self.enter_editor_mode_logic()
+            
+            # Entering Editor Mode: Force Pause Physics
+            self.ui.buttons['play'].active = False
+            self.sim.paused = True
+            self.change_tool(self.app.editor_tool)
             
         self._update_window_title()
 
-    def exit_sim_mode_logic(self):
-        self.sim.snapshot()
-        self.app.sim_backup_state = self.sim.undo_stack.pop() 
-        self.app.was_sim_running = not self.sim.paused
-        self.ui.buttons['play'].active = False
-        self.sim.paused = True
-
-    def enter_editor_mode_logic(self):
-        self.sim.clear_particles(snapshot=False)
-        self.sim.walls = self.app.editor_storage['walls']
-        self.sim.constraints = self.app.editor_storage['constraints']
-        self.change_tool(self.app.editor_tool)
-
-    def exit_editor_mode_logic(self):
-        self.app.editor_storage['walls'] = self.sim.walls
-        self.app.editor_storage['constraints'] = self.sim.constraints
-
-    def enter_sim_mode_logic(self):
-        if self.app.sim_backup_state:
-            self.sim.restore_state(self.app.sim_backup_state)
-        
-        if self.app.was_sim_running:
-            self.ui.buttons['play'].active = True
-            self.sim.paused = False
-        else:
-            self.ui.buttons['play'].active = False
-            self.sim.paused = True
-            
-        self.change_tool(self.app.sim_tool)
-
-    def enter_geometry_mode(self):
-        pass
-
-    def exit_editor_mode(self, restore_state):
-        pass
-
+    # --- Wrapper methods to satisfy InputHandler calls ---
+    
     def toggle_extend(self):
         if self.app.selected_walls:
             for idx in self.app.selected_walls:
-                if idx < len(self.sim.walls) and isinstance(self.sim.walls[idx], Line): self.sim.walls[idx].infinite = not self.sim.walls[idx].infinite
+                if idx < len(self.sim.walls) and isinstance(self.sim.walls[idx], Line): 
+                    # Need to check if 'infinite' attr exists on Line, if not add it
+                    if not hasattr(self.sim.walls[idx], 'infinite'): self.sim.walls[idx].infinite = False
+                    self.sim.walls[idx].infinite = not self.sim.walls[idx].infinite
             self.sim.rebuild_static_atoms(); self.app.set_status("Toggled Extend")
             
     def toggle_editor_play(self):
@@ -386,6 +352,8 @@ class FastMDEditor:
 
     def trigger_constraint(self, ctype):
         for btn, c_val in self.input_handler.constraint_btn_map.items(): btn.active = (c_val == ctype)
+        
+        # Check for multi-select rules (Horizontal/Vertical on multiple lines)
         is_multi = False
         if ctype in CONSTRAINT_DEFS and CONSTRAINT_DEFS[ctype][0].get('multi'):
             walls = list(self.app.selected_walls)
@@ -399,6 +367,8 @@ class FastMDEditor:
                     self.sim.apply_constraints(); is_multi = True
         
         if is_multi: return
+        
+        # Standard constraint application
         walls = list(self.app.selected_walls); pts = list(self.app.selected_points)
         if self.sim.attempt_apply_constraint(ctype, walls, pts):
             self.app.set_status(f"Applied {ctype}")

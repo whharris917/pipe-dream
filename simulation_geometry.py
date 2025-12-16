@@ -43,7 +43,7 @@ class GeometryManager:
         
         return hit_wall
 
-    def get_context_options(self, target_type, index):
+    def get_context_options(self, target_type, index, pt_index=-1):
         """Returns a list of context menu options for a given target."""
         opts = []
         if target_type == 'constraint':
@@ -60,7 +60,20 @@ class GeometryManager:
                 if isinstance(w, Line):
                     opts.extend(["Set Length...", "Set Rotation..."])
         elif target_type == 'point':
-            opts = ["Anchor"]
+            # Check if currently anchored to determine text
+            is_anchored = False
+            if 0 <= index < len(self.sim.walls):
+                w = self.sim.walls[index]
+                if isinstance(w, Line):
+                    if 0 <= pt_index < 2:
+                        is_anchored = w.anchored[pt_index]
+                elif isinstance(w, Circle):
+                    is_anchored = w.anchored[0]
+            
+            if is_anchored:
+                opts = ["Un-Anchor"]
+            else:
+                opts = ["Anchor"]
             
         return opts
 

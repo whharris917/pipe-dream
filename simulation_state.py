@@ -8,19 +8,22 @@ from physics_core import integrate_n_steps, build_neighbor_list, check_displacem
 from geometry import Line, Point, Circle
 from constraints import create_constraint, Constraint, Length
 from definitions import CONSTRAINT_DEFS
-from simulation_geometry import GeometryManager  # New Import
+from simulation_geometry import GeometryManager
+from sketch import Sketch # NEW: The centralized data container
 
 class Simulation:
     def __init__(self):
         self.capacity = 5000
         self.count = 0
         
+        # --- Physics Parameters ---
         self.world_size = config.DEFAULT_WORLD_SIZE
         self.use_boundaries = False
         self.sigma = config.ATOM_SIGMA
         self.epsilon = config.ATOM_EPSILON
         self.skin_distance = config.DEFAULT_SKIN_DISTANCE
         
+        # --- Particle Arrays ---
         self.pos_x = np.zeros(self.capacity, dtype=np.float32)
         self.pos_y = np.zeros(self.capacity, dtype=np.float32)
         self.vel_x = np.zeros(self.capacity, dtype=np.float32)
@@ -32,12 +35,14 @@ class Simulation:
         self.atom_sigma = np.zeros(self.capacity, dtype=np.float32)
         self.atom_eps_sqrt = np.zeros(self.capacity, dtype=np.float32)
         
-        self.walls = [] 
-        self.constraints = [] 
+        # --- Design / Sketch Data ---
+        # Replaced local lists with the Sketch container
+        self.sketch = Sketch()
         
-        # Initialize Geometry Helper
+        # Helper for spatial queries (Legacy support)
         self.geo = GeometryManager(self)
         
+        # --- Neighbor List & Optimization ---
         self.max_pairs = self.capacity * 100
         self.pair_i = np.zeros(self.max_pairs, dtype=np.int32)
         self.pair_j = np.zeros(self.max_pairs, dtype=np.int32)
@@ -46,6 +51,7 @@ class Simulation:
         self.last_y = np.zeros(self.capacity, dtype=np.float32)
         self.rebuild_next = False
         
+        # --- Simulation State ---
         self.paused = True
         self.dt = config.DEFAULT_DT
         self.gravity = config.DEFAULT_GRAVITY
@@ -56,10 +62,28 @@ class Simulation:
         self.r_cut_base = 2.5
         self._update_derived_params()
         
+        # --- Metrics & History ---
         self.total_steps = 0; self.sps = 0.0
         self.steps_accumulator = 0; self.last_sps_update = time.time()
         self.undo_stack = []; self.redo_stack = []
         self._warmup_compiler()
+
+    # --- Properties to maintain backward compatibility ---
+    @property
+    def walls(self):
+        return self.sketch.entities
+    
+    @walls.setter
+    def walls(self, value):
+        self.sketch.entities = value
+
+    @property
+    def constraints(self):
+        return self.sketch.constraints
+    
+    @constraints.setter
+    def constraints(self, value):
+        self.sketch.constraints = value
 
     def _update_derived_params(self):
         self.r_list = self.r_cut_base + self.skin_distance
@@ -69,6 +93,7 @@ class Simulation:
 
     def _warmup_compiler(self):
         print("Warming up Numba compiler...")
+        # (Warmup logic unchanged)
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
@@ -87,7 +112,8 @@ class Simulation:
             'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
             'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]),
             'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
-            'walls': copy.deepcopy(self.walls), 'constraints': copy.deepcopy(self.constraints),
+            # Serialize Sketch instead of raw lists
+            'sketch_data': self.sketch.to_dict(),
             'world_size': self.world_size
         }
         self.undo_stack.append(state)
@@ -106,8 +132,14 @@ class Simulation:
         else: self.kinematic_props[:self.count] = 0.0
         self.atom_sigma[:self.count] = state['atom_sigma']; self.atom_eps_sqrt[:self.count] = state['atom_eps_sqrt']
         
-        self.walls = copy.deepcopy(state['walls'])
-        self.constraints = copy.deepcopy(state.get('constraints', []))
+        # Restore Sketch
+        if 'sketch_data' in state:
+            self.sketch.restore(state['sketch_data'])
+        else:
+            # Fallback for old saves
+            self.sketch.entities = copy.deepcopy(state.get('walls', []))
+            self.sketch.constraints = copy.deepcopy(state.get('constraints', []))
+            
         self.world_size = state['world_size']
         self.rebuild_next = True; self.pair_count = 0 
 
@@ -135,7 +167,8 @@ class Simulation:
             'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
             'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]), 
             'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
-            'walls': copy.deepcopy(self.walls), 'constraints': copy.deepcopy(self.constraints), 'world_size': self.world_size
+            'sketch_data': self.sketch.to_dict(), 
+            'world_size': self.world_size
         }
         stack.append(current_state)
 
@@ -147,7 +180,10 @@ class Simulation:
 
     def clear_particles(self, snapshot=True):
         if snapshot: self.snapshot()
-        self.count = 0; self.pair_count = 0; self.walls = []; self.constraints = []
+        self.count = 0; self.pair_count = 0; 
+        # Note: We do NOT clear the sketch here, only the fluid particles.
+        # This matches the "Clear" button behavior (clear fluid).
+        # To clear geometry, use "New"
         self.pos_x.fill(0); self.pos_y.fill(0); self.vel_x.fill(0); self.vel_y.fill(0)
         self.is_static.fill(0); self.kinematic_props.fill(0); self.rebuild_next = True
 
@@ -161,8 +197,48 @@ class Simulation:
         self._update_derived_params()
         self.clear_particles(snapshot=False)
 
-    # Note: export_geometry_data and place_geometry moved to GeometryManager
+    # --- Geometry / Sketch Wrappers ---
 
+    def add_wall(self, start_pos, end_pos, is_ref=False):
+        # Auto-set physical=True for backward compatibility
+        idx = self.sketch.add_line(start_pos, end_pos, is_ref)
+        self.sketch.update_entity(idx, physical=True, sigma=config.ATOM_SIGMA, epsilon=config.ATOM_EPSILON, spacing=0.7*config.ATOM_SIGMA)
+        self.rebuild_static_atoms()
+        
+    def add_circle(self, center, radius):
+        idx = self.sketch.add_circle(center, radius)
+        self.sketch.update_entity(idx, physical=True, sigma=config.ATOM_SIGMA, epsilon=config.ATOM_EPSILON, spacing=0.7*config.ATOM_SIGMA)
+        self.rebuild_static_atoms()
+
+    def remove_wall(self, index):
+        self.snapshot()
+        self.sketch.remove_entity(index)
+        self.rebuild_static_atoms()
+
+    def toggle_anchor(self, wall_idx, pt_idx):
+        if 0 <= wall_idx < len(self.walls):
+            w = self.walls[wall_idx]
+            # Must operate on the specific anchor index. Sketch update_entity is generic, 
+            # so we modify the object for now or add specific API.
+            # Direct modification is okay since 'walls' property returns the live list.
+            w.anchored[pt_idx] = not w.anchored[pt_idx]
+            self.snapshot(); self.rebuild_static_atoms()
+
+    def update_wall(self, index, start_pos, end_pos):
+        # Maps to sketch.update_entity
+        if 0 <= index < len(self.walls):
+            w = self.walls[index]
+            if isinstance(w, Line):
+                self.sketch.update_entity(index, start=start_pos, end=end_pos)
+            elif isinstance(w, Circle):
+                self.sketch.update_entity(index, center=start_pos) # Circle tool uses update_wall for center
+            self.rebuild_static_atoms()
+
+    def update_wall_props(self, index, props):
+        self.snapshot()
+        self.sketch.update_entity(index, **props)
+        self.rebuild_static_atoms()
+        
     def set_wall_rotation(self, index, params):
         if 0 <= index < len(self.walls):
             w = self.walls[index]
@@ -173,6 +249,8 @@ class Simulation:
             self.rebuild_static_atoms()
 
     def update_animations(self, dt):
+        # This logic handles 'kinematic' walls (rotating lines). 
+        # In future, this should move to Sketch.drivers
         for w in self.walls:
             if not isinstance(w, Line): continue
             anim = w.anim
@@ -186,31 +264,15 @@ class Simulation:
                 v_s = rs - pivot; v_e = re - pivot
                 w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
                 w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
-    
-    def update_constraint_drivers(self, current_time):
-        """Updates constraint values based on attached drivers (motors/oscillators)."""
-        for c in self.constraints:
-            if hasattr(c, 'driver') and c.driver:
-                d = c.driver
-                if c.base_value is None: c.base_value = c.value
-                
-                base = c.base_value
-                t0 = getattr(c, 'base_time', 0.0)
-                dt_drive = current_time - t0
-                
-                if d['type'] == 'sin':
-                    offset = d['amp'] * math.sin(2 * math.pi * d['freq'] * dt_drive + math.radians(d['phase']))
-                    c.value = base + offset
-                elif d['type'] == 'lin':
-                    c.value = base + d['rate'] * dt_drive
 
-    # Note: find_wall_at moved to GeometryManager
+    # --- Constraints ---
+
+    def update_constraint_drivers(self, current_time):
+        # Delegate to Sketch
+        self.sketch.update_drivers(current_time)
 
     def attempt_apply_constraint(self, ctype, wall_idxs, pt_idxs):
-        """
-        Validates and applies a constraint based on rules in definitions.py.
-        Returns True if successful, False if requirements (args) not met.
-        """
+        # Legacy Wrapper: uses DEFINITIONS to check rules, then adds to Sketch
         rules = CONSTRAINT_DEFS.get(ctype, [])
         for r in rules:
             if len(wall_idxs) == r['w'] and len(pt_idxs) == r['p']:
@@ -220,161 +282,60 @@ class Simulation:
                         if not isinstance(self.walls[w_idx], r['t']): 
                             valid = False; break
                 if valid:
-                    # 'f' is the lambda in CONSTRAINT_DEFS that instantiates the class
+                    # Factory creates the object
                     c_obj = r['f'](self, wall_idxs, pt_idxs)
                     self.add_constraint_object(c_obj)
                     return True
         return False
 
     def apply_constraints(self, iterations=20):
-        """
-        Solves geometric constraints.
-        iterations: Number of solver passes. Increase for hard constraints or large changes.
-        """
         if self.constraints:
-            for _ in range(iterations):
-                for c in self.constraints:
-                    c.solve(self.walls)
+            self.sketch.solve(iterations)
             self.rebuild_static_atoms()
 
     def add_constraint_object(self, c_obj):
         self.snapshot()
+        # Conflict handling logic from Sketch is internal, so we replicate strict checks here
+        # or rely on Sketch.add_constraint if we were creating from scratch.
+        # Since we have the object, we manually add to the list via the wrapper logic
         
-        # Conflict Resolution:
+        # 1. Handle conflicts (local replication of logic for robustness)
         angle_types = ['PARALLEL', 'PERPENDICULAR', 'HORIZONTAL', 'VERTICAL']
         if hasattr(c_obj, 'type') and c_obj.type in angle_types:
             new_indices = set(c_obj.indices) if isinstance(c_obj.indices, (list, tuple)) else {c_obj.indices}
-            
-            non_conflicting = []
+            keep = []
             for c in self.constraints:
                 is_angle = getattr(c, 'type', '') in angle_types
                 if is_angle:
                     old_indices = set(c.indices) if isinstance(c.indices, (list, tuple)) else {c.indices}
-                    if old_indices == new_indices:
-                        continue 
-                non_conflicting.append(c)
-            self.constraints = non_conflicting
+                    if old_indices == new_indices: continue 
+                keep.append(c)
+            self.sketch.constraints = keep
 
-        self.constraints.append(c_obj)
-        self.apply_constraints(iterations=500)
+        # 2. Add
+        self.sketch.constraints.append(c_obj)
+        
+        # 3. Solve
+        self.sketch.solve(iterations=500)
 
     def nudge_geometry(self):
-        """Manual high-iteration solve helper."""
-        self.apply_constraints(iterations=500)
+        self.sketch.solve(iterations=500)
 
-    def remove_wall(self, index):
-        self.snapshot()
-        if 0 <= index < len(self.walls):
-            keep = []
-            for c in self.constraints:
-                involves = False
-                for idx in c.indices:
-                    if isinstance(idx, (list, tuple)):
-                        if idx[0] == index: involves = True
-                    else:
-                        if idx == index: involves = True
-                if not involves: keep.append(c)
-            self.constraints = keep
-            
-            for c in self.constraints:
-                new_indices = []
-                for idx in c.indices:
-                    if isinstance(idx, (list, tuple)):
-                        w_idx, pt_idx = idx
-                        if w_idx > index: w_idx -= 1
-                        new_indices.append((w_idx, pt_idx))
-                    else:
-                        if idx > index: idx -= 1
-                        new_indices.append(idx)
-                c.indices = new_indices
-
-            self.walls.pop(index)
-            self.rebuild_static_atoms()
-
-    def add_particles_brush(self, x, y, radius):
-        sigma = self.sigma; spacing = 1.12246 * sigma  
-        row_height = spacing * 0.866025; r_sq = radius * radius
-        n_rows = int(radius / row_height) + 1; n_cols = int(radius / spacing) + 1
-        estimated_add = int(3.14159 * radius * radius / (spacing * row_height)) + 10
-        if self.count + estimated_add >= self.capacity: self._resize_arrays()
-
-        for row in range(-n_rows, n_rows + 1):
-            offset_x = 0.5 * spacing if (row % 2 != 0) else 0.0
-            y_curr = y + row * row_height
-            for col in range(-n_cols, n_cols + 1):
-                x_curr = x + col * spacing + offset_x
-                dx = x_curr - x; dy = y_curr - y
-                if dx*dx + dy*dy <= r_sq:
-                    if 0 < x_curr < self.world_size and 0 < y_curr < self.world_size:
-                        if not self._check_overlap(x_curr, y_curr, 0.8 * sigma):
-                            if self.count >= self.capacity: self._resize_arrays()
-                            idx = self.count
-                            self.pos_x[idx] = x_curr; self.pos_y[idx] = y_curr
-                            self.vel_x[idx] = 0.0; self.vel_y[idx] = 0.0
-                            self.is_static[idx] = 0 
-                            self.atom_sigma[idx] = self.sigma; self.atom_eps_sqrt[idx] = math.sqrt(self.epsilon)
-                            self.count += 1
-        self.rebuild_next = True
-
-    def _check_overlap(self, x, y, threshold):
-        if self.count == 0: return False
-        threshold_sq = threshold * threshold
-        dx = self.pos_x[:self.count] - x; dy = self.pos_y[:self.count] - y
-        dist_sq = dx*dx + dy*dy
-        if np.any(dist_sq < threshold_sq): return True
-        return False
-
-    def delete_particles_brush(self, x, y, radius):
-        r2 = radius**2
-        keep_indices = []
-        for i in range(self.count):
-            if self.is_static[i] == 1 or self.is_static[i] == 2: keep_indices.append(i); continue
-            dx = self.pos_x[i] - x; dy = self.pos_y[i] - y
-            if dx*dx + dy*dy > r2: keep_indices.append(i)
-        if len(keep_indices) < self.count:
-            self._compact_arrays(keep_indices); self.rebuild_next = True
-
-    def add_wall(self, start_pos, end_pos, is_ref=False):
-        w = Line(start_pos, end_pos, is_ref)
-        w.sigma = config.ATOM_SIGMA; w.epsilon = config.ATOM_EPSILON; w.spacing = 0.7 * config.ATOM_SIGMA
-        self.walls.append(w); self.rebuild_static_atoms()
-        
-    def add_circle(self, center, radius):
-        c = Circle(center, radius)
-        c.sigma = config.ATOM_SIGMA; c.epsilon = config.ATOM_EPSILON; c.spacing = 0.7 * config.ATOM_SIGMA
-        self.walls.append(c); self.rebuild_static_atoms()
-
-    def toggle_anchor(self, wall_idx, pt_idx):
-        if 0 <= wall_idx < len(self.walls):
-            w = self.walls[wall_idx]
-            w.anchored[pt_idx] = not w.anchored[pt_idx]
-            self.snapshot(); self.rebuild_static_atoms()
-
-    def update_wall(self, index, start_pos, end_pos):
-        if 0 <= index < len(self.walls):
-            w = self.walls[index]
-            if isinstance(w, Line):
-                w.start[:] = start_pos; w.end[:] = end_pos
-            elif isinstance(w, Circle):
-                # For circle, update_wall is used to move center (start_pos)
-                w.center[:] = start_pos
-            self.rebuild_static_atoms()
-
-    def update_wall_props(self, index, props):
-        self.snapshot()
-        if 0 <= index < len(self.walls):
-            w = self.walls[index]
-            w.sigma = props['sigma']; w.epsilon = props['epsilon']; w.spacing = props['spacing']
-            self.rebuild_static_atoms()
+    # --- Atomizer Logic (The Compiler) ---
 
     def rebuild_static_atoms(self):
+        """
+        Converts 'Physical' Sketch entities into static atoms for the physics core.
+        """
         is_dynamic = self.is_static[:self.count] == 0
         dyn_indices = np.where(is_dynamic)[0]
         self._compact_arrays(dyn_indices)
         
         for w in self.walls:
+            # Check Physical Flag
+            if not getattr(w, 'physical', True): continue
+            
             if isinstance(w, Line):
-                # 2. Ignored in physics
                 if w.ref: continue
                 
                 p1 = w.start; p2 = w.end; spacing = w.spacing
@@ -396,7 +357,6 @@ class Simulation:
                     self._add_static_atom(pos, w.sigma, math.sqrt(w.epsilon), is_rotating, pivot, omega)
                     
             elif isinstance(w, Circle):
-                # Circumference
                 circumference = 2 * math.pi * w.radius
                 num_atoms = max(3, int(circumference / w.spacing))
                 
@@ -407,6 +367,8 @@ class Simulation:
                     self._add_static_atom(pos, w.sigma, math.sqrt(w.epsilon), False, np.zeros(2), 0.0)
 
         self.rebuild_next = True
+
+    # --- Standard Physics Methods (Unchanged) ---
 
     def _add_static_atom(self, pos, sig, eps_sqrt, rotating, pivot, omega):
         idx = self.count
@@ -468,6 +430,51 @@ class Simulation:
                 keep_indices = np.where(is_inside)[0]
                 self._compact_arrays(keep_indices)
                 self.rebuild_next = True
+
+    # --- Brush Tools (Unchanged) ---
+    
+    def add_particles_brush(self, x, y, radius):
+        sigma = self.sigma; spacing = 1.12246 * sigma  
+        row_height = spacing * 0.866025; r_sq = radius * radius
+        n_rows = int(radius / row_height) + 1; n_cols = int(radius / spacing) + 1
+        estimated_add = int(3.14159 * radius * radius / (spacing * row_height)) + 10
+        if self.count + estimated_add >= self.capacity: self._resize_arrays()
+
+        for row in range(-n_rows, n_rows + 1):
+            offset_x = 0.5 * spacing if (row % 2 != 0) else 0.0
+            y_curr = y + row * row_height
+            for col in range(-n_cols, n_cols + 1):
+                x_curr = x + col * spacing + offset_x
+                dx = x_curr - x; dy = y_curr - y
+                if dx*dx + dy*dy <= r_sq:
+                    if 0 < x_curr < self.world_size and 0 < y_curr < self.world_size:
+                        if not self._check_overlap(x_curr, y_curr, 0.8 * sigma):
+                            if self.count >= self.capacity: self._resize_arrays()
+                            idx = self.count
+                            self.pos_x[idx] = x_curr; self.pos_y[idx] = y_curr
+                            self.vel_x[idx] = 0.0; self.vel_y[idx] = 0.0
+                            self.is_static[idx] = 0 
+                            self.atom_sigma[idx] = self.sigma; self.atom_eps_sqrt[idx] = math.sqrt(self.epsilon)
+                            self.count += 1
+        self.rebuild_next = True
+
+    def _check_overlap(self, x, y, threshold):
+        if self.count == 0: return False
+        threshold_sq = threshold * threshold
+        dx = self.pos_x[:self.count] - x; dy = self.pos_y[:self.count] - y
+        dist_sq = dx*dx + dy*dy
+        if np.any(dist_sq < threshold_sq): return True
+        return False
+
+    def delete_particles_brush(self, x, y, radius):
+        r2 = radius**2
+        keep_indices = []
+        for i in range(self.count):
+            if self.is_static[i] == 1 or self.is_static[i] == 2: keep_indices.append(i); continue
+            dx = self.pos_x[i] - x; dy = self.pos_y[i] - y
+            if dx*dx + dy*dy > r2: keep_indices.append(i)
+        if len(keep_indices) < self.count:
+            self._compact_arrays(keep_indices); self.rebuild_next = True
 
     def _resize_arrays(self):
         self.capacity *= 2
