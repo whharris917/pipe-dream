@@ -5,8 +5,6 @@ import pygame
 class Entity:
     def __init__(self, material_id="Default"):
         self.material_id = material_id
-        # Note: 'anim' is kept here for kinematic definitions (rotating stirrers),
-        # but pure physics properties (sigma, epsilon) are gone.
         self.anim = None 
 
     def render(self, screen, transform_func, is_selected=False, is_pending=False, color=None):
@@ -147,7 +145,11 @@ class Line(Entity):
 
     @staticmethod
     def from_dict(data):
-        l = Line(data['start'], data['end'], data.get('ref', False), data.get('material_id', "Default"))
+        # Backward compatibility check
+        mat_id = data.get('material_id', "Default")
+        # If older file had 'physical' but no mat_id, maybe infer?
+        # For now, default is safe.
+        l = Line(data['start'], data['end'], data.get('ref', False), mat_id)
         l.anchored = data.get('anchored', [False, False])
         l.anim = data.get('anim', None)
         return l

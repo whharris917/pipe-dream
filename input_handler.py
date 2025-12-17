@@ -1,7 +1,8 @@
 import pygame
 import config
 import utils
-from ui_widgets import PropertiesDialog, RotationDialog, AnimationDialog, ContextMenu
+# FIX: Import MaterialDialog instead of PropertiesDialog
+from ui_widgets import MaterialDialog, RotationDialog, AnimationDialog, ContextMenu
 from constraints import Length
 from app_state import InteractionState
 from tkinter import simpledialog
@@ -36,6 +37,7 @@ class InputHandler:
             self.ui.buttons['clear']: lambda: self.sim.clear_particles(),
             self.ui.buttons['undo']: lambda: (self.sim.undo(), self.app.set_status("Undo")),
             self.ui.buttons['redo']: lambda: (self.sim.redo(), self.app.set_status("Redo")),
+            # Note: Inputs handled safely inside lambda
             self.ui.buttons['resize']: lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0)),
             self.ui.buttons['discard_geo']: lambda: self.editor.exit_editor_mode(None), 
             self.ui.buttons['save_geo']: self.editor.save_geo_dialog,
@@ -58,12 +60,16 @@ class InputHandler:
             count = 0
             for idx in self.app.selected_walls:
                 if idx < len(self.sim.walls):
-                    self.sim.sketch.update_entity(idx, physical=True)
+                    # Use update_entity for cleaner API access via Sketch if possible, 
+                    # but FlowStateApp wrapper calls sim.update_wall_props -> sketch.update_entity
+                    # Setting physical=True via props implies a material change or property update
+                    self.editor.update_wall_props(idx, {'physical': True})
                     count += 1
             self.sim.rebuild_static_atoms()
             self.app.set_status(f"Atomized {count} entities")
         else:
-            self.app.set_status("Select entities to atomize")
+            self.sim.rebuild_static_atoms()
+            self.app.set_status("Atomized All Geometry")
 
     def handle_input(self):
         self.layout = self.editor.layout
@@ -168,9 +174,11 @@ class InputHandler:
                 self.editor.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
             elif action == "Delete": 
                 self.sim.remove_wall(self.editor.ctx_vars['wall']); self.app.selected_walls.clear(); self.app.selected_points.clear()
-            elif action == "Properties":
-                w_props = self.sim.walls[self.editor.ctx_vars['wall']].to_dict()
-                self.editor.prop_dialog = PropertiesDialog(self.layout['W']//2, self.layout['H']//2, w_props)
+            elif action == "Properties" or action == "Edit Material": # Map both actions
+                # FIX: Use MaterialDialog now
+                idx = self.editor.ctx_vars['wall']
+                mat_id = getattr(self.sim.walls[idx], 'material_id', "Default")
+                self.editor.prop_dialog = MaterialDialog(self.layout['W']//2, self.layout['H']//2, self.sim.sketch, mat_id)
             elif action == "Set Rotation...":
                 anim = getattr(self.sim.walls[self.editor.ctx_vars['wall']], 'anim', None)
                 self.editor.rot_dialog = RotationDialog(self.layout['W']//2, self.layout['H']//2, anim)
@@ -183,10 +191,19 @@ class InputHandler:
                 if val: self.sim.add_constraint_object(Length(self.editor.ctx_vars['wall'], val))
             self.editor.context_menu = None; captured = True
 
+        # Handle MaterialDialog (prop_dialog)
         if self.editor.prop_dialog and self.editor.prop_dialog.handle_event(event):
-            if self.editor.prop_dialog.apply: self.sim.update_wall_props(self.editor.ctx_vars['wall'], self.editor.prop_dialog.get_values()); self.editor.prop_dialog.apply = False
+            if self.editor.prop_dialog.apply: 
+                # MaterialDialog returns a Material object
+                mat = self.editor.prop_dialog.get_result()
+                # 1. Add to registry
+                self.sim.sketch.add_material(mat)
+                # 2. Update Wall to point to this material
+                self.sim.update_wall_props(self.editor.ctx_vars['wall'], {'material_id': mat.name})
+                self.editor.prop_dialog.apply = False
             if self.editor.prop_dialog.done: self.editor.prop_dialog = None
             captured = True
+            
         if self.editor.rot_dialog and self.editor.rot_dialog.handle_event(event):
             if self.editor.rot_dialog.apply: self.sim.set_wall_rotation(self.editor.ctx_vars['wall'], self.editor.rot_dialog.get_values()); self.editor.rot_dialog.apply = False
             if self.editor.rot_dialog.done: self.editor.rot_dialog = None

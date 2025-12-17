@@ -1,5 +1,3 @@
-import json
-
 class Material:
     """
     Defines the physical and visual properties of a geometric entity.

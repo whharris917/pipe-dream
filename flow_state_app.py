@@ -11,7 +11,8 @@ from tkinter import filedialog, Tk, simpledialog
 
 # Modules
 from simulation_state import Simulation
-from ui_widgets import InputField, ContextMenu, PropertiesDialog, RotationDialog, AnimationDialog
+# FIX: Import MaterialDialog instead of PropertiesDialog
+from ui_widgets import InputField, ContextMenu, MaterialDialog, RotationDialog, AnimationDialog
 from geometry import Line, Circle
 from constraints import Length
 from renderer import Renderer
@@ -209,6 +210,8 @@ class FlowStateApp:
         self.ui.draw(self.screen, self.font, self.app.mode)
 
         if self.context_menu: self.context_menu.draw(self.screen, self.font)
+        # Replaced prop_dialog with generic active_dialog check logic, but sticking to logic in input_handler for modal dialogs
+        # BUT input_handler modifies 'self.editor.prop_dialog', so we draw it here:
         if self.prop_dialog: self.prop_dialog.draw(self.screen, self.font)
         if self.rot_dialog: self.rot_dialog.draw(self.screen, self.font)
         if self.anim_dialog: self.anim_dialog.draw(self.screen, self.font)

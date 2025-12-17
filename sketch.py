@@ -15,7 +15,7 @@ class Sketch:
         self.constraints = []   # Constraint Data Objects
         self.drivers = []       # Animation Drivers
         
-        # Material Registry - The central "Database" for physics properties
+        # Material Registry
         self.materials = {
             "Default": Material("Default", sigma=1.0, epsilon=1.0, color=(180, 180, 180), physical=True),
             "Ghost": Material("Ghost", sigma=1.0, epsilon=1.0, color=(100, 100, 100), physical=False),
@@ -53,8 +53,6 @@ class Sketch:
             
             # Material Assignment
             if 'material_id' in kwargs: 
-                # Validate material existence? Or allow lazy assignment?
-                # For safety, defaulting if missing is smart, but for now we trust the ID.
                 e.material_id = kwargs['material_id']
             
             # Anchors
@@ -136,7 +134,7 @@ class Sketch:
     def clear(self):
         self.entities = []
         self.constraints = []
-        # We do NOT clear materials, those persist as part of the document definitions.
+        # Materials persist!
 
     # --- Private Helpers ---
 
@@ -183,16 +181,14 @@ class Sketch:
         }
 
     def restore(self, data):
-        # Local imports to avoid circular deps with Geometry modules using Sketch
+        # Local imports
         from geometry import Line, Circle, Point
         from properties import Material
         
-        # Restore Materials First
         if 'materials' in data:
             self.materials = {}
             for k, v in data['materials'].items():
                 self.materials[k] = Material.from_dict(v)
-        # Ensure Default exists
         if "Default" not in self.materials:
              self.materials["Default"] = Material("Default")
 

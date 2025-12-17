@@ -10,6 +10,7 @@ from constraints import create_constraint, Constraint, Length
 from definitions import CONSTRAINT_DEFS
 from simulation_geometry import GeometryManager
 from sketch import Sketch
+from compiler import Compiler
 
 class Simulation:
     def __init__(self):
@@ -37,8 +38,7 @@ class Simulation:
         
         # --- Design / Sketch Data ---
         self.sketch = Sketch()
-        
-        # Helper for spatial queries
+        self.compiler = Compiler(self)
         self.geo = GeometryManager(self)
         
         # --- Neighbor List & Optimization ---
@@ -299,70 +299,10 @@ class Simulation:
     def nudge_geometry(self):
         self.sketch.solve(iterations=500)
 
-    # --- Atomizer Logic (The Compiler) ---
+    # --- Atomizer Logic (DELEGATED) ---
 
     def rebuild_static_atoms(self):
-        """
-        Converts 'Physical' Sketch entities into static atoms for the physics core.
-        Now uses Material properties instead of reading directly from entities.
-        """
-        is_dynamic = self.is_static[:self.count] == 0
-        dyn_indices = np.where(is_dynamic)[0]
-        self._compact_arrays(dyn_indices)
-        
-        for w in self.walls:
-            # Look up material properties
-            mat = self.sketch.materials.get(w.material_id, self.sketch.materials["Default"])
-            
-            # Check Physical Flag from Material
-            if not mat.physical: continue
-            
-            if isinstance(w, Line):
-                if w.ref: continue
-                
-                p1 = w.start; p2 = w.end; spacing = mat.spacing
-                vec = p2 - p1; length = np.linalg.norm(vec)
-                if length < 1e-4: continue 
-                num_atoms = max(1, int(length / spacing) + 1)
-                
-                anim = w.anim; is_rotating = False; pivot = np.zeros(2); omega = 0.0
-                if anim and anim['type'] == 'rotate':
-                    is_rotating = True; omega = math.radians(anim['speed'])
-                    if anim['pivot'] == 'start': pivot = w.start
-                    elif anim['pivot'] == 'end': pivot = w.end
-                    else: pivot = (w.start + w.end) * 0.5
-
-                for k in range(num_atoms):
-                    if self.count >= self.capacity: self._resize_arrays()
-                    t = k / max(1, num_atoms - 1) if num_atoms > 1 else 0.5
-                    pos = p1 + vec * t
-                    self._add_static_atom(pos, mat.sigma, math.sqrt(mat.epsilon), is_rotating, pivot, omega)
-                    
-            elif isinstance(w, Circle):
-                circumference = 2 * math.pi * w.radius
-                num_atoms = max(3, int(circumference / mat.spacing))
-                
-                for k in range(num_atoms):
-                    if self.count >= self.capacity: self._resize_arrays()
-                    angle = (k / num_atoms) * 2 * math.pi
-                    pos = w.center + np.array([math.cos(angle) * w.radius, math.sin(angle) * w.radius])
-                    self._add_static_atom(pos, mat.sigma, math.sqrt(mat.epsilon), False, np.zeros(2), 0.0)
-
-        self.rebuild_next = True
-
-    # --- Standard Physics Methods ---
-
-    def _add_static_atom(self, pos, sig, eps_sqrt, rotating, pivot, omega):
-        idx = self.count
-        self.pos_x[idx] = pos[0]; self.pos_y[idx] = pos[1]
-        self.vel_x[idx] = 0.0; self.vel_y[idx] = 0.0
-        if rotating:
-            self.is_static[idx] = 2
-            self.kinematic_props[idx, 0] = pivot[0]; self.kinematic_props[idx, 1] = pivot[1]; self.kinematic_props[idx, 2] = omega
-        else:
-            self.is_static[idx] = 1; self.kinematic_props[idx, :] = 0.0
-        self.atom_sigma[idx] = sig; self.atom_eps_sqrt[idx] = eps_sqrt
-        self.count += 1
+        self.compiler.rebuild(self.sketch)
 
     def _compact_arrays(self, keep_indices):
         indices = np.array(keep_indices, dtype=np.int32)
