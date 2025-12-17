@@ -37,7 +37,10 @@ class Renderer:
 
         self.screen.set_clip(None)
         self._draw_panels(layout)
-        self._draw_stats(app, sim, layout)
+        
+        # FIXED: Only draw physics stats if we are actually in a Simulation
+        if app.mode == config.MODE_SIM:
+            self._draw_stats(app, sim, layout)
         
         for el in ui_list:
             el.draw(self.screen, self.font)
@@ -47,6 +50,7 @@ class Renderer:
     def _draw_snap_indicator(self, app, sim, layout):
         if app.current_snap_target:
             w_idx, pt_idx = app.current_snap_target
+            # sim.walls works for both Contexts (Sim and Builder)
             if w_idx < len(sim.walls):
                 ent = sim.walls[w_idx]
                 pt_pos = ent.get_point(pt_idx)
@@ -62,12 +66,11 @@ class Renderer:
         br = sim_to_screen(sim.world_size, sim.world_size, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
         
         g_col = config.GRID_COLOR if app.mode == config.MODE_SIM else (50, 60, 50)
-        # FIX: Correct height calculation (br[1] - tl[1])
         pygame.draw.rect(self.screen, g_col, (tl[0], tl[1], br[0]-tl[0], br[1]-tl[1]), 2)
 
     def _draw_particles(self, app, sim, layout):
+        # We assume sim is a Simulation instance here because of the check in draw_app
         for i in range(sim.count):
-            # NEW: Check visibility flag for static atoms from AppState
             if sim.is_static[i] and not getattr(app, 'show_wall_atoms', True): continue 
             
             sx, sy = sim_to_screen(sim.pos_x[i], sim.pos_y[i], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
@@ -85,10 +88,10 @@ class Renderer:
 
     def _draw_geometry(self, app, sim, layout):
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
+        # sim.walls works for both Contexts
         for i, w in enumerate(sim.walls):
-            # Look up material properties for rendering
+            # sim.sketch works for both Contexts
             mat = sim.sketch.materials.get(w.material_id)
-            # Default to gray if missing
             base_color = mat.color if mat else (200, 200, 200)
             
             is_sel = (i in app.selected_walls)
@@ -101,6 +104,7 @@ class Renderer:
         grouped = {}
         threshold = 20
         layout_data = []
+        # sim.constraints works for both Contexts
         for c in sim.constraints:
             cx, cy = c.get_visual_center(transform, sim.walls)
             found_group = None
@@ -175,6 +179,8 @@ class Renderer:
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H), (layout['RIGHT_X'], layout['H']))
 
     def _draw_stats(self, app, sim, layout):
+        # This function requires physics data (vel_x, count, sps)
+        # It is now protected by the check in draw_app
         metric_x = layout['LEFT_X'] + 15
         stats_y = config.WINDOW_HEIGHT - 80
         curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)

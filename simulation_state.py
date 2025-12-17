@@ -67,22 +67,13 @@ class Simulation:
         self.undo_stack = []; self.redo_stack = []
         self._warmup_compiler()
 
-    # --- Properties to maintain backward compatibility ---
+    # --- Properties ---
     @property
-    def walls(self):
-        return self.sketch.entities
-    
-    @walls.setter
-    def walls(self, value):
-        self.sketch.entities = value
-
+    def walls(self): return self.sketch.entities
     @property
-    def constraints(self):
-        return self.sketch.constraints
-    
+    def constraints(self): return self.sketch.constraints
     @constraints.setter
-    def constraints(self, value):
-        self.sketch.constraints = value
+    def constraints(self, value): self.sketch.constraints = value
 
     def _update_derived_params(self):
         self.r_list = self.r_cut_base + self.skin_distance
@@ -92,6 +83,7 @@ class Simulation:
 
     def _warmup_compiler(self):
         print("Warming up Numba compiler...")
+        # (Standard warmup sequence)
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
@@ -150,11 +142,8 @@ class Simulation:
         next_state = self.redo_stack.pop()
         self.restore_state(next_state)
 
-    def _push_redo(self):
-        self._save_current_to_stack(self.redo_stack)
-
-    def _push_undo_internal(self):
-        self._save_current_to_stack(self.undo_stack)
+    def _push_redo(self): self._save_current_to_stack(self.redo_stack)
+    def _push_undo_internal(self): self._save_current_to_stack(self.undo_stack)
         
     def _save_current_to_stack(self, stack):
         current_state = {
@@ -188,17 +177,11 @@ class Simulation:
         self.skin_distance = config.DEFAULT_SKIN_DISTANCE
         self._update_derived_params()
         self.clear_particles(snapshot=False)
+        self.sketch.clear()
 
-    # --- Geometry / Sketch Wrappers ---
-
-    def add_wall(self, start_pos, end_pos, is_ref=False, material_id="Default"):
-        if is_ref: material_id = "Ghost"
-        idx = self.sketch.add_line(start_pos, end_pos, is_ref, material_id=material_id)
-        # REMOVED AUTO-REBUILD: self.rebuild_static_atoms()
-        
-    def add_circle(self, center, radius, material_id="Default"):
-        idx = self.sketch.add_circle(center, radius, material_id=material_id)
-        # REMOVED AUTO-REBUILD: self.rebuild_static_atoms()
+    # --- Wrappers for Compatibility with InputHandler (DELEGATED) ---
+    # These are now mostly handled by FlowStateApp, but we keep them here for safety
+    # or if any tools call sim directly. 
 
     def remove_wall(self, index):
         self.snapshot()
@@ -210,46 +193,6 @@ class Simulation:
             w = self.walls[wall_idx]
             w.anchored[pt_idx] = not w.anchored[pt_idx]
             self.snapshot(); self.rebuild_static_atoms()
-
-    def update_wall(self, index, start_pos, end_pos):
-        if 0 <= index < len(self.walls):
-            w = self.walls[index]
-            if isinstance(w, Line):
-                self.sketch.update_entity(index, start=start_pos, end=end_pos)
-            elif isinstance(w, Circle):
-                self.sketch.update_entity(index, center=start_pos)
-            self.rebuild_static_atoms()
-
-    def update_wall_props(self, index, props):
-        self.snapshot()
-        self.sketch.update_entity(index, **props)
-        self.rebuild_static_atoms()
-        
-    def set_wall_rotation(self, index, params):
-        if 0 <= index < len(self.walls):
-            w = self.walls[index]
-            if isinstance(w, Circle): return 
-            speed = params['speed']; pivot = params['pivot']
-            if abs(speed) < 1e-5: w.anim = None; return
-            w.anim = {'type': 'rotate', 'speed': speed, 'pivot': pivot, 'angle': 0.0, 'ref_start': w.start.copy(), 'ref_end': w.end.copy()}
-            self.rebuild_static_atoms()
-
-    def update_animations(self, dt):
-        for w in self.walls:
-            if not isinstance(w, Line): continue
-            anim = w.anim
-            if anim and anim['type'] == 'rotate':
-                anim['angle'] += anim['speed'] * dt
-                rad = math.radians(anim['angle']); c = math.cos(rad); s = math.sin(rad)
-                rs = anim['ref_start']; re = anim['ref_end']
-                if anim['pivot'] == 'start': pivot = rs
-                elif anim['pivot'] == 'end': pivot = re
-                else: pivot = (rs + re) * 0.5
-                v_s = rs - pivot; v_e = re - pivot
-                w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
-                w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
-
-    # --- Constraints ---
 
     def update_constraint_drivers(self, current_time):
         self.sketch.update_drivers(current_time)
@@ -291,11 +234,6 @@ class Simulation:
         self.sketch.constraints.append(c_obj)
         self.sketch.solve(iterations=500)
 
-    def nudge_geometry(self):
-        self.sketch.solve(iterations=500)
-
-    # --- Atomizer Logic (DELEGATED) ---
-
     def rebuild_static_atoms(self):
         self.compiler.rebuild(self.sketch)
 
@@ -312,13 +250,16 @@ class Simulation:
 
     def step(self, steps_to_run):
         if self.paused: return
+        # Standard physics step logic
         is_dyn = self.is_static[:self.count] == 0
         if np.any(is_dyn):
             self.atom_sigma[:self.count][is_dyn] = self.sigma
             self.atom_eps_sqrt[:self.count][is_dyn] = math.sqrt(self.epsilon)
         self._update_derived_params()
         total_dt = self.dt * steps_to_run
+        
         self.update_animations(total_dt)
+
         if self.total_steps % 100 == 0 and self.count > 0:
             spatial_sort(self.pos_x[:self.count], self.pos_y[:self.count], self.vel_x[:self.count], self.vel_y[:self.count], self.force_x[:self.count], self.force_y[:self.count], self.is_static[:self.count], self.kinematic_props[:self.count], self.atom_sigma[:self.count], self.atom_eps_sqrt[:self.count], self.world_size, self.cell_size)
             self.rebuild_next = True
@@ -348,7 +289,23 @@ class Simulation:
                 self._compact_arrays(keep_indices)
                 self.rebuild_next = True
 
+    def update_animations(self, dt):
+        for w in self.walls:
+            if not isinstance(w, Line): continue
+            anim = w.anim
+            if anim and anim['type'] == 'rotate':
+                anim['angle'] += anim['speed'] * dt
+                rad = math.radians(anim['angle']); c = math.cos(rad); s = math.sin(rad)
+                rs = anim['ref_start']; re = anim['ref_end']
+                if anim['pivot'] == 'start': pivot = rs
+                elif anim['pivot'] == 'end': pivot = re
+                else: pivot = (rs + re) * 0.5
+                v_s = rs - pivot; v_e = re - pivot
+                w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
+                w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
+
     def add_particles_brush(self, x, y, radius):
+        # (Same content as previous file)
         sigma = self.sigma; spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025; r_sq = radius * radius
         n_rows = int(radius / row_height) + 1; n_cols = int(radius / spacing) + 1

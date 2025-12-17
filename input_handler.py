@@ -3,7 +3,6 @@ import config
 import utils
 import file_io
 import sys
-# FIX: Import MaterialDialog
 from ui_widgets import MaterialDialog, RotationDialog, AnimationDialog, ContextMenu
 from constraints import Length
 from app_state import InteractionState
@@ -13,7 +12,7 @@ class InputHandler:
     def __init__(self, editor):
         self.editor = editor
         self.app = editor.app
-        self.sim = editor.sim
+        # sim property removed. Use self.editor.active_context
         self.ui = editor.ui
         self.layout = editor.layout
         
@@ -33,16 +32,15 @@ class InputHandler:
             self.ui.buttons['const_horiz']: 'HORIZONTAL', self.ui.buttons['const_vert']: 'VERTICAL'
         }
 
-        # Action Map (Calls sim directly where possible)
+        # Action Map (Delegates to editor or active context)
         self.ui_action_map = {
-            self.ui.buttons['reset']: lambda: self.sim.reset_simulation(),
-            self.ui.buttons['clear']: lambda: self.sim.clear_particles(),
-            self.ui.buttons['undo']: lambda: (self.sim.undo(), self.app.set_status("Undo")),
-            self.ui.buttons['redo']: lambda: (self.sim.redo(), self.app.set_status("Redo")),
+            self.ui.buttons['reset']: lambda: self.editor.reset_simulation(), # Calls context reset
+            self.ui.buttons['clear']: lambda: self.editor.clear_particles(), # Safe call
+            self.ui.buttons['undo']: lambda: (self.editor.undo(), self.app.set_status("Undo")),
+            self.ui.buttons['redo']: lambda: (self.editor.redo(), self.app.set_status("Redo")),
             self.ui.buttons['atomize']: self.atomize_selected,
             self.ui.buttons['mode_ghost']: self.toggle_ghost_mode,
             
-            # Editor actions kept as pass-throughs via editor for now if complex
             self.ui.buttons['discard_geo']: lambda: self.editor.exit_editor_mode(None), 
             self.ui.buttons['save_geo']: self.editor.save_geo_dialog,
             self.ui.buttons['extend']: self.editor.toggle_extend,
@@ -50,45 +48,55 @@ class InputHandler:
             self.ui.buttons['show_const']: self.editor.toggle_show_constraints,
         }
         if 'resize' in self.ui.buttons and 'world' in self.ui.inputs:
-             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0))
+             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.editor.resize_world(self.ui.inputs['world'].get_value(50.0))
 
     def toggle_ghost_mode(self):
-        # NEW LOGIC: Just toggles visibility, doesn't change material logic yet
         self.app.show_wall_atoms = not self.app.show_wall_atoms
         self.ui.buttons['mode_ghost'].active = not self.app.show_wall_atoms 
         state = "Hidden" if not self.app.show_wall_atoms else "Visible"
         self.app.set_status(f"Wall Atoms: {state}")
 
     def atomize_selected(self):
+        # Access walls via context property
         if self.app.selected_walls:
             count = 0
             for idx in self.app.selected_walls:
-                if idx < len(self.sim.walls):
-                    # Using update_entity directly via Sim to avoid middleman if possible, 
-                    # but maintaining props usage:
-                    self.sim.update_wall_props(idx, {'physical': True})
+                if idx < len(self.editor.active_context.walls):
+                    self.editor.update_wall_props(idx, {'physical': True})
                     count += 1
-            self.sim.rebuild_static_atoms()
+            if hasattr(self.editor.active_context, 'rebuild_static_atoms'):
+                self.editor.active_context.rebuild_static_atoms()
             self.app.set_status(f"Atomized {count} entities")
         else:
-            self.sim.rebuild_static_atoms()
+            if hasattr(self.editor.active_context, 'rebuild_static_atoms'):
+                self.editor.active_context.rebuild_static_atoms()
             self.app.set_status("Atomized All Geometry")
 
     def handle_input(self):
         self.layout = self.editor.layout
         
-        physics_elements = [
-            self.ui.buttons['play'], self.ui.buttons['clear'], self.ui.buttons['reset'], 
-            self.ui.buttons['undo'], self.ui.buttons['redo'],
-            self.ui.buttons['thermostat'], self.ui.buttons['boundaries'],
-            *self.ui.sliders.values()
-        ]
+        # Determine visibility based on mode
+        physics_elements = []
+        # Only show physics controls if context is Simulation
+        from simulation_state import Simulation
+        if isinstance(self.editor.active_context, Simulation):
+            physics_elements = [
+                self.ui.buttons['play'], self.ui.buttons['clear'], self.ui.buttons['reset'], 
+                self.ui.buttons['undo'], self.ui.buttons['redo'],
+                self.ui.buttons['thermostat'], self.ui.buttons['boundaries'],
+                *self.ui.sliders.values()
+            ]
+        else:
+            # Model Builder minimal set
+            physics_elements = [
+                 self.ui.buttons['reset'], self.ui.buttons['undo'], self.ui.buttons['redo'],
+                 self.ui.buttons['resize'], self.ui.inputs['world']
+            ]
         
         editor_elements = [
             self.ui.buttons['mode_ghost'], self.ui.buttons['atomize'], 
             self.ui.buttons['save_geo'], self.ui.buttons['discard_geo'], 
             self.ui.buttons['editor_play'], self.ui.buttons['show_const'],
-            self.ui.buttons['resize'], self.ui.inputs['world'],
             self.ui.buttons['extend'],
             *self.ui.tools.values(), 
             *self.constraint_btn_map.keys()
@@ -141,17 +149,15 @@ class InputHandler:
                 return True
             if event.key == pygame.K_z and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                 if self.app.current_tool: self.app.current_tool.cancel()
-                self.sim.undo(); self.app.set_status("Undo"); return True
+                self.editor.undo(); self.app.set_status("Undo"); return True
             if event.key == pygame.K_y and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                 if self.app.current_tool: self.app.current_tool.cancel()
-                self.sim.redo(); self.app.set_status("Redo"); return True
-            # CHANGED: Use self.sim directly instead of self.app proxy
+                self.editor.redo(); self.app.set_status("Redo"); return True
             if event.key == pygame.K_DELETE:
                 if self.app.selected_walls:
                     for idx in sorted(list(self.app.selected_walls), reverse=True):
-                        self.sim.remove_wall(idx)
+                        self.editor.remove_wall(idx) # Delegate to editor
                     self.app.selected_walls.clear()
-                    self.sim.rebuild_static_atoms() # Ensure rebuild
         return False
 
     def _handle_menus(self, event):
@@ -167,58 +173,62 @@ class InputHandler:
 
     def _handle_dialogs(self, event):
         captured = False
+        # Use editor.context_menu and active_context
         if self.editor.context_menu and self.editor.context_menu.handle_event(event):
             action = self.editor.context_menu.action
+            ctx = self.editor.active_context
+            
             if action == "Delete Constraint":
-                if 0 <= self.editor.ctx_vars['const'] < len(self.sim.constraints):
-                    self.sim.snapshot(); self.sim.constraints.pop(self.editor.ctx_vars['const']); self.sim.apply_constraints()
+                if 0 <= self.editor.ctx_vars['const'] < len(ctx.constraints):
+                    ctx.snapshot(); ctx.constraints.pop(self.editor.ctx_vars['const']); ctx.apply_constraints()
             elif action == "Set Angle...":
                 val = simpledialog.askfloat("Set Angle", "Enter target angle (degrees):")
                 if val is not None:
-                    if 0 <= self.editor.ctx_vars['const'] < len(self.sim.constraints):
-                        self.sim.constraints[self.editor.ctx_vars['const']].value = val
-                        self.sim.apply_constraints()
+                    if 0 <= self.editor.ctx_vars['const'] < len(ctx.constraints):
+                        ctx.constraints[self.editor.ctx_vars['const']].value = val
+                        ctx.apply_constraints()
             elif action == "Animate...":
-                c = self.sim.constraints[self.editor.ctx_vars['const']]
+                c = ctx.constraints[self.editor.ctx_vars['const']]
                 driver = getattr(c, 'driver', None)
                 self.editor.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
             elif action == "Delete": 
-                # CHANGED: Use sim directly
-                self.sim.remove_wall(self.editor.ctx_vars['wall'])
+                self.editor.remove_wall(self.editor.ctx_vars['wall'])
                 self.app.selected_walls.clear(); self.app.selected_points.clear()
             elif action == "Properties" or action == "Edit Material":
                 idx = self.editor.ctx_vars['wall']
-                mat_id = getattr(self.sim.walls[idx], 'material_id', "Default")
-                self.editor.prop_dialog = MaterialDialog(self.layout['W']//2, self.layout['H']//2, self.sim.sketch, mat_id)
+                mat_id = getattr(ctx.walls[idx], 'material_id', "Default")
+                self.editor.prop_dialog = MaterialDialog(self.layout['W']//2, self.layout['H']//2, ctx.sketch, mat_id)
             elif action == "Set Rotation...":
-                anim = getattr(self.sim.walls[self.editor.ctx_vars['wall']], 'anim', None)
+                anim = getattr(ctx.walls[self.editor.ctx_vars['wall']], 'anim', None)
                 self.editor.rot_dialog = RotationDialog(self.layout['W']//2, self.layout['H']//2, anim)
             elif action == "Anchor": 
-                self.sim.toggle_anchor(self.editor.ctx_vars['wall'], self.editor.ctx_vars['pt'])
+                self.editor.toggle_anchor(self.editor.ctx_vars['wall'], self.editor.ctx_vars['pt'])
             elif action == "Un-Anchor":
-                self.sim.toggle_anchor(self.editor.ctx_vars['wall'], self.editor.ctx_vars['pt'])
+                self.editor.toggle_anchor(self.editor.ctx_vars['wall'], self.editor.ctx_vars['pt'])
             elif action == "Set Length...":
                 val = simpledialog.askfloat("Set Length", "Enter target length:")
-                if val: self.sim.add_constraint_object(Length(self.editor.ctx_vars['wall'], val))
+                if val: ctx.add_constraint_object(Length(self.editor.ctx_vars['wall'], val))
             self.editor.context_menu = None; captured = True
 
         if self.editor.prop_dialog and self.editor.prop_dialog.handle_event(event):
             if self.editor.prop_dialog.apply: 
                 mat = self.editor.prop_dialog.get_result()
-                self.sim.sketch.add_material(mat)
-                self.sim.update_wall_props(self.editor.ctx_vars['wall'], {'material_id': mat.name})
+                self.editor.active_context.sketch.add_material(mat)
+                self.editor.update_wall_props(self.editor.ctx_vars['wall'], {'material_id': mat.name})
                 self.editor.prop_dialog.apply = False
             if self.editor.prop_dialog.done: self.editor.prop_dialog = None
             captured = True
             
         if self.editor.rot_dialog and self.editor.rot_dialog.handle_event(event):
-            if self.editor.rot_dialog.apply: self.sim.set_wall_rotation(self.editor.ctx_vars['wall'], self.editor.rot_dialog.get_values()); self.editor.rot_dialog.apply = False
+            if self.editor.rot_dialog.apply: 
+                self.editor.set_wall_rotation(self.editor.ctx_vars['wall'], self.editor.rot_dialog.get_values())
+                self.editor.rot_dialog.apply = False
             if self.editor.rot_dialog.done: self.editor.rot_dialog = None
             captured = True
         if self.editor.anim_dialog and self.editor.anim_dialog.handle_event(event):
             if self.editor.anim_dialog.apply:
-                c = self.sim.constraints[self.editor.ctx_vars['const']]
-                self.sim.sketch.set_driver(self.editor.ctx_vars['const'], self.editor.anim_dialog.get_values())
+                # Use sketch directly for drivers
+                self.editor.active_context.sketch.set_driver(self.editor.ctx_vars['const'], self.editor.anim_dialog.get_values())
                 self.editor.anim_dialog.apply = False
             if self.editor.anim_dialog.done: self.editor.anim_dialog = None
             captured = True
@@ -229,9 +239,10 @@ class InputHandler:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     mx, my = event.pos
-                    sx, sy = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
-                    if hasattr(self.sim.geo, 'place_geometry'):
-                        self.sim.geo.place_geometry(self.app.placing_geo_data, sx, sy, current_time=self.app.geo_time)
+                    # Use active_context to place geometry
+                    sx, sy = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.editor.active_context.world_size, self.layout)
+                    if hasattr(self.editor.active_context.geo, 'place_geometry'):
+                        self.editor.active_context.geo.place_geometry(self.app.placing_geo_data, sx, sy, current_time=self.app.geo_time)
                     self.app.placing_geo_data = None
                     self.app.set_status("Geometry Placed")
                 elif event.button == 3:
