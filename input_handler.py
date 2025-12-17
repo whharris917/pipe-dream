@@ -1,11 +1,13 @@
 import pygame
 import config
 import utils
-# FIX: Import MaterialDialog instead of PropertiesDialog
+import file_io
+import sys
+# FIX: Import MaterialDialog
 from ui_widgets import MaterialDialog, RotationDialog, AnimationDialog, ContextMenu
 from constraints import Length
 from app_state import InteractionState
-from tkinter import simpledialog
+from tkinter import simpledialog, filedialog
 
 class InputHandler:
     def __init__(self, editor):
@@ -27,43 +29,44 @@ class InputHandler:
             self.ui.buttons['const_length']: 'LENGTH', self.ui.buttons['const_equal']: 'EQUAL',
             self.ui.buttons['const_parallel']: 'PARALLEL', self.ui.buttons['const_perp']: 'PERPENDICULAR',
             self.ui.buttons['const_coincident']: 'COINCIDENT', self.ui.buttons['const_collinear']: 'COLLINEAR',
-            self.ui.buttons['const_midpoint']: 'MIDPOINT', self.ui.buttons['const_horiz']: 'HORIZONTAL',
-            self.ui.buttons['const_vert']: 'VERTICAL', self.ui.buttons['const_angle']: 'ANGLE'
+            self.ui.buttons['const_midpoint']: 'MIDPOINT', self.ui.buttons['const_angle']: 'ANGLE',
+            self.ui.buttons['const_horiz']: 'HORIZONTAL', self.ui.buttons['const_vert']: 'VERTICAL'
         }
-        
-        # Action Map
+
+        # Action Map (Calls sim directly where possible)
         self.ui_action_map = {
             self.ui.buttons['reset']: lambda: self.sim.reset_simulation(),
             self.ui.buttons['clear']: lambda: self.sim.clear_particles(),
             self.ui.buttons['undo']: lambda: (self.sim.undo(), self.app.set_status("Undo")),
             self.ui.buttons['redo']: lambda: (self.sim.redo(), self.app.set_status("Redo")),
-            # Note: Inputs handled safely inside lambda
-            self.ui.buttons['resize']: lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0)),
+            self.ui.buttons['atomize']: self.atomize_selected,
+            self.ui.buttons['mode_ghost']: self.toggle_ghost_mode,
+            
+            # Editor actions kept as pass-throughs via editor for now if complex
             self.ui.buttons['discard_geo']: lambda: self.editor.exit_editor_mode(None), 
             self.ui.buttons['save_geo']: self.editor.save_geo_dialog,
             self.ui.buttons['extend']: self.editor.toggle_extend,
             self.ui.buttons['editor_play']: self.editor.toggle_editor_play,
             self.ui.buttons['show_const']: self.editor.toggle_show_constraints,
-            
-            # New Actions
-            self.ui.buttons['mode_ghost']: self.toggle_ghost_mode,
-            self.ui.buttons['atomize']: self.atomize_selected
         }
+        if 'resize' in self.ui.buttons and 'world' in self.ui.inputs:
+             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0))
 
     def toggle_ghost_mode(self):
-        is_ghost = self.ui.buttons['mode_ghost'].active
-        state = "Ghost (Blueprint)" if is_ghost else "Physical (Live)"
-        self.app.set_status(f"Mode set to: {state}")
+        # NEW LOGIC: Just toggles visibility, doesn't change material logic yet
+        self.app.show_wall_atoms = not self.app.show_wall_atoms
+        self.ui.buttons['mode_ghost'].active = not self.app.show_wall_atoms 
+        state = "Hidden" if not self.app.show_wall_atoms else "Visible"
+        self.app.set_status(f"Wall Atoms: {state}")
 
     def atomize_selected(self):
         if self.app.selected_walls:
             count = 0
             for idx in self.app.selected_walls:
                 if idx < len(self.sim.walls):
-                    # Use update_entity for cleaner API access via Sketch if possible, 
-                    # but FlowStateApp wrapper calls sim.update_wall_props -> sketch.update_entity
-                    # Setting physical=True via props implies a material change or property update
-                    self.editor.update_wall_props(idx, {'physical': True})
+                    # Using update_entity directly via Sim to avoid middleman if possible, 
+                    # but maintaining props usage:
+                    self.sim.update_wall_props(idx, {'physical': True})
                     count += 1
             self.sim.rebuild_static_atoms()
             self.app.set_status(f"Atomized {count} entities")
@@ -142,6 +145,13 @@ class InputHandler:
             if event.key == pygame.K_y and (pygame.key.get_mods() & pygame.KMOD_CTRL):
                 if self.app.current_tool: self.app.current_tool.cancel()
                 self.sim.redo(); self.app.set_status("Redo"); return True
+            # CHANGED: Use self.sim directly instead of self.app proxy
+            if event.key == pygame.K_DELETE:
+                if self.app.selected_walls:
+                    for idx in sorted(list(self.app.selected_walls), reverse=True):
+                        self.sim.remove_wall(idx)
+                    self.app.selected_walls.clear()
+                    self.sim.rebuild_static_atoms() # Ensure rebuild
         return False
 
     def _handle_menus(self, event):
@@ -173,9 +183,10 @@ class InputHandler:
                 driver = getattr(c, 'driver', None)
                 self.editor.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
             elif action == "Delete": 
-                self.sim.remove_wall(self.editor.ctx_vars['wall']); self.app.selected_walls.clear(); self.app.selected_points.clear()
-            elif action == "Properties" or action == "Edit Material": # Map both actions
-                # FIX: Use MaterialDialog now
+                # CHANGED: Use sim directly
+                self.sim.remove_wall(self.editor.ctx_vars['wall'])
+                self.app.selected_walls.clear(); self.app.selected_points.clear()
+            elif action == "Properties" or action == "Edit Material":
                 idx = self.editor.ctx_vars['wall']
                 mat_id = getattr(self.sim.walls[idx], 'material_id', "Default")
                 self.editor.prop_dialog = MaterialDialog(self.layout['W']//2, self.layout['H']//2, self.sim.sketch, mat_id)
@@ -191,14 +202,10 @@ class InputHandler:
                 if val: self.sim.add_constraint_object(Length(self.editor.ctx_vars['wall'], val))
             self.editor.context_menu = None; captured = True
 
-        # Handle MaterialDialog (prop_dialog)
         if self.editor.prop_dialog and self.editor.prop_dialog.handle_event(event):
             if self.editor.prop_dialog.apply: 
-                # MaterialDialog returns a Material object
                 mat = self.editor.prop_dialog.get_result()
-                # 1. Add to registry
                 self.sim.sketch.add_material(mat)
-                # 2. Update Wall to point to this material
                 self.sim.update_wall_props(self.editor.ctx_vars['wall'], {'material_id': mat.name})
                 self.editor.prop_dialog.apply = False
             if self.editor.prop_dialog.done: self.editor.prop_dialog = None

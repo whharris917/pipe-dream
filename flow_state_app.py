@@ -11,7 +11,6 @@ from tkinter import filedialog, Tk, simpledialog
 
 # Modules
 from simulation_state import Simulation
-# FIX: Import MaterialDialog instead of PropertiesDialog
 from ui_widgets import InputField, ContextMenu, MaterialDialog, RotationDialog, AnimationDialog
 from geometry import Line, Circle
 from constraints import Length
@@ -210,8 +209,6 @@ class FlowStateApp:
         self.ui.draw(self.screen, self.font, self.app.mode)
 
         if self.context_menu: self.context_menu.draw(self.screen, self.font)
-        # Replaced prop_dialog with generic active_dialog check logic, but sticking to logic in input_handler for modal dialogs
-        # BUT input_handler modifies 'self.editor.prop_dialog', so we draw it here:
         if self.prop_dialog: self.prop_dialog.draw(self.screen, self.font)
         if self.rot_dialog: self.rot_dialog.draw(self.screen, self.font)
         if self.anim_dialog: self.anim_dialog.draw(self.screen, self.font)
@@ -235,22 +232,13 @@ class FlowStateApp:
         pygame.display.set_caption(title)
 
     def _execute_menu(self, selection):
-        # New Simulation / Model spawn functionality
         if selection == "New Simulation":
-            try:
-                subprocess.Popen([sys.executable, "run_instance.py", "sim"])
+            try: subprocess.Popen([sys.executable, "run_instance.py", "sim"])
             except Exception as e: print(f"Error launching sim: {e}")
-            
         elif selection == "New Model":
-            try:
-                subprocess.Popen([sys.executable, "run_instance.py", "editor"])
+            try: subprocess.Popen([sys.executable, "run_instance.py", "editor"])
             except Exception as e: print(f"Error launching model: {e}")
-
-        # Standard file ops
         elif selection == "New": 
-            # Replaced by generic "New" behavior or context aware? 
-            # If "New Simulation" and "New Model" exist, "New" is ambiguous.
-            # Kept for backward compat but effectively resets current window.
             self.sim.reset_simulation()
             self.sim.sketch.clear()
             self.app.input_world.set_value(config.DEFAULT_WORLD_SIZE)
@@ -258,7 +246,6 @@ class FlowStateApp:
             self.app.current_geom_filepath = None
             self.app.set_status("New Project Created")
             self._update_window_title()
-            
         elif selection == "Import Geometry":
             if self.root_tk:
                 f = filedialog.askopenfilename(filetypes=[("Geometry Files", "*.geom"), ("All Files", "*.*")])
@@ -268,18 +255,15 @@ class FlowStateApp:
                         if hasattr(self.sim.geo, 'place_geometry'):
                             self.app.placing_geo_data = data
                             self.app.set_status("Place Model")
-                        
         elif self.root_tk:
             if selection == "Save As..." or (selection == "Save"):
                 is_save_as = (selection == "Save As...")
                 if is_save_as or not self.app.current_sim_filepath:
                     f = filedialog.asksaveasfilename(defaultextension=".sim", filetypes=[("Simulation Files", "*.sim")])
                     if f: self.app.current_sim_filepath = f
-                
                 if self.app.current_sim_filepath:
                     self.app.set_status(file_io.save_file(self.sim, self.app, self.app.current_sim_filepath))
                     self._update_window_title()
-                    
             elif selection == "Open...":
                 f = filedialog.askopenfilename(filetypes=[("Simulation Files", "*.sim")])
                 if f:
@@ -295,7 +279,8 @@ class FlowStateApp:
                     self._update_window_title()
         pygame.event.pump()
 
-    # --- Wrapper methods to satisfy InputHandler calls ---
+    # --- Wrapper methods ---
+    # RESTORED: Methods required by tools.py and InputHandler
     
     def exit_editor_mode(self, backup_state=None):
         self.sim.reset_simulation()
@@ -370,35 +355,19 @@ class FlowStateApp:
             ctype = self.app.pending_constraint; msg = CONSTRAINT_DEFS[ctype][0]['msg']
             self.app.set_status(f"{ctype} ({len(self.app.pending_targets_walls)}W, {len(self.app.pending_targets_points)}P): {msg}")
 
-    # --- Geometry Creation Interceptors ---
+    # --- Geometry Creation Interceptors (Material-Aware) ---
     
     def add_wall(self, start_pos, end_pos, is_ref=False):
         is_ghost = self.ui.buttons['mode_ghost'].active
-        is_physical = not is_ghost
-        idx = self.sim.sketch.add_line(start_pos, end_pos, is_ref)
-        self.sim.sketch.update_entity(
-            idx, 
-            physical=is_physical, 
-            sigma=config.ATOM_SIGMA, 
-            epsilon=config.ATOM_EPSILON, 
-            spacing=0.7*config.ATOM_SIGMA
-        )
-        self.sim.rebuild_static_atoms()
+        mat_id = "Ghost" if is_ref or is_ghost else "Default"
+        self.sim.add_wall(start_pos, end_pos, is_ref, material_id=mat_id)
         
     def add_circle(self, center, radius):
         is_ghost = self.ui.buttons['mode_ghost'].active
-        is_physical = not is_ghost
-        idx = self.sim.sketch.add_circle(center, radius)
-        self.sim.sketch.update_entity(
-            idx, 
-            physical=is_physical, 
-            sigma=config.ATOM_SIGMA, 
-            epsilon=config.ATOM_EPSILON, 
-            spacing=0.7*config.ATOM_SIGMA
-        )
-        self.sim.rebuild_static_atoms()
+        mat_id = "Ghost" if is_ghost else "Default"
+        self.sim.add_circle(center, radius, material_id=mat_id)
 
-    # Pass-throughs
+    # --- Pass-throughs RESTORED to fix AttributeErrors from Tools ---
     def remove_wall(self, index): self.sim.remove_wall(index)
     def toggle_anchor(self, wall_idx, pt_idx): self.sim.toggle_anchor(wall_idx, pt_idx)
     def update_wall(self, index, s, e): self.sim.update_wall(index, s, e)
@@ -416,7 +385,6 @@ class FlowStateApp:
     def resize_world(self, s): self.sim.resize_world(s)
     def reset_simulation(self): self.sim.reset_simulation()
     def clear_particles(self): self.sim.clear_particles()
-    # ADDED THIS LINE:
     def rebuild_static_atoms(self): self.sim.rebuild_static_atoms()
     
     @property

@@ -28,6 +28,8 @@ class AppState:
         # Tool States (Persistent per mode)
         self.sim_tool = config.TOOL_BRUSH
         self.editor_tool = config.TOOL_SELECT
+        self.current_tool = None # Current active tool instance
+        self.tools = {}          # Dictionary to hold tool instances
         
         # Selection
         self.selected_walls = set()
@@ -37,14 +39,7 @@ class AppState:
         self.pending_constraint = None
         self.pending_targets_walls = []
         self.pending_targets_points = []
-        
-        # Tool System
-        self.tools = {} # Map tool_id -> Tool Instance
-        self.current_tool = None # Active Tool Instance
-        
-        # Snapping Helpers
         self.current_snap_target = None
-        self.new_wall_start_snap = None
         
         # IO / Clipboard
         self.placing_geo_data = None
@@ -72,21 +67,22 @@ class AppState:
         
         # Playback State
         self.editor_paused = False
+        
+        # View Options
+        self.show_wall_atoms = True 
+        self.show_constraints = True # Moved from FlowStateApp to here for centralization
 
     def set_status(self, msg):
         self.status_msg = msg
         self.status_time = time.time()
 
     def change_tool(self, tool_id):
-        if self.current_tool:
+        if hasattr(self, 'current_tool') and self.current_tool:
             self.current_tool.deactivate()
         
-        if tool_id in self.tools:
+        if hasattr(self, 'tools') and tool_id in self.tools:
             self.current_tool = self.tools[tool_id]
             self.current_tool.activate()
             # Store the tool selection based on current mode
-            if self.mode == config.MODE_SIM:
-                self.sim_tool = tool_id
-            else:
-                self.editor_tool = tool_id
-            # REMOVED: self.set_status(f"Tool: {self.current_tool.name}")
+            if self.mode == config.MODE_SIM: self.sim_tool = tool_id
+            else: self.editor_tool = tool_id

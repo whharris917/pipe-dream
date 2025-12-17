@@ -62,10 +62,14 @@ class Renderer:
         br = sim_to_screen(sim.world_size, sim.world_size, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
         
         g_col = config.GRID_COLOR if app.mode == config.MODE_SIM else (50, 60, 50)
+        # FIX: Correct height calculation (br[1] - tl[1])
         pygame.draw.rect(self.screen, g_col, (tl[0], tl[1], br[0]-tl[0], br[1]-tl[1]), 2)
 
     def _draw_particles(self, app, sim, layout):
         for i in range(sim.count):
+            # NEW: Check visibility flag for static atoms from AppState
+            if sim.is_static[i] and not getattr(app, 'show_wall_atoms', True): continue 
+            
             sx, sy = sim_to_screen(sim.pos_x[i], sim.pos_y[i], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
             if layout['MID_X'] < sx < layout['RIGHT_X'] and config.TOP_MENU_H < sy < config.WINDOW_HEIGHT:
                 is_stat = sim.is_static[i]

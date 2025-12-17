@@ -92,7 +92,6 @@ class Simulation:
 
     def _warmup_compiler(self):
         print("Warming up Numba compiler...")
-        # (Warmup logic unchanged)
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
@@ -130,11 +129,9 @@ class Simulation:
         else: self.kinematic_props[:self.count] = 0.0
         self.atom_sigma[:self.count] = state['atom_sigma']; self.atom_eps_sqrt[:self.count] = state['atom_eps_sqrt']
         
-        # Restore Sketch
         if 'sketch_data' in state:
             self.sketch.restore(state['sketch_data'])
         else:
-            # Fallback for old saves
             self.sketch.entities = copy.deepcopy(state.get('walls', []))
             self.sketch.constraints = copy.deepcopy(state.get('constraints', []))
             
@@ -194,16 +191,14 @@ class Simulation:
 
     # --- Geometry / Sketch Wrappers ---
 
-    def add_wall(self, start_pos, end_pos, is_ref=False):
-        # Assign materials based on context
-        mat_id = "Default"
-        if is_ref: mat_id = "Ghost"
-        idx = self.sketch.add_line(start_pos, end_pos, is_ref, material_id=mat_id)
-        self.rebuild_static_atoms()
+    def add_wall(self, start_pos, end_pos, is_ref=False, material_id="Default"):
+        if is_ref: material_id = "Ghost"
+        idx = self.sketch.add_line(start_pos, end_pos, is_ref, material_id=material_id)
+        # REMOVED AUTO-REBUILD: self.rebuild_static_atoms()
         
-    def add_circle(self, center, radius):
-        idx = self.sketch.add_circle(center, radius, material_id="Default")
-        self.rebuild_static_atoms()
+    def add_circle(self, center, radius, material_id="Default"):
+        idx = self.sketch.add_circle(center, radius, material_id=material_id)
+        # REMOVED AUTO-REBUILD: self.rebuild_static_atoms()
 
     def remove_wall(self, index):
         self.snapshot()
