@@ -82,17 +82,15 @@ class Renderer:
     def _draw_geometry(self, app, sim, layout):
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
         for i, w in enumerate(sim.walls):
-            if isinstance(w, Line) and w.start is not None and w.end is not None:
-                pass 
+            # Look up material properties for rendering
+            mat = sim.sketch.materials.get(w.material_id)
+            # Default to gray if missing
+            base_color = mat.color if mat else (200, 200, 200)
             
             is_sel = (i in app.selected_walls)
             is_pend = (app.pending_constraint and i in app.pending_targets_walls)
             
-            # Use visual indication for Ghost Mode if not physical
-            # The geometry entity now has a 'physical' flag (from previous sketch.py updates)
-            # We pass this implicit state via the object itself
-            
-            w.render(self.screen, transform, is_sel, is_pend)
+            w.render(self.screen, transform, is_selected=is_sel, is_pending=is_pend, color=base_color)
 
     def _draw_constraints(self, app, sim, layout):
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)

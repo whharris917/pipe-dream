@@ -9,7 +9,7 @@ from geometry import Line, Point, Circle
 from constraints import create_constraint, Constraint, Length
 from definitions import CONSTRAINT_DEFS
 from simulation_geometry import GeometryManager
-from sketch import Sketch # NEW: The centralized data container
+from sketch import Sketch
 
 class Simulation:
     def __init__(self):
@@ -36,10 +36,9 @@ class Simulation:
         self.atom_eps_sqrt = np.zeros(self.capacity, dtype=np.float32)
         
         # --- Design / Sketch Data ---
-        # Replaced local lists with the Sketch container
         self.sketch = Sketch()
         
-        # Helper for spatial queries (Legacy support)
+        # Helper for spatial queries
         self.geo = GeometryManager(self)
         
         # --- Neighbor List & Optimization ---
@@ -112,7 +111,6 @@ class Simulation:
             'vel_x': np.copy(self.vel_x[:self.count]), 'vel_y': np.copy(self.vel_y[:self.count]),
             'is_static': np.copy(self.is_static[:self.count]), 'kinematic_props': np.copy(self.kinematic_props[:self.count]),
             'atom_sigma': np.copy(self.atom_sigma[:self.count]), 'atom_eps_sqrt': np.copy(self.atom_eps_sqrt[:self.count]),
-            # Serialize Sketch instead of raw lists
             'sketch_data': self.sketch.to_dict(),
             'world_size': self.world_size
         }
@@ -181,9 +179,6 @@ class Simulation:
     def clear_particles(self, snapshot=True):
         if snapshot: self.snapshot()
         self.count = 0; self.pair_count = 0; 
-        # Note: We do NOT clear the sketch here, only the fluid particles.
-        # This matches the "Clear" button behavior (clear fluid).
-        # To clear geometry, use "New"
         self.pos_x.fill(0); self.pos_y.fill(0); self.vel_x.fill(0); self.vel_y.fill(0)
         self.is_static.fill(0); self.kinematic_props.fill(0); self.rebuild_next = True
 
@@ -200,14 +195,14 @@ class Simulation:
     # --- Geometry / Sketch Wrappers ---
 
     def add_wall(self, start_pos, end_pos, is_ref=False):
-        # Auto-set physical=True for backward compatibility
-        idx = self.sketch.add_line(start_pos, end_pos, is_ref)
-        self.sketch.update_entity(idx, physical=True, sigma=config.ATOM_SIGMA, epsilon=config.ATOM_EPSILON, spacing=0.7*config.ATOM_SIGMA)
+        # Assign materials based on context
+        mat_id = "Default"
+        if is_ref: mat_id = "Ghost"
+        idx = self.sketch.add_line(start_pos, end_pos, is_ref, material_id=mat_id)
         self.rebuild_static_atoms()
         
     def add_circle(self, center, radius):
-        idx = self.sketch.add_circle(center, radius)
-        self.sketch.update_entity(idx, physical=True, sigma=config.ATOM_SIGMA, epsilon=config.ATOM_EPSILON, spacing=0.7*config.ATOM_SIGMA)
+        idx = self.sketch.add_circle(center, radius, material_id="Default")
         self.rebuild_static_atoms()
 
     def remove_wall(self, index):
@@ -218,20 +213,16 @@ class Simulation:
     def toggle_anchor(self, wall_idx, pt_idx):
         if 0 <= wall_idx < len(self.walls):
             w = self.walls[wall_idx]
-            # Must operate on the specific anchor index. Sketch update_entity is generic, 
-            # so we modify the object for now or add specific API.
-            # Direct modification is okay since 'walls' property returns the live list.
             w.anchored[pt_idx] = not w.anchored[pt_idx]
             self.snapshot(); self.rebuild_static_atoms()
 
     def update_wall(self, index, start_pos, end_pos):
-        # Maps to sketch.update_entity
         if 0 <= index < len(self.walls):
             w = self.walls[index]
             if isinstance(w, Line):
                 self.sketch.update_entity(index, start=start_pos, end=end_pos)
             elif isinstance(w, Circle):
-                self.sketch.update_entity(index, center=start_pos) # Circle tool uses update_wall for center
+                self.sketch.update_entity(index, center=start_pos)
             self.rebuild_static_atoms()
 
     def update_wall_props(self, index, props):
@@ -249,8 +240,6 @@ class Simulation:
             self.rebuild_static_atoms()
 
     def update_animations(self, dt):
-        # This logic handles 'kinematic' walls (rotating lines). 
-        # In future, this should move to Sketch.drivers
         for w in self.walls:
             if not isinstance(w, Line): continue
             anim = w.anim
@@ -268,11 +257,9 @@ class Simulation:
     # --- Constraints ---
 
     def update_constraint_drivers(self, current_time):
-        # Delegate to Sketch
         self.sketch.update_drivers(current_time)
 
     def attempt_apply_constraint(self, ctype, wall_idxs, pt_idxs):
-        # Legacy Wrapper: uses DEFINITIONS to check rules, then adds to Sketch
         rules = CONSTRAINT_DEFS.get(ctype, [])
         for r in rules:
             if len(wall_idxs) == r['w'] and len(pt_idxs) == r['p']:
@@ -282,7 +269,6 @@ class Simulation:
                         if not isinstance(self.walls[w_idx], r['t']): 
                             valid = False; break
                 if valid:
-                    # Factory creates the object
                     c_obj = r['f'](self, wall_idxs, pt_idxs)
                     self.add_constraint_object(c_obj)
                     return True
@@ -295,11 +281,6 @@ class Simulation:
 
     def add_constraint_object(self, c_obj):
         self.snapshot()
-        # Conflict handling logic from Sketch is internal, so we replicate strict checks here
-        # or rely on Sketch.add_constraint if we were creating from scratch.
-        # Since we have the object, we manually add to the list via the wrapper logic
-        
-        # 1. Handle conflicts (local replication of logic for robustness)
         angle_types = ['PARALLEL', 'PERPENDICULAR', 'HORIZONTAL', 'VERTICAL']
         if hasattr(c_obj, 'type') and c_obj.type in angle_types:
             new_indices = set(c_obj.indices) if isinstance(c_obj.indices, (list, tuple)) else {c_obj.indices}
@@ -312,10 +293,7 @@ class Simulation:
                 keep.append(c)
             self.sketch.constraints = keep
 
-        # 2. Add
         self.sketch.constraints.append(c_obj)
-        
-        # 3. Solve
         self.sketch.solve(iterations=500)
 
     def nudge_geometry(self):
@@ -326,19 +304,23 @@ class Simulation:
     def rebuild_static_atoms(self):
         """
         Converts 'Physical' Sketch entities into static atoms for the physics core.
+        Now uses Material properties instead of reading directly from entities.
         """
         is_dynamic = self.is_static[:self.count] == 0
         dyn_indices = np.where(is_dynamic)[0]
         self._compact_arrays(dyn_indices)
         
         for w in self.walls:
-            # Check Physical Flag
-            if not getattr(w, 'physical', True): continue
+            # Look up material properties
+            mat = self.sketch.materials.get(w.material_id, self.sketch.materials["Default"])
+            
+            # Check Physical Flag from Material
+            if not mat.physical: continue
             
             if isinstance(w, Line):
                 if w.ref: continue
                 
-                p1 = w.start; p2 = w.end; spacing = w.spacing
+                p1 = w.start; p2 = w.end; spacing = mat.spacing
                 vec = p2 - p1; length = np.linalg.norm(vec)
                 if length < 1e-4: continue 
                 num_atoms = max(1, int(length / spacing) + 1)
@@ -354,21 +336,21 @@ class Simulation:
                     if self.count >= self.capacity: self._resize_arrays()
                     t = k / max(1, num_atoms - 1) if num_atoms > 1 else 0.5
                     pos = p1 + vec * t
-                    self._add_static_atom(pos, w.sigma, math.sqrt(w.epsilon), is_rotating, pivot, omega)
+                    self._add_static_atom(pos, mat.sigma, math.sqrt(mat.epsilon), is_rotating, pivot, omega)
                     
             elif isinstance(w, Circle):
                 circumference = 2 * math.pi * w.radius
-                num_atoms = max(3, int(circumference / w.spacing))
+                num_atoms = max(3, int(circumference / mat.spacing))
                 
                 for k in range(num_atoms):
                     if self.count >= self.capacity: self._resize_arrays()
                     angle = (k / num_atoms) * 2 * math.pi
                     pos = w.center + np.array([math.cos(angle) * w.radius, math.sin(angle) * w.radius])
-                    self._add_static_atom(pos, w.sigma, math.sqrt(w.epsilon), False, np.zeros(2), 0.0)
+                    self._add_static_atom(pos, mat.sigma, math.sqrt(mat.epsilon), False, np.zeros(2), 0.0)
 
         self.rebuild_next = True
 
-    # --- Standard Physics Methods (Unchanged) ---
+    # --- Standard Physics Methods ---
 
     def _add_static_atom(self, pos, sig, eps_sqrt, rotating, pivot, omega):
         idx = self.count
@@ -431,8 +413,6 @@ class Simulation:
                 self._compact_arrays(keep_indices)
                 self.rebuild_next = True
 
-    # --- Brush Tools (Unchanged) ---
-    
     def add_particles_brush(self, x, y, radius):
         sigma = self.sigma; spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025; r_sq = radius * radius

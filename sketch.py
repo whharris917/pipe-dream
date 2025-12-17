@@ -1,44 +1,46 @@
 import copy
 import numpy as np
-from geometry import Line, Circle
+from geometry import Line, Circle, Point
 from constraints import create_constraint
 from solver import Solver
+from properties import Material
 
 class Sketch:
     """
     The Sketch is the 'Model' or 'Blueprint'.
-    It holds Geometries, Constraints, and Drivers.
-    It isolates the Physics Engine from the Design Tools.
+    It holds Geometries, Constraints, and Materials.
     """
     def __init__(self):
         self.entities = []      # Lines, Circles, Points
         self.constraints = []   # Constraint Data Objects
-        self.drivers = []       # (Future: Explicit Driver objects if we separate them from constraints)
+        self.drivers = []       # Animation Drivers
         
-        # History for Undo/Redo (Managed by the App, but Sketch provides the state)
-        # We can implement specific sketch-level undo here if desired later.
+        # Material Registry - The central "Database" for physics properties
+        self.materials = {
+            "Default": Material("Default", sigma=1.0, epsilon=1.0, color=(180, 180, 180), physical=True),
+            "Ghost": Material("Ghost", sigma=1.0, epsilon=1.0, color=(100, 100, 100), physical=False),
+            "Steel": Material("Steel", sigma=1.0, epsilon=2.0, color=(100, 150, 200), physical=True)
+        }
 
     # --- Geometry API ---
 
-    def add_line(self, start, end, is_ref=False, anchored=None):
-        if anchored is None:
-            anchored = [False, False]
-        l = Line(start, end, is_ref)
+    def add_line(self, start, end, is_ref=False, anchored=None, material_id="Default"):
+        if anchored is None: anchored = [False, False]
+        l = Line(start, end, is_ref, material_id)
         l.anchored = anchored
         self.entities.append(l)
         return len(self.entities) - 1
 
-    def add_circle(self, center, radius, anchored=None):
-        if anchored is None:
-            anchored = [False]
-        c = Circle(center, radius)
+    def add_circle(self, center, radius, anchored=None, material_id="Default"):
+        if anchored is None: anchored = [False]
+        c = Circle(center, radius, material_id)
         c.anchored = anchored
         self.entities.append(c)
         return len(self.entities) - 1
 
     def update_entity(self, index, **kwargs):
         """
-        Generic update for entity properties (pos, radius, physics flags).
+        Generic update for entity properties.
         """
         if 0 <= index < len(self.entities):
             e = self.entities[index]
@@ -49,8 +51,13 @@ class Sketch:
             if 'center' in kwargs and hasattr(e, 'center'): e.center[:] = kwargs['center']
             if 'radius' in kwargs and hasattr(e, 'radius'): e.radius = kwargs['radius']
             
-            # Property updates
-            if 'physical' in kwargs: e.physical = kwargs['physical']
+            # Material Assignment
+            if 'material_id' in kwargs: 
+                # Validate material existence? Or allow lazy assignment?
+                # For safety, defaulting if missing is smart, but for now we trust the ID.
+                e.material_id = kwargs['material_id']
+            
+            # Anchors
             if 'anchored' in kwargs: e.anchored = kwargs['anchored']
             
             # Trigger Solve
@@ -61,14 +68,9 @@ class Sketch:
         Removes an entity and any dependent constraints.
         """
         if 0 <= index < len(self.entities):
-            # 1. Clean up dependent constraints
             self.constraints = [c for c in self.constraints if not self._constraint_involves(c, index)]
-            
-            # 2. Shift indices in remaining constraints
             for c in self.constraints:
                 self._shift_constraint_indices(c, index)
-
-            # 3. Remove entity
             self.entities.pop(index)
             self.solve()
 
@@ -77,21 +79,25 @@ class Sketch:
             return self.entities[index]
         return None
 
+    # --- Material API ---
+    
+    def add_material(self, material):
+        if isinstance(material, Material):
+            self.materials[material.name] = material
+
+    def get_material(self, material_id):
+        return self.materials.get(material_id, self.materials["Default"])
+
     # --- Constraint API ---
 
     def add_constraint(self, type_name, indices, value=None):
-        """
-        Creates and adds a constraint via the Factory in constraints.py (or locally).
-        """
-        # Prepare data dict for the factory
         data = {'type': type_name, 'indices': indices}
         if value is not None: data['value'] = value
-        
         c = create_constraint(data)
         if c:
             self._handle_constraint_conflicts(c)
             self.constraints.append(c)
-            self.solve(iterations=500) # Strong solve on add
+            self.solve(iterations=500)
             return c
         return None
 
@@ -100,39 +106,22 @@ class Sketch:
             self.constraints.pop(index)
             self.solve()
 
-    def clear(self):
-        self.entities = []
-        self.constraints = []
-
-    # --- Driver API ---
-
     def set_driver(self, constraint_index, driver_data):
-        """
-        Attaches a motor/driver to a constraint.
-        """
         if 0 <= constraint_index < len(self.constraints):
             c = self.constraints[constraint_index]
             c.driver = driver_data
-            # Set base values for relative driving
             if getattr(c, 'value', None) is not None:
                 c.base_value = c.value
 
     def update_drivers(self, time):
-        """
-        Called by the App/Simulation loop to animate the Sketch.
-        """
         import math
         for c in self.constraints:
             if hasattr(c, 'driver') and c.driver:
                 d = c.driver
                 if c.base_value is None: c.base_value = c.value
-                
                 base = c.base_value
-                
-                # Check for None explicitly because getattr returns None if the attr exists but is None
                 t0 = getattr(c, 'base_time', 0.0)
                 if t0 is None: t0 = 0.0
-                
                 dt_drive = time - t0
                 
                 if d['type'] == 'sin':
@@ -141,13 +130,13 @@ class Sketch:
                 elif d['type'] == 'lin':
                     c.value = base + d['rate'] * dt_drive
 
-    # --- Solver Integration ---
-
     def solve(self, iterations=20):
-        """
-        The Bridge to the Solver.
-        """
         Solver.solve(self.constraints, self.entities, iterations)
+
+    def clear(self):
+        self.entities = []
+        self.constraints = []
+        # We do NOT clear materials, those persist as part of the document definitions.
 
     # --- Private Helpers ---
 
@@ -173,7 +162,6 @@ class Sketch:
         c.indices = new_indices
 
     def _handle_constraint_conflicts(self, new_c):
-        # Remove conflicting constraints (e.g. setting an Angle twice)
         angle_types = ['PARALLEL', 'PERPENDICULAR', 'HORIZONTAL', 'VERTICAL']
         if new_c.type in angle_types:
             new_indices = set(new_c.indices) if isinstance(new_c.indices, (list, tuple)) else {new_c.indices}
@@ -181,8 +169,7 @@ class Sketch:
             for c in self.constraints:
                 if c.type in angle_types:
                     old_indices = set(c.indices) if isinstance(c.indices, (list, tuple)) else {c.indices}
-                    if old_indices == new_indices:
-                        continue 
+                    if old_indices == new_indices: continue 
                 keep.append(c)
             self.constraints = keep
 
@@ -191,13 +178,24 @@ class Sketch:
     def to_dict(self):
         return {
             'entities': [e.to_dict() for e in self.entities],
-            'constraints': [c.to_dict() for c in self.constraints]
+            'constraints': [c.to_dict() for c in self.constraints],
+            'materials': {k: v.to_dict() for k, v in self.materials.items()}
         }
 
     def restore(self, data):
-        # We need to import Line/Circle factories here to avoid top-level circular imports if they use Sketch
+        # Local imports to avoid circular deps with Geometry modules using Sketch
         from geometry import Line, Circle, Point
+        from properties import Material
         
+        # Restore Materials First
+        if 'materials' in data:
+            self.materials = {}
+            for k, v in data['materials'].items():
+                self.materials[k] = Material.from_dict(v)
+        # Ensure Default exists
+        if "Default" not in self.materials:
+             self.materials["Default"] = Material("Default")
+
         self.entities = []
         for e_data in data.get('entities', []):
             if e_data['type'] == 'line': self.entities.append(Line.from_dict(e_data))
