@@ -13,50 +13,35 @@ class Renderer:
     def draw_app(self, app, sim, layout, ui_list):
         self.screen.fill(config.BACKGROUND_COLOR)
         
-        # 1. Draw Viewport & Grid
         self._draw_viewport(app, sim, layout)
         
-        # 2. Draw Simulation Content
         if app.mode == config.MODE_SIM:
             self._draw_particles(app, sim, layout)
         else:
             self._draw_editor_guides(app, sim, layout)
             
-        # 3. Draw Geometry (Walls/Shapes)
         self._draw_geometry(app, sim, layout)
         
-        # 4. Draw Tool Overlays (Ghost shapes, etc)
         if app.current_tool:
             app.current_tool.draw_overlay(self.screen, self)
         
-        # 5. Draw Editor Specifics (Points, Selection Highlights, CONSTRAINTS)
-        if app.mode == config.MODE_EDITOR:
+        # Always draw constraints in Unified UI unless hidden
+        if app.show_constraints:
             self._draw_constraints(app, sim, layout)
             self._draw_editor_overlays(app, sim, layout)
             
-        # 6. Draw Placement Preview (if importing geometry)
         if app.placing_geo_data:
             self._draw_placement_preview(app, sim, layout)
 
-        # 7. Draw Snapping Feedback (Green Dot)
         self._draw_snap_indicator(app, sim, layout)
 
-        # 8. Draw UI Panels & Widgets
-        self.screen.set_clip(None) # Reset clip to draw UI over everything
+        self.screen.set_clip(None)
         self._draw_panels(layout)
         self._draw_stats(app, sim, layout)
         
         for el in ui_list:
             el.draw(self.screen, self.font)
             
-        # 9. Draw Tool Specific UI
-        # Input World position is handled by UI Manager draw now, removed manual blit here to avoid duplication
-        # if app.mode == config.MODE_SIM:
-        #    self.screen.blit(self.font.render("World Size:", True, (200, 200, 200)), 
-        #                     (layout['RIGHT_X'] + 15, app.input_world.rect.y + 4))
-        #    app.input_world.draw(self.screen, self.font)
-
-        # 10. Status Message
         self._draw_status(app, layout)
 
     def _draw_snap_indicator(self, app, sim, layout):
@@ -66,7 +51,6 @@ class Renderer:
                 ent = sim.walls[w_idx]
                 pt_pos = ent.get_point(pt_idx)
                 sx, sy = sim_to_screen(pt_pos[0], pt_pos[1], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
-                
                 pygame.draw.circle(self.screen, (0, 255, 0), (sx, sy), 6)
                 pygame.draw.circle(self.screen, (255, 255, 255), (sx, sy), 8, 1)
 
@@ -103,47 +87,35 @@ class Renderer:
             
             is_sel = (i in app.selected_walls)
             is_pend = (app.pending_constraint and i in app.pending_targets_walls)
+            
+            # Use visual indication for Ghost Mode if not physical
+            # The geometry entity now has a 'physical' flag (from previous sketch.py updates)
+            # We pass this implicit state via the object itself
+            
             w.render(self.screen, transform, is_sel, is_pend)
 
     def _draw_constraints(self, app, sim, layout):
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
-        
-        # Spatial grouping to prevent overlaps
-        # Map of (x,y) -> list of constraints
         grouped = {}
-        threshold = 20 # pixels
-        
-        # 1. Calculate positions and group
+        threshold = 20
         layout_data = []
         for c in sim.constraints:
             cx, cy = c.get_visual_center(transform, sim.walls)
-            # Find close group
             found_group = None
             for key in grouped:
                 if math.hypot(key[0]-cx, key[1]-cy) < threshold:
-                    found_group = key
-                    break
-            
+                    found_group = key; break
             if found_group:
-                grouped[found_group].append(c)
-                layout_data.append((c, found_group))
+                grouped[found_group].append(c); layout_data.append((c, found_group))
             else:
-                grouped[(cx, cy)] = [c]
-                layout_data.append((c, (cx, cy)))
+                grouped[(cx, cy)] = [c]; layout_data.append((c, (cx, cy)))
 
-        # 2. Draw with offsets
         group_counts = {k: 0 for k in grouped}
-        
         for c, key in layout_data:
-            idx = group_counts[key]
-            group_counts[key] += 1
-            
-            # Stack HORIZONTALLY around center
-            total_in_group = len(grouped[key])
-            spacing = 30 # Slightly wider for horizontal text
+            idx = group_counts[key]; group_counts[key] += 1
+            total_in_group = len(grouped[key]); spacing = 30
             start_x = -((total_in_group - 1) * spacing) / 2.0
             final_offset_x = start_x + idx * spacing
-            
             c.render(self.screen, transform, sim.walls, self.font, offset=(final_offset_x, 0))
 
     def _draw_editor_overlays(self, app, sim, layout):
@@ -166,11 +138,9 @@ class Renderer:
                 pygame.draw.circle(self.screen, color, (cx, cy), radius, 2)
                 
                 w = sim.walls[w_idx]
-                # Handle Circle case where pt_idx is 0
                 is_anchored = False
                 if isinstance(w, Line): is_anchored = w.anchored[pt_idx]
                 elif isinstance(w, Circle): is_anchored = w.anchored[0]
-                
                 if is_anchored: anchored_points_draw_list.append((cx, cy))
         
         for pt in anchored_points_draw_list: 
@@ -197,34 +167,18 @@ class Renderer:
                         pygame.draw.circle(self.screen, (100, 255, 100), sc, int(sr), 2)
 
     def _draw_panels(self, layout):
-        # Draw Left Panel
         pygame.draw.rect(self.screen, config.PANEL_BG_COLOR, (0, config.TOP_MENU_H, layout['LEFT_W'], layout['H']))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['LEFT_W'], config.TOP_MENU_H), (layout['LEFT_W'], layout['H']))
-        
-        # Draw Right Panel
         pygame.draw.rect(self.screen, config.PANEL_BG_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], layout['H']))
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H), (layout['RIGHT_X'], layout['H']))
-        
-        # REMOVED: Legacy header block that drew a dark grey box at the top of the right panel.
-        # This was causing the "divider" line issue behind the Editor buttons.
-        # pygame.draw.rect(self.screen, (40, 40, 45), (layout['RIGHT_X'], config.TOP_MENU_H, layout['RIGHT_W'], 90))
-        # pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H + 90), (layout['W'], config.TOP_MENU_H + 90))
 
     def _draw_stats(self, app, sim, layout):
-        # Stats on LEFT panel (bottom)
         metric_x = layout['LEFT_X'] + 15
         stats_y = config.WINDOW_HEIGHT - 80
-        
         curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)
         self.screen.blit(self.big_font.render(f"Particles: {sim.count}", True, (255, 255, 255)), (metric_x, stats_y))
         self.screen.blit(self.font.render(f"Pairs: {sim.pair_count} | T: {curr_t:.3f}", True, (180, 180, 180)), (metric_x, stats_y + 30))
         self.screen.blit(self.font.render(f"SPS: {int(sim.sps)}", True, (100, 255, 100)), (metric_x, stats_y + 50))
-
-        # Editor Header on Right (Optional)
-        if app.mode == config.MODE_EDITOR:
-            right_metric_x = layout['RIGHT_X'] + 15
-            # We can enable this if desired, but for now kept clean
-            # self.screen.blit(self.big_font.render("GEOMETRY EDITOR", True, (255, 200, 100)), (right_metric_x, config.TOP_MENU_H + 10))
 
     def _draw_status(self, app, layout):
         import time

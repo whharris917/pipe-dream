@@ -37,43 +37,54 @@ class InputHandler:
             self.ui.buttons['undo']: lambda: (self.sim.undo(), self.app.set_status("Undo")),
             self.ui.buttons['redo']: lambda: (self.sim.redo(), self.app.set_status("Redo")),
             self.ui.buttons['resize']: lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0)),
-            self.ui.buttons['discard_geo']: lambda: self.editor.exit_editor_mode(self.app.sim_backup_state), # Legacy name, effectively just exit/reset
+            self.ui.buttons['discard_geo']: lambda: self.editor.exit_editor_mode(None), 
             self.ui.buttons['save_geo']: self.editor.save_geo_dialog,
             self.ui.buttons['extend']: self.editor.toggle_extend,
             self.ui.buttons['editor_play']: self.editor.toggle_editor_play,
             self.ui.buttons['show_const']: self.editor.toggle_show_constraints,
-            self.ui.buttons['tab_sim']: lambda: self.editor.switch_mode(config.MODE_SIM),
-            self.ui.buttons['tab_edit']: lambda: self.editor.switch_mode(config.MODE_EDITOR)
+            
+            # New Actions
+            self.ui.buttons['mode_ghost']: self.toggle_ghost_mode,
+            self.ui.buttons['atomize']: self.atomize_selected
         }
 
+    def toggle_ghost_mode(self):
+        is_ghost = self.ui.buttons['mode_ghost'].active
+        state = "Ghost (Blueprint)" if is_ghost else "Physical (Live)"
+        self.app.set_status(f"Mode set to: {state}")
+
+    def atomize_selected(self):
+        if self.app.selected_walls:
+            count = 0
+            for idx in self.app.selected_walls:
+                if idx < len(self.sim.walls):
+                    self.sim.sketch.update_entity(idx, physical=True)
+                    count += 1
+            self.sim.rebuild_static_atoms()
+            self.app.set_status(f"Atomized {count} entities")
+        else:
+            self.app.set_status("Select entities to atomize")
+
     def handle_input(self):
-        # Refresh layout ref in case of resize
         self.layout = self.editor.layout
         
-        # --- UNIFIED UI INPUT HANDLING ---
-        # Both modes now share most elements. We construct the list dynamically to match UIManager.draw()
-        
-        # 1. Physics Elements (Left Panel)
         physics_elements = [
             self.ui.buttons['play'], self.ui.buttons['clear'], self.ui.buttons['reset'], 
             self.ui.buttons['undo'], self.ui.buttons['redo'],
-            self.ui.buttons['tab_sim'], self.ui.buttons['tab_edit'], # Tabs
             self.ui.buttons['thermostat'], self.ui.buttons['boundaries'],
-            *self.ui.sliders.values() # All sliders (gravity, temp, etc.)
+            *self.ui.sliders.values()
         ]
         
-        # 2. Editor Elements (Right Panel)
         editor_elements = [
+            self.ui.buttons['mode_ghost'], self.ui.buttons['atomize'], 
             self.ui.buttons['save_geo'], self.ui.buttons['discard_geo'], 
             self.ui.buttons['editor_play'], self.ui.buttons['show_const'],
             self.ui.buttons['resize'], self.ui.inputs['world'],
             self.ui.buttons['extend'],
-            *self.ui.tools.values(), # Tools (Brush, Select, etc.)
-            *self.constraint_btn_map.keys() # Constraint Buttons
+            *self.ui.tools.values(), 
+            *self.constraint_btn_map.keys()
         ]
         
-        # In the new Unified UI, ALL elements are visible and active in BOTH modes.
-        # (Previously we filtered sim vs editor, but now they are on separate panels)
         ui_list = physics_elements + editor_elements
 
         for event in pygame.event.get():
@@ -82,7 +93,6 @@ class InputHandler:
             
             if self._handle_keys(event): continue
             
-            # Tool Switching
             tool_switched = False
             for btn, tid in self.tool_btn_map.items():
                 if btn.handle_event(event): 
@@ -92,20 +102,15 @@ class InputHandler:
             if self._handle_menus(event): continue
             if self._handle_dialogs(event): continue
 
-            # General UI
             ui_interacted = False
             for el in ui_list:
                 if el.handle_event(event):
                     ui_interacted = True
-                    # Check if it's a constraint button
                     if el in self.constraint_btn_map:
                         self.editor.trigger_constraint(self.constraint_btn_map[el])
-                    # Check action map
                     elif el in self.ui_action_map:
                         self.ui_action_map[el]()
             
-            # Scene Interaction
-            # If mouse is NOT on a panel, handle scene
             mouse_on_ui = (event.type == pygame.MOUSEBUTTONDOWN and 
                           (event.pos[0] > self.layout['RIGHT_X'] or event.pos[0] < self.layout['LEFT_W'] or event.pos[1] < config.TOP_MENU_H))
             
@@ -167,8 +172,6 @@ class InputHandler:
                 w_props = self.sim.walls[self.editor.ctx_vars['wall']].to_dict()
                 self.editor.prop_dialog = PropertiesDialog(self.layout['W']//2, self.layout['H']//2, w_props)
             elif action == "Set Rotation...":
-                # Rotation on walls is handled via AnimationDialog in future, but for now specific:
-                # We need to fetch anim if exists
                 anim = getattr(self.sim.walls[self.editor.ctx_vars['wall']], 'anim', None)
                 self.editor.rot_dialog = RotationDialog(self.layout['W']//2, self.layout['H']//2, anim)
             elif action == "Anchor": 
@@ -191,7 +194,6 @@ class InputHandler:
         if self.editor.anim_dialog and self.editor.anim_dialog.handle_event(event):
             if self.editor.anim_dialog.apply:
                 c = self.sim.constraints[self.editor.ctx_vars['const']]
-                # Set driver via Sketch API
                 self.sim.sketch.set_driver(self.editor.ctx_vars['const'], self.editor.anim_dialog.get_values())
                 self.editor.anim_dialog.apply = False
             if self.editor.anim_dialog.done: self.editor.anim_dialog = None
@@ -204,12 +206,6 @@ class InputHandler:
                 if event.button == 1:
                     mx, my = event.pos
                     sx, sy = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
-                    # We need to use new import logic if we had a dedicated importer, 
-                    # but sim.geo.place_geometry is the old way. 
-                    # We should probably implement import in flow_state_app or Sketch.
-                    # For now, we assume sim has a method or we fail gracefully.
-                    # sim.sketch doesn't have 'place_geometry' yet.
-                    # We'll skip for now or use the old method if it still exists on sim.geo
                     if hasattr(self.sim.geo, 'place_geometry'):
                         self.sim.geo.place_geometry(self.app.placing_geo_data, sx, sy, current_time=self.app.geo_time)
                     self.app.placing_geo_data = None
@@ -232,29 +228,6 @@ class InputHandler:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 if self.app.state == InteractionState.DRAGGING_GEOMETRY: self.app.current_tool.cancel()
                 else: 
-                    # Pass context vars (point index) to spawn context menu correctly
-                    # spawn_context_menu handles hit testing again? 
-                    # No, we rely on editor._spawn_context_menu to do hit testing and set ctx_vars
-                    # BUT wait, spawn_context_menu needs to call get_context_options with the point index now!
-                    # I need to check flow_state_app.py or editor.py where _spawn_context_menu is defined.
-                    # Since I can't edit that file here, I will rely on the fact that I only changed get_context_options signature.
-                    # Does _spawn_context_menu pass the point index?
-                    # In the provided files, I don't see the full content of editor.py/_spawn_context_menu. 
-                    # Assuming it calls get_context_options('point', -1) based on previous snippets.
-                    # I should probably update flow_state_app.py as well if I could.
-                    # Since I can't, I set a default for pt_index in get_context_options to -1.
-                    # However, to make Un-Anchor work, we need the actual point index passed.
-                    # I will assume the user has flow_state_app.py open or will ask for it if it breaks.
-                    # Actually, flow_state_app.py WAS provided in the previous turn by me.
-                    # But I can't edit it now.
-                    # Let's hope the user asks for it or I can sneak it in? No, instructions say only edit if intent.
-                    # The intent is to fix behavior.
-                    # I will check flow_state_app.py content from history... 
-                    # It calls: opts = self.sim.geo.get_context_options('point', -1)
-                    # And sets self.ctx_vars['pt'] = hit_pt[1]
-                    # So I should update get_context_options to look at ctx_vars? No, it's a method on geometry manager.
-                    # I will update flow_state_app.py as well to pass the point index.
-                    
                     self.editor._spawn_context_menu(event.pos)
             else:
                 self.app.current_tool.handle_event(event, self.layout)
