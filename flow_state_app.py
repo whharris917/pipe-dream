@@ -9,10 +9,8 @@ import subprocess
 import numpy as np
 from tkinter import filedialog, Tk, simpledialog
 
-# Contexts
+# Modules
 from simulation_state import Simulation
-from model_builder import ModelBuilder 
-
 from ui_widgets import InputField, ContextMenu, MaterialDialog, RotationDialog, AnimationDialog
 from geometry import Line, Circle
 from constraints import Length
@@ -45,14 +43,10 @@ class FlowStateApp:
         self.app = AppState()
         self.app.mode = start_mode 
         
-        # --- CONTEXT SWITCHING ---
-        if self.app.mode == config.MODE_EDITOR:
-            self.active_context = ModelBuilder()
-            self.sim = None # Explicitly None to prevent accidental usage
-        else:
-            self.active_context = Simulation()
-            self.sim = self.active_context # Alias for backward compat if needed temporarily
-            
+        # Initialize Simulation (Feature Flagging: skip warmup if Editor)
+        is_editor = (start_mode == config.MODE_EDITOR)
+        self.sim = Simulation(skip_warmup=is_editor)
+        
         self.app.input_world = InputField(0, 0, 0, 0)
         
         # Default View Settings
@@ -75,7 +69,7 @@ class FlowStateApp:
         w, h = self.screen.get_size()
         self.init_layout(w, h)
         
-        self.ui = UIManager(self.layout, self.app.input_world)
+        self.ui = UIManager(self.layout, self.app.input_world, mode=self.app.mode)
         self.input_handler = InputHandler(self) 
         
         self.init_tools() 
@@ -85,22 +79,21 @@ class FlowStateApp:
         else:
             self.change_tool(config.TOOL_BRUSH) 
 
-    # --- Properties to expose active context ---
+    # --- Properties ---
     @property
-    def walls(self): return self.active_context.walls
+    def walls(self): return self.sim.walls
     
     @property
-    def constraints(self): return self.active_context.constraints
+    def constraints(self): return self.sim.constraints
     
     @constraints.setter
     def constraints(self, value):
-        # REQUIRED: This setter allows tools.py to modify the list (e.g. cleaning temp constraints)
-        self.active_context.constraints = value
+        self.sim.constraints = value
 
     @property
-    def geo(self): return self.active_context.geo
+    def geo(self): return self.sim.geo
     @property
-    def world_size(self): return self.active_context.world_size
+    def world_size(self): return self.sim.world_size
 
     def init_layout(self, w, h):
         self.layout = {
@@ -147,36 +140,36 @@ class FlowStateApp:
 
     def _spawn_context_menu(self, pos):
         mx, my = pos
-        sim_x, sim_y = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.active_context.world_size, self.layout)
+        sim_x, sim_y = utils.screen_to_sim(mx, my, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
         
         if self.app.show_constraints:
-            for i, c in enumerate(self.active_context.constraints):
+            for i, c in enumerate(self.sim.constraints):
                 if c.hit_test(mx, my): 
                     self.ctx_vars['const'] = i
-                    opts = self.active_context.geo.get_context_options('constraint', i)
+                    opts = self.sim.geo.get_context_options('constraint', i)
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
-        point_map = utils.get_grouped_points(self.active_context, self.app.zoom, self.app.pan_x, self.app.pan_y, self.active_context.world_size, self.layout)
+        point_map = utils.get_grouped_points(self.sim, self.app.zoom, self.app.pan_x, self.app.pan_y, self.sim.world_size, self.layout)
         hit_pt = None; base_r, step_r = 5, 4
         for center_pos, items in point_map.items():
             if math.hypot(mx - center_pos[0], my - center_pos[1]) <= base_r + (len(items) - 1) * step_r: hit_pt = items[0]; break
 
         if hit_pt:
             self.ctx_vars['wall'] = hit_pt[0]; self.ctx_vars['pt'] = hit_pt[1]
-            opts = self.active_context.geo.get_context_options('point', hit_pt[0], hit_pt[1])
+            opts = self.sim.geo.get_context_options('point', hit_pt[0], hit_pt[1])
             self.context_menu = ContextMenu(mx, my, opts)
             if self.app.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
-        rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.active_context.world_size) * self.app.zoom)
-        hit_wall = self.active_context.geo.find_wall_at(sim_x, sim_y, rad_sim)
+        rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.app.zoom)
+        hit_wall = self.sim.geo.find_wall_at(sim_x, sim_y, rad_sim)
         
         if hit_wall != -1:
             if self.app.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
             else:
                 self.ctx_vars['wall'] = hit_wall
-                opts = self.active_context.geo.get_context_options('wall', hit_wall)
+                opts = self.sim.geo.get_context_options('wall', hit_wall)
                 self.context_menu = ContextMenu(mx, my, opts)
         else:
             if self.app.mode == config.MODE_EDITOR: 
@@ -190,36 +183,33 @@ class FlowStateApp:
         
         if not self.app.editor_paused:
             self.app.geo_time += dt
-        
-        if isinstance(self.active_context, Simulation):
-            self.active_context.update_constraint_drivers(self.app.geo_time)
-            self.active_context.apply_constraints()
-            
-            self.active_context.paused = not self.ui.buttons['play'].active
-            self.active_context.gravity = self.ui.sliders['gravity'].val
-            self.active_context.target_temp = self.ui.sliders['temp'].val
-            self.active_context.damping = self.ui.sliders['damping'].val
-            self.active_context.dt = self.ui.sliders['dt'].val
-            self.active_context.sigma = self.ui.sliders['sigma'].val
-            self.active_context.epsilon = self.ui.sliders['epsilon'].val
-            self.active_context.skin_distance = self.ui.sliders['skin'].val
-            self.active_context.use_thermostat = self.ui.buttons['thermostat'].active
-            self.active_context.use_boundaries = self.ui.buttons['boundaries'].active
-            
-            if not self.active_context.paused:
-                self.active_context.step(int(self.ui.sliders['speed'].val))
-        
-        else:
-            # ModelBuilder Logic
-            self.active_context.update_constraint_drivers(self.app.geo_time)
-            self.active_context.apply_constraints()
 
+        # Always update drivers and geometry, regardless of mode
+        self.sim.update_constraint_drivers(self.app.geo_time)
+        self.sim.apply_constraints()
+
+        # Only step physics if we are in SIM mode
+        if self.app.mode == config.MODE_SIM:
+            self.sim.paused = not self.ui.buttons['play'].active
+            self.sim.gravity = self.ui.sliders['gravity'].val
+            self.sim.target_temp = self.ui.sliders['temp'].val
+            self.sim.damping = self.ui.sliders['damping'].val
+            self.sim.dt = self.ui.sliders['dt'].val
+            self.sim.sigma = self.ui.sliders['sigma'].val
+            self.sim.epsilon = self.ui.sliders['epsilon'].val
+            self.sim.skin_distance = self.ui.sliders['skin'].val
+            self.sim.use_thermostat = self.ui.buttons['thermostat'].active
+            self.sim.use_boundaries = self.ui.buttons['boundaries'].active
+            
+            if not self.sim.paused:
+                self.sim.step(int(self.ui.sliders['speed'].val))
+        
         if self.app.current_tool:
             self.app.current_tool.update(dt, self.layout, self.ui)
 
     def render(self):
-        # Pass active_context to renderer
-        self.renderer.draw_app(self.app, self.active_context, self.layout, [])
+        # Render using the single Simulation instance
+        self.renderer.draw_app(self.app, self.sim, self.layout, [])
 
         self.ui.draw(self.screen, self.font, self.app.mode)
 
@@ -249,7 +239,8 @@ class FlowStateApp:
         elif selection == "New Model":
             subprocess.Popen([sys.executable, "run_instance.py", "editor"])
         elif selection == "New": 
-            self.active_context.reset_simulation()
+            self.sim.reset_simulation()
+            self.sim.sketch.clear()
             self.app.input_world.set_value(config.DEFAULT_WORLD_SIZE)
             self.app.current_sim_filepath = None
             self.app.set_status("New Project Created")
@@ -260,29 +251,29 @@ class FlowStateApp:
                 if f:
                     data, _ = file_io.load_geometry_file(f)
                     if data: 
-                        if hasattr(self.active_context.geo, 'place_geometry'):
+                        if hasattr(self.sim.geo, 'place_geometry'):
                             self.app.placing_geo_data = data
                             self.app.set_status("Place Model")
         elif self.root_tk:
             if selection == "Save As..." or (selection == "Save"):
                 is_save_as = (selection == "Save As...")
                 if is_save_as or not self.app.current_sim_filepath:
-                    ext = ".sim" if isinstance(self.active_context, Simulation) else ".mdl"
+                    ext = ".sim" if self.app.mode == config.MODE_SIM else ".mdl"
                     ft = [("Simulation Files", "*.sim")] if ext == ".sim" else [("Model Files", "*.mdl")]
                     f = filedialog.asksaveasfilename(defaultextension=ext, filetypes=ft)
                     if f: self.app.current_sim_filepath = f
                 if self.app.current_sim_filepath:
-                    self.app.set_status(file_io.save_file(self.active_context, self.app, self.app.current_sim_filepath))
+                    self.app.set_status(file_io.save_file(self.sim, self.app, self.app.current_sim_filepath))
                     self._update_window_title()
             elif selection == "Open...":
-                ext = "*.sim" if isinstance(self.active_context, Simulation) else "*.mdl"
+                ext = "*.sim" if self.app.mode == config.MODE_SIM else "*.mdl"
                 f = filedialog.askopenfilename(filetypes=[("Project Files", ext)])
                 if f:
                     self.app.current_sim_filepath = f
-                    success, msg, view_state = file_io.load_file(self.active_context, f)
+                    success, msg, view_state = file_io.load_file(self.sim, f)
                     self.app.set_status(msg)
                     if success: 
-                        self.app.input_world.set_value(self.active_context.world_size)
+                        self.app.input_world.set_value(self.sim.world_size)
                         if view_state:
                             self.app.zoom = view_state['zoom']
                             self.app.pan_x = view_state['pan_x']
@@ -290,22 +281,20 @@ class FlowStateApp:
                     self._update_window_title()
         pygame.event.pump()
 
-    # --- Wrapper methods (Controller Layer) ---
+    # --- Wrapper methods ---
     
     def exit_editor_mode(self, backup_state=None):
-        self.active_context.reset_simulation()
+        self.sim.reset_simulation()
+        self.sim.sketch.clear()
         self.app.set_status("Reset/Discarded")
 
     def toggle_extend(self):
         if self.app.selected_walls:
             for idx in self.app.selected_walls:
-                if idx < len(self.active_context.walls) and isinstance(self.active_context.walls[idx], Line): 
-                    if not hasattr(self.active_context.walls[idx], 'infinite'): self.active_context.walls[idx].infinite = False
-                    self.active_context.walls[idx].infinite = not self.active_context.walls[idx].infinite
-            
-            if hasattr(self.active_context, 'rebuild_static_atoms'):
-                self.active_context.rebuild_static_atoms()
-            self.app.set_status("Toggled Extend")
+                if idx < len(self.sim.walls) and isinstance(self.sim.walls[idx], Line): 
+                    if not hasattr(self.sim.walls[idx], 'infinite'): self.sim.walls[idx].infinite = False
+                    self.sim.walls[idx].infinite = not self.sim.walls[idx].infinite
+            self.sim.rebuild_static_atoms(); self.app.set_status("Toggled Extend")
             
     def toggle_editor_play(self):
         self.app.editor_paused = not self.app.editor_paused
@@ -322,19 +311,19 @@ class FlowStateApp:
             f = filedialog.asksaveasfilename(defaultextension=".geom", filetypes=[("Geometry Files", "*.geom")])
             if f: 
                 self.app.current_geom_filepath = f
-                self.app.set_status(file_io.save_geometry_file(self.active_context, self.app, f))
+                self.app.set_status(file_io.save_geometry_file(self.sim, self.app, f))
                 self._update_window_title()
 
-    # --- SMART CONSTRAINT TRIGGER (FIXED) ---
+    # --- SMART CONSTRAINT TRIGGER ---
     
     def _try_apply_constraint_smart(self, ctype, walls, pts):
         # 1. Try Strict Match
-        if self.active_context.attempt_apply_constraint(ctype, walls, pts):
+        if self.sim.attempt_apply_constraint(ctype, walls, pts):
             self.app.set_status(f"Applied {ctype}")
             self.app.selected_walls.clear(); self.app.selected_points.clear()
             self.app.pending_constraint = None
             for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
-            self.active_context.apply_constraints()
+            self.sim.apply_constraints()
             return True
             
         # 2. Try Fuzzy Match (Auto-Trim)
@@ -345,12 +334,12 @@ class FlowStateApp:
                 if len(walls) >= r['w'] and len(pts) >= r['p']:
                     sub_w = walls[:r['w']]
                     sub_p = pts[:r['p']]
-                    if self.active_context.attempt_apply_constraint(ctype, sub_w, sub_p):
+                    if self.sim.attempt_apply_constraint(ctype, sub_w, sub_p):
                          self.app.set_status(f"Applied {ctype} (Auto-Trimmed)")
                          self.app.selected_walls.clear(); self.app.selected_points.clear()
                          self.app.pending_constraint = None
                          for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
-                         self.active_context.apply_constraints()
+                         self.sim.apply_constraints()
                          return True
         return False
 
@@ -362,11 +351,11 @@ class FlowStateApp:
             if walls:
                 count = 0
                 for w_idx in walls:
-                    if self.active_context.attempt_apply_constraint(ctype, [w_idx], []): count += 1
+                    if self.sim.attempt_apply_constraint(ctype, [w_idx], []): count += 1
                 if count > 0:
                     self.app.set_status(f"Applied {ctype} to {count} items")
                     self.app.selected_walls.clear(); self.app.selected_points.clear()
-                    self.active_context.apply_constraints(); is_multi = True
+                    self.sim.apply_constraints(); is_multi = True
         if is_multi: return
         
         walls = list(self.app.selected_walls); pts = list(self.app.selected_points)
@@ -393,61 +382,34 @@ class FlowStateApp:
         ctype = self.app.pending_constraint; msg = CONSTRAINT_DEFS[ctype][0]['msg']
         self.app.set_status(f"{ctype} ({len(self.app.pending_targets_walls)}W, {len(self.app.pending_targets_points)}P): {msg}")
 
-    # --- Geometry Creation Interceptors ---
+    # --- Geometry Creation Interceptors (Material-Aware) ---
     
     def add_wall(self, start_pos, end_pos, is_ref=False):
         is_ghost = self.ui.buttons['mode_ghost'].active
         mat_id = "Ghost" if is_ref or is_ghost else "Default"
-        self.active_context.snapshot()
-        self.active_context.sketch.add_line(start_pos, end_pos, is_ref, material_id=mat_id)
-        if hasattr(self.active_context, 'rebuild_static_atoms'):
-            self.active_context.rebuild_static_atoms()
+        self.sim.add_wall(start_pos, end_pos, is_ref, material_id=mat_id)
         
     def add_circle(self, center, radius):
         is_ghost = self.ui.buttons['mode_ghost'].active
         mat_id = "Ghost" if is_ghost else "Default"
-        self.active_context.snapshot()
-        self.active_context.sketch.add_circle(center, radius, material_id=mat_id)
-        if hasattr(self.active_context, 'rebuild_static_atoms'):
-            self.active_context.rebuild_static_atoms()
+        self.sim.add_circle(center, radius, material_id=mat_id)
 
     # --- Pass-throughs ---
-    def remove_wall(self, index): self.active_context.remove_wall(index)
-    def toggle_anchor(self, wall_idx, pt_idx): self.active_context.toggle_anchor(wall_idx, pt_idx)
-    def update_wall(self, index, s, e): 
-        self.active_context.sketch.update_entity(index, start=s, end=e, center=s)
-        if hasattr(self.active_context, 'rebuild_static_atoms'): self.active_context.rebuild_static_atoms()
-        
-    def update_wall_props(self, idx, props): 
-        self.active_context.snapshot()
-        self.active_context.sketch.update_entity(idx, **props)
-        if hasattr(self.active_context, 'rebuild_static_atoms'): self.active_context.rebuild_static_atoms()
-
-    def set_wall_rotation(self, idx, params): 
-        w = self.active_context.walls[idx]
-        if isinstance(w, Circle): return
-        speed = params['speed']; pivot = params['pivot']
-        anim = None
-        if abs(speed) > 1e-5:
-             anim = {'type': 'rotate', 'speed': speed, 'pivot': pivot, 'angle': 0.0, 'ref_start': w.start.copy(), 'ref_end': w.end.copy()}
-        w.anim = anim
-        if hasattr(self.active_context, 'rebuild_static_atoms'): self.active_context.rebuild_static_atoms()
-
-    def update_constraint_drivers(self, t): self.active_context.update_constraint_drivers(t)
-    def attempt_apply_constraint(self, t, w, p): return self.active_context.attempt_apply_constraint(t, w, p)
-    def apply_constraints(self): self.active_context.apply_constraints()
-    def add_constraint_object(self, c): self.active_context.add_constraint_object(c)
-    
-    def add_particles_brush(self, x, y, r): 
-        if hasattr(self.active_context, 'add_particles_brush'): self.active_context.add_particles_brush(x, y, r)
-    def delete_particles_brush(self, x, y, r): 
-        if hasattr(self.active_context, 'delete_particles_brush'): self.active_context.delete_particles_brush(x, y, r)
-    
-    def snapshot(self): self.active_context.snapshot()
-    def undo(self): self.active_context.undo()
-    def redo(self): self.active_context.redo()
-    def resize_world(self, s): self.active_context.resize_world(s)
-    def reset_simulation(self): self.active_context.reset_simulation()
-    def clear_particles(self): self.active_context.clear_particles()
-    def rebuild_static_atoms(self): 
-        if hasattr(self.active_context, 'rebuild_static_atoms'): self.active_context.rebuild_static_atoms()
+    def remove_wall(self, index): self.sim.remove_wall(index)
+    def toggle_anchor(self, wall_idx, pt_idx): self.sim.toggle_anchor(wall_idx, pt_idx)
+    def update_wall(self, index, s, e): self.sim.update_wall(index, s, e)
+    def update_wall_props(self, idx, props): self.sim.update_wall_props(idx, props)
+    def set_wall_rotation(self, idx, params): self.sim.set_wall_rotation(idx, params)
+    def update_constraint_drivers(self, t): self.sim.update_constraint_drivers(t)
+    def attempt_apply_constraint(self, t, w, p): return self.sim.attempt_apply_constraint(t, w, p)
+    def apply_constraints(self): self.sim.apply_constraints()
+    def add_constraint_object(self, c): self.sim.add_constraint_object(c)
+    def add_particles_brush(self, x, y, r): self.sim.add_particles_brush(x, y, r)
+    def delete_particles_brush(self, x, y, r): self.sim.delete_particles_brush(x, y, r)
+    def snapshot(self): self.sim.snapshot()
+    def undo(self): self.sim.undo()
+    def redo(self): self.sim.redo()
+    def resize_world(self, s): self.sim.resize_world(s)
+    def reset_simulation(self): self.sim.reset_simulation()
+    def clear_particles(self): self.sim.clear_particles()
+    def rebuild_static_atoms(self): self.sim.rebuild_static_atoms()

@@ -13,7 +13,7 @@ from sketch import Sketch
 from compiler import Compiler
 
 class Simulation:
-    def __init__(self):
+    def __init__(self, skip_warmup=False):
         self.capacity = 5000
         self.count = 0
         
@@ -65,11 +65,18 @@ class Simulation:
         self.total_steps = 0; self.sps = 0.0
         self.steps_accumulator = 0; self.last_sps_update = time.time()
         self.undo_stack = []; self.redo_stack = []
-        self._warmup_compiler()
+        
+        if not skip_warmup:
+            self._warmup_compiler()
+        else:
+            print("Skipping Numba warmup (Model Builder Mode)")
 
     # --- Properties ---
     @property
     def walls(self): return self.sketch.entities
+    @walls.setter
+    def walls(self, value): self.sketch.entities = value
+
     @property
     def constraints(self): return self.sketch.constraints
     @constraints.setter
@@ -83,7 +90,6 @@ class Simulation:
 
     def _warmup_compiler(self):
         print("Warming up Numba compiler...")
-        # (Standard warmup sequence)
         self.pos_x[0] = 10.0; self.pos_y[0] = 10.0
         self.pos_x[1] = 12.0; self.pos_y[1] = 10.0
         self.count = 2
@@ -179,9 +185,13 @@ class Simulation:
         self.clear_particles(snapshot=False)
         self.sketch.clear()
 
-    # --- Wrappers for Compatibility with InputHandler (DELEGATED) ---
-    # These are now mostly handled by FlowStateApp, but we keep them here for safety
-    # or if any tools call sim directly. 
+    # --- Geometry / Sketch Wrappers ---
+    def add_wall(self, start_pos, end_pos, is_ref=False, material_id="Default"):
+        if is_ref: material_id = "Ghost"
+        idx = self.sketch.add_line(start_pos, end_pos, is_ref, material_id=material_id)
+        
+    def add_circle(self, center, radius, material_id="Default"):
+        idx = self.sketch.add_circle(center, radius, material_id=material_id)
 
     def remove_wall(self, index):
         self.snapshot()
@@ -194,6 +204,45 @@ class Simulation:
             w.anchored[pt_idx] = not w.anchored[pt_idx]
             self.snapshot(); self.rebuild_static_atoms()
 
+    def update_wall(self, index, start_pos, end_pos):
+        if 0 <= index < len(self.walls):
+            w = self.walls[index]
+            if isinstance(w, Line):
+                self.sketch.update_entity(index, start=start_pos, end=end_pos)
+            elif isinstance(w, Circle):
+                self.sketch.update_entity(index, center=start_pos)
+            self.rebuild_static_atoms()
+
+    def update_wall_props(self, index, props):
+        self.snapshot()
+        self.sketch.update_entity(index, **props)
+        self.rebuild_static_atoms()
+        
+    def set_wall_rotation(self, index, params):
+        if 0 <= index < len(self.walls):
+            w = self.walls[index]
+            if isinstance(w, Circle): return 
+            speed = params['speed']; pivot = params['pivot']
+            if abs(speed) < 1e-5: w.anim = None; return
+            w.anim = {'type': 'rotate', 'speed': speed, 'pivot': pivot, 'angle': 0.0, 'ref_start': w.start.copy(), 'ref_end': w.end.copy()}
+            self.rebuild_static_atoms()
+
+    def update_animations(self, dt):
+        for w in self.walls:
+            if not isinstance(w, Line): continue
+            anim = w.anim
+            if anim and anim['type'] == 'rotate':
+                anim['angle'] += anim['speed'] * dt
+                rad = math.radians(anim['angle']); c = math.cos(rad); s = math.sin(rad)
+                rs = anim['ref_start']; re = anim['ref_end']
+                if anim['pivot'] == 'start': pivot = rs
+                elif anim['pivot'] == 'end': pivot = re
+                else: pivot = (rs + re) * 0.5
+                v_s = rs - pivot; v_e = re - pivot
+                w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
+                w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
+
+    # --- Constraints ---
     def update_constraint_drivers(self, current_time):
         self.sketch.update_drivers(current_time)
 
@@ -234,6 +283,7 @@ class Simulation:
         self.sketch.constraints.append(c_obj)
         self.sketch.solve(iterations=500)
 
+    # --- Atomizer Logic ---
     def rebuild_static_atoms(self):
         self.compiler.rebuild(self.sketch)
 
@@ -250,7 +300,6 @@ class Simulation:
 
     def step(self, steps_to_run):
         if self.paused: return
-        # Standard physics step logic
         is_dyn = self.is_static[:self.count] == 0
         if np.any(is_dyn):
             self.atom_sigma[:self.count][is_dyn] = self.sigma
@@ -289,23 +338,7 @@ class Simulation:
                 self._compact_arrays(keep_indices)
                 self.rebuild_next = True
 
-    def update_animations(self, dt):
-        for w in self.walls:
-            if not isinstance(w, Line): continue
-            anim = w.anim
-            if anim and anim['type'] == 'rotate':
-                anim['angle'] += anim['speed'] * dt
-                rad = math.radians(anim['angle']); c = math.cos(rad); s = math.sin(rad)
-                rs = anim['ref_start']; re = anim['ref_end']
-                if anim['pivot'] == 'start': pivot = rs
-                elif anim['pivot'] == 'end': pivot = re
-                else: pivot = (rs + re) * 0.5
-                v_s = rs - pivot; v_e = re - pivot
-                w.start = pivot + np.array([v_s[0]*c - v_s[1]*s, v_s[0]*s + v_s[1]*c])
-                w.end = pivot + np.array([v_e[0]*c - v_e[1]*s, v_e[0]*s + v_e[1]*c])
-
     def add_particles_brush(self, x, y, radius):
-        # (Same content as previous file)
         sigma = self.sigma; spacing = 1.12246 * sigma  
         row_height = spacing * 0.866025; r_sq = radius * radius
         n_rows = int(radius / row_height) + 1; n_cols = int(radius / spacing) + 1
