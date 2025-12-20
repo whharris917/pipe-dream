@@ -9,7 +9,7 @@ class InteractionState(Enum):
     DRAGGING_GEOMETRY = auto()
     EDITING_CONSTRAINT = auto()
 
-class AppState:
+class Session:
     def __init__(self):
         # Core State
         self.mode = config.MODE_SIM
@@ -70,7 +70,7 @@ class AppState:
         
         # View Options
         self.show_wall_atoms = True 
-        self.show_constraints = True # Moved from FlowStateApp to here for centralization
+        self.show_constraints = True 
 
     def set_status(self, msg):
         self.status_msg = msg

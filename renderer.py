@@ -10,49 +10,52 @@ class Renderer:
         self.font = font
         self.big_font = big_font
 
-    def draw_app(self, app, sim, layout, ui_list):
+    def draw_app(self, app, layout, ui_list):
+        # Unpack commonly used references for readability
+        session = app.session 
+        sim = app.sim
+        sketch = app.sketch
+        
         self.screen.fill(config.BACKGROUND_COLOR)
         
-        self._draw_viewport(app, sim, layout)
+        self._draw_viewport(session, sim, layout)
         
-        if app.mode == config.MODE_SIM:
-            self._draw_particles(app, sim, layout)
+        if session.mode == config.MODE_SIM:
+            self._draw_particles(session, sim, layout)
         else:
-            self._draw_editor_guides(app, sim, layout)
+            self._draw_editor_guides(session, sim, layout)
             
-        self._draw_geometry(app, sim, layout)
+        self._draw_geometry(session, sketch, layout, world_size=sim.world_size)
         
-        if app.current_tool:
-            app.current_tool.draw_overlay(self.screen, self)
+        if session.current_tool:
+            session.current_tool.draw_overlay(self.screen, self)
         
-        # Always draw constraints in Unified UI unless hidden
-        if app.show_constraints:
-            self._draw_constraints(app, sim, layout)
-            self._draw_editor_overlays(app, sim, layout)
+        if session.show_constraints:
+            self._draw_constraints(session, sketch, layout, world_size=sim.world_size)
+            self._draw_editor_overlays(session, sketch, layout, world_size=sim.world_size)
             
-        if app.placing_geo_data:
-            self._draw_placement_preview(app, sim, layout)
+        if session.placing_geo_data:
+            self._draw_placement_preview(session, sim, layout)
 
-        self._draw_snap_indicator(app, sim, layout)
+        self._draw_snap_indicator(session, sim, sketch, layout)
 
         self.screen.set_clip(None)
         self._draw_panels(layout)
         
-        # FIXED: Only draw physics stats if we are actually in a Simulation
-        if app.mode == config.MODE_SIM:
-            self._draw_stats(app, sim, layout)
+        if session.mode == config.MODE_SIM:
+            self._draw_stats(session, sim, layout)
         
         for el in ui_list:
             el.draw(self.screen, self.font)
             
-        self._draw_status(app, layout)
+        self._draw_status(session, layout)
 
-    def _draw_snap_indicator(self, app, sim, layout):
+    def _draw_snap_indicator(self, app, sim, sketch, layout):
         if app.current_snap_target:
             w_idx, pt_idx = app.current_snap_target
-            # sim.walls works for both Contexts (Sim and Builder)
-            if w_idx < len(sim.walls):
-                ent = sim.walls[w_idx]
+            walls = sketch.entities
+            if w_idx < len(walls):
+                ent = walls[w_idx]
                 pt_pos = ent.get_point(pt_idx)
                 sx, sy = sim_to_screen(pt_pos[0], pt_pos[1], app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
                 pygame.draw.circle(self.screen, (0, 255, 0), (sx, sy), 6)
@@ -69,7 +72,6 @@ class Renderer:
         pygame.draw.rect(self.screen, g_col, (tl[0], tl[1], br[0]-tl[0], br[1]-tl[1]), 2)
 
     def _draw_particles(self, app, sim, layout):
-        # We assume sim is a Simulation instance here because of the check in draw_app
         for i in range(sim.count):
             if sim.is_static[i] and not getattr(app, 'show_wall_atoms', True): continue 
             
@@ -86,12 +88,12 @@ class Renderer:
         pygame.draw.line(self.screen, (50, 50, 50), (cx-10, cy), (cx+10, cy))
         pygame.draw.line(self.screen, (50, 50, 50), (cx, cy-10), (cx, cy+10))
 
-    def _draw_geometry(self, app, sim, layout):
-        transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
-        # sim.walls works for both Contexts
-        for i, w in enumerate(sim.walls):
-            # sim.sketch works for both Contexts
-            mat = sim.sketch.materials.get(w.material_id)
+    def _draw_geometry(self, app, sketch, layout, world_size=50.0):
+        transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, world_size, layout)
+        
+        walls = sketch.entities
+        for i, w in enumerate(walls):
+            mat = sketch.materials.get(w.material_id)
             base_color = mat.color if mat else (200, 200, 200)
             
             is_sel = (i in app.selected_walls)
@@ -99,14 +101,17 @@ class Renderer:
             
             w.render(self.screen, transform, is_selected=is_sel, is_pending=is_pend, color=base_color)
 
-    def _draw_constraints(self, app, sim, layout):
-        transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
+    def _draw_constraints(self, app, sketch, layout, world_size=50.0):
+        transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, world_size, layout)
         grouped = {}
         threshold = 20
         layout_data = []
-        # sim.constraints works for both Contexts
-        for c in sim.constraints:
-            cx, cy = c.get_visual_center(transform, sim.walls)
+        
+        constraints = sketch.constraints
+        walls = sketch.entities
+        
+        for c in constraints:
+            cx, cy = c.get_visual_center(transform, walls)
             found_group = None
             for key in grouped:
                 if math.hypot(key[0]-cx, key[1]-cy) < threshold:
@@ -122,10 +127,10 @@ class Renderer:
             total_in_group = len(grouped[key]); spacing = 30
             start_x = -((total_in_group - 1) * spacing) / 2.0
             final_offset_x = start_x + idx * spacing
-            c.render(self.screen, transform, sim.walls, self.font, offset=(final_offset_x, 0))
+            c.render(self.screen, transform, walls, self.font, offset=(final_offset_x, 0))
 
-    def _draw_editor_overlays(self, app, sim, layout):
-        point_map = get_grouped_points(sim, app.zoom, app.pan_x, app.pan_y, sim.world_size, layout)
+    def _draw_editor_overlays(self, app, sketch, layout, world_size=50.0):
+        point_map = get_grouped_points(sketch.entities, app.zoom, app.pan_x, app.pan_y, world_size, layout)
         anchored_points_draw_list = []
         base_r, step_r = 5, 4
         
@@ -143,7 +148,7 @@ class Renderer:
                 pygame.draw.circle(self.screen, (30,30,30), (cx, cy), radius)
                 pygame.draw.circle(self.screen, color, (cx, cy), radius, 2)
                 
-                w = sim.walls[w_idx]
+                w = sketch.entities[w_idx]
                 is_anchored = False
                 if isinstance(w, Line): is_anchored = w.anchored[pt_idx]
                 elif isinstance(w, Circle): is_anchored = w.anchored[0]
@@ -179,8 +184,6 @@ class Renderer:
         pygame.draw.line(self.screen, config.PANEL_BORDER_COLOR, (layout['RIGHT_X'], config.TOP_MENU_H), (layout['RIGHT_X'], layout['H']))
 
     def _draw_stats(self, app, sim, layout):
-        # This function requires physics data (vel_x, count, sps)
-        # It is now protected by the check in draw_app
         metric_x = layout['LEFT_X'] + 15
         stats_y = config.WINDOW_HEIGHT - 80
         curr_t = calculate_current_temp(sim.vel_x, sim.vel_y, sim.count, config.ATOM_MASS)

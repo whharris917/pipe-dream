@@ -30,12 +30,12 @@ def screen_to_sim(sx, sy, zoom, pan_x, pan_y, world_size, layout):
     y = (sy - pan_y - cy_screen) / final_scale + cy_world
     return x, y
 
-def get_connected_group(sim, start_wall_idx):
+def get_connected_group(constraints, start_wall_idx):
     group = {start_wall_idx}
     queue = [start_wall_idx]
     
     adjacency = {}
-    for c in sim.constraints:
+    for c in constraints:
         if c.type == 'COINCIDENT':
             idx_list = c.indices
             w1, w2 = idx_list[0][0], idx_list[1][0]
@@ -53,20 +53,20 @@ def get_connected_group(sim, start_wall_idx):
                     queue.append(neighbor)
     return group
 
-def is_group_anchored(sim, group_indices):
+def is_group_anchored(walls, group_indices):
     for idx in group_indices:
-        if idx >= len(sim.walls): continue
-        w = sim.walls[idx]
+        if idx >= len(walls): continue
+        w = walls[idx]
         if isinstance(w, Line):
             if w.anchored[0] or w.anchored[1]: return True
         elif isinstance(w, Circle):
             if w.anchored[0]: return True
     return False
 
-def get_grouped_points(sim, zoom, pan_x, pan_y, world_size, layout):
+def get_grouped_points(walls, zoom, pan_x, pan_y, world_size, layout):
     point_map = {}
     
-    for i, w in enumerate(sim.walls):
+    for i, w in enumerate(walls):
         points_to_process = []
         if isinstance(w, Line):
             if np.array_equal(w.start, w.end): points_to_process.append((w.start, 0))
@@ -91,7 +91,7 @@ def get_grouped_points(sim, zoom, pan_x, pan_y, world_size, layout):
                 point_map[(sx, sy)] = [(i, end_idx)]
     return point_map
 
-def get_snapped_pos(mx, my, sim, zoom, pan_x, pan_y, world_size, layout, anchor_pos=None, exclude_wall_idx=-1):
+def get_snapped_pos(mx, my, walls, zoom, pan_x, pan_y, world_size, layout, anchor_pos=None, exclude_wall_idx=-1):
     sim_x, sim_y = screen_to_sim(mx, my, zoom, pan_x, pan_y, world_size, layout)
     final_x, final_y = sim_x, sim_y
     is_snapped_to_vertex = False
@@ -101,7 +101,7 @@ def get_snapped_pos(mx, my, sim, zoom, pan_x, pan_y, world_size, layout, anchor_
     if pygame.key.get_mods() & pygame.KMOD_CTRL:
         snap_threshold_px = 15
         best_dist = float('inf')
-        for i, w in enumerate(sim.walls):
+        for i, w in enumerate(walls):
             if i == exclude_wall_idx: continue
             points = []
             if isinstance(w, Line): points = [(w.start, 0), (w.end, 1)]
