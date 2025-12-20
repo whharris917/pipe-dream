@@ -1,6 +1,5 @@
 import pygame
 import os
-import importlib.util
 import math
 import array
 import random
@@ -20,11 +19,15 @@ class AssetManager:
         self.images = {}
         self.sounds = {}
         self.tracks = {} 
+        
+        # --- FIX: Define the sounds directory explicitly ---
+        self.snd_dir = os.path.join(ASSET_DIR, "sounds")
+        
         self._ensure_dirs()
         self._generate_default_icons()
         self._synthesize_sounds()
-        self._generate_sound_library() # <--- Fully populated now
-        self._load_tracks()
+        self._generate_sound_library()
+        self._load_tracks() # Scans both generated AND external files
 
     @staticmethod
     def get():
@@ -35,8 +38,12 @@ class AssetManager:
     def _ensure_dirs(self):
         if not os.path.exists(IMG_DIR):
             os.makedirs(IMG_DIR)
+        # Create the sounds folder so you have somewhere to drop your MP3s
+        if not os.path.exists(self.snd_dir):
+            os.makedirs(self.snd_dir)
 
     def _generate_default_icons(self):
+        # (Standard icon generation)
         tools = [
             ("select", (200, 200, 255), "cursor"),
             ("brush", (100, 255, 100), "circle"),
@@ -106,7 +113,6 @@ class AssetManager:
             total_samples = int(sample_rate * total_duration)
             buf = array.array('h', [0] * total_samples)
             
-            # Helper to add wave to buffer
             def add_wave(offset_samples, f_start, f_end, vol):
                 dur_samples = int(sample_rate * duration)
                 k = (f_end - f_start) / duration
@@ -117,38 +123,30 @@ class AssetManager:
                     phase = 2 * math.pi * (f_start * t + 0.5 * k * t * t)
                     val = math.sin(phase)
                     env = math.sin(math.pi * (t / duration)) 
-                    # Mix
                     buf[idx] = max(-32767, min(32767, buf[idx] + int(val * vol * env)))
 
-            # Main Sound
             add_wave(0, start_freq, end_freq, amp)
-            # Echo
             delay_samples = int(sample_rate * 0.08) 
             add_wave(delay_samples, start_freq * 0.8, end_freq * 0.8, amp * 0.4)
             return pygame.mixer.Sound(buffer=buf)
 
-        # Store generators for reuse
         self._make_beep = make_beep
         self._make_bloop = make_bloop
 
-        # Default UI sounds
         self.sounds['hover'] = make_beep(450, 0.05, 2000)
         self.sounds['click'] = make_beep(1200, 0.1, 3000)
         self.sounds['snap'] = make_bloop(220, 280, 0.12, 2500)
 
     def _generate_sound_library(self):
-        # 1. Beeps
         for freq in [100, 220, 440, 660, 880, 1200]:
             self.sounds[f"beep_{freq}Hz"] = self._make_beep(freq, 0.08)
             
-        # 2. Clicks
         self.sounds['click_wood_low'] = self._make_beep(400, 0.03, 4000)
         self.sounds['click_wood_hi'] = self._make_beep(800, 0.02, 4000)
         self.sounds['click_plastic'] = self._make_beep(1500, 0.015, 3500)
         self.sounds['click_metal'] = self._make_beep(2500, 0.01, 3500)
         self.sounds['click_deep'] = self._make_beep(100, 0.05, 4000)
 
-        # 3. Bloops
         self.sounds['bloop_bub_1'] = self._make_bloop(800, 900, 0.04)
         self.sounds['bloop_bub_2'] = self._make_bloop(900, 1000, 0.04)
         self.sounds['bloop_bub_3'] = self._make_bloop(1000, 1200, 0.04)
@@ -164,9 +162,23 @@ class AssetManager:
         self.sounds['bloop_error_1'] = self._make_bloop(400, 200, 0.15)
 
     def _load_tracks(self):
-        print("Generating Tracks... (This may take a moment)")
+        print("Generating Tracks...")
+        
+        # 1. Internal Generated Tracks
         self.tracks["Whimsical Flow"] = track_whimsical.generate(44100)
         self.tracks["Jungle Explorer"] = track_jungle.generate(44100)
+        
+        # 2. External File Scanner
+        # This looks into folly_assets/sounds/ and finds ANY supported file
+        if os.path.exists(self.snd_dir):
+            files = os.listdir(self.snd_dir)
+            for f in files:
+                if f.lower().endswith(('.mp3', '.ogg', '.wav')):
+                    # We store the FULL PATH as the value, and the filename as the key
+                    full_path = os.path.join(self.snd_dir, f)
+                    self.tracks[f] = full_path
+                    print(f"Loaded external track: {f}")
+        
         print("Tracks Ready.")
 
     def get_icon(self, name):
@@ -178,29 +190,29 @@ class AssetManager:
             self.sounds[name].play()
             
     def play_music(self, track_name):
-        pygame.mixer.Channel(0).fadeout(500)
+        """Intelligently handles both generated Sounds and external Files."""
+        # Stop everything first to prevent overlap
+        pygame.mixer.Channel(0).stop()
+        pygame.mixer.music.stop()
+        
         if track_name in self.tracks:
-            pygame.mixer.Channel(0).play(self.tracks[track_name], loops=-1, fade_ms=500)
-            pygame.mixer.Channel(0).set_volume(0.5)
+            data = self.tracks[track_name]
+            
+            # Check: Is this a file path (String) or a generated Object (Sound)?
+            if isinstance(data, str):
+                try:
+                    pygame.mixer.music.load(data)
+                    pygame.mixer.music.play(loops=-1, fade_ms=500)
+                    pygame.mixer.music.set_volume(0.5)
+                    print(f"Streaming: {track_name}")
+                except Exception as e:
+                    print(f"Error loading file {track_name}: {e}")
+            else:
+                # It's a generated Sound object
+                pygame.mixer.Channel(0).play(data, loops=-1, fade_ms=500)
+                pygame.mixer.Channel(0).set_volume(0.5)
+                print(f"Playing generated: {track_name}")
 
     def stop_music(self):
         pygame.mixer.Channel(0).fadeout(500)
-
-    def play_external_music(self, filename):
-            """Streams an MP3/OGG file from disk instead of generating it."""
-            path = os.path.join(self.snd_dir, filename) # Assumes file is in assets/sounds
-            
-            if os.path.exists(path):
-                try:
-                    # Stop current music
-                    pygame.mixer.music.fadeout(500)
-                    # Load new file (Streams from disk, doesn't use RAM)
-                    pygame.mixer.music.load(path)
-                    # Play (Loops indefinitely)
-                    pygame.mixer.music.play(loops=-1, fade_ms=500)
-                    pygame.mixer.music.set_volume(0.5)
-                    print(f"Now Playing: {filename}")
-                except Exception as e:
-                    print(f"Error playing music: {e}")
-            else:
-                print(f"File not found: {path}")
+        pygame.mixer.music.fadeout(500)

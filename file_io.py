@@ -1,23 +1,25 @@
 import json
 import os
 import numpy as np
-from geometry import Line, Circle
+from geometry import Line, Circle, Point
 from constraints import create_constraint
 
-def save_file(sim, app, filename):
+def save_file(sim, session, filename):
+    """
+    Saves the current Simulation and Session View State to a file.
+    """
     if not filename: return "Cancelled"
     
     # Serialize Physics/Sim State
     walls_dicts = [w.to_dict() for w in sim.walls]
     constraints_dicts = [c.to_dict() for c in sim.constraints]
     
-    # Capture View State (Current View)
+    # Capture View State (Current View) from the Session
     view_state = {
-        'zoom': app.zoom,
-        'pan_x': app.pan_x,
-        'pan_y': app.pan_y,
-        # --- UPDATE: Capture editor time to allow full state restoration ---
-        'geo_time': getattr(app, 'geo_time', 0.0)
+        'zoom': session.zoom,
+        'pan_x': session.pan_x,
+        'pan_y': session.pan_y,
+        'geo_time': getattr(session, 'geo_time', 0.0)
     }
 
     state = {
@@ -41,20 +43,27 @@ def save_file(sim, app, filename):
     except Exception as e: return f"Error: {e}"
 
 def load_file(sim, filename):
+    """
+    Loads a simulation state into the provided Simulation object.
+    Returns (success, message, view_state_dict).
+    """
     if not filename: return False, "Cancelled", None
     try:
         with open(filename, 'r') as f: data = json.load(f)
         
+        # 1. Restore Geometry
         walls = []
         for w_data in data['walls']:
             if w_data['type'] == 'line': walls.append(Line.from_dict(w_data))
             elif w_data['type'] == 'circle': walls.append(Circle.from_dict(w_data))
+            elif w_data['type'] == 'point': walls.append(Point.from_dict(w_data))
             
         constraints = []
         for c_data in data.get('constraints', []):
             c = create_constraint(c_data)
             if c: constraints.append(c)
             
+        # 2. Restore Physics Arrays
         restored_state = {}
         for k, v in data.items():
             if k in ['walls', 'constraints', 'view_state']: continue 
@@ -73,17 +82,19 @@ def load_file(sim, filename):
         return True, f"Loaded {os.path.basename(filename)}", view_state
     except Exception as e: return False, f"Error: {e}", None
 
-def save_geometry_file(sim, app, filename):
+def save_geometry_file(sim, session, filename):
+    """
+    Saves only the geometry (Sketch) and view state, ignoring particles.
+    """
     if not filename: return "Cancelled"
-    geo_data = sim.geo.export_geometry_data()  # Updated Call
+    geo_data = sim.geo.export_geometry_data()
     if not geo_data: return "Empty Geometry"
     
     view_state = {
-        'zoom': app.zoom,
-        'pan_x': app.pan_x,
-        'pan_y': app.pan_y,
-        # --- UPDATE: Capture editor time ---
-        'geo_time': getattr(app, 'geo_time', 0.0)
+        'zoom': session.zoom,
+        'pan_x': session.pan_x,
+        'pan_y': session.pan_y,
+        'geo_time': getattr(session, 'geo_time', 0.0)
     }
     
     wrapper = {
@@ -98,6 +109,9 @@ def save_geometry_file(sim, app, filename):
     except Exception as e: return f"Error: {e}"
 
 def load_geometry_file(filename):
+    """
+    Loads geometry data to be placed into an existing world.
+    """
     if not filename: return None, None
     try:
         with open(filename, 'r') as f: data = json.load(f)

@@ -72,28 +72,26 @@ music_buttons = []
 jukebox_x = 100
 jukebox_y = 100
 
-track_names = list(assets.tracks.keys())
+# The scanner has already populated 'assets.tracks' with your MP3s!
+track_names = sorted(list(assets.tracks.keys())) 
+
 for i, t_name in enumerate(track_names):
     y_pos = jukebox_y + (i * 70)
     
     # Track Label
-    lbl = JuicyButton(jukebox_x, y_pos, 300, 50, text=t_name)
-    lbl.target_color = (40, 40, 50) # Darker
+    lbl = JuicyButton(jukebox_x, y_pos, 400, 50, text=t_name)
+    lbl.target_color = (40, 40, 50)
     music_buttons.append(lbl)
     
     # Play
-    btn_play = JuicyButton(jukebox_x + 320, y_pos, 50, 50, icon_name="play")
+    btn_play = JuicyButton(jukebox_x + 420, y_pos, 50, 50, icon_name="play")
     btn_play.track_to_play = t_name 
     music_buttons.append(btn_play)
     
     # Stop
-    btn_stop = JuicyButton(jukebox_x + 380, y_pos, 50, 50, icon_name="stop")
+    btn_stop = JuicyButton(jukebox_x + 480, y_pos, 50, 50, icon_name="stop")
     btn_stop.is_stop_btn = True
     music_buttons.append(btn_stop)
-
-    btn_real = JuicyButton(jukebox_x, jukebox_y + 300, 300, 50, text="Load 'jungle_track.mp3'")
-    btn_real.is_external_track = "jungle_track.mp3" # Custom property
-    music_buttons.append(btn_real)
 
 # --- MAIN LOOP ---
 running = True
@@ -123,14 +121,10 @@ while running:
         for btn in active_list:
             btn.handle_event(event)
             if btn.clicked:
-                # Music Logic
                 if hasattr(btn, 'track_to_play'):
                     assets.play_music(btn.track_to_play)
                 elif hasattr(btn, 'is_stop_btn'):
                     assets.stop_music()
-                elif hasattr(btn, 'is_external_track'):
-                    # Call our new method!
-                    assets.play_external_music(btn.is_external_track)
 
     # Updates
     btn_tab_sfx.update()
@@ -143,11 +137,10 @@ while running:
     # Drawing
     screen.fill(C_BG)
     
-    # Draw Tab Bar Background
+    # Draw Tab Bar
     pygame.draw.rect(screen, (40, 40, 40), (0, 0, WIDTH, 80))
     pygame.draw.line(screen, (80, 80, 80), (0, 80), (WIDTH, 80))
     
-    # Draw Tabs
     btn_tab_sfx.draw(screen, font)
     btn_tab_music.draw(screen, font)
     

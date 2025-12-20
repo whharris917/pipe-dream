@@ -1,15 +1,19 @@
 import config
 from ui_widgets import SmartSlider, Button, InputField, MenuBar
+# Tools are created in FlowStateApp, but we import keys here to be consistent
 from tools import SelectTool, BrushTool, LineTool, RectTool, CircleTool, PointTool
 
 class UIManager:
-    """Helper to organize UI elements"""
+    """
+    Helper to organize UI elements.
+    Separates the definition of UI widgets from the application logic.
+    """
     def __init__(self, layout, app_input_world=None, mode=config.MODE_SIM):
         self.sliders = {}
         self.buttons = {}
         self.tools = {}
         self.inputs = {}
-        self.mode = mode  # Store the mode
+        self.mode = mode
         self.menu = MenuBar(layout['W'], config.TOP_MENU_H)
         
         self.menu.items["File"] = [
@@ -28,15 +32,10 @@ class UIManager:
         if app_input_world:
             self.inputs['world'] = app_input_world
         else:
-            # Adjust position based on mode to avoid empty gaps
+            # Fallback if input not provided
             rp_x = layout['RIGHT_X'] + 15
             base_y = config.TOP_MENU_H + 20
-            # Rough calculation of where the bottom of the panel is
-            if self.mode == config.MODE_SIM:
-                rp_y_for_input = base_y + 800 # Approximate for full UI
-            else:
-                rp_y_for_input = base_y + 700 # Approximate for Editor only
-                
+            rp_y_for_input = base_y + 800 if self.mode == config.MODE_SIM else base_y + 700
             self.inputs['world'] = InputField(rp_x + 80, rp_y_for_input, 60, 25, str(config.DEFAULT_WORLD_SIZE))
 
     def _init_elements(self, layout):
@@ -76,9 +75,6 @@ class UIManager:
         rp_w = layout['RIGHT_W'] - 30
         rp_y = config.TOP_MENU_H + 20
         
-        # In Editor mode, "Ghost Mode" button is redundant? 
-        # Optional: You might keep it if you want to allow "Physical" properties in Editor.
-        # For now, we keep it as it controls visibility.
         self.buttons['mode_ghost'] = Button(rp_x, rp_y, rp_w, 35, "Mode: Physical", active=False, color_active=(100, 100, 180), color_inactive=(100, 180, 100)); rp_y += 45
         self.buttons['atomize'] = Button(rp_x, rp_y, rp_w, 30, "Atomize Selected", active=False, toggle=False); rp_y += 40
 
