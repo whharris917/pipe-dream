@@ -1,194 +1,163 @@
-import pygame
 import config
-from session import InteractionState
-from ui_widgets import Button, SmartSlider, InputField
+from ui_widgets import SmartSlider, Button, InputField, MenuBar
+from tools import SelectTool, BrushTool, LineTool, RectTool, CircleTool, PointTool
 
 class UIManager:
-    def __init__(self, layout, input_world, mode=config.MODE_SIM):
-        self.buttons = {}
+    """Helper to organize UI elements"""
+    def __init__(self, layout, app_input_world=None, mode=config.MODE_SIM):
         self.sliders = {}
-        self.inputs = []
-        self.layout = layout
-        self.menu = TopMenu(layout['W'])
-        self.mode = mode
+        self.buttons = {}
+        self.tools = {}
+        self.inputs = {}
+        self.mode = mode  # Store the mode
+        self.menu = MenuBar(layout['W'], config.TOP_MENU_H)
         
-        self._init_ui(input_world)
-
-    def _init_ui(self, input_world):
-        self.inputs.append(input_world)
+        self.menu.items["File"] = [
+            "New Simulation", 
+            "New Model", 
+            "---",
+            "Open...", 
+            "Save", 
+            "Save As...", 
+            "---", 
+            "Import Geometry"
+        ] 
         
-        y_off = config.TOP_MENU_H + 20
-        lx = self.layout['LEFT_X'] + 10
-        rx = self.layout['RIGHT_X'] + 10
+        self._init_elements(layout)
         
-        # Left Panel (Tools)
-        self.buttons['select'] = Button(lx, y_off, 120, 30, "Select (S)", toggle=True, group='tools')
-        y_off += 40
-        self.buttons['brush'] = Button(lx, y_off, 120, 30, "Brush (B)", toggle=True, group='tools')
-        y_off += 40
-        
-        # FIXED: SmartSlider does not take a height argument (removed '20')
-        self.sliders['brush_size'] = SmartSlider(lx, y_off, 120, 0.5, 5.0, 2.0, "Size")
-        y_off += 40
-        
-        self.buttons['line'] = Button(lx, y_off, 55, 30, "Line", toggle=True, group='tools')
-        self.buttons['rect'] = Button(lx + 65, y_off, 55, 30, "Rect", toggle=True, group='tools')
-        y_off += 35
-        self.buttons['circ'] = Button(lx, y_off, 55, 30, "Circ", toggle=True, group='tools')
-        self.buttons['point'] = Button(lx + 65, y_off, 55, 30, "Point", toggle=True, group='tools')
-        y_off += 35
-        self.buttons['ref'] = Button(lx, y_off, 120, 30, "Ref Line", toggle=True, group='tools')
-        y_off += 40
-        
-        # Constraints
-        self.buttons['c_coincident'] = Button(lx, y_off, 35, 30, "Coin", toggle=True, group='const')
-        self.buttons['c_parallel'] = Button(lx+40, y_off, 35, 30, "Para", toggle=True, group='const')
-        self.buttons['c_perp'] = Button(lx+80, y_off, 35, 30, "Perp", toggle=True, group='const')
-        y_off += 35
-        self.buttons['c_horiz'] = Button(lx, y_off, 35, 30, "Horz", toggle=True, group='const')
-        self.buttons['c_vert'] = Button(lx+40, y_off, 35, 30, "Vert", toggle=True, group='const')
-        self.buttons['c_fix'] = Button(lx+80, y_off, 35, 30, "Fix", toggle=True, group='const')
-        y_off += 35
-        self.buttons['c_dist'] = Button(lx, y_off, 55, 30, "Dist", toggle=True, group='const')
-        self.buttons['c_equal'] = Button(lx+65, y_off, 55, 30, "Equal", toggle=True, group='const')
-
-        # Right Panel (Sim Controls)
-        y_r = config.TOP_MENU_H + 20
-        self.buttons['play'] = Button(rx, y_r, 120, 30, "Play/Pause", toggle=True)
-        y_r += 40
-        # FIXED: Removed height argument '20' from all SmartSliders
-        self.sliders['speed'] = SmartSlider(rx, y_r, 120, 1, 20, 5, "Speed")
-        y_r += 40
-        self.sliders['gravity'] = SmartSlider(rx, y_r, 120, 0, 200, 98, "Gravity")
-        y_r += 40
-        self.sliders['temp'] = SmartSlider(rx, y_r, 120, 0.1, 5.0, 0.5, "Temp")
-        y_r += 30
-        self.buttons['thermostat'] = Button(rx, y_r, 120, 25, "Thermostat", toggle=True)
-        y_r += 40
-        self.sliders['damping'] = SmartSlider(rx, y_r, 120, 0.90, 1.0, 0.99, "Damping")
-        y_r += 40
-        self.sliders['dt'] = SmartSlider(rx, y_r, 120, 0.001, 0.01, 0.005, "dt")
-        y_r += 40
-        self.sliders['sigma'] = SmartSlider(rx, y_r, 120, 0.5, 2.0, 1.0, "Sigma")
-        y_r += 40
-        self.sliders['epsilon'] = SmartSlider(rx, y_r, 120, 0.1, 5.0, 1.0, "Epsilon")
-        y_r += 40
-        self.sliders['skin'] = SmartSlider(rx, y_r, 120, 0.1, 1.0, 0.3, "Skin")
-        y_r += 40
-        self.buttons['boundaries'] = Button(rx, y_r, 120, 25, "Boundaries", toggle=True)
-        y_r += 40
-        
-        # Editor specific
-        self.buttons['mode_ghost'] = Button(rx, y_r, 120, 25, "Ghost Mode", toggle=True)
-        y_r += 30
-        self.buttons['editor_play'] = Button(rx, y_r, 120, 25, "Simulate")
-        y_r += 30
-        self.buttons['show_const'] = Button(rx, y_r, 120, 25, "Hide Cnstr")
-
-    def handle_event(self, event, app):
-        res = self.menu.handle_event(event)
-        if res: app._execute_menu(res); return True
-        
-        mx, my = pygame.mouse.get_pos()
-        
-        # Check against SESSION state
-        if app.session.state == InteractionState.PAINTING: return False
-        
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                # Check Buttons
-                for name, btn in self.buttons.items():
-                    if btn.is_hovered(mx, my):
-                        if name == 'play':
-                            btn.active = not btn.active
-                            app.sim.paused = not btn.active
-                        elif name == 'boundaries':
-                            btn.active = not btn.active
-                        elif name == 'thermostat':
-                            btn.active = not btn.active
-                        elif name == 'mode_ghost':
-                            btn.active = not btn.active
-                        elif name == 'editor_play':
-                            app.toggle_editor_play()
-                        elif name == 'show_const':
-                            app.toggle_show_constraints()
-                        elif btn.group == 'tools':
-                            app.change_tool(app.input_handler.tool_btn_map[btn])
-                        elif btn.group == 'const':
-                             ctype = app.input_handler.constraint_btn_map[btn]
-                             app.trigger_constraint(ctype)
-                        return True
+        if app_input_world:
+            self.inputs['world'] = app_input_world
+        else:
+            # Adjust position based on mode to avoid empty gaps
+            rp_x = layout['RIGHT_X'] + 15
+            base_y = config.TOP_MENU_H + 20
+            # Rough calculation of where the bottom of the panel is
+            if self.mode == config.MODE_SIM:
+                rp_y_for_input = base_y + 800 # Approximate for full UI
+            else:
+                rp_y_for_input = base_y + 700 # Approximate for Editor only
                 
-                # Check Sliders
-                for s in self.sliders.values():
-                    if s.handle_event(event): return True
-                    
-                # Check Inputs
-                for inp in self.inputs:
-                    if inp.handle_event(event):
-                         if inp == app.session.input_world:
-                             try:
-                                 val = float(inp.text)
-                                 app.sim.resize_world(val)
-                             except: pass
-                         return True
-                         
-        elif event.type == pygame.MOUSEBUTTONUP:
-            for s in self.sliders.values(): s.handle_event(event)
+            self.inputs['world'] = InputField(rp_x + 80, rp_y_for_input, 60, 25, str(config.DEFAULT_WORLD_SIZE))
 
-        elif event.type == pygame.MOUSEMOTION:
-            for s in self.sliders.values(): 
-                if s.handle_event(event): return True
+    def _init_elements(self, layout):
+        # --- LEFT PANEL: Physics Controls ---
+        # ONLY initialize these if we are in Simulation Mode
+        if self.mode == config.MODE_SIM:
+            lp_x = layout['LEFT_X'] + 15 
+            lp_w = layout['LEFT_W'] - 30
+            lp_y = config.TOP_MENU_H + 20
+            
+            self.buttons['play'] = Button(lp_x, lp_y, lp_w, 35, "Play/Pause", active=False, color_active=(60, 120, 60), color_inactive=(180, 60, 60)); lp_y += 50
+            self.buttons['clear'] = Button(lp_x, lp_y, lp_w, 35, "Clear Particles", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
+            self.buttons['reset'] = Button(lp_x, lp_y, lp_w, 35, "Reset All", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
+            
+            lp_y += 10
+            
+            self.sliders['gravity'] = SmartSlider(lp_x, lp_y, lp_w, 0.0, 50.0, config.DEFAULT_GRAVITY, "Gravity", hard_min=0.0); lp_y += 60
+            self.sliders['temp'] = SmartSlider(lp_x, lp_y, lp_w, 0.0, 5.0, 0.5, "Temperature", hard_min=0.0); lp_y += 60
+            self.sliders['damping'] = SmartSlider(lp_x, lp_y, lp_w, 0.90, 1.0, config.DEFAULT_DAMPING, "Damping", hard_min=0.0, hard_max=1.0); lp_y += 60
+            self.sliders['dt'] = SmartSlider(lp_x, lp_y, lp_w, 0.0001, 0.01, config.DEFAULT_DT, "Time Step (dt)", hard_min=0.00001); lp_y += 60
+            
+            self.sliders['speed'] = SmartSlider(lp_x, lp_y, lp_w, 1.0, 100.0, float(config.DEFAULT_DRAW_M), "Speed (Steps/Frame)", hard_min=1.0); lp_y += 60
+            
+            self.sliders['sigma'] = SmartSlider(lp_x, lp_y, lp_w, 0.5, 2.0, config.ATOM_SIGMA, "Sigma (Size)", hard_min=0.1); lp_y += 60
+            self.sliders['epsilon'] = SmartSlider(lp_x, lp_y, lp_w, 0.1, 5.0, config.ATOM_EPSILON, "Epsilon (Strength)", hard_min=0.0); lp_y += 60
+            self.sliders['skin'] = SmartSlider(lp_x, lp_y, lp_w, 0.1, 2.0, config.DEFAULT_SKIN_DISTANCE, "Skin Distance", hard_min=0.05); lp_y += 60
+            
+            btn_half_left = (lp_w - 10) // 2
+            self.buttons['thermostat'] = Button(lp_x, lp_y, btn_half_left, 30, "Thermostat", active=False)
+            self.buttons['boundaries'] = Button(lp_x + btn_half_left + 10, lp_y, btn_half_left, 30, "Bounds", active=False); lp_y += 45
+
+            self.buttons['undo'] = Button(lp_x, lp_y, btn_half_left, 30, "Undo", active=False, toggle=False)
+            self.buttons['redo'] = Button(lp_x + btn_half_left + 10, lp_y, btn_half_left, 30, "Redo", active=False, toggle=False)
+
+        # --- RIGHT PANEL: Editor Tools (Always Needed) ---
+        rp_x = layout['RIGHT_X'] + 15
+        rp_w = layout['RIGHT_W'] - 30
+        rp_y = config.TOP_MENU_H + 20
         
-        return False
+        # In Editor mode, "Ghost Mode" button is redundant? 
+        # Optional: You might keep it if you want to allow "Physical" properties in Editor.
+        # For now, we keep it as it controls visibility.
+        self.buttons['mode_ghost'] = Button(rp_x, rp_y, rp_w, 35, "Mode: Physical", active=False, color_active=(100, 100, 180), color_inactive=(100, 180, 100)); rp_y += 45
+        self.buttons['atomize'] = Button(rp_x, rp_y, rp_w, 30, "Atomize Selected", active=False, toggle=False); rp_y += 40
+
+        btn_half = (rp_w - 10) // 2
+        self.tools['brush'] = Button(rp_x, rp_y, btn_half, 30, "Brush", active=True, toggle=False)
+        self.tools['select'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Select", active=False, toggle=False); rp_y += 40
+        self.tools['line'] = Button(rp_x, rp_y, btn_half, 30, "Line", active=False, toggle=False)
+        self.tools['rect'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Rectangle", active=False, toggle=False); rp_y += 40
+        self.tools['circle'] = Button(rp_x, rp_y, btn_half, 30, "Circle", active=False, toggle=False)
+        self.tools['point'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Point", active=False, toggle=False); rp_y += 40
+        self.tools['ref'] = Button(rp_x, rp_y, btn_half, 30, "Ref Line", active=False, toggle=False); rp_y += 45
+        
+        self.sliders['brush_size'] = SmartSlider(rp_x, rp_y, rp_w, 1.0, 10.0, 2.0, "Brush Radius", hard_min=0.5); rp_y+=60
+        
+        self.buttons['editor_play'] = Button(rp_x, rp_y, btn_half, 30, "Anim Pause", active=False, toggle=False); 
+        self.buttons['show_const'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Hide Cnstr", active=False, toggle=False); rp_y+=40
+        
+        self.buttons['extend'] = Button(rp_x, rp_y, rp_w, 30, "Extend Infinite Line", toggle=False); rp_y += 45
+
+        self.buttons['const_coincident'] = Button(rp_x, rp_y, rp_w, 30, "Coincident (Pt-Pt/Ln/Circ)", toggle=False); rp_y+=35
+        self.buttons['const_collinear'] = Button(rp_x, rp_y, rp_w, 30, "Collinear (Pt-Ln)", toggle=False); rp_y+=35
+        self.buttons['const_midpoint'] = Button(rp_x, rp_y, rp_w, 30, "Midpoint (Pt-Ln)", toggle=False); rp_y+=35
+        
+        self.buttons['const_length'] = Button(rp_x, rp_y, btn_half, 30, "Fix Length", toggle=False)
+        self.buttons['const_equal'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Equal Len", toggle=False); rp_y+=35
+        
+        self.buttons['const_parallel'] = Button(rp_x, rp_y, btn_half, 30, "Parallel", toggle=False)
+        self.buttons['const_perp'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Perpendic", toggle=False); rp_y+=35
+        
+        self.buttons['const_horiz'] = Button(rp_x, rp_y, btn_half, 30, "Horizontal", toggle=False)
+        self.buttons['const_vert'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Vertical", toggle=False); rp_y+=35
+        
+        self.buttons['const_angle'] = Button(rp_x, rp_y, btn_half, 30, "Angle", toggle=False); rp_y+=45
+
+        self.buttons['save_geo'] = Button(rp_x, rp_y, btn_half, 30, "Save", active=False, toggle=False, color_inactive=(50, 120, 50))
+        self.buttons['discard_geo'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Exit", active=False, toggle=False, color_inactive=(150, 50, 50)); rp_y+=40
+        
+        self.buttons['resize'] = Button(rp_x, rp_y, rp_w - 70, 25, "Resize World", active=False, toggle=False)
 
     def draw(self, screen, font, mode):
-        self.menu.draw(screen, font)
-        
-        for name, btn in self.buttons.items():
-            if mode == config.MODE_SIM:
-                if name in ['mode_ghost', 'editor_play', 'show_const']: continue
+        # Update text for Ghost/Physical toggle
+        if self.buttons.get('mode_ghost'):
+            if self.buttons['mode_ghost'].active:
+                self.buttons['mode_ghost'].text = "Mode: Ghost (Blueprint)"
             else:
-                if name in ['play', 'thermostat']: continue
-                
-            btn.draw(screen, font)
-            
-        for name, s in self.sliders.items():
-            s.draw(screen, font)
-            
-        for inp in self.inputs:
-            inp.draw(screen, font)
+                self.buttons['mode_ghost'].text = "Mode: Physical (Live)"
+            self.buttons['mode_ghost'].cached_surf = None
 
-class TopMenu:
-    def __init__(self, w):
-        self.rect = pygame.Rect(0, 0, w, config.TOP_MENU_H)
-        self.items = ["New", "New Simulation", "New Model", "Save", "Save As...", "Open...", "Import Geometry"]
-        self.item_rects = []
-        x = 10
-        for item in self.items:
-            w = len(item) * 8 + 10
-            self.item_rects.append((item, pygame.Rect(x, 2, w, 26)))
-            x += w + 5
-            
-    def resize(self, w):
-        self.rect.width = w
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mx, my = event.pos
-            if self.rect.collidepoint(mx, my):
-                for item, r in self.item_rects:
-                    if r.collidepoint(mx, my): return item
-        return None
-
-    def draw(self, screen, font):
-        pygame.draw.rect(screen, (40, 40, 40), self.rect)
-        pygame.draw.line(screen, (60, 60, 60), (0, 30), (self.rect.width, 30))
+        physics_elements = []
+        if self.mode == config.MODE_SIM:
+            physics_elements = [
+                self.buttons.get('play'), self.buttons.get('clear'), self.buttons.get('reset'),
+                self.buttons.get('undo'), self.buttons.get('redo'),
+                self.buttons.get('thermostat'), self.buttons.get('boundaries'),
+                self.sliders.get('gravity'), self.sliders.get('temp'), self.sliders.get('damping'),
+                self.sliders.get('dt'), self.sliders.get('speed'), 
+                self.sliders.get('sigma'), self.sliders.get('epsilon'), self.sliders.get('skin')
+            ]
         
-        mx, my = pygame.mouse.get_pos()
-        for item, r in self.item_rects:
-            col = (200, 200, 200)
-            if r.collidepoint(mx, my):
-                pygame.draw.rect(screen, (60, 60, 80), r, border_radius=4)
-                col = (255, 255, 255)
-            screen.blit(font.render(item, True, col), (r.x + 5, r.y + 4))
+        editor_elements = [
+            self.buttons.get('mode_ghost'), self.buttons.get('atomize'),
+            self.buttons.get('save_geo'), self.buttons.get('discard_geo'), 
+            self.buttons.get('editor_play'), self.buttons.get('show_const'),
+            *self.tools.values(), 
+            self.sliders.get('brush_size'),
+            self.buttons.get('const_coincident'), self.buttons.get('const_collinear'), self.buttons.get('const_midpoint'),
+            self.buttons.get('const_length'), self.buttons.get('const_equal'), self.buttons.get('const_parallel'),
+            self.buttons.get('const_perp'), self.buttons.get('const_horiz'), self.buttons.get('const_vert'),
+            self.buttons.get('const_angle'), self.buttons.get('extend'),
+            self.buttons.get('resize'), self.inputs.get('world')
+        ]
+        
+        # Filter None and Combine
+        active_list = [el for el in physics_elements + editor_elements if el is not None]
+        
+        for el in active_list:
+            if el == self.inputs.get('world') and el:
+                screen.blit(font.render("Size:", True, (200, 200, 200)), 
+                             (el.rect.x - 40, el.rect.y + 4))
+            el.draw(screen, font)
+
+        self.menu.draw(screen, font)

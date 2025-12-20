@@ -1,97 +1,106 @@
-import pickle
-import numpy as np
-# UPDATED: Import new module names
-from simulation import Simulation
-from session import Session
-import config
 import json
+import os
+import numpy as np
+from geometry import Line, Circle
+from constraints import create_constraint
 
-# UPDATED: Argument name app_state -> session
-def save_file(sim, session, filepath):
-    try:
-        data = {
-            'sim_data': {
-                'count': sim.count,
-                'pos_x': sim.pos_x[:sim.count],
-                'pos_y': sim.pos_y[:sim.count],
-                'vel_x': sim.vel_x[:sim.count],
-                'vel_y': sim.vel_y[:sim.count],
-                'is_static': sim.is_static[:sim.count],
-                'kinematic_props': sim.kinematic_props[:sim.count],
-                'atom_sigma': sim.atom_sigma[:sim.count],
-                'atom_eps_sqrt': sim.atom_eps_sqrt[:sim.count],
-                'world_size': sim.world_size
-            },
-            'sketch_data': sim.sketch.to_dict(),
-            # UPDATED: Access session object
-            'view_state': {
-                'zoom': session.zoom,
-                'pan_x': session.pan_x,
-                'pan_y': session.pan_y
-            }
-        }
-        with open(filepath, 'wb') as f:
-            pickle.dump(data, f)
-        return f"Saved to {filepath}"
-    except Exception as e:
-        return f"Error saving: {e}"
+def save_file(sim, app, filename):
+    if not filename: return "Cancelled"
+    
+    # Serialize Physics/Sim State
+    walls_dicts = [w.to_dict() for w in sim.walls]
+    constraints_dicts = [c.to_dict() for c in sim.constraints]
+    
+    # Capture View State (Current View)
+    view_state = {
+        'zoom': app.zoom,
+        'pan_x': app.pan_x,
+        'pan_y': app.pan_y,
+        # --- UPDATE: Capture editor time to allow full state restoration ---
+        'geo_time': getattr(app, 'geo_time', 0.0)
+    }
 
-def load_file(sim, filepath):
+    state = {
+        'count': sim.count,
+        'pos_x': sim.pos_x[:sim.count].tolist(), 
+        'pos_y': sim.pos_y[:sim.count].tolist(),
+        'vel_x': sim.vel_x[:sim.count].tolist(), 
+        'vel_y': sim.vel_y[:sim.count].tolist(),
+        'is_static': sim.is_static[:sim.count].tolist(),
+        'atom_sigma': sim.atom_sigma[:sim.count].tolist(), 
+        'atom_eps_sqrt': sim.atom_eps_sqrt[:sim.count].tolist(),
+        'walls': walls_dicts, 
+        'constraints': constraints_dicts,
+        'world_size': sim.world_size,
+        'view_state': view_state
+    }
+    
     try:
-        with open(filepath, 'rb') as f:
-            data = pickle.load(f)
-            
-        sim.snapshot()
-        
-        s_data = data['sim_data']
-        sim.world_size = s_data['world_size']
-        sim.count = s_data['count']
-        
-        if sim.count > sim.capacity:
-            sim.capacity = sim.count * 2
-            sim._resize_arrays()
-            
-        sim.pos_x[:sim.count] = s_data['pos_x']
-        sim.pos_y[:sim.count] = s_data['pos_y']
-        sim.vel_x[:sim.count] = s_data['vel_x']
-        sim.vel_y[:sim.count] = s_data['vel_y']
-        sim.is_static[:sim.count] = s_data['is_static']
-        
-        if 'kinematic_props' in s_data: sim.kinematic_props[:sim.count] = s_data['kinematic_props']
-        else: sim.kinematic_props[:sim.count] = 0.0
-            
-        sim.atom_sigma[:sim.count] = s_data['atom_sigma']
-        sim.atom_eps_sqrt[:sim.count] = s_data['atom_eps_sqrt']
-        
-        if 'sketch_data' in data:
-            sim.sketch.restore(data['sketch_data'])
-        else:
-            import copy
-            sim.sketch.entities = copy.deepcopy(data.get('walls', []))
-            sim.sketch.constraints = copy.deepcopy(data.get('constraints', []))
-            
-        sim.rebuild_static_atoms()
-        
-        return True, f"Loaded {filepath}", data.get('view_state')
-    except Exception as e:
-        return False, f"Error loading: {e}", None
+        with open(filename, 'w') as f: json.dump(state, f)
+        return f"Saved Simulation: {os.path.basename(filename)}"
+    except Exception as e: return f"Error: {e}"
 
-def save_geometry_file(sim, session, filepath):
+def load_file(sim, filename):
+    if not filename: return False, "Cancelled", None
     try:
-        data = {
-            'walls': [w.to_dict() for w in sim.walls if hasattr(w, 'to_dict')],
-            'world_size': sim.world_size
-        }
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-        return f"Geometry saved to {filepath}"
-    except Exception as e:
-        return f"Error saving geo: {e}"
+        with open(filename, 'r') as f: data = json.load(f)
+        
+        walls = []
+        for w_data in data['walls']:
+            if w_data['type'] == 'line': walls.append(Line.from_dict(w_data))
+            elif w_data['type'] == 'circle': walls.append(Circle.from_dict(w_data))
+            
+        constraints = []
+        for c_data in data.get('constraints', []):
+            c = create_constraint(c_data)
+            if c: constraints.append(c)
+            
+        restored_state = {}
+        for k, v in data.items():
+            if k in ['walls', 'constraints', 'view_state']: continue 
+            if k in ['pos_x', 'pos_y', 'vel_x', 'vel_y', 'is_static', 'atom_sigma', 'atom_eps_sqrt']:
+                dtype = np.float32
+                if k == 'is_static': dtype = np.int32
+                restored_state[k] = np.array(v, dtype=dtype)
+            else: restored_state[k] = v
+            
+        restored_state['walls'] = walls
+        restored_state['constraints'] = constraints
+        sim.restore_state(restored_state)
+        
+        view_state = data.get('view_state', None)
+        
+        return True, f"Loaded {os.path.basename(filename)}", view_state
+    except Exception as e: return False, f"Error: {e}", None
 
-def load_geometry_file(filepath):
+def save_geometry_file(sim, app, filename):
+    if not filename: return "Cancelled"
+    geo_data = sim.geo.export_geometry_data()  # Updated Call
+    if not geo_data: return "Empty Geometry"
+    
+    view_state = {
+        'zoom': app.zoom,
+        'pan_x': app.pan_x,
+        'pan_y': app.pan_y,
+        # --- UPDATE: Capture editor time ---
+        'geo_time': getattr(app, 'geo_time', 0.0)
+    }
+    
+    wrapper = {
+        'type': 'GEOMETRY', 
+        'data': geo_data,
+        'view_state': view_state
+    }
+    
     try:
-        with open(filepath, 'r') as f:
-            data = json.load(f)
-        return data, "Geometry Loaded"
-    except Exception as e:
-        return None, f"Error: {e}"
+        with open(filename, 'w') as f: json.dump(wrapper, f)
+        return f"Geometry Saved: {os.path.basename(filename)}"
+    except Exception as e: return f"Error: {e}"
+
+def load_geometry_file(filename):
+    if not filename: return None, None
+    try:
+        with open(filename, 'r') as f: data = json.load(f)
+        if data.get('type') != 'GEOMETRY': return None, None
+        return data.get('data', {}), data.get('view_state', None)
+    except Exception as e: return None, None
