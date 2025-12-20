@@ -1,95 +1,48 @@
-# Screen Settings
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
-FPS = 60
+import numpy as np
 
-# Interaction Settings
-SNAP_DISTANCE = 15.0       
-INTERACTION_DISTANCE = 40.0 
-MIN_PIPE_LENGTH = 4.0      
-SEGMENT_LENGTH_PX = 20.0 
-SEGMENT_LENGTH_M = 1.0 
+# Window Layout
+WINDOW_WIDTH = 1400
+WINDOW_HEIGHT = 930 
+# UPDATED: Equal width for left and right panels to support unified UI
+PANEL_LEFT_WIDTH = 350 
+PANEL_RIGHT_WIDTH = 350
+TOP_MENU_H = 30 # Moved from main.py
 
-# Hydraulic Geometry
-PIPE_DIAMETER_M = 0.3  
-PIPE_AREA_M2 = 3.14159 * (PIPE_DIAMETER_M / 2)**2
+# Modes
+MODE_SIM = 0
+MODE_EDITOR = 1
 
-# UI Settings
-TOOLBAR_HEIGHT = 60
-BUTTON_WIDTH = 100
-BUTTON_HEIGHT = 40
-BUTTON_MARGIN = 10
+# Tools
+TOOL_BRUSH = 0
+TOOL_LINE = 1
+TOOL_REF = 2
+TOOL_POINT = 3
+TOOL_RECT = 4
+TOOL_CIRCLE = 5
+TOOL_SELECT = 6
 
-# Physics Constants
-# Hydraulic Resistance (kPa per (m^3/s))
-PIPE_RESISTANCE = 1.0 
-VALVE_RESISTANCE = 1.0 
+# World
+DEFAULT_WORLD_SIZE = 50.0
 
-# Pressure Solver Settings
-PRESSURE_ITERATIONS = 10 
-PHYSICS_SUBSTEPS = 40 
+# Physics Defaults
+DEFAULT_DT = 0.002
+DEFAULT_GRAVITY = 0.0
+DEFAULT_DAMPING = 1.0 
+DEFAULT_DRAW_M = 10
+DEFAULT_SKIN_DISTANCE = 0.5
 
-# Diffusion Settings
-DIFFUSION_FACTOR = 0.0
+# Rendering - Modern Dark Theme
+PARTICLE_RADIUS_SCALE = 0.4
+BACKGROUND_COLOR = (30, 30, 30)      # #1e1e1e (Editor Background)
+GRID_COLOR = (50, 50, 50)            # Subtle Grid
+PANEL_BG_COLOR = (37, 37, 38)        # #252526 (Side Panel Background)
+PANEL_BORDER_COLOR = (60, 60, 60)    # Soft borders
 
-# Source settings
-# Reduced to 5.0 kPa to ensure numerical stability during pipe filling.
-DEFAULT_SOURCE_PRESSURE = 5.0 
+# Single Atom Definition
+ATOM_SIGMA = 1.0
+ATOM_EPSILON = 1.0
+ATOM_MASS = 1.0
 
-# Viscosity Thresholds
-VISCOSITIES = {
-    'Water': 0.1,
-    'Red': 0.9,   
-    'Green': 0.5, 
-    'Blue': 0.1   
-}
-
-# Chemistry Constants
-DENSITIES = {
-    'Water': 1000.0,
-    'Red': 1050.0,   
-    'Green': 950.0,
-    'Blue': 1000.0   
-}
-
-MOLAR_MASSES = {
-    'Water': 18.0,
-    'Red': 40.0,   
-    'Green': 30.0,
-    'Blue': 20.0   
-}
-
-# WPA Color Palette
-C_BACKGROUND = (30, 35, 40)     
-C_GRID = (50, 55, 60)           
-C_FLOOR = (45, 50, 55)          
-C_HIGHLIGHT = (255, 180, 60)    
-C_FLUID = (0, 255, 255)         
-C_PIPE_EMPTY = (80, 80, 90)     
-C_TEXT = (220, 230, 240)        
-C_PREVIEW = (255, 255, 255)     
-
-# Chemical Colors
-C_FLUID_RED = (255, 80, 80)
-C_FLUID_GREEN = (80, 255, 80)
-C_FLUID_BLUE = (80, 80, 255)
-
-FLUID_COLORS = {
-    'Water': C_FLUID,
-    'Red': C_FLUID_RED,
-    'Green': C_FLUID_GREEN,
-    'Blue': C_FLUID_BLUE
-}
-
-# Component Colors
-C_VALVE_OPEN = (100, 255, 100)
-C_VALVE_CLOSED = (255, 80, 80)
-C_VALVE_HOVER = (255, 255, 200)
-C_SINK = (100, 100, 100) 
-
-# UI Colors
-C_UI_BG = (20, 25, 30)          
-C_BUTTON_IDLE = (60, 65, 70)
-C_BUTTON_HOVER = (80, 85, 90)
-C_BUTTON_ACTIVE = (255, 180, 60)
-C_BUTTON_TEXT = (220, 230, 240)
+# Visuals
+COLOR_DYNAMIC = (86, 156, 214)       # #569cd6 (VS Blue)
+COLOR_STATIC = (206, 145, 120)       # #ce9178 (VS Orange/Red)
