@@ -46,9 +46,9 @@ class UIManager:
             lp_w = layout['LEFT_W'] - 30
             lp_y = config.TOP_MENU_H + 20
             
-            self.buttons['play'] = Button(lp_x, lp_y, lp_w, 35, "Play/Pause", active=False, color_active=(60, 120, 60), color_inactive=(180, 60, 60)); lp_y += 50
-            self.buttons['clear'] = Button(lp_x, lp_y, lp_w, 35, "Clear Particles", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
-            self.buttons['reset'] = Button(lp_x, lp_y, lp_w, 35, "Reset All", active=False, toggle=False, color_inactive=(80, 80, 80)); lp_y += 50
+            self.buttons['play'] = Button(lp_x, lp_y, lp_w, 35, "Play/Pause", active=False, color_active=config.COLOR_SUCCESS, color_inactive=config.COLOR_DANGER); lp_y += 50
+            self.buttons['clear'] = Button(lp_x, lp_y, lp_w, 35, "Clear Particles", active=False, toggle=False); lp_y += 50
+            self.buttons['reset'] = Button(lp_x, lp_y, lp_w, 35, "Reset All", active=False, toggle=False); lp_y += 50
             
             lp_y += 10
             
@@ -75,7 +75,7 @@ class UIManager:
         rp_w = layout['RIGHT_W'] - 30
         rp_y = config.TOP_MENU_H + 20
         
-        self.buttons['mode_ghost'] = Button(rp_x, rp_y, rp_w, 35, "Mode: Physical", active=False, color_active=(100, 100, 180), color_inactive=(100, 180, 100)); rp_y += 45
+        self.buttons['mode_ghost'] = Button(rp_x, rp_y, rp_w, 35, "Mode: Physical", active=False, color_active=config.COLOR_ACCENT, color_inactive=config.COLOR_SUCCESS); rp_y += 45
         self.buttons['atomize'] = Button(rp_x, rp_y, rp_w, 30, "Atomize Selected", active=False, toggle=False); rp_y += 40
 
         btn_half = (rp_w - 10) // 2
@@ -109,10 +109,23 @@ class UIManager:
         
         self.buttons['const_angle'] = Button(rp_x, rp_y, btn_half, 30, "Angle", toggle=False); rp_y+=45
 
-        self.buttons['save_geo'] = Button(rp_x, rp_y, btn_half, 30, "Save", active=False, toggle=False, color_inactive=(50, 120, 50))
-        self.buttons['discard_geo'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Exit", active=False, toggle=False, color_inactive=(150, 50, 50)); rp_y+=40
+        self.buttons['save_geo'] = Button(rp_x, rp_y, btn_half, 30, "Save", active=False, toggle=False, color_inactive=config.COLOR_SUCCESS)
+        self.buttons['discard_geo'] = Button(rp_x + btn_half + 10, rp_y, btn_half, 30, "Exit", active=False, toggle=False, color_inactive=config.COLOR_DANGER); rp_y+=40
         
         self.buttons['resize'] = Button(rp_x, rp_y, rp_w - 70, 25, "Resize World", active=False, toggle=False)
+
+    def update(self, dt):
+        """
+        Propagate time step to all widgets for smooth animations.
+        """
+        for b in self.buttons.values():
+            if b: b.update(dt)
+        for t in self.tools.values():
+            if t: t.update(dt)
+        for s in self.sliders.values():
+            if s: s.update(dt)
+        for i in self.inputs.values():
+            if i: i.update(dt)
 
     def draw(self, screen, font, mode):
         # Update text for Ghost/Physical toggle
@@ -152,7 +165,7 @@ class UIManager:
         
         for el in active_list:
             if el == self.inputs.get('world') and el:
-                screen.blit(font.render("Size:", True, (200, 200, 200)), 
+                screen.blit(font.render("Size:", True, config.COLOR_TEXT), 
                              (el.rect.x - 40, el.rect.y + 4))
             el.draw(screen, font)
 

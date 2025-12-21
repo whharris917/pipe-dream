@@ -1,4 +1,8 @@
 import pygame
+# CRITICAL: Initialize mixer before pygame.init for high-quality procedural audio
+pygame.mixer.pre_init(44100, -16, 1, 1024)
+pygame.init()
+
 import config
 import utils
 import file_io
@@ -22,6 +26,7 @@ from definitions import CONSTRAINT_DEFS
 from ui_manager import UIManager
 from input_handler import InputHandler
 import simulation_geometry
+from sound_manager import SoundManager
 
 class FlowStateApp:
     def __init__(self, start_mode=config.MODE_SIM):
@@ -29,17 +34,25 @@ class FlowStateApp:
         try: self.root_tk = Tk(); self.root_tk.withdraw()
         except: self.root_tk = None
 
-        pygame.init()
         self.screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_HEIGHT), pygame.RESIZABLE)
         
         title_suffix = "Simulation" if start_mode == config.MODE_SIM else "Model Builder"
         pygame.display.set_caption(f"Flow State - {title_suffix}")
         
+        # Load Fonts
         self.font = pygame.font.SysFont("segoeui", 15)
         self.big_font = pygame.font.SysFont("segoeui", 22)
+        
         self.renderer = Renderer(self.screen, self.font, self.big_font)
         self.clock = pygame.time.Clock()
         self.running = True
+
+        # Initialize Audio
+        self.sound_manager = SoundManager.get()
+        if start_mode == config.MODE_SIM:
+            self.sound_manager.play_music('Whimsical')
+        else:
+            self.sound_manager.play_music('Jungle')
 
         # 2. App Logic (Session)
         self.session = Session()
@@ -194,16 +207,8 @@ class FlowStateApp:
             return
 
         mx, my = pygame.mouse.get_pos()
-        
         first_idx = list(self.session.selected_walls)[0]
         anim = getattr(self.sim.walls[first_idx], 'anim', None)
-
-        def on_apply(angle, speed):
-            for idx in self.session.selected_walls:
-                self.sim.set_wall_rotation(idx, {'angle': angle, 'speed': speed})
-            self.session.set_status(f"Set Rotation: {speed:.1f} rad/s")
-            self.rot_dialog = None
-            
         self.rot_dialog = RotationDialog(mx, my, anim) # Fixed args to pass existing anim
 
     def get_context_options(self, target_type, idx1, idx2=None):
@@ -313,6 +318,12 @@ class FlowStateApp:
         dt = now - self.last_time
         self.last_time = now
         
+        # ANIMATE UI
+        self.ui.update(dt)
+        if self.prop_dialog: self.prop_dialog.update(dt)
+        if self.rot_dialog: self.rot_dialog.update(dt)
+        if self.anim_dialog: self.anim_dialog.update(dt)
+        
         if not self.session.editor_paused:
             self.session.geo_time += dt
 
@@ -358,6 +369,7 @@ class FlowStateApp:
         if hasattr(self, 'input_handler'):
             for btn, tid in self.input_handler.tool_btn_map.items(): 
                 btn.active = (tid == tool_id)
+            self.sound_manager.play_sound('tool_select')
 
     def _update_window_title(self):
         base = "Simulation" if self.session.mode == config.MODE_SIM else "Model Builder"
@@ -368,6 +380,7 @@ class FlowStateApp:
         pygame.display.set_caption(title)
 
     def _execute_menu(self, selection):
+        self.sound_manager.play_sound('click')
         if selection == "New Simulation":
             subprocess.Popen([sys.executable, "run_instance.py", "sim"])
         elif selection == "New Model":

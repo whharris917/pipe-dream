@@ -1,6 +1,7 @@
 import pygame
 import sys
 import subprocess
+import os
 import config
 
 class MenuButton:
@@ -29,9 +30,29 @@ class MenuButton:
 
 class Launcher:
     def __init__(self):
+        # Initialize mixer before pygame for high quality audio
+        pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
-        self.width = 800
-        self.height = 600
+        
+        # --- Background Image Setup ---
+        self.bg_image = None
+        self.width = 800  # Default width
+        self.height = 600 # Default height
+        
+        bg_path = os.path.join("art", "colorful_vessels.jpg")
+        if os.path.exists(bg_path):
+            try:
+                self.bg_image = pygame.image.load(bg_path)
+                bg_w, bg_h = self.bg_image.get_size()
+                # Ensure window is at least as large as the background image
+                self.width = max(self.width, bg_w)
+                self.height = max(self.height, bg_h)
+                print(f"Loaded background: {bg_path} ({bg_w}x{bg_h})")
+            except Exception as e:
+                print(f"Failed to load background image: {e}")
+        else:
+            print(f"Background image not found: {bg_path}")
+        
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Flow State - Dashboard")
         
@@ -40,25 +61,79 @@ class Launcher:
         self.clock = pygame.time.Clock()
         self.running = True
         
+        # --- Background Music ---
+        self._start_music()
+        
         # Layout
         cx = self.width // 2
         cy = self.height // 2
         
+        # Shift buttons down to create breathing room
+        # Previous start: cy - 60
+        # New start: cy - 20 (40px lower)
+        # Stride: 70px (50h + 20gap)
         self.buttons = [
-            MenuButton(cx - 150, cy - 60, 300, 50, "New Simulation", "NEW_SIM"),
-            MenuButton(cx - 150, cy + 10, 300, 50, "New Model Builder", "NEW_MODEL"),
-            MenuButton(cx - 150, cy + 80, 300, 50, "Open File...", "OPEN"),
-            MenuButton(cx - 150, cy + 150, 300, 50, "Exit", "EXIT"),
+            MenuButton(cx - 150, cy - 20, 300, 50, "New Simulation", "NEW_SIM"),
+            MenuButton(cx - 150, cy + 50, 300, 50, "New Model Builder", "NEW_MODEL"),
+            MenuButton(cx - 150, cy + 120, 300, 50, "Open File...", "OPEN"),
+            MenuButton(cx - 150, cy + 190, 300, 50, "Exit", "EXIT"),
         ]
+
+    def _start_music(self):
+        # Look for the music file in the 'music' subdirectory
+        music_path = os.path.join("music", "flow_dynamics.mp3")
+        
+        if os.path.exists(music_path):
+            try:
+                # Load and play continuously (-1 means loop forever)
+                pygame.mixer.music.load(music_path)
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play(-1, fade_ms=1000)
+                print(f"Launcher playing: {music_path}")
+            except Exception as e:
+                print(f"Error loading music: {e}")
+        else:
+            print(f"Music file not found: {music_path}")
 
     def run(self):
         while self.running:
-            self.screen.fill((30, 30, 35))
+            if self.bg_image:
+                # Center background if window is larger, or top-left if matching
+                bg_x = (self.width - self.bg_image.get_width()) // 2
+                bg_y = (self.height - self.bg_image.get_height()) // 2
+                self.screen.blit(self.bg_image, (bg_x, bg_y))
+            else:
+                self.screen.fill((30, 30, 35))
             
+            # Draw semi-transparent overlay behind text for readability if bg exists
+            if self.bg_image:
+                # Expanded overlay to cover new layout spacing
+                overlay_h = 500 
+                overlay = pygame.Surface((400, overlay_h), pygame.SRCALPHA)
+                overlay.fill((30, 30, 35, 200)) # Dark semi-transparent box
+                # Center vertically over the content area
+                self.screen.blit(overlay, (self.width//2 - 200, self.height//2 - 220))
+
             title = self.title_font.render("Flow State", True, (0, 122, 204))
             sub = self.font.render("Engineering Sandbox", True, (150, 150, 150))
-            self.screen.blit(title, (self.width//2 - title.get_width()//2, 100))
-            self.screen.blit(sub, (self.width//2 - sub.get_width()//2, 160))
+            
+            # Adjusted Y positions to center nicely over the button stack
+            # Moved text up to clear the buttons
+            title_y = (self.height // 2) - 180
+            sub_y = (self.height // 2) - 120
+            
+            # Draw Title
+            self.screen.blit(title, (self.width//2 - title.get_width()//2, title_y))
+            
+            # Draw Subtitle with Drop Shadow
+            sub_pos = (self.width//2 - sub.get_width()//2, sub_y)
+            
+            # 1. Draw Drop Shadow (Black, offset by 2px)
+            shadow = self.font.render("Engineering Sandbox", True, (0, 0, 0))
+            self.screen.blit(shadow, (sub_pos[0] + 2, sub_pos[1] + 2))
+            
+            # 2. Draw Main Text
+            self.screen.blit(sub, sub_pos)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -89,8 +164,8 @@ class Launcher:
     def launch_app(self, mode):
         try:
             # Spawn the new independent instance
+            # The music in this launcher process will keep playing
             subprocess.Popen([sys.executable, "run_instance.py", mode])
-            # We keep the launcher open to allow launching multiple instances
         except Exception as e:
             print(f"Failed to launch: {e}")
 
