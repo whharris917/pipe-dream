@@ -16,7 +16,7 @@ from folly_ui import (
 pygame.init()
 WIDTH, HEIGHT = 1200, 850
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Flow State // Studio")
+pygame.display.set_caption("Flow State // Industrial Studio")
 
 try:
     font_path = pygame.font.match_font("segoeui") 
@@ -69,15 +69,10 @@ for cat, names in sfx_categories.items():
     sfx_buttons.append(JuicyButton(content_rect.x, curr_y, content_rect.width, 30, text=f"// {cat.upper()}"))
     sfx_buttons[-1].disabled = True 
     curr_y += 40
-    cols = 5
-    gap = 10
-    bw = (content_rect.width - (cols-1)*gap) // cols
-    bh = 45
+    cols = 5; gap = 10; bw = (content_rect.width - (cols-1)*gap) // cols; bh = 45
     for i, name in enumerate(names):
-        r = i // cols
-        c = i % cols
-        bx = content_rect.x + c * (bw + gap)
-        by = curr_y + r * (bh + gap)
+        r = i // cols; c = i % cols
+        bx = content_rect.x + c * (bw + gap); by = curr_y + r * (bh + gap)
         label = name.replace("bloop_", "").replace("beep_", "").replace("click_", "")
         btn = JuicyButton(bx, by, bw, bh, text=label, sound_name=name)
         sfx_buttons.append(btn)
@@ -96,66 +91,47 @@ for t_name in track_names:
     lbl.disabled = True 
     music_buttons.append(lbl)
     btn_play = JuicyButton(content_rect.right - 110, curr_y, 50, 50, icon_name="play")
-    btn_play.track_to_play = t_name 
-    music_buttons.append(btn_play)
+    btn_play.track_to_play = t_name; music_buttons.append(btn_play)
     btn_stop = JuicyButton(content_rect.right - 50, curr_y, 50, 50, icon_name="stop")
-    btn_stop.is_stop_btn = True
-    music_buttons.append(btn_stop)
+    btn_stop.is_stop_btn = True; music_buttons.append(btn_stop)
     curr_y += 60
 
 # -- UI KIT CONTENT --
 kit_widgets = []
 cx, cy = content_rect.x + 20, content_rect.y + 20
-kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// ACTION BUTTONS"))
-kit_widgets[-1].disabled = True
-cy += 40
+kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// ACTION BUTTONS")); kit_widgets[-1].disabled = True; cy += 40
 kit_widgets.append(JuicyButton(cx, cy, 140, 45, text="Default"))
 kit_widgets.append(JuicyButton(cx+150, cy, 140, 45, text="Primary", style="primary"))
 kit_widgets.append(JuicyButton(cx+300, cy, 140, 45, text="Danger", style="danger"))
 kit_widgets.append(JuicyButton(cx+450, cy, 140, 45, text="Success", style="success"))
 cy += 60
-kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// BOOLEAN INPUTS"))
-kit_widgets[-1].disabled = True
-cy += 40
+kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// BOOLEAN INPUTS")); kit_widgets[-1].disabled = True; cy += 40
 kit_widgets.append(JuicyButton(cx, cy, 140, 40, text="Toggle Me", style="toggle"))
 kit_widgets.append(Checkbox(cx+160, cy+5, 30, "Show Grid", True))
 kit_widgets.append(Checkbox(cx+300, cy+5, 30, "Enable Physics", False))
 kit_widgets.append(Checkbox(cx+460, cy+5, 30, "Debug Mode", False))
 cy += 60
-kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// ANALOG INPUTS"))
-kit_widgets[-1].disabled = True
-cy += 40
+kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// ANALOG INPUTS")); kit_widgets[-1].disabled = True; cy += 40
 kit_widgets.append(Slider(cx, cy+10, 200, val=0.3))
 kit_widgets.append(Slider(cx+220, cy+10, 200, val=0.7))
 kit_widgets.append(Knob(cx+480, cy+20, 25, val=0.2))
 kit_widgets.append(Knob(cx+550, cy+20, 25, val=0.8))
 cy += 60
-kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// TEXT & SELECTION"))
-kit_widgets[-1].disabled = True
-cy += 40
+kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// TEXT & SELECTION")); kit_widgets[-1].disabled = True; cy += 40
 kit_widgets.append(TextInput(cx, cy, 250, 40, "Enter project name..."))
 kit_widgets.append(Dropdown(cx+270, cy, 200, 40, ["Low Quality", "Medium Quality", "High Quality"]))
 cy += 60
-kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// SYSTEM STATUS"))
-kit_widgets[-1].disabled = True
-cy += 40
+kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// SYSTEM STATUS")); kit_widgets[-1].disabled = True; cy += 40
 kit_widgets.append(ProgressBar(cx, cy, 400, 20, val=0.4))
 
 # -- FACTORY CONTENT --
 fac_widgets = []
 fx, fy = content_rect.x + 20, content_rect.y + 20
+fac_widgets.append(JuicyButton(fx, fy, 200, 30, text="// FACTORY DASHBOARD (50% SCALE)")); fac_widgets[-1].disabled = True; fy += 50
 
-fac_widgets.append(JuicyButton(fx, fy, 200, 30, text="// FACTORY DASHBOARD (50% SCALE)"))
-fac_widgets[-1].disabled = True
-fy += 50
-
-# --- MINI GRID: 30px WIDGETS ---
-grid_cols = 20
-grid_rows = 5
-grid_size = 30 # 50% smaller!
-grid_gap = 10
-
-widget_generators = [
+# Grid Setup
+grid_cols = 20; grid_size = 30; grid_gap = 8
+generators = [
     lambda x, y: FactoryGear(x, y, grid_size, speed=random.choice([30, 60, -60])),
     lambda x, y: FactoryTank(x, y, grid_size, fluid_col=random.choice([C_ACCENT, C_SUCCESS, C_DANGER])),
     lambda x, y: FactoryFan(x, y, grid_size),
@@ -164,7 +140,6 @@ widget_generators = [
     lambda x, y: FactoryPower(x, y, grid_size),
     lambda x, y: FactoryPiston(x, y, grid_size),
     lambda x, y: FactoryGraph(x, y, grid_size),
-    # New ones
     lambda x, y: FactoryConveyor(x, y, grid_size),
     lambda x, y: FactoryValve(x, y, grid_size),
     lambda x, y: FactoryBurner(x, y, grid_size),
@@ -179,46 +154,33 @@ widget_generators = [
     lambda x, y: FactoryRobotArm(x, y, grid_size)
 ]
 
-for i in range(100): # More widgets to fill the denser grid
-    col = i % grid_cols
-    row = i // grid_cols
-    
+for i in range(140):
+    col = i % grid_cols; row = i // grid_cols
     wx = fx + col * (grid_size + grid_gap)
     wy = fy + row * (grid_size + grid_gap)
-    
-    gen = random.choice(widget_generators)
+    gen = random.choice(generators)
     fac_widgets.append(gen(wx, wy))
 
-fac_widgets.append(FactoryHazard(fx, fy + 250, 790, 40))
+fac_widgets.append(FactoryHazard(fx, fy + 300, 790, 40))
 
-# --- MAIN LOOP ---
 running = True
-current_tab = "SFX"
-target_tab = "SFX"
+current_tab = "SFX"; target_tab = "SFX"
 
 while running:
     dt = clock.tick(60) / 1000.0
-    
     for event in pygame.event.get():
         if event.type == pygame.QUIT: running = False
-        
-        btn_tab_sfx.handle_event(event, assets)
-        btn_tab_music.handle_event(event, assets)
-        btn_tab_kit.handle_event(event, assets)
-        btn_tab_fac.handle_event(event, assets)
-        
+        btn_tab_sfx.handle_event(event, assets); btn_tab_music.handle_event(event, assets)
+        btn_tab_kit.handle_event(event, assets); btn_tab_fac.handle_event(event, assets)
         if btn_tab_sfx.clicked: target_tab = "SFX"
         elif btn_tab_music.clicked: target_tab = "MUSIC"
         elif btn_tab_kit.clicked: target_tab = "KIT"
         elif btn_tab_fac.clicked: target_tab = "FAC"
 
         if target_tab != current_tab:
-            anim_tab_offset.value = 50.0 
-            current_tab = target_tab
-            btn_tab_sfx.active = (current_tab == "SFX")
-            btn_tab_music.active = (current_tab == "MUSIC")
-            btn_tab_kit.active = (current_tab == "KIT")
-            btn_tab_fac.active = (current_tab == "FAC")
+            anim_tab_offset.value = 50.0; current_tab = target_tab
+            btn_tab_sfx.active = (current_tab == "SFX"); btn_tab_music.active = (current_tab == "MUSIC")
+            btn_tab_kit.active = (current_tab == "KIT"); btn_tab_fac.active = (current_tab == "FAC")
 
         active_list = []
         if current_tab == "SFX": active_list = sfx_buttons
@@ -230,18 +192,13 @@ while running:
             if hasattr(w, 'handle_event'):
                 try: w.handle_event(event, assets)
                 except: pass 
-                
                 if hasattr(w, 'clicked') and w.clicked:
                     if hasattr(w, 'track_to_play') and w.track_to_play: assets.play_music(w.track_to_play)
                     elif hasattr(w, 'is_stop_btn') and w.is_stop_btn: assets.stop_music()
                     elif hasattr(w, 'is_external_track') and w.is_external_track: assets.play_external_music(w.is_external_track)
 
-    # Updates
     anim_tab_offset.update(dt)
-    btn_tab_sfx.update(dt)
-    btn_tab_music.update(dt)
-    btn_tab_kit.update(dt)
-    btn_tab_fac.update(dt)
+    btn_tab_sfx.update(dt); btn_tab_music.update(dt); btn_tab_kit.update(dt); btn_tab_fac.update(dt)
     
     active_list = []
     if current_tab == "SFX": active_list = sfx_buttons
@@ -252,39 +209,30 @@ while running:
     for w in active_list:
         if hasattr(w, 'update'): w.update(dt)
 
-    # Draw
     bg_sys.draw(screen)
     
-    # Sidebar
-    s = pygame.Surface((200, HEIGHT), pygame.SRCALPHA)
-    s.fill((25, 25, 28, 230)) 
-    screen.blit(s, (0,0))
-    pygame.draw.line(screen, (50,50,55), (200, 0), (200, HEIGHT))
+    s = pygame.Surface((200, HEIGHT), pygame.SRCALPHA); s.fill((25, 28, 32, 230)); screen.blit(s, (0,0))
+    pygame.draw.line(screen, (50,55,60), (200, 0), (200, HEIGHT))
     
     title_surf = title_font.render("FLOW STATE", True, C_ACCENT)
     screen.blit(title_surf, (20, 30))
     sub_surf = font.render("AUDIO STUDIO", True, (150, 150, 150))
     screen.blit(sub_surf, (20, 55))
     
-    btn_tab_sfx.draw(screen, font, assets)
-    btn_tab_music.draw(screen, font, assets)
-    btn_tab_kit.draw(screen, font, assets)
-    btn_tab_fac.draw(screen, font, assets)
+    btn_tab_sfx.draw(screen, font, assets); btn_tab_music.draw(screen, font, assets)
+    btn_tab_kit.draw(screen, font, assets); btn_tab_fac.draw(screen, font, assets)
     
     offset = anim_tab_offset.value
-    
     for w in active_list:
         if not isinstance(w, Dropdown) or not w.is_open:
-            orig_x = w.rect.x
-            w.rect.x += offset
+            orig_x = w.rect.x; w.rect.x += offset
             if isinstance(w, JuicyButton): w.draw(screen, font, assets)
             else: w.draw(screen, font)
             w.rect.x = orig_x
             
     for w in active_list:
         if isinstance(w, Dropdown):
-            orig_x = w.rect.x
-            w.rect.x += offset
+            orig_x = w.rect.x; w.rect.x += offset
             if w.is_open: w.draw_overlay(screen, font) 
             else: w.draw(screen, font) 
             w.rect.x = orig_x

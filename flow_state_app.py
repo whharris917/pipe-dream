@@ -143,10 +143,10 @@ class FlowStateApp:
         if self.root_tk: self.root_tk.destroy()
         pygame.quit()
 
-    # --- BUSINESS LOGIC ACTIONS (Moved from InputHandler) ---
+    # --- BUSINESS LOGIC ACTIONS ---
 
     def toggle_ghost_mode(self):
-        self.session.show_wall_atoms = not self.session.show_wall_atoms
+        self.session.show_wall_atoms = not getattr(self.session, 'show_wall_atoms', True)
         if 'mode_ghost' in self.ui.buttons:
             self.ui.buttons['mode_ghost'].active = not self.session.show_wall_atoms 
         state = "Hidden" if not self.session.show_wall_atoms else "Visible"
@@ -164,6 +164,100 @@ class FlowStateApp:
         else:
             self.sim.rebuild_static_atoms()
             self.session.set_status("Atomized All Geometry")
+
+    def open_material_dialog(self):
+        if not self.session.selected_walls: 
+            self.session.set_status("Select a wall first")
+            return
+            
+        mx, my = pygame.mouse.get_pos()
+        
+        def on_apply(mat_id, color):
+            # Update material library if needed
+            if mat_id not in self.sketch.materials:
+                 self.sketch.materials[mat_id] = type('Material', (), {'color': color}) # Dummy prop
+            
+            for idx in self.session.selected_walls:
+                if idx < len(self.sim.walls):
+                    self.sim.walls[idx].material_id = mat_id
+            self.session.set_status(f"Assigned Material: {mat_id}")
+            self.prop_dialog = None
+
+        first_idx = list(self.session.selected_walls)[0]
+        current_mat = self.sim.walls[first_idx].material_id
+        
+        self.prop_dialog = MaterialDialog(mx, my, self.sketch, current_mat) # Fixed args
+
+    def open_rotation_dialog(self):
+        if not self.session.selected_walls:
+            self.session.set_status("Select walls to rotate")
+            return
+
+        mx, my = pygame.mouse.get_pos()
+        
+        first_idx = list(self.session.selected_walls)[0]
+        anim = getattr(self.sim.walls[first_idx], 'anim', None)
+
+        def on_apply(angle, speed):
+            for idx in self.session.selected_walls:
+                self.sim.set_wall_rotation(idx, {'angle': angle, 'speed': speed})
+            self.session.set_status(f"Set Rotation: {speed:.1f} rad/s")
+            self.rot_dialog = None
+            
+        self.rot_dialog = RotationDialog(mx, my, anim) # Fixed args to pass existing anim
+
+    def get_context_options(self, target_type, idx1, idx2=None):
+        """Moved from SimulationGeometry. Determines valid actions for right-click context."""
+        options = []
+        if target_type == 'wall':
+            options = ["Properties", "Rotate", "Animate", "Atomize", "Delete"]
+        elif target_type == 'point':
+            w_idx, pt_idx = idx1, idx2
+            walls = self.sim.walls
+            if w_idx < len(walls):
+                w = walls[w_idx]
+                is_anchored = False
+                if isinstance(w, Line): is_anchored = w.anchored[pt_idx]
+                elif isinstance(w, Circle): is_anchored = w.anchored[0]
+                elif isinstance(w, PointTool): is_anchored = w.anchored # Should be Point entity
+                
+                options.append("Un-Anchor" if is_anchored else "Anchor")
+                options.append("Set Length...") # Contextual
+        elif target_type == 'constraint':
+            options = ["Delete Constraint", "Animate...", "Set Angle..."]
+            
+        return options
+
+    def handle_context_menu_action(self, action):
+        """Routes context menu selections to appropriate logic."""
+        if action == "Properties":
+            self.open_material_dialog()
+        elif action == "Rotate":
+            self.open_rotation_dialog()
+        # "Animate" usually opens AnimationDialog for a wall or constraint
+        elif action == "Animate":
+             # This is tricky because Animate for Walls vs Constraints differs.
+             # Implementation deferred or handled by InputHandler directly calling Dialog.
+             pass 
+        elif action == "Delete":
+            if self.ctx_vars['wall'] != -1:
+                self.sim.remove_wall(self.ctx_vars['wall'])
+                self.session.set_status("Deleted Wall")
+        elif action == "Delete Constraint":
+            if self.ctx_vars['const'] != -1:
+                if self.ctx_vars['const'] < len(self.sim.constraints):
+                    self.sim.constraints.pop(self.ctx_vars['const'])
+                    self.session.set_status("Deleted Constraint")
+        elif action == "Anchor" or action == "Un-Anchor":
+            if self.ctx_vars['wall'] != -1 and self.ctx_vars['pt'] is not None:
+                self.sim.toggle_anchor(self.ctx_vars['wall'], self.ctx_vars['pt'])
+        elif action == "Atomize":
+            if self.ctx_vars['wall'] != -1:
+                self.session.selected_walls.add(self.ctx_vars['wall'])
+                self.atomize_selected()
+                self.session.selected_walls.clear()
+        
+        self.context_menu = None # Close menu
 
     # --- End Business Logic ---
 
@@ -184,7 +278,7 @@ class FlowStateApp:
                 if item['rect'].collidepoint(mx, my):
                     const_idx = item['index']
                     self.ctx_vars['const'] = const_idx
-                    opts = self.sim.geo.get_context_options('constraint', const_idx)
+                    opts = self.get_context_options('constraint', const_idx) # Use local method
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
@@ -195,7 +289,7 @@ class FlowStateApp:
 
         if hit_pt:
             self.ctx_vars['wall'] = hit_pt[0]; self.ctx_vars['pt'] = hit_pt[1]
-            opts = self.sim.geo.get_context_options('point', hit_pt[0], hit_pt[1])
+            opts = self.get_context_options('point', hit_pt[0], hit_pt[1]) # Use local method
             self.context_menu = ContextMenu(mx, my, opts)
             if self.session.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
@@ -207,7 +301,7 @@ class FlowStateApp:
             if self.session.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
             else:
                 self.ctx_vars['wall'] = hit_wall
-                opts = self.sim.geo.get_context_options('wall', hit_wall)
+                opts = self.get_context_options('wall', hit_wall) # Use local method
                 self.context_menu = ContextMenu(mx, my, opts)
         else:
             if self.session.mode == config.MODE_EDITOR: 
