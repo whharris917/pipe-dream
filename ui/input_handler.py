@@ -50,22 +50,24 @@ class InputHandler:
             if btn_key in self.ui.buttons:
                 self.ui_action_map[self.ui.buttons[btn_key]] = action
 
-        bind_action('reset', self.controller.action_reset)
-        bind_action('clear', self.controller.action_clear_particles)
-        bind_action('undo', self.controller.action_undo)
-        bind_action('redo', self.controller.action_redo)
+        # UPDATED: Point to self.controller.actions (AppController)
+        bind_action('reset', self.controller.actions.action_reset)
+        bind_action('clear', self.controller.actions.action_clear_particles)
+        bind_action('undo', self.controller.actions.action_undo)
+        bind_action('redo', self.controller.actions.action_redo)
         
-        # Delegated to Controller
-        bind_action('atomize', self.controller.atomize_selected)
-        bind_action('mode_ghost', self.controller.toggle_ghost_mode)
+        bind_action('atomize', self.controller.actions.atomize_selected)
+        bind_action('mode_ghost', self.controller.actions.toggle_ghost_mode)
+        bind_action('extend', self.controller.actions.toggle_extend)
+        bind_action('editor_play', self.controller.actions.toggle_editor_play)
+        bind_action('show_const', self.controller.actions.toggle_show_constraints)
+        
+        # Some methods remain on the main app if they involve File I/O or critical lifecycle
         bind_action('discard_geo', lambda: self.controller.exit_editor_mode(None))
         bind_action('save_geo', self.controller.save_geo_dialog)
-        bind_action('extend', self.controller.toggle_extend)
-        bind_action('editor_play', self.controller.toggle_editor_play)
-        bind_action('show_const', self.controller.toggle_show_constraints)
         
         if 'resize' in self.ui.buttons and 'world' in self.ui.inputs:
-             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.controller.action_resize_world(self.ui.inputs['world'].get_value(50.0))
+             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.controller.actions.action_resize_world(self.ui.inputs['world'].get_value(50.0))
 
     def handle_input(self):
         self.layout = self.controller.layout
@@ -113,7 +115,7 @@ class InputHandler:
                 if el.handle_event(event):
                     ui_interacted = True
                     if el in self.constraint_btn_map:
-                        self.controller.trigger_constraint(self.constraint_btn_map[el])
+                        self.controller.actions.trigger_constraint(self.constraint_btn_map[el])
                     elif el in self.ui_action_map:
                         self.ui_action_map[el]()
             
@@ -137,11 +139,11 @@ class InputHandler:
                 self.session.set_status("Cancelled")
                 return True
             if event.key == pygame.K_z and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                self.controller.action_undo(); return True
+                self.controller.actions.action_undo(); return True
             if event.key == pygame.K_y and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                self.controller.action_redo(); return True
+                self.controller.actions.action_redo(); return True
             if event.key == pygame.K_DELETE:
-                self.controller.action_delete_selection() 
+                self.controller.actions.action_delete_selection() 
                 return True
         return False
 
@@ -157,34 +159,35 @@ class InputHandler:
         return False
 
     def _handle_dialogs(self, event):
+        # UPDATED: Delegate to self.controller.actions
         captured = False
-        if self.controller.context_menu and self.controller.context_menu.handle_event(event):
-            action = self.controller.context_menu.action
-            if action: self.controller.handle_context_menu_action(action)
+        if self.controller.actions.context_menu and self.controller.actions.context_menu.handle_event(event):
+            action = self.controller.actions.context_menu.action
+            if action: self.controller.actions.handle_context_menu_action(action)
             captured = True
 
         # Property Dialog (Material)
-        if self.controller.prop_dialog and self.controller.prop_dialog.handle_event(event):
-            if self.controller.prop_dialog.apply: 
-                self.controller.apply_material_from_dialog(self.controller.prop_dialog)
-                self.controller.prop_dialog.apply = False
-            if self.controller.prop_dialog.done: self.controller.prop_dialog = None
+        if self.controller.actions.prop_dialog and self.controller.actions.prop_dialog.handle_event(event):
+            if self.controller.actions.prop_dialog.apply: 
+                self.controller.actions.apply_material_from_dialog(self.controller.actions.prop_dialog)
+                self.controller.actions.prop_dialog.apply = False
+            if self.controller.actions.prop_dialog.done: self.controller.actions.prop_dialog = None
             captured = True
             
         # Rotation Dialog
-        if self.controller.rot_dialog and self.controller.rot_dialog.handle_event(event):
-            if self.controller.rot_dialog.apply: 
-                self.controller.apply_rotation_from_dialog(self.controller.rot_dialog)
-                self.controller.rot_dialog.apply = False
-            if self.controller.rot_dialog.done: self.controller.rot_dialog = None
+        if self.controller.actions.rot_dialog and self.controller.actions.rot_dialog.handle_event(event):
+            if self.controller.actions.rot_dialog.apply: 
+                self.controller.actions.apply_rotation_from_dialog(self.controller.actions.rot_dialog)
+                self.controller.actions.rot_dialog.apply = False
+            if self.controller.actions.rot_dialog.done: self.controller.actions.rot_dialog = None
             captured = True
         
         # Animation Dialog
-        if self.controller.anim_dialog and self.controller.anim_dialog.handle_event(event):
-            if self.controller.anim_dialog.apply:
-                self.controller.apply_animation_from_dialog(self.controller.anim_dialog)
-                self.controller.anim_dialog.apply = False
-            if self.controller.anim_dialog.done: self.controller.anim_dialog = None
+        if self.controller.actions.anim_dialog and self.controller.actions.anim_dialog.handle_event(event):
+            if self.controller.actions.anim_dialog.apply:
+                self.controller.actions.apply_animation_from_dialog(self.controller.actions.anim_dialog)
+                self.controller.actions.anim_dialog.apply = False
+            if self.controller.actions.anim_dialog.done: self.controller.actions.anim_dialog = None
             captured = True
         return captured
 
@@ -216,6 +219,6 @@ class InputHandler:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 if self.session.state == InteractionState.DRAGGING_GEOMETRY: self.session.current_tool.cancel()
                 else: 
-                    self.controller._spawn_context_menu(event.pos)
+                    self.controller.actions.spawn_context_menu(event.pos) # UPDATED
             else:
                 self.session.current_tool.handle_event(event, self.layout)
