@@ -2,7 +2,6 @@ import pygame
 import math
 import config
 from utils import sim_to_screen, screen_to_sim, get_grouped_points, calculate_current_temp
-from simulation_geometry import get_constraint_layout
 from geometry import Line, Circle, Point
 
 class Renderer:
@@ -173,10 +172,10 @@ class Renderer:
             pygame.draw.line(self.screen, color, s, e, width)
 
     def _draw_constraints(self, app, sketch, layout, world_size=50.0):
-        # 1. Get the Layout (Pure Data) from SimulationGeometry
-        layout_data = get_constraint_layout(sketch.constraints, sketch.entities, app.zoom, app.pan_x, app.pan_y, world_size, layout)
+        # 1. Calculate Layout internally (SoC Fix)
+        layout_data = self._calculate_constraint_layout(sketch.constraints, sketch.entities, app.zoom, app.pan_x, app.pan_y, world_size, layout)
         
-        # 2. Helper transform for drawing connectors (not needed for icons, they are already screen coords)
+        # 2. Helper transform for drawing connectors
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, world_size, layout)
 
         for item in layout_data:
@@ -195,14 +194,11 @@ class Renderer:
             
             # Draw Text
             text = self.font.render(symbol, True, item['text_color'])
-            # Center text in rect
             tx = rect.centerx - text.get_width() // 2
             ty = rect.centery - text.get_height() // 2
             self.screen.blit(text, (tx, ty))
 
     def _draw_constraint_connectors(self, c, transform, entities):
-        # We still need helper logic to know WHERE to draw lines to.
-        # This duplicates some logic from utils but is purely for drawing lines, which is fine.
         ctype = c.type
         indices = c.indices
         
@@ -330,11 +326,10 @@ class Renderer:
     def draw_tool_line(self, start, end, is_ref=False):
         col = (100, 255, 100) if not is_ref else (200, 200, 200)
         pygame.draw.line(self.screen, col, start, end, 2)
-        if is_ref: # simple dash effect if needed, or just color change
+        if is_ref:
             pass
 
     def draw_tool_rect(self, rect_tuple):
-         # rect_tuple is (x, y, w, h)
          pygame.draw.rect(self.screen, (100, 255, 100), rect_tuple, 2)
 
     def draw_tool_circle(self, center, radius, mouse_pos):
@@ -343,3 +338,107 @@ class Renderer:
 
     def draw_tool_point(self, cx, cy):
         pygame.draw.circle(self.screen, (100, 255, 100), (cx, cy), 4)
+
+    # --- New Internal Layout Logic (Moved from simulation_geometry.py) ---
+
+    def _calculate_constraint_layout(self, constraints, entities, zoom, pan_x, pan_y, world_size, layout):
+        transform = lambda x, y: sim_to_screen(x, y, zoom, pan_x, pan_y, world_size, layout)
+        
+        grouped = {}
+        threshold = 20
+        layout_data = [] 
+        
+        for i, c in enumerate(constraints):
+            cx, cy = self._get_constraint_raw_pos(c, entities, transform)
+            found_group = None
+            for key in grouped:
+                if math.hypot(key[0]-cx, key[1]-cy) < threshold:
+                    found_group = key; break
+            if found_group:
+                grouped[found_group].append((i, c)); layout_data.append((i, c, found_group))
+            else:
+                grouped[(cx, cy)] = [(i, c)]; layout_data.append((i, c, (cx, cy)))
+
+        results = []
+        group_counts = {k: 0 for k in grouped}
+        
+        for i, c, key in layout_data:
+            idx = group_counts[key]; group_counts[key] += 1
+            total_in_group = len(grouped[key]); spacing = 30
+            
+            start_x = -((total_in_group - 1) * spacing) / 2.0
+            final_offset_x = start_x + idx * spacing
+            
+            cx, cy = self._get_constraint_raw_pos(c, entities, transform)
+            final_x, final_y = cx + final_offset_x, cy
+            
+            symbol = self._get_constraint_symbol(c)
+            
+            w = len(symbol) * 9 + 12 
+            h = 20
+            rect = pygame.Rect(final_x - w//2, final_y - h//2, w, h)
+            
+            # Colors
+            bg_color = (50, 50, 50)
+            text_color = (255, 255, 255)
+            if c.type == 'COINCIDENT': text_color = (100, 255, 255)
+            elif c.type == 'COLLINEAR': text_color = (150, 255, 150)
+            elif c.type == 'MIDPOINT': text_color = (150, 150, 255)
+            elif c.type == 'LENGTH': text_color = (255, 200, 100)
+            elif c.type == 'ANGLE' and hasattr(c, 'value'): text_color = (255, 200, 200)
+
+            results.append({
+                'index': i, 'constraint': c, 'center': (final_x, final_y),
+                'rect': rect, 'symbol': symbol,
+                'text_color': text_color, 'bg_color': bg_color
+            })
+        return results
+
+    def _get_constraint_symbol(self, c):
+        if c.type == 'COINCIDENT': return "C"
+        elif c.type == 'COLLINEAR': return "CL"
+        elif c.type == 'MIDPOINT': return "M"
+        elif c.type == 'LENGTH': return f"{c.value:.1f}"
+        elif c.type == 'EQUAL': return "="
+        elif c.type == 'ANGLE':
+            if hasattr(c, 'value'): return f"{c.value:.0f}°"
+            return "//" if c.type == 'PARALLEL' else "T"
+        elif c.type == 'PARALLEL': return "//"
+        elif c.type == 'PERPENDICULAR': return "T"
+        elif c.type == 'HORIZONTAL': return "H"
+        elif c.type == 'VERTICAL': return "V"
+        return "?"
+
+    def _get_constraint_raw_pos(self, c, entities, transform):
+        ctype = c.type
+        indices = c.indices
+        
+        if ctype == 'COINCIDENT':
+            idx1, idx2 = indices[0][1], indices[1][1]
+            if idx1 == -1 or idx2 == -1: # Pt-Entity
+                ent_idx = indices[0][0] if idx1 == -1 else indices[1][0]
+                pt_ref = indices[1] if idx1 == -1 else indices[0]
+                c_pos = self._get_entity_center_screen(ent_idx, entities, transform)
+                p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform)
+                return ((c_pos[0] + p_pos[0]) // 2, (c_pos[1] + p_pos[1]) // 2)
+            else:
+                p_pos = self._get_point_screen(indices[0][0], idx1, entities, transform)
+                return (p_pos[0] + 15, p_pos[1] - 15)
+                
+        elif ctype in ['COLLINEAR', 'MIDPOINT']:
+            pt_ref = indices[0]
+            line_idx = indices[1]
+            p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform)
+            l_pos = self._get_entity_center_screen(line_idx, entities, transform)
+            return ((p_pos[0] + l_pos[0]) // 2, (p_pos[1] + l_pos[1]) // 2)
+            
+        elif ctype in ['LENGTH', 'HORIZONTAL', 'VERTICAL']:
+            c_pos = self._get_entity_center_screen(indices[0], entities, transform)
+            if ctype == 'LENGTH': return (c_pos[0], c_pos[1] + 15)
+            return (c_pos[0], c_pos[1] - 15)
+            
+        elif ctype in ['EQUAL', 'ANGLE', 'PARALLEL', 'PERPENDICULAR']:
+                c1 = self._get_entity_center_screen(indices[0], entities, transform)
+                c2 = self._get_entity_center_screen(indices[1], entities, transform)
+                return ((c1[0]+c2[0])//2, (c1[1]+c2[1])//2)
+        return (0,0)

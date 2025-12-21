@@ -164,6 +164,7 @@ class FlowStateApp:
             self.ui.buttons['mode_ghost'].active = not self.session.show_wall_atoms 
         state = "Hidden" if not self.session.show_wall_atoms else "Visible"
         self.session.set_status(f"Wall Atoms: {state}")
+        self.sound_manager.play_sound('click')
 
     def atomize_selected(self):
         if self.session.selected_walls:
@@ -174,95 +175,191 @@ class FlowStateApp:
                     count += 1
             self.sim.rebuild_static_atoms()
             self.session.set_status(f"Atomized {count} entities")
+            self.sound_manager.play_sound('click')
         else:
             self.sim.rebuild_static_atoms()
             self.session.set_status("Atomized All Geometry")
+            self.sound_manager.play_sound('click')
+
+    # --- CONTROLLER ACTIONS (SoC Step 3) ---
+    
+    def action_undo(self):
+        self.sim.undo()
+        self.session.set_status("Undo")
+        self.sound_manager.play_sound('click')
+
+    def action_redo(self):
+        self.sim.redo()
+        self.session.set_status("Redo")
+        self.sound_manager.play_sound('click')
+
+    def action_reset(self):
+        self.sim.reset_simulation()
+        self.session.set_status("Reset Simulation")
+        self.sound_manager.play_sound('click')
+        
+    def action_clear_particles(self):
+        self.sim.clear_particles()
+        self.session.set_status("Particles Cleared")
+        self.sound_manager.play_sound('click')
+
+    def action_delete_selection(self):
+        """
+        Deletes currently selected walls/entities or context target.
+        """
+        deleted_count = 0
+        if self.session.selected_walls:
+            # Sort reverse to avoid index shifting issues
+            for idx in sorted(list(self.session.selected_walls), reverse=True):
+                self.sim.remove_wall(idx)
+                deleted_count += 1
+            self.session.selected_walls.clear()
+            self.session.selected_points.clear() 
+            self.sim.rebuild_static_atoms()
+            self.sound_manager.play_sound('click')
+            self.session.set_status(f"Deleted {deleted_count} Items")
+        elif self.ctx_vars['wall'] != -1:
+             self.sim.remove_wall(self.ctx_vars['wall'])
+             self.ctx_vars['wall'] = -1
+             self.sim.rebuild_static_atoms()
+             self.session.set_status("Deleted Item")
+             self.sound_manager.play_sound('click')
+
+    def action_delete_constraint(self):
+        if self.ctx_vars['const'] != -1:
+            if self.ctx_vars['const'] < len(self.sim.constraints):
+                self.sim.constraints.pop(self.ctx_vars['const'])
+                self.session.set_status("Deleted Constraint")
+                self.sim.apply_constraints() # Re-solve immediately
+                self.ctx_vars['const'] = -1
+                self.sound_manager.play_sound('click')
+
+    def action_resize_world(self, size_str):
+        try:
+            val = float(size_str)
+            self.sim.resize_world(val)
+            self.session.set_status(f"World Resized: {val}")
+            self.sound_manager.play_sound('click')
+        except ValueError:
+            self.session.set_status("Invalid Size")
+
+    # --- Dialog Result Applicators ---
+
+    def apply_material_from_dialog(self, dialog):
+        mat = dialog.get_result()
+        self.sketch.add_material(mat)
+        
+        targets = []
+        if self.session.selected_walls:
+            targets = list(self.session.selected_walls)
+        elif self.ctx_vars['wall'] != -1:
+            targets = [self.ctx_vars['wall']]
+            
+        for idx in targets:
+             if idx < len(self.walls):
+                 self.sim.update_wall_props(idx, {'material_id': mat.name})
+        
+        self.session.set_status(f"Material Applied: {mat.name}")
+        self.sound_manager.play_sound('click')
+
+    def apply_rotation_from_dialog(self, dialog):
+        vals = dialog.get_values()
+        targets = []
+        if self.session.selected_walls:
+            targets = list(self.session.selected_walls)
+        elif self.ctx_vars['wall'] != -1:
+            targets = [self.ctx_vars['wall']]
+            
+        for idx in targets:
+            self.sim.set_wall_rotation(idx, vals)
+        self.session.set_status("Rotation Updated")
+        self.sound_manager.play_sound('click')
+
+    def apply_animation_from_dialog(self, dialog):
+        if self.ctx_vars['const'] != -1:
+            self.sketch.set_driver(self.ctx_vars['const'], dialog.get_values())
+            self.session.set_status("Animation Set")
+            self.sound_manager.play_sound('click')
 
     def open_material_dialog(self):
-        if not self.session.selected_walls: 
+        if not self.session.selected_walls and self.ctx_vars['wall'] == -1: 
             self.session.set_status("Select a wall first")
             return
             
         mx, my = pygame.mouse.get_pos()
         
-        def on_apply(mat_id, color):
-            # Update material library if needed
-            if mat_id not in self.sketch.materials:
-                 self.sketch.materials[mat_id] = type('Material', (), {'color': color}) # Dummy prop
+        # Determine target for initial values
+        target_idx = -1
+        if self.session.selected_walls: target_idx = list(self.session.selected_walls)[0]
+        elif self.ctx_vars['wall'] != -1: target_idx = self.ctx_vars['wall']
             
-            for idx in self.session.selected_walls:
-                if idx < len(self.sim.walls):
-                    self.sim.walls[idx].material_id = mat_id
-            self.session.set_status(f"Assigned Material: {mat_id}")
-            self.prop_dialog = None
-
-        first_idx = list(self.session.selected_walls)[0]
-        current_mat = self.sim.walls[first_idx].material_id
+        current_mat = "Default"
+        if target_idx != -1 and target_idx < len(self.sim.walls):
+             current_mat = self.sim.walls[target_idx].material_id
         
-        self.prop_dialog = MaterialDialog(mx, my, self.sketch, current_mat) # Fixed args
+        self.prop_dialog = MaterialDialog(mx, my, self.sketch, current_mat)
 
     def open_rotation_dialog(self):
-        if not self.session.selected_walls:
+        target_idx = -1
+        if self.session.selected_walls: target_idx = list(self.session.selected_walls)[0]
+        elif self.ctx_vars['wall'] != -1: target_idx = self.ctx_vars['wall']
+
+        if target_idx == -1:
             self.session.set_status("Select walls to rotate")
             return
 
         mx, my = pygame.mouse.get_pos()
-        first_idx = list(self.session.selected_walls)[0]
-        anim = getattr(self.sim.walls[first_idx], 'anim', None)
-        self.rot_dialog = RotationDialog(mx, my, anim) # Fixed args to pass existing anim
+        anim = getattr(self.sim.walls[target_idx], 'anim', None)
+        self.rot_dialog = RotationDialog(mx, my, anim)
+        
+    def open_animation_dialog(self):
+        if self.ctx_vars['const'] != -1:
+             c = self.constraints[self.ctx_vars['const']]
+             driver = getattr(c, 'driver', None)
+             self.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
+
+    # --- Context Menu Logic ---
 
     def get_context_options(self, target_type, idx1, idx2=None):
-        """Moved from SimulationGeometry. Determines valid actions for right-click context."""
         options = []
         if target_type == 'wall':
-            options = ["Properties", "Rotate", "Animate", "Atomize", "Delete"]
+            options = ["Properties", "Rotate", "Atomize", "Delete"]
         elif target_type == 'point':
             w_idx, pt_idx = idx1, idx2
             walls = self.sim.walls
             if w_idx < len(walls):
                 w = walls[w_idx]
+                w_obj = self.sim.walls[w_idx]
                 is_anchored = False
-                if isinstance(w, Line): is_anchored = w.anchored[pt_idx]
-                elif isinstance(w, Circle): is_anchored = w.anchored[0]
-                elif isinstance(w, PointTool): is_anchored = w.anchored # Should be Point entity
+                if isinstance(w_obj, Line): is_anchored = w_obj.anchored[pt_idx]
+                elif isinstance(w_obj, Circle): is_anchored = w_obj.anchored[0]
+                elif isinstance(w_obj, PointTool): is_anchored = w_obj.anchored 
                 
                 options.append("Un-Anchor" if is_anchored else "Anchor")
-                options.append("Set Length...") # Contextual
+                options.append("Set Length...") 
         elif target_type == 'constraint':
             options = ["Delete Constraint", "Animate...", "Set Angle..."]
             
         return options
 
     def handle_context_menu_action(self, action):
-        """Routes context menu selections to appropriate logic."""
-        if action == "Properties":
-            self.open_material_dialog()
-        elif action == "Rotate":
-            self.open_rotation_dialog()
-        # "Animate" usually opens AnimationDialog for a wall or constraint
-        elif action == "Animate":
-             # This is tricky because Animate for Walls vs Constraints differs.
-             # Implementation deferred or handled by InputHandler directly calling Dialog.
-             pass 
-        elif action == "Delete":
-            if self.ctx_vars['wall'] != -1:
-                self.sim.remove_wall(self.ctx_vars['wall'])
-                self.session.set_status("Deleted Wall")
-        elif action == "Delete Constraint":
-            if self.ctx_vars['const'] != -1:
-                if self.ctx_vars['const'] < len(self.sim.constraints):
-                    self.sim.constraints.pop(self.ctx_vars['const'])
-                    self.session.set_status("Deleted Constraint")
+        if action == "Properties": self.open_material_dialog()
+        elif action == "Rotate": self.open_rotation_dialog()
+        elif action == "Animate...": self.open_animation_dialog()
+        elif action == "Delete": self.action_delete_selection()
+        elif action == "Delete Constraint": self.action_delete_constraint()
+        
         elif action == "Anchor" or action == "Un-Anchor":
             if self.ctx_vars['wall'] != -1 and self.ctx_vars['pt'] is not None:
                 self.sim.toggle_anchor(self.ctx_vars['wall'], self.ctx_vars['pt'])
+                self.sound_manager.play_sound('click')
         elif action == "Atomize":
             if self.ctx_vars['wall'] != -1:
                 self.session.selected_walls.add(self.ctx_vars['wall'])
                 self.atomize_selected()
                 self.session.selected_walls.clear()
         
-        self.context_menu = None # Close menu
+        self.context_menu = None
 
     # --- End Business Logic ---
 
@@ -270,20 +367,17 @@ class FlowStateApp:
         mx, my = pos
         sim_x, sim_y = utils.screen_to_sim(mx, my, self.session.zoom, self.session.pan_x, self.session.pan_y, self.sim.world_size, self.layout)
         
-        # Check for constraints using SIMULATION GEOMETRY LAYOUT
         if self.session.show_constraints:
-            # Re-calculate layout for hit testing
-            layout_data = simulation_geometry.get_constraint_layout(
+            layout_data = self.renderer._calculate_constraint_layout(
                 self.sim.constraints, self.sim.walls, 
                 self.session.zoom, self.session.pan_x, self.session.pan_y, 
                 self.sim.world_size, self.layout
             )
-            
             for item in layout_data:
                 if item['rect'].collidepoint(mx, my):
                     const_idx = item['index']
                     self.ctx_vars['const'] = const_idx
-                    opts = self.get_context_options('constraint', const_idx) # Use local method
+                    opts = self.get_context_options('constraint', const_idx)
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
@@ -294,19 +388,19 @@ class FlowStateApp:
 
         if hit_pt:
             self.ctx_vars['wall'] = hit_pt[0]; self.ctx_vars['pt'] = hit_pt[1]
-            opts = self.get_context_options('point', hit_pt[0], hit_pt[1]) # Use local method
+            opts = self.get_context_options('point', hit_pt[0], hit_pt[1])
             self.context_menu = ContextMenu(mx, my, opts)
             if self.session.pending_constraint: self.handle_pending_constraint_click(pt_idx=hit_pt)
             return
 
         rad_sim = 5.0 / (((self.layout['MID_W'] - 50) / self.sim.world_size) * self.session.zoom)
-        hit_wall = self.sim.geo.find_wall_at(sim_x, sim_y, rad_sim)
+        hit_wall = self.sketch.find_entity_at(sim_x, sim_y, rad_sim)
         
         if hit_wall != -1:
             if self.session.pending_constraint: self.handle_pending_constraint_click(wall_idx=hit_wall)
             else:
                 self.ctx_vars['wall'] = hit_wall
-                opts = self.get_context_options('wall', hit_wall) # Use local method
+                opts = self.get_context_options('wall', hit_wall)
                 self.context_menu = ContextMenu(mx, my, opts)
         else:
             if self.session.mode == config.MODE_EDITOR: 
@@ -318,7 +412,6 @@ class FlowStateApp:
         dt = now - self.last_time
         self.last_time = now
         
-        # ANIMATE UI
         self.ui.update(dt)
         if self.prop_dialog: self.prop_dialog.update(dt)
         if self.rot_dialog: self.rot_dialog.update(dt)
@@ -346,7 +439,6 @@ class FlowStateApp:
                 self.sim.step(int(self.ui.sliders['speed'].val))
         
         if self.session.current_tool:
-            # Sync Tool Properties from UI (Controller Logic)
             if self.session.current_tool.name == "Brush":
                 if 'brush_size' in self.ui.sliders:
                     self.session.current_tool.brush_radius = self.ui.sliders['brush_size'].val
@@ -432,6 +524,7 @@ class FlowStateApp:
         self.sim.reset_simulation()
         self.sim.sketch.clear()
         self.session.set_status("Reset/Discarded")
+        self.sound_manager.play_sound('click')
 
     def toggle_extend(self):
         if self.session.selected_walls:
@@ -440,16 +533,19 @@ class FlowStateApp:
                     if not hasattr(self.sim.walls[idx], 'infinite'): self.sim.walls[idx].infinite = False
                     self.sim.walls[idx].infinite = not self.sim.walls[idx].infinite
             self.sim.rebuild_static_atoms(); self.session.set_status("Toggled Extend")
+            self.sound_manager.play_sound('click')
             
     def toggle_editor_play(self):
         self.session.editor_paused = not self.session.editor_paused
         self.ui.buttons['editor_play'].text = "Play" if self.session.editor_paused else "Pause"
         self.ui.buttons['editor_play'].cached_surf = None
+        self.sound_manager.play_sound('click')
         
     def toggle_show_constraints(self):
         self.session.show_constraints = not self.session.show_constraints
         self.ui.buttons['show_const'].text = "Show Cnstr" if not self.session.show_constraints else "Hide Cnstr"
         self.ui.buttons['show_const'].cached_surf = None
+        self.sound_manager.play_sound('click')
 
     def save_geo_dialog(self):
         if self.root_tk:
@@ -466,6 +562,7 @@ class FlowStateApp:
             self.session.pending_constraint = None
             for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
             self.sim.apply_constraints()
+            self.sound_manager.play_sound('click')
             return True
             
         if ctype in CONSTRAINT_DEFS:
@@ -480,6 +577,7 @@ class FlowStateApp:
                          self.session.pending_constraint = None
                          for btn in self.input_handler.constraint_btn_map.keys(): btn.active = False
                          self.sim.apply_constraints()
+                         self.sound_manager.play_sound('click')
                          return True
         return False
 
@@ -496,6 +594,7 @@ class FlowStateApp:
                     self.session.set_status(f"Applied {ctype} to {count} items")
                     self.session.selected_walls.clear(); self.session.selected_points.clear()
                     self.sim.apply_constraints(); is_multi = True
+                    self.sound_manager.play_sound('click')
         if is_multi: return
         
         walls = list(self.session.selected_walls); pts = list(self.session.selected_points)
@@ -509,6 +608,7 @@ class FlowStateApp:
         self.session.selected_walls.clear(); self.session.selected_points.clear()
         msg = CONSTRAINT_DEFS[ctype][0]['msg'] if ctype in CONSTRAINT_DEFS else "Select targets..."
         self.session.set_status(f"{ctype}: {msg}")
+        self.sound_manager.play_sound('tool_select')
 
     def handle_pending_constraint_click(self, wall_idx=None, pt_idx=None):
         if not self.session.pending_constraint: return
@@ -519,7 +619,8 @@ class FlowStateApp:
             return
             
         ctype = self.session.pending_constraint; msg = CONSTRAINT_DEFS[ctype][0]['msg']
-        self.session.set_status(f"{ctype} ({len(self.session.pending_targets_walls)}W, {len(self.session.pending_targets_points)}P): {msg}")
+        self.session.set_status(f"{ctype} ({len(self.session.pending_targets_walls)}P, {len(self.session.pending_targets_points)}P): {msg}")
+        self.sound_manager.play_sound('click')
     
     def add_wall(self, start_pos, end_pos, is_ref=False):
         is_ghost = self.ui.buttons['mode_ghost'].active

@@ -2,7 +2,12 @@ import pygame
 import sys
 import subprocess
 import os
-import config
+
+# Try to import config to respect global settings if available
+try:
+    import config
+except ImportError:
+    config = None
 
 class MenuButton:
     def __init__(self, x, y, w, h, text, action_code):
@@ -28,18 +33,21 @@ class MenuButton:
                 return True
         return False
 
-class Launcher:
+class Dashboard:
     def __init__(self):
         # Initialize mixer before pygame for high quality audio
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
+        
+        # --- Environment Setup ---
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
         
         # --- Background Image Setup ---
         self.bg_image = None
         self.width = 800  # Default width
         self.height = 600 # Default height
         
-        bg_path = os.path.join("art", "colorful_vessels.jpg")
+        bg_path = os.path.join(self.base_dir, "art", "colorful_vessels.jpg")
         if os.path.exists(bg_path):
             try:
                 self.bg_image = pygame.image.load(bg_path)
@@ -56,6 +64,7 @@ class Launcher:
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Flow State - Dashboard")
         
+        # Fonts
         self.font = pygame.font.SysFont("segoeui", 24)
         self.title_font = pygame.font.SysFont("segoeui", 48, bold=True)
         self.clock = pygame.time.Clock()
@@ -69,19 +78,16 @@ class Launcher:
         cy = self.height // 2
         
         # Shift buttons down to create breathing room
-        # Previous start: cy - 60
-        # New start: cy - 20 (40px lower)
-        # Stride: 70px (50h + 20gap)
         self.buttons = [
-            MenuButton(cx - 150, cy - 20, 300, 50, "New Simulation", "NEW_SIM"),
-            MenuButton(cx - 150, cy + 50, 300, 50, "New Model Builder", "NEW_MODEL"),
-            MenuButton(cx - 150, cy + 120, 300, 50, "Open File...", "OPEN"),
+            MenuButton(cx - 150, cy - 20, 300, 50, "New Simulation", "sim"),
+            MenuButton(cx - 150, cy + 50, 300, 50, "New Model Builder", "builder"),
+            MenuButton(cx - 150, cy + 120, 300, 50, "Open File...", "sim"), # Currently maps to sim
             MenuButton(cx - 150, cy + 190, 300, 50, "Exit", "EXIT"),
         ]
 
     def _start_music(self):
         # Look for the music file in the 'music' subdirectory
-        music_path = os.path.join("music", "flow_dynamics.mp3")
+        music_path = os.path.join(self.base_dir, "music", "flow_dynamics.mp3")
         
         if os.path.exists(music_path):
             try:
@@ -107,7 +113,6 @@ class Launcher:
             
             # Draw semi-transparent overlay behind text for readability if bg exists
             if self.bg_image:
-                # Expanded overlay to cover new layout spacing
                 overlay_h = 500 
                 overlay = pygame.Surface((400, overlay_h), pygame.SRCALPHA)
                 overlay.fill((30, 30, 35, 200)) # Dark semi-transparent box
@@ -118,7 +123,6 @@ class Launcher:
             sub = self.font.render("Engineering Sandbox", True, (150, 150, 150))
             
             # Adjusted Y positions to center nicely over the button stack
-            # Moved text up to clear the buttons
             title_y = (self.height // 2) - 180
             sub_y = (self.height // 2) - 120
             
@@ -127,12 +131,8 @@ class Launcher:
             
             # Draw Subtitle with Drop Shadow
             sub_pos = (self.width//2 - sub.get_width()//2, sub_y)
-            
-            # 1. Draw Drop Shadow (Black, offset by 2px)
             shadow = self.font.render("Engineering Sandbox", True, (0, 0, 0))
             self.screen.blit(shadow, (sub_pos[0] + 2, sub_pos[1] + 2))
-            
-            # 2. Draw Main Text
             self.screen.blit(sub, sub_pos)
             
             for event in pygame.event.get():
@@ -154,20 +154,23 @@ class Launcher:
     def handle_action(self, code):
         if code == "EXIT":
             self.running = False
-        elif code == "NEW_SIM":
-            self.launch_app("sim")
-        elif code == "NEW_MODEL":
-            self.launch_app("editor")
-        elif code == "OPEN":
-            self.launch_app("sim") 
+        else:
+            self.launch_app(code)
 
     def launch_app(self, mode):
         try:
-            # Spawn the new independent instance
-            # The music in this launcher process will keep playing
-            subprocess.Popen([sys.executable, "run_instance.py", mode])
+            # Spawn the new independent instance using main.py
+            # This respects the new entry point architecture
+            script_path = os.path.join(self.base_dir, "main.py")
+            cmd = [sys.executable, script_path, "--mode", mode]
+            
+            print(f"Launching subprocess: {' '.join(cmd)}")
+            subprocess.Popen(cmd)
         except Exception as e:
             print(f"Failed to launch: {e}")
 
+def run():
+    Dashboard().run()
+
 if __name__ == "__main__":
-    Launcher().run()
+    run()

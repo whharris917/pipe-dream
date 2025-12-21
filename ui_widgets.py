@@ -82,14 +82,26 @@ class Button(Widget):
                 self.clicked = True
                 self.anim_click.value = 1.0 # Flash effect
                 self.ripples.append({'x': event.pos[0]-self.rect.x, 'y': event.pos[1]-self.rect.y, 'r': 5, 'a': 1.0})
-                sounds.play_sound('click')
+                
+                # SOUND LOGIC ADJUSTMENT:
+                # If it's a toggle button that is currently INACTIVE (about to turn ON/Resume),
+                # we suppress the click sound here so we only hear the Bloop on release.
+                # If it's ACTIVE (about to turn OFF/Pause), we play the click/clink here.
+                should_play_click = True
+                if self.toggle and not self.active:
+                    should_play_click = False
+                
+                if should_play_click:
+                    sounds.play_sound('click')
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if self.clicked:
                 if self.rect.collidepoint(event.pos) and event.button == 1:
                     if self.toggle:
                         self.active = not self.active
-                        if self.active: sounds.play_sound('snap')
+                        # If we just turned ON (Resume), play the Bloop (snap)
+                        if self.active: 
+                            sounds.play_sound('snap')
                     action = True
                 self.clicked = False
         
@@ -144,8 +156,6 @@ class Button(Widget):
         if self.disabled: txt_col = (100, 100, 100)
         elif not self.active and not self.hovered: txt_col = config.COLOR_TEXT_DIM
         
-        # We re-render text to support changing colors cleanly
-        # Optimization: Could cache surface per state, but fine for UI
         ts = font.render(self.text, True, txt_col)
         ts_rect = ts.get_rect(center=draw_rect.center)
         screen.blit(ts, ts_rect)
@@ -165,7 +175,7 @@ class InputField(Widget):
         self.rect.x += dx; self.rect.y += dy
 
     def update(self, dt):
-        pass # Could add cursor blink here
+        pass 
 
     def handle_event(self, event):
         changed = False
@@ -301,7 +311,6 @@ class MenuBar(Widget):
         self.item_rects = {}
         curr_x = 15
         for key in self.items:
-            # Re-calculated in draw typically if dynamic, but fixed here
             pass
             
     def resize(self, w):
@@ -356,7 +365,6 @@ class MenuBar(Widget):
         
         curr_x = 15
         for key in self.items:
-            # Simple width calculation
             ts = font.render(key, True, config.COLOR_TEXT)
             width = ts.get_width() + 20
             r = pygame.Rect(curr_x, 0, width, self.rect.height)
@@ -473,7 +481,6 @@ class MaterialDialog:
 
     def handle_event(self, event):
         if self.in_id.handle_event(event):
-            # Try to load existing
             name = self.in_id.get_text()
             if name in self.sketch.materials:
                 m = self.sketch.materials[name]
@@ -518,7 +525,6 @@ class MaterialDialog:
         return m
 
     def draw(self, screen, font):
-        # Shadow
         shadow = self.rect.copy(); shadow.x += 5; shadow.y += 5
         s_surf = pygame.Surface((shadow.width, shadow.height), pygame.SRCALPHA)
         pygame.draw.rect(s_surf, (0, 0, 0, 100), s_surf.get_rect(), border_radius=6)

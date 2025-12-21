@@ -42,7 +42,7 @@ class InputHandler:
             if key in self.ui.buttons:
                 self.constraint_btn_map[self.ui.buttons[key]] = val
 
-        # Action Map - Now mostly delegates to Controller
+        # Action Map - Now fully delegates to Controller (SoC Step 3)
         self.ui_action_map = {}
         
         # Helper to safely map buttons if they exist
@@ -50,10 +50,10 @@ class InputHandler:
             if btn_key in self.ui.buttons:
                 self.ui_action_map[self.ui.buttons[btn_key]] = action
 
-        bind_action('reset', lambda: self.sim.reset_simulation())
-        bind_action('clear', lambda: self.sim.clear_particles())
-        bind_action('undo', lambda: (self.sim.undo(), self.session.set_status("Undo")))
-        bind_action('redo', lambda: (self.sim.redo(), self.session.set_status("Redo")))
+        bind_action('reset', self.controller.action_reset)
+        bind_action('clear', self.controller.action_clear_particles)
+        bind_action('undo', self.controller.action_undo)
+        bind_action('redo', self.controller.action_redo)
         
         # Delegated to Controller
         bind_action('atomize', self.controller.atomize_selected)
@@ -65,7 +65,7 @@ class InputHandler:
         bind_action('show_const', self.controller.toggle_show_constraints)
         
         if 'resize' in self.ui.buttons and 'world' in self.ui.inputs:
-             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0))
+             self.ui_action_map[self.ui.buttons['resize']] = lambda: self.controller.action_resize_world(self.ui.inputs['world'].get_value(50.0))
 
     def handle_input(self):
         self.layout = self.controller.layout
@@ -137,17 +137,12 @@ class InputHandler:
                 self.session.set_status("Cancelled")
                 return True
             if event.key == pygame.K_z and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                if self.session.current_tool: self.session.current_tool.cancel()
-                self.sim.undo(); self.session.set_status("Undo"); return True
+                self.controller.action_undo(); return True
             if event.key == pygame.K_y and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                if self.session.current_tool: self.session.current_tool.cancel()
-                self.sim.redo(); self.session.set_status("Redo"); return True
+                self.controller.action_redo(); return True
             if event.key == pygame.K_DELETE:
-                if self.session.selected_walls:
-                    for idx in sorted(list(self.session.selected_walls), reverse=True):
-                        self.sim.remove_wall(idx)
-                    self.session.selected_walls.clear()
-                    self.sim.rebuild_static_atoms() 
+                self.controller.action_delete_selection() 
+                return True
         return False
 
     def _handle_menus(self, event):
@@ -165,56 +160,29 @@ class InputHandler:
         captured = False
         if self.controller.context_menu and self.controller.context_menu.handle_event(event):
             action = self.controller.context_menu.action
-            ctx_vars = self.controller.ctx_vars
-            
-            if action == "Delete Constraint":
-                if 0 <= ctx_vars['const'] < len(self.sim.constraints):
-                    self.sim.snapshot(); self.sim.constraints.pop(ctx_vars['const']); self.sim.apply_constraints()
-            elif action == "Set Angle...":
-                val = simpledialog.askfloat("Set Angle", "Enter target angle (degrees):")
-                if val is not None:
-                    if 0 <= ctx_vars['const'] < len(self.sim.constraints):
-                        self.sim.constraints[ctx_vars['const']].value = val
-                        self.sim.apply_constraints()
-            elif action == "Animate...":
-                c = self.sim.constraints[ctx_vars['const']]
-                driver = getattr(c, 'driver', None)
-                self.controller.anim_dialog = AnimationDialog(self.layout['W']//2, self.layout['H']//2, driver)
-            elif action == "Delete": 
-                self.sim.remove_wall(ctx_vars['wall'])
-                self.session.selected_walls.clear(); self.session.selected_points.clear()
-            elif action == "Properties" or action == "Edit Material":
-                idx = ctx_vars['wall']
-                mat_id = getattr(self.sim.walls[idx], 'material_id', "Default")
-                self.controller.prop_dialog = MaterialDialog(self.layout['W']//2, self.layout['H']//2, self.sim.sketch, mat_id)
-            elif action == "Set Rotation...":
-                anim = getattr(self.sim.walls[ctx_vars['wall']], 'anim', None)
-                self.controller.rot_dialog = RotationDialog(self.layout['W']//2, self.layout['H']//2, anim)
-            elif action == "Anchor": 
-                self.sim.toggle_anchor(ctx_vars['wall'], ctx_vars['pt'])
-            elif action == "Un-Anchor":
-                self.sim.toggle_anchor(ctx_vars['wall'], ctx_vars['pt'])
-            elif action == "Set Length...":
-                val = simpledialog.askfloat("Set Length", "Enter target length:")
-                if val: self.sim.add_constraint_object(Length(ctx_vars['wall'], val))
-            self.controller.context_menu = None; captured = True
+            if action: self.controller.handle_context_menu_action(action)
+            captured = True
 
+        # Property Dialog (Material)
         if self.controller.prop_dialog and self.controller.prop_dialog.handle_event(event):
             if self.controller.prop_dialog.apply: 
-                mat = self.controller.prop_dialog.get_result()
-                self.sim.sketch.add_material(mat)
-                self.sim.update_wall_props(self.controller.ctx_vars['wall'], {'material_id': mat.name})
+                self.controller.apply_material_from_dialog(self.controller.prop_dialog)
                 self.controller.prop_dialog.apply = False
             if self.controller.prop_dialog.done: self.controller.prop_dialog = None
             captured = True
             
+        # Rotation Dialog
         if self.controller.rot_dialog and self.controller.rot_dialog.handle_event(event):
-            if self.controller.rot_dialog.apply: self.sim.set_wall_rotation(self.controller.ctx_vars['wall'], self.controller.rot_dialog.get_values()); self.controller.rot_dialog.apply = False
+            if self.controller.rot_dialog.apply: 
+                self.controller.apply_rotation_from_dialog(self.controller.rot_dialog)
+                self.controller.rot_dialog.apply = False
             if self.controller.rot_dialog.done: self.controller.rot_dialog = None
             captured = True
+        
+        # Animation Dialog
         if self.controller.anim_dialog and self.controller.anim_dialog.handle_event(event):
             if self.controller.anim_dialog.apply:
-                self.sim.sketch.set_driver(self.controller.ctx_vars['const'], self.controller.anim_dialog.get_values())
+                self.controller.apply_animation_from_dialog(self.controller.anim_dialog)
                 self.controller.anim_dialog.apply = False
             if self.controller.anim_dialog.done: self.controller.anim_dialog = None
             captured = True

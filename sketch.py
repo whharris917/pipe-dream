@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import math
 from geometry import Line, Circle, Point
 from constraints import create_constraint
 from solver import Solver
@@ -21,6 +22,48 @@ class Sketch:
             "Ghost": Material("Ghost", sigma=1.0, epsilon=1.0, color=(100, 100, 100), physical=False),
             "Steel": Material("Steel", sigma=1.0, epsilon=2.0, color=(100, 150, 200), physical=True)
         }
+
+    # --- Geometry Queries (New SoC Compliance) ---
+
+    def find_entity_at(self, x, y, radius):
+        """
+        Finds the index of an entity intersecting the circle (x, y, radius).
+        Moved from simulation_geometry.py to keep Model logic encapsulated.
+        """
+        best_dist = float('inf')
+        best_idx = -1
+        
+        for i, w in enumerate(self.entities):
+            dist = float('inf')
+            
+            if isinstance(w, Line):
+                if np.array_equal(w.start, w.end): continue
+                p1 = w.start
+                p2 = w.end
+                p3 = np.array([x, y])
+                
+                # Point-Line Segment Distance
+                d_vec = p2 - p1
+                len_sq = np.dot(d_vec, d_vec)
+                if len_sq == 0:
+                    dist = np.linalg.norm(p3 - p1)
+                else:
+                    t = max(0, min(1, np.dot(p3 - p1, d_vec) / len_sq))
+                    proj = p1 + t * d_vec
+                    dist = np.linalg.norm(p3 - proj)
+                    
+            elif isinstance(w, Circle):
+                center_dist = math.hypot(x - w.center[0], y - w.center[1])
+                dist = abs(center_dist - w.radius)
+                
+            elif isinstance(w, Point):
+                 dist = math.hypot(x - w.pos[0], y - w.pos[1])
+
+            if dist < radius and dist < best_dist:
+                best_dist = dist
+                best_idx = i
+                
+        return best_idx
 
     # --- Geometry API ---
 
@@ -112,7 +155,6 @@ class Sketch:
                 c.base_value = c.value
 
     def update_drivers(self, time):
-        import math
         for c in self.constraints:
             if hasattr(c, 'driver') and c.driver:
                 d = c.driver
