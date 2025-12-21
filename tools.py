@@ -5,7 +5,7 @@ import config
 import utils
 import time
 from geometry import Line, Circle
-from constraints import Coincident, Length
+from constraints import Coincident, Length, Angle
 from session import InteractionState
 
 class Tool:
@@ -22,10 +22,10 @@ class Tool:
     def handle_event(self, event, layout):
         return False
 
-    def update(self, dt, layout, ui):
+    def update(self, dt, layout):
         pass
 
-    def draw_overlay(self, screen, renderer):
+    def draw_overlay(self, screen, renderer, layout):
         pass
     
     def cancel(self):
@@ -34,14 +34,16 @@ class Tool:
 class BrushTool(Tool):
     def __init__(self, app):
         super().__init__(app, "Brush")
-        self.brush_radius = 2.0 
+        self.brush_radius = 5.0 
 
-    def update(self, dt, layout, ui):
+    def update(self, dt, layout):
         if self.app.session.state == InteractionState.PAINTING:
             mx, my = pygame.mouse.get_pos()
-            if layout['LEFT_X'] < mx < layout['RIGHT_X']:
+            if layout['LEFT_X'] < mx < layout['RIGHT_X'] and config.TOP_MENU_H < my < config.WINDOW_HEIGHT:
                 sx, sy = utils.screen_to_sim(mx, my, self.app.session.zoom, self.app.session.pan_x, self.app.session.pan_y, self.app.sim.world_size, layout)
-                radius = ui.sliders['brush_size'].val
+                
+                # Decoupled: Use internal state
+                radius = self.brush_radius
                 
                 if pygame.mouse.get_pressed()[0]: 
                     self.app.sim.add_particles_brush(sx, sy, radius)
@@ -52,6 +54,11 @@ class BrushTool(Tool):
         if self.app.session.mode != config.MODE_SIM: return False
         
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # Check bounds for click start
+            mx, my = event.pos
+            if not (layout['MID_X'] < mx < layout['RIGHT_X'] and config.TOP_MENU_H < my < config.WINDOW_HEIGHT):
+                return False
+
             if event.button == 1:
                 self.app.session.state = InteractionState.PAINTING
                 self.app.sim.snapshot()
@@ -66,6 +73,18 @@ class BrushTool(Tool):
                 self.app.session.state = InteractionState.IDLE
                 return True
         return False
+
+    def draw_overlay(self, screen, renderer, layout):
+        # Draw brush preview
+        mx, my = pygame.mouse.get_pos()
+        if layout['MID_X'] < mx < layout['RIGHT_X'] and config.TOP_MENU_H < my < config.WINDOW_HEIGHT:
+            zoom = self.app.session.zoom
+            world_size = self.app.sim.world_size
+            base_scale = (layout['MID_W'] - 50) / world_size
+            final_scale = base_scale * zoom
+            screen_r = self.brush_radius * final_scale
+            
+            renderer.draw_tool_brush(mx, my, screen_r)
 
 class GeometryTool(Tool):
     def __init__(self, app, name):
@@ -157,7 +176,6 @@ class LineTool(GeometryTool):
                 if pygame.key.get_mods() & pygame.KMOD_SHIFT:
                      dx = abs(w.start[0] - w.end[0])
                      dy = abs(w.start[1] - w.end[1])
-                     from constraints import Angle
                      if dy < 0.001: self.app.sim.add_constraint_object(Angle('HORIZONTAL', self.current_wall_idx))
                      elif dx < 0.001: self.app.sim.add_constraint_object(Angle('VERTICAL', self.current_wall_idx))
 
@@ -168,6 +186,11 @@ class LineTool(GeometryTool):
             self.app.sim.apply_constraints()
             return True
         return False
+
+    def draw_overlay(self, screen, renderer, layout):
+        # Line tool draws directly to simulation during drag, 
+        # but we could add specific overlays here if needed.
+        pass
 
 class RectTool(GeometryTool):
     def __init__(self, app):
@@ -208,7 +231,6 @@ class RectTool(GeometryTool):
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.dragging:
             base = self.base_idx
-            from constraints import Angle, Coincident
             sim = self.app.sim
             sim.add_constraint_object(Coincident(base, 1, base+1, 0))
             sim.add_constraint_object(Coincident(base+1, 1, base+2, 0))
@@ -291,6 +313,11 @@ class PointTool(GeometryTool):
                     self.app.sim.add_constraint_object(Coincident(wall_idx, 0, snap[0], snap[1]))
                 return True
         return False
+    
+    def draw_overlay(self, screen, renderer, layout):
+        mx, my = pygame.mouse.get_pos()
+        if layout['MID_X'] < mx < layout['RIGHT_X']:
+             renderer.draw_tool_point(mx, my)
 
 class SelectTool(Tool):
     def __init__(self, app):
@@ -300,6 +327,7 @@ class SelectTool(Tool):
         self.target_pt = -1
         self.group_indices = []
         self.drag_start_mouse = (0, 0)
+        self.drag_rect = None # Added for compatibility if renderer expects it
         self.last_click_time = 0.0
         self.last_click_pos = (0, 0)
         self.DOUBLE_CLICK_TIME = 0.3

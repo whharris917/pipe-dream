@@ -2,7 +2,9 @@ import math
 import numpy as np
 import pygame
 import config
-from geometry import Line, Circle
+from geometry import Line, Circle, Point
+
+# --- Coordinate Transformations ---
 
 def sim_to_screen(x, y, zoom, pan_x, pan_y, world_size, layout):
     cx_world = world_size / 2.0
@@ -29,6 +31,8 @@ def screen_to_sim(sx, sy, zoom, pan_x, pan_y, world_size, layout):
     x = (sx - pan_x - cx_screen) / final_scale + cx_world
     y = (sy - pan_y - cy_screen) / final_scale + cy_world
     return x, y
+
+# --- Grouping & Snapping Helpers ---
 
 def get_connected_group(constraints, start_wall_idx):
     group = {start_wall_idx}
@@ -75,11 +79,12 @@ def get_grouped_points(walls, zoom, pan_x, pan_y, world_size, layout):
                 points_to_process.append((w.end, 1))
         elif isinstance(w, Circle):
             points_to_process.append((w.center, 0))
+        elif isinstance(w, Point):
+             points_to_process.append((w.pos, 0))
         
         for pt, end_idx in points_to_process:
             sx, sy = sim_to_screen(pt[0], pt[1], zoom, pan_x, pan_y, world_size, layout)
             found_key = None
-            # Fuzzy match for screen coordinates to group nearby points
             for k in point_map:
                 if abs(k[0]-sx) <= 3 and abs(k[1]-sy) <= 3: 
                     found_key = k
@@ -97,7 +102,6 @@ def get_snapped_pos(mx, my, walls, zoom, pan_x, pan_y, world_size, layout, ancho
     is_snapped_to_vertex = False
     snapped_target = None
     
-    # CTRL to snap to existing points
     if pygame.key.get_mods() & pygame.KMOD_CTRL:
         snap_threshold_px = 15
         best_dist = float('inf')
@@ -106,6 +110,7 @@ def get_snapped_pos(mx, my, walls, zoom, pan_x, pan_y, world_size, layout, ancho
             points = []
             if isinstance(w, Line): points = [(w.start, 0), (w.end, 1)]
             elif isinstance(w, Circle): points = [(w.center, 0)]
+            elif isinstance(w, Point): points = [(w.pos, 0)]
 
             for pt_pos, pt_idx in points:
                 sx, sy = sim_to_screen(pt_pos[0], pt_pos[1], zoom, pan_x, pan_y, world_size, layout)
@@ -116,7 +121,6 @@ def get_snapped_pos(mx, my, walls, zoom, pan_x, pan_y, world_size, layout, ancho
                     snapped_target = (i, pt_idx)
                     is_snapped_to_vertex = True
 
-    # SHIFT to snap axis (Horizontal/Vertical relative to anchor)
     if (pygame.key.get_mods() & pygame.KMOD_SHIFT) and anchor_pos is not None and not is_snapped_to_vertex:
         dx = final_x - anchor_pos[0]
         dy = final_y - anchor_pos[1]

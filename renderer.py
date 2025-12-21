@@ -2,7 +2,8 @@ import pygame
 import math
 import config
 from utils import sim_to_screen, screen_to_sim, get_grouped_points, calculate_current_temp
-from geometry import Line, Circle
+from simulation_geometry import get_constraint_layout
+from geometry import Line, Circle, Point
 
 class Renderer:
     def __init__(self, screen, font, big_font):
@@ -28,7 +29,8 @@ class Renderer:
         self._draw_geometry(session, sketch, layout, world_size=sim.world_size)
         
         if session.current_tool:
-            session.current_tool.draw_overlay(self.screen, self)
+            # PASSING LAYOUT to the tool so it can calculate screen coords
+            session.current_tool.draw_overlay(self.screen, self, layout)
         
         if session.show_constraints:
             self._draw_constraints(session, sketch, layout, world_size=sim.world_size)
@@ -99,35 +101,154 @@ class Renderer:
             is_sel = (i in app.selected_walls)
             is_pend = (app.pending_constraint and i in app.pending_targets_walls)
             
-            w.render(self.screen, transform, is_selected=is_sel, is_pending=is_pend, color=base_color)
+            if isinstance(w, Line):
+                self._draw_line_entity(w, transform, is_sel, is_pend, base_color)
+            elif isinstance(w, Circle):
+                self._draw_circle_entity(w, transform, is_sel, is_pend, base_color)
+            elif isinstance(w, Point):
+                self._draw_point_entity(w, transform, is_sel, is_pend, base_color)
+
+    def _draw_line_entity(self, line, transform, is_selected, is_pending, color):
+        s1 = transform(line.start[0], line.start[1])
+        s2 = transform(line.end[0], line.end[1])
+        
+        draw_col = color if color else (255, 255, 255)
+        width = 1
+        
+        if is_selected: 
+            draw_col = (255, 200, 50)
+            width = 3
+        elif is_pending:
+            draw_col = (100, 255, 100)
+            width = 3
+        
+        if line.ref: 
+            self._draw_dashed_line(draw_col, s1, s2, width)
+        else: 
+            pygame.draw.line(self.screen, draw_col, s1, s2, width)
+
+        if line.anchored[0]: pygame.draw.circle(self.screen, (255, 50, 50), s1, 3)
+        if line.anchored[1]: pygame.draw.circle(self.screen, (255, 50, 50), s2, 3)
+
+    def _draw_circle_entity(self, circle, transform, is_selected, is_pending, color):
+        sx, sy = transform(circle.center[0], circle.center[1])
+        p0 = transform(0, 0)
+        pr = transform(circle.radius, 0)
+        s_radius = abs(pr[0] - p0[0])
+        
+        draw_col = color if color else (255, 255, 255)
+        width = 1
+
+        if is_selected:
+            draw_col = (255, 200, 50)
+            width = 3
+        elif is_pending:
+            draw_col = (100, 255, 100)
+            width = 3
+        
+        if circle.anchored[0]: pygame.draw.circle(self.screen, (255, 50, 50), (int(sx), int(sy)), 4)
+        pygame.draw.circle(self.screen, draw_col, (int(sx), int(sy)), int(s_radius), width)
+
+    def _draw_point_entity(self, pt, transform, is_selected, is_pending, color):
+        sx, sy = transform(pt.pos[0], pt.pos[1])
+        draw_col = color if color else (255, 255, 255)
+        if is_selected: draw_col = (0, 255, 255)
+        elif is_pending: draw_col = (100, 255, 100)
+        
+        if pt.anchored:
+            pygame.draw.circle(self.screen, (255, 50, 50), (int(sx), int(sy)), 6)
+        
+        pygame.draw.circle(self.screen, draw_col, (int(sx), int(sy)), 4)
+
+    def _draw_dashed_line(self, color, start_pos, end_pos, width=1, dash_length=10):
+        x1, y1 = start_pos; x2, y2 = end_pos
+        length = math.hypot(x2 - x1, y2 - y1)
+        if length == 0: return
+        dash_amount = int(length / dash_length)
+        if dash_amount == 0: return
+        dx = (x2 - x1) / length; dy = (y2 - y1) / length
+        for i in range(0, dash_amount, 2):
+            s = (x1 + dx * i * dash_length, y1 + dy * i * dash_length)
+            e = (x1 + dx * (i + 1) * dash_length, y1 + dy * (i + 1) * dash_length)
+            pygame.draw.line(self.screen, color, s, e, width)
 
     def _draw_constraints(self, app, sketch, layout, world_size=50.0):
+        # 1. Get the Layout (Pure Data) from SimulationGeometry
+        layout_data = get_constraint_layout(sketch.constraints, sketch.entities, app.zoom, app.pan_x, app.pan_y, world_size, layout)
+        
+        # 2. Helper transform for drawing connectors (not needed for icons, they are already screen coords)
         transform = lambda x, y: sim_to_screen(x, y, app.zoom, app.pan_x, app.pan_y, world_size, layout)
-        grouped = {}
-        threshold = 20
-        layout_data = []
-        
-        constraints = sketch.constraints
-        walls = sketch.entities
-        
-        for c in constraints:
-            cx, cy = c.get_visual_center(transform, walls)
-            found_group = None
-            for key in grouped:
-                if math.hypot(key[0]-cx, key[1]-cy) < threshold:
-                    found_group = key; break
-            if found_group:
-                grouped[found_group].append(c); layout_data.append((c, found_group))
-            else:
-                grouped[(cx, cy)] = [c]; layout_data.append((c, (cx, cy)))
 
-        group_counts = {k: 0 for k in grouped}
-        for c, key in layout_data:
-            idx = group_counts[key]; group_counts[key] += 1
-            total_in_group = len(grouped[key]); spacing = 30
-            start_x = -((total_in_group - 1) * spacing) / 2.0
-            final_offset_x = start_x + idx * spacing
-            c.render(self.screen, transform, walls, self.font, offset=(final_offset_x, 0))
+        for item in layout_data:
+            c = item['constraint']
+            rect = item['rect']
+            symbol = item['symbol']
+            
+            # Draw Connectors first
+            self._draw_constraint_connectors(c, transform, sketch.entities)
+            
+            # Draw Icon Background
+            s_rect = rect.copy(); s_rect.x += 2; s_rect.y += 2
+            pygame.draw.rect(self.screen, (0,0,0), s_rect, border_radius=4)
+            pygame.draw.rect(self.screen, item['bg_color'], rect, border_radius=4)
+            pygame.draw.rect(self.screen, (100, 100, 100), rect, 1, border_radius=4)
+            
+            # Draw Text
+            text = self.font.render(symbol, True, item['text_color'])
+            # Center text in rect
+            tx = rect.centerx - text.get_width() // 2
+            ty = rect.centery - text.get_height() // 2
+            self.screen.blit(text, (tx, ty))
+
+    def _draw_constraint_connectors(self, c, transform, entities):
+        # We still need helper logic to know WHERE to draw lines to.
+        # This duplicates some logic from utils but is purely for drawing lines, which is fine.
+        ctype = c.type
+        indices = c.indices
+        
+        if ctype == 'COINCIDENT':
+            idx1, idx2 = indices[0][1], indices[1][1]
+            if idx1 == -1 or idx2 == -1: # Pt-Entity
+                ent_idx = indices[0][0] if idx1 == -1 else indices[1][0]
+                pt_ref = indices[1] if idx1 == -1 else indices[0]
+                c_pos = self._get_entity_center_screen(ent_idx, entities, transform)
+                p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform)
+                self._draw_connector(c_pos, p_pos)
+        
+        elif ctype in ['COLLINEAR', 'MIDPOINT']:
+            pt_ref = indices[0]
+            line_idx = indices[1]
+            p_pos = self._get_point_screen(pt_ref[0], pt_ref[1], entities, transform)
+            l_pos = self._get_entity_center_screen(line_idx, entities, transform)
+            col = (100, 150, 100) if ctype == 'COLLINEAR' else (100, 100, 150)
+            self._draw_connector(p_pos, l_pos, col)
+            
+        elif ctype in ['EQUAL', 'ANGLE', 'PARALLEL', 'PERPENDICULAR']:
+             c1 = self._get_entity_center_screen(indices[0], entities, transform)
+             c2 = self._get_entity_center_screen(indices[1], entities, transform)
+             self._draw_connector(c1, c2)
+
+    def _get_entity_center_screen(self, entity_idx, entities, transform):
+        if entity_idx < 0 or entity_idx >= len(entities): return (0,0)
+        e = entities[entity_idx]
+        if hasattr(e, 'start'): # Line
+            p1 = transform(e.start[0], e.start[1])
+            p2 = transform(e.end[0], e.end[1])
+            return ((p1[0]+p2[0])//2, (p1[1]+p2[1])//2)
+        elif hasattr(e, 'center'): # Circle
+            return transform(e.center[0], e.center[1])
+        elif hasattr(e, 'pos'): # Point
+             return transform(e.pos[0], e.pos[1])
+        return (0,0)
+
+    def _get_point_screen(self, ent_idx, pt_idx, entities, transform):
+        if ent_idx < 0 or ent_idx >= len(entities): return (0,0)
+        e = entities[ent_idx]
+        pt = e.get_point(pt_idx)
+        return transform(pt[0], pt[1])
+
+    def _draw_connector(self, p1, p2, color=(100, 100, 100)):
+        pygame.draw.line(self.screen, color, p1, p2, 1)
 
     def _draw_editor_overlays(self, app, sketch, layout, world_size=50.0):
         point_map = get_grouped_points(sketch.entities, app.zoom, app.pan_x, app.pan_y, world_size, layout)
@@ -152,6 +273,7 @@ class Renderer:
                 is_anchored = False
                 if isinstance(w, Line): is_anchored = w.anchored[pt_idx]
                 elif isinstance(w, Circle): is_anchored = w.anchored[0]
+                elif isinstance(w, Point): is_anchored = w.anchored
                 if is_anchored: anchored_points_draw_list.append((cx, cy))
         
         for pt in anchored_points_draw_list: 
@@ -197,3 +319,27 @@ class Renderer:
             status_surf = self.font.render(app.status_msg, True, (100, 255, 100))
             pygame.draw.rect(self.screen, (30,30,30), (layout['MID_X'] + 15, config.TOP_MENU_H + 10, status_surf.get_width()+10, 25), border_radius=5)
             self.screen.blit(status_surf, (layout['MID_X'] + 20, config.TOP_MENU_H + 15))
+
+    # --- Tool Overlay Helpers ---
+    def draw_tool_selection_rect(self, rect):
+        pygame.draw.rect(self.screen, (0, 255, 255), rect, 1)
+
+    def draw_tool_brush(self, cx, cy, radius):
+        pygame.draw.circle(self.screen, (100, 255, 100), (cx, cy), max(1, int(radius)), 1)
+
+    def draw_tool_line(self, start, end, is_ref=False):
+        col = (100, 255, 100) if not is_ref else (200, 200, 200)
+        pygame.draw.line(self.screen, col, start, end, 2)
+        if is_ref: # simple dash effect if needed, or just color change
+            pass
+
+    def draw_tool_rect(self, rect_tuple):
+         # rect_tuple is (x, y, w, h)
+         pygame.draw.rect(self.screen, (100, 255, 100), rect_tuple, 2)
+
+    def draw_tool_circle(self, center, radius, mouse_pos):
+        pygame.draw.circle(self.screen, (100, 255, 100), center, int(radius), 2)
+        pygame.draw.line(self.screen, (100, 255, 100), center, mouse_pos, 1)
+
+    def draw_tool_point(self, cx, cy):
+        pygame.draw.circle(self.screen, (100, 255, 100), (cx, cy), 4)

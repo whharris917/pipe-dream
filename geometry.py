@@ -1,14 +1,9 @@
 import numpy as np
-import math
-import pygame
 
 class Entity:
     def __init__(self, material_id="Default"):
         self.material_id = material_id
         self.anim = None 
-
-    def render(self, screen, transform_func, is_selected=False, is_pending=False, color=None):
-        raise NotImplementedError
 
     def get_point(self, index):
         raise NotImplementedError
@@ -30,18 +25,6 @@ class Point(Entity):
         super().__init__(material_id)
         self.pos = np.array([x, y], dtype=np.float64)
         self.anchored = anchored
-
-    def render(self, screen, transform_func, is_selected=False, is_pending=False, color=None):
-        sx, sy = transform_func(self.pos[0], self.pos[1])
-        
-        draw_col = color if color else (255, 255, 255)
-        if is_selected: draw_col = (0, 255, 255)
-        elif is_pending: draw_col = (100, 255, 100)
-        
-        if self.anchored:
-            pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 6)
-        
-        pygame.draw.circle(screen, draw_col, (int(sx), int(sy)), 4)
 
     def get_point(self, index):
         return self.pos
@@ -97,40 +80,6 @@ class Line(Entity):
         if 1 in indices and not self.anchored[1]:
             self.end[0] += dx; self.end[1] += dy
 
-    def render(self, screen, transform_func, is_selected=False, is_pending=False, color=None):
-        s1 = transform_func(self.start[0], self.start[1])
-        s2 = transform_func(self.end[0], self.end[1])
-        
-        draw_col = color if color else (255, 255, 255)
-        width = 1
-        
-        if is_selected: 
-            draw_col = (255, 200, 50)
-            width = 3
-        elif is_pending:
-            draw_col = (100, 255, 100)
-            width = 3
-        
-        if self.ref: 
-            self._draw_dashed(screen, draw_col, s1, s2, width)
-        else: 
-            pygame.draw.line(screen, draw_col, s1, s2, width)
-
-        if self.anchored[0]: pygame.draw.circle(screen, (255, 50, 50), s1, 3)
-        if self.anchored[1]: pygame.draw.circle(screen, (255, 50, 50), s2, 3)
-
-    def _draw_dashed(self, surf, color, start_pos, end_pos, width=1, dash_length=10):
-        x1, y1 = start_pos; x2, y2 = end_pos
-        length = math.hypot(x2 - x1, y2 - y1)
-        if length == 0: return
-        dash_amount = int(length / dash_length)
-        if dash_amount == 0: return
-        dx = (x2 - x1) / length; dy = (y2 - y1) / length
-        for i in range(0, dash_amount, 2):
-            s = (x1 + dx * i * dash_length, y1 + dy * i * dash_length)
-            e = (x1 + dx * (i + 1) * dash_length, y1 + dy * (i + 1) * dash_length)
-            pygame.draw.line(surf, color, s, e, width)
-
     def to_dict(self):
         d = {
             'type': 'line', 
@@ -145,10 +94,7 @@ class Line(Entity):
 
     @staticmethod
     def from_dict(data):
-        # Backward compatibility check
         mat_id = data.get('material_id', "Default")
-        # If older file had 'physical' but no mat_id, maybe infer?
-        # For now, default is safe.
         l = Line(data['start'], data['end'], data.get('ref', False), mat_id)
         l.anchored = data.get('anchored', [False, False])
         l.anim = data.get('anim', None)
@@ -173,25 +119,6 @@ class Circle(Entity):
     def move(self, dx, dy, indices=None):
         if not self.anchored[0]:
             self.center[0] += dx; self.center[1] += dy
-
-    def render(self, screen, transform_func, is_selected=False, is_pending=False, color=None):
-        sx, sy = transform_func(self.center[0], self.center[1])
-        p0 = transform_func(0, 0)
-        pr = transform_func(self.radius, 0)
-        s_radius = abs(pr[0] - p0[0])
-        
-        draw_col = color if color else (255, 255, 255)
-        width = 1
-
-        if is_selected:
-            draw_col = (255, 200, 50)
-            width = 3
-        elif is_pending:
-            draw_col = (100, 255, 100)
-            width = 3
-        
-        if self.anchored[0]: pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 4)
-        pygame.draw.circle(screen, draw_col, (int(sx), int(sy)), int(s_radius), width)
 
     def to_dict(self):
         d = {

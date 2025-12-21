@@ -21,6 +21,7 @@ from tools import SelectTool, BrushTool, LineTool, RectTool, CircleTool, PointTo
 from definitions import CONSTRAINT_DEFS
 from ui_manager import UIManager
 from input_handler import InputHandler
+import simulation_geometry
 
 class FlowStateApp:
     def __init__(self, start_mode=config.MODE_SIM):
@@ -148,11 +149,20 @@ class FlowStateApp:
         mx, my = pos
         sim_x, sim_y = utils.screen_to_sim(mx, my, self.session.zoom, self.session.pan_x, self.session.pan_y, self.sim.world_size, self.layout)
         
+        # Check for constraints using SIMULATION GEOMETRY LAYOUT
         if self.session.show_constraints:
-            for i, c in enumerate(self.sim.constraints):
-                if c.hit_test(mx, my): 
-                    self.ctx_vars['const'] = i
-                    opts = self.sim.geo.get_context_options('constraint', i)
+            # Re-calculate layout for hit testing
+            layout_data = simulation_geometry.get_constraint_layout(
+                self.sim.constraints, self.sim.walls, 
+                self.session.zoom, self.session.pan_x, self.session.pan_y, 
+                self.sim.world_size, self.layout
+            )
+            
+            for item in layout_data:
+                if item['rect'].collidepoint(mx, my):
+                    const_idx = item['index']
+                    self.ctx_vars['const'] = const_idx
+                    opts = self.sim.geo.get_context_options('constraint', const_idx)
                     self.context_menu = ContextMenu(mx, my, opts)
                     return
 
@@ -209,10 +219,14 @@ class FlowStateApp:
                 self.sim.step(int(self.ui.sliders['speed'].val))
         
         if self.session.current_tool:
-            self.session.current_tool.update(dt, self.layout, self.ui)
+            # Sync Tool Properties from UI (Controller Logic)
+            if self.session.current_tool.name == "Brush":
+                if 'brush_size' in self.ui.sliders:
+                    self.session.current_tool.brush_radius = self.ui.sliders['brush_size'].val
+            
+            self.session.current_tool.update(dt, self.layout)
 
     def render(self):
-        # UPDATED: Pass self (the app)
         self.renderer.draw_app(self, self.layout, [])
 
         self.ui.draw(self.screen, self.font, self.session.mode)
