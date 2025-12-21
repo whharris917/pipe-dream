@@ -1,5 +1,5 @@
 import pygame
-from folly_synth import Synth, NOTES
+from ui_folly.folly_synth import Synth, NOTES
 
 def generate(sample_rate):
     bpm = 120

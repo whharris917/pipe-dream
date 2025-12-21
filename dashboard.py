@@ -5,7 +5,8 @@ import os
 
 # Try to import config to respect global settings if available
 try:
-    import config
+    import core.config as config
+
 except ImportError:
     config = None
 
