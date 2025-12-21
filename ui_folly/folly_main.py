@@ -13,11 +13,16 @@ from folly_ui import (
 )
 
 # --- SETUP ---
+# CRITICAL: Pre-init mixer to 44.1kHz, 16-bit signed, MONO (1 channel)
+# matches the array.array('h') buffers generated in folly_assets.py
+pygame.mixer.pre_init(44100, -16, 1, 1024)
 pygame.init()
+
 WIDTH, HEIGHT = 1200, 850
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Flow State // Industrial Studio")
 
+# Fonts
 try:
     font_path = pygame.font.match_font("segoeui") 
     font = pygame.font.Font(font_path, 15) if font_path else pygame.font.SysFont("arial", 15)

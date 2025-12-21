@@ -3,14 +3,12 @@ import math
 import random
 
 # --- PROFESSIONAL THEME ---
-C_BG = (15, 18, 22)           # Deep charcoal blue
-C_PANEL = (28, 32, 38)        # Neutral slate
-C_BORDER = (45, 50, 60)       # Low contrast border
-
-# --- TEXT COLORS (CRITICAL) ---
+C_BG = (18, 20, 24)           # Deep charcoal blue
+C_PANEL = (30, 34, 40)        # Soft Slate
+C_BORDER = (50, 55, 65)       # Low contrast border
 C_TEXT = (255, 255, 255)      # Pure White core (Active)
 C_TEXT_IDLE = (235, 235, 240) # Soft paper white (Normal)
-C_TEXT_DIM = (160, 165, 175)  # Muted slate (Disabled/Header) - FIX: Added explicitly
+C_TEXT_DIM = (160, 165, 175)  # Muted slate (Disabled/Header)
 C_SHADOW = (0, 0, 0, 120)     
 
 # Muted Accent Colors
@@ -73,14 +71,26 @@ class JuicyButton:
         if self.disabled: return
         if event.type == pygame.MOUSEMOTION:
             was = self.hovered; self.hovered = self.rect.collidepoint(event.pos)
-            if self.hovered: self.anim_hover.set(1.0); self.anim_scale.set(1.02); 
-            else: self.anim_hover.set(0.0); self.anim_scale.set(1.0)
-            if self.hovered and not was and assets: assets.play_sound('hover')
+            if self.hovered: 
+                self.anim_hover.set(1.0); self.anim_scale.set(1.02); 
+            else: 
+                self.anim_hover.set(0.0); self.anim_scale.set(1.0)
+            
+            # --- FIX: Play the assigned sound on hover (Preview Mode) ---
+            if self.hovered and not was and assets:
+                preview = self.sound_name if self.sound_name else 'hover'
+                assets.play_sound(preview)
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if self.hovered and event.button == 1:
                 self.clicked = True; self.anim_scale.value = 0.95; self.anim_click.value = 1.0
                 self.ripples.append({'x': event.pos[0]-self.rect.x, 'y': event.pos[1]-self.rect.y, 'r': 5, 'a': 1.0})
-                if assets: assets.play_sound('click')
+                
+                # We still play on click for rhythmic tapping
+                if assets: 
+                    snd = self.sound_name if self.sound_name else 'click'
+                    assets.play_sound(snd)
+                    
         elif event.type == pygame.MOUSEBUTTONUP:
             if self.clicked:
                 if self.hovered and event.button == 1 and self.style == "toggle": self.active = not self.active
@@ -149,13 +159,13 @@ class Slider:
         if e.type == pygame.MOUSEMOTION:
             self.hovered = self.rect.collidepoint(e.pos)
             if self.dragging: self.val = max(0, min((e.pos[0]-self.rect.x)/self.rect.w, 1.0))
-        elif e.type == pygame.MOUSEBUTTONDOWN and self.hovered: self.dragging = True
+        elif e.type == pygame.MOUSEBUTTONDOWN and self.hovered: self.dragging = True; self.val = max(0, min((e.pos[0]-self.rect.x)/self.rect.w, 1.0))
         elif e.type == pygame.MOUSEBUTTONUP: self.dragging = False
     def update(self, dt): pass
     def draw(self, s, f):
-        pygame.draw.rect(s, (20,22,26), (self.rect.x, self.rect.centery-2, self.rect.w, 4), border_radius=2)
+        pygame.draw.rect(s, C_PANEL, (self.rect.x, self.rect.centery-3, self.rect.w, 6), border_radius=3)
         pygame.draw.rect(s, C_ACCENT, (self.rect.x, self.rect.centery-2, self.rect.w*self.val, 4), border_radius=2)
-        draw_soft_circle(s, (200,200,200), (int(self.rect.x+self.rect.w*self.val), self.rect.centery), 7)
+        draw_soft_circle(s, (200,200,200), (int(self.rect.x+self.rect.width*self.val), self.rect.centery), 7)
 
 class Knob:
     def __init__(self, x, y, r, val=0.0):
@@ -213,14 +223,15 @@ class Dropdown:
                 if mr.collidepoint(event.pos): self.hover_index = int((event.pos[1]-mr.y)//30)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if self.rect.collidepoint(event.pos): self.is_open = not self.is_open; return True
-                elif self.is_open and self.hover_index != -1: self.selected_index = self.hover_index; self.is_open = False; return True
+                if self.rect.collidepoint(event.pos): self.is_open = not self.is_open; assets and assets.play_sound('click'); return True
+                elif self.is_open and self.hover_index != -1: self.selected_index = self.hover_index; self.is_open = False; assets and assets.play_sound('snap'); return True
                 elif self.is_open: self.is_open = False; return True
         return False
     def update(self, dt): self.anim_open.set(1.0 if self.is_open else 0.0); self.anim_open.update(dt)
     def draw(self, screen, font):
         pygame.draw.rect(screen, C_PANEL, self.rect, border_radius=6); pygame.draw.rect(screen, C_BORDER, self.rect, 1, border_radius=6)
-        screen.blit(font.render(self.options[self.selected_index], True, C_TEXT_IDLE), (self.rect.x+10, self.rect.centery-8))
+        ts = font.render(self.options[self.selected_index] if self.options else "", True, C_TEXT_IDLE)
+        screen.blit(ts, (self.rect.x+10, self.rect.centery-ts.get_height()//2))
     def draw_overlay(self, screen, font):
         if self.anim_open.value < 0.01: return
         th = len(self.options)*30; ch = th * self.anim_open.value
@@ -234,14 +245,13 @@ class Dropdown:
 class Panel:
     def __init__(self, x, y, w, h, title=""): self.rect = pygame.Rect(x, y, w, h); self.title = title
 
-# --- FACTORY WIDGETS (PROFESSIONAL RENDER) ---
+# --- PROFESSIONAL FACTORY WIDGETS ---
 
 class FactoryGear(JuicyButton):
     def __init__(self, x, y, size, speed=30): super().__init__(x, y, size, size); self.a=0; self.base=speed
     def update(self, dt): super().update(dt); self.a += (self.base*5 if self.hovered else self.base)*dt
     def draw(self, s, f, a=None):
         super().draw(s, f, a); cx, cy = self.rect.center; r = self.rect.w*0.35
-        # Soft Metal Gear
         for i in range(8):
             rad = math.radians(self.a + i*45)
             draw_soft_circle(s, (100, 110, 120), (cx+math.cos(rad)*(r+3), cy+math.sin(rad)*(r+3)), 3)
@@ -263,9 +273,7 @@ class FactoryFan(JuicyButton):
     def update(self, dt): super().update(dt); self.a += (1000 if self.hovered else 200)*dt
     def draw(self, s, f, a=None):
         super().draw(s, f, a); cx, cy = self.rect.center; r = self.rect.w*0.35
-        # Frame
         draw_soft_circle(s, (40, 40, 45), (cx, cy), int(r))
-        # Blades
         for i in range(3):
             rad = math.radians(self.a + i*120)
             ex, ey = cx+math.cos(rad)*r, cy+math.sin(rad)*r
@@ -450,27 +458,18 @@ class FactoryHazard(JuicyButton):
         super().__init__(x, y, w, h); self.scroll = 0.0
     def update(self, dt): super().update(dt); self.scroll += dt * 30
     def draw(self, s, f, a=None):
-        # Base shadow
         shad = pygame.Surface((self.rect.w, self.rect.h), pygame.SRCALPHA)
         pygame.draw.rect(shad, C_SHADOW, (0,0,self.rect.w,self.rect.h), border_radius=8)
         s.blit(shad, (self.rect.x, self.rect.y+4))
-        
-        # Stripes
         surf = pygame.Surface((self.rect.w, self.rect.h))
         surf.fill(C_WARNING)
         offset = int(self.scroll) % 40
         for i in range(-50, self.rect.w + 50, 20):
             pts = [(i+offset, 0), (i+offset+10, 0), (i+offset-10, self.rect.h), (i+offset-20, self.rect.h)]
             pygame.draw.polygon(surf, (20, 20, 20), pts)
-        
-        # Highlight (Glassy Top)
         pygame.draw.rect(surf, (255,255,255,40), (0,0,self.rect.w,self.rect.h//2))
         s.blit(surf, self.rect.topleft)
-        
-        # Border
         pygame.draw.rect(s, (20,20,20), self.rect, 2)
-        
-        # Text Pill
         ts = f.render("CAUTION", True, (20,20,20))
         pill = ts.get_rect(center=self.rect.center).inflate(16, 4)
         pygame.draw.rect(s, (240,240,240), pill, border_radius=4)
