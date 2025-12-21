@@ -2,7 +2,15 @@ import pygame
 import math
 import random
 from folly_assets import AssetManager
-from folly_ui import JuicyButton, Dropdown, Checkbox, Slider, Knob, TextInput, ProgressBar, C_BG, C_ACCENT, AnimVar
+from folly_ui import (
+    JuicyButton, Dropdown, Checkbox, Slider, Knob, TextInput, ProgressBar, 
+    FactoryGear, FactoryTank, FactoryPower, FactoryGauge, FactoryHazard, 
+    FactoryFan, FactoryLight, FactoryPiston, FactoryGraph,
+    FactoryConveyor, FactoryValve, FactoryBurner, FactoryRadar, FactoryChip,
+    FactoryBattery, FactoryServer, FactorySolar, FactoryTurbine, FactorySiren,
+    FactoryCrate, FactoryRobotArm,
+    C_BG, C_ACCENT, C_SUCCESS, C_DANGER, C_WARNING, AnimVar
+)
 
 # --- SETUP ---
 pygame.init()
@@ -10,7 +18,6 @@ WIDTH, HEIGHT = 1200, 850
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Flow State // Studio")
 
-# Fonts
 try:
     font_path = pygame.font.match_font("segoeui") 
     font = pygame.font.Font(font_path, 15) if font_path else pygame.font.SysFont("arial", 15)
@@ -23,7 +30,6 @@ except:
 clock = pygame.time.Clock()
 assets = AssetManager.get()
 
-# --- BACKGROUND ---
 class Background:
     def draw(self, surf):
         surf.fill(C_BG)
@@ -41,6 +47,7 @@ sidebar_w = 200
 btn_tab_sfx = JuicyButton(10, 80, 180, 45, text="Soundboard", icon_name="tab_sfx")
 btn_tab_music = JuicyButton(10, 135, 180, 45, text="Jukebox", icon_name="tab_music")
 btn_tab_kit = JuicyButton(10, 190, 180, 45, text="UI Kit", icon_name="settings") 
+btn_tab_fac = JuicyButton(10, 245, 180, 45, text="Factory", icon_name="gear") 
 btn_tab_sfx.active = True
 
 content_rect = pygame.Rect(210, 80, WIDTH - 220, HEIGHT - 100)
@@ -96,11 +103,9 @@ for t_name in track_names:
     music_buttons.append(btn_stop)
     curr_y += 60
 
-# -- UI KIT CONTENT (SHOWCASE) --
+# -- UI KIT CONTENT --
 kit_widgets = []
 cx, cy = content_rect.x + 20, content_rect.y + 20
-
-# 1. Colors & Buttons
 kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// ACTION BUTTONS"))
 kit_widgets[-1].disabled = True
 cy += 40
@@ -109,8 +114,6 @@ kit_widgets.append(JuicyButton(cx+150, cy, 140, 45, text="Primary", style="prima
 kit_widgets.append(JuicyButton(cx+300, cy, 140, 45, text="Danger", style="danger"))
 kit_widgets.append(JuicyButton(cx+450, cy, 140, 45, text="Success", style="success"))
 cy += 60
-
-# 2. Toggles & Checkboxes
 kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// BOOLEAN INPUTS"))
 kit_widgets[-1].disabled = True
 cy += 40
@@ -119,8 +122,6 @@ kit_widgets.append(Checkbox(cx+160, cy+5, 30, "Show Grid", True))
 kit_widgets.append(Checkbox(cx+300, cy+5, 30, "Enable Physics", False))
 kit_widgets.append(Checkbox(cx+460, cy+5, 30, "Debug Mode", False))
 cy += 60
-
-# 3. Sliders & Progress
 kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// ANALOG INPUTS"))
 kit_widgets[-1].disabled = True
 cy += 40
@@ -129,21 +130,66 @@ kit_widgets.append(Slider(cx+220, cy+10, 200, val=0.7))
 kit_widgets.append(Knob(cx+480, cy+20, 25, val=0.2))
 kit_widgets.append(Knob(cx+550, cy+20, 25, val=0.8))
 cy += 60
-
-# 4. Text & Dropdowns
 kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// TEXT & SELECTION"))
 kit_widgets[-1].disabled = True
 cy += 40
 kit_widgets.append(TextInput(cx, cy, 250, 40, "Enter project name..."))
 kit_widgets.append(Dropdown(cx+270, cy, 200, 40, ["Low Quality", "Medium Quality", "High Quality"]))
 cy += 60
-
-# 5. Progress
 kit_widgets.append(JuicyButton(cx, cy, 200, 30, text="// SYSTEM STATUS"))
 kit_widgets[-1].disabled = True
 cy += 40
 kit_widgets.append(ProgressBar(cx, cy, 400, 20, val=0.4))
 
+# -- FACTORY CONTENT --
+fac_widgets = []
+fx, fy = content_rect.x + 20, content_rect.y + 20
+
+fac_widgets.append(JuicyButton(fx, fy, 200, 30, text="// FACTORY DASHBOARD (50% SCALE)"))
+fac_widgets[-1].disabled = True
+fy += 50
+
+# --- MINI GRID: 30px WIDGETS ---
+grid_cols = 20
+grid_rows = 5
+grid_size = 30 # 50% smaller!
+grid_gap = 10
+
+widget_generators = [
+    lambda x, y: FactoryGear(x, y, grid_size, speed=random.choice([30, 60, -60])),
+    lambda x, y: FactoryTank(x, y, grid_size, fluid_col=random.choice([C_ACCENT, C_SUCCESS, C_DANGER])),
+    lambda x, y: FactoryFan(x, y, grid_size),
+    lambda x, y: FactoryLight(x, y, grid_size, color=random.choice([C_SUCCESS, C_DANGER, C_WARNING])),
+    lambda x, y: FactoryGauge(x, y, grid_size),
+    lambda x, y: FactoryPower(x, y, grid_size),
+    lambda x, y: FactoryPiston(x, y, grid_size),
+    lambda x, y: FactoryGraph(x, y, grid_size),
+    # New ones
+    lambda x, y: FactoryConveyor(x, y, grid_size),
+    lambda x, y: FactoryValve(x, y, grid_size),
+    lambda x, y: FactoryBurner(x, y, grid_size),
+    lambda x, y: FactoryRadar(x, y, grid_size),
+    lambda x, y: FactoryChip(x, y, grid_size),
+    lambda x, y: FactoryBattery(x, y, grid_size),
+    lambda x, y: FactoryServer(x, y, grid_size),
+    lambda x, y: FactorySolar(x, y, grid_size),
+    lambda x, y: FactoryTurbine(x, y, grid_size),
+    lambda x, y: FactorySiren(x, y, grid_size),
+    lambda x, y: FactoryCrate(x, y, grid_size),
+    lambda x, y: FactoryRobotArm(x, y, grid_size)
+]
+
+for i in range(100): # More widgets to fill the denser grid
+    col = i % grid_cols
+    row = i // grid_cols
+    
+    wx = fx + col * (grid_size + grid_gap)
+    wy = fy + row * (grid_size + grid_gap)
+    
+    gen = random.choice(widget_generators)
+    fac_widgets.append(gen(wx, wy))
+
+fac_widgets.append(FactoryHazard(fx, fy + 250, 790, 40))
 
 # --- MAIN LOOP ---
 running = True
@@ -159,10 +205,12 @@ while running:
         btn_tab_sfx.handle_event(event, assets)
         btn_tab_music.handle_event(event, assets)
         btn_tab_kit.handle_event(event, assets)
+        btn_tab_fac.handle_event(event, assets)
         
         if btn_tab_sfx.clicked: target_tab = "SFX"
         elif btn_tab_music.clicked: target_tab = "MUSIC"
         elif btn_tab_kit.clicked: target_tab = "KIT"
+        elif btn_tab_fac.clicked: target_tab = "FAC"
 
         if target_tab != current_tab:
             anim_tab_offset.value = 50.0 
@@ -170,18 +218,19 @@ while running:
             btn_tab_sfx.active = (current_tab == "SFX")
             btn_tab_music.active = (current_tab == "MUSIC")
             btn_tab_kit.active = (current_tab == "KIT")
+            btn_tab_fac.active = (current_tab == "FAC")
 
         active_list = []
         if current_tab == "SFX": active_list = sfx_buttons
         elif current_tab == "MUSIC": active_list = music_buttons
         elif current_tab == "KIT": active_list = kit_widgets
+        elif current_tab == "FAC": active_list = fac_widgets
         
         for w in active_list:
             if hasattr(w, 'handle_event'):
                 try: w.handle_event(event, assets)
-                except: pass # some widgets dont need assets
+                except: pass 
                 
-                # Logic Hooks
                 if hasattr(w, 'clicked') and w.clicked:
                     if hasattr(w, 'track_to_play') and w.track_to_play: assets.play_music(w.track_to_play)
                     elif hasattr(w, 'is_stop_btn') and w.is_stop_btn: assets.stop_music()
@@ -192,11 +241,13 @@ while running:
     btn_tab_sfx.update(dt)
     btn_tab_music.update(dt)
     btn_tab_kit.update(dt)
+    btn_tab_fac.update(dt)
     
     active_list = []
     if current_tab == "SFX": active_list = sfx_buttons
     elif current_tab == "MUSIC": active_list = music_buttons
     elif current_tab == "KIT": active_list = kit_widgets
+    elif current_tab == "FAC": active_list = fac_widgets
 
     for w in active_list:
         if hasattr(w, 'update'): w.update(dt)
@@ -218,10 +269,10 @@ while running:
     btn_tab_sfx.draw(screen, font, assets)
     btn_tab_music.draw(screen, font, assets)
     btn_tab_kit.draw(screen, font, assets)
+    btn_tab_fac.draw(screen, font, assets)
     
     offset = anim_tab_offset.value
     
-    # Standard Draw
     for w in active_list:
         if not isinstance(w, Dropdown) or not w.is_open:
             orig_x = w.rect.x
@@ -230,13 +281,12 @@ while running:
             else: w.draw(screen, font)
             w.rect.x = orig_x
             
-    # Overlay Draw (Dropdowns)
     for w in active_list:
         if isinstance(w, Dropdown):
             orig_x = w.rect.x
             w.rect.x += offset
-            if w.is_open: w.draw_overlay(screen, font) # Draw overlay
-            else: w.draw(screen, font) # Draw closed state if not handled above
+            if w.is_open: w.draw_overlay(screen, font) 
+            else: w.draw(screen, font) 
             w.rect.x = orig_x
     
     pygame.display.flip()

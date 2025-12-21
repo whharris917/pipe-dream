@@ -85,8 +85,6 @@ class FlowStateApp:
             self.change_tool(config.TOOL_BRUSH) 
 
     # --- Properties ---
-    # Compatibility layer REMOVED per instruction. Use self.session directly.
-
     @property
     def walls(self): return self.sim.walls
     
@@ -144,6 +142,30 @@ class FlowStateApp:
             self.clock.tick()
         if self.root_tk: self.root_tk.destroy()
         pygame.quit()
+
+    # --- BUSINESS LOGIC ACTIONS (Moved from InputHandler) ---
+
+    def toggle_ghost_mode(self):
+        self.session.show_wall_atoms = not self.session.show_wall_atoms
+        if 'mode_ghost' in self.ui.buttons:
+            self.ui.buttons['mode_ghost'].active = not self.session.show_wall_atoms 
+        state = "Hidden" if not self.session.show_wall_atoms else "Visible"
+        self.session.set_status(f"Wall Atoms: {state}")
+
+    def atomize_selected(self):
+        if self.session.selected_walls:
+            count = 0
+            for idx in self.session.selected_walls:
+                if idx < len(self.sim.walls):
+                    self.sim.update_wall_props(idx, {'physical': True})
+                    count += 1
+            self.sim.rebuild_static_atoms()
+            self.session.set_status(f"Atomized {count} entities")
+        else:
+            self.sim.rebuild_static_atoms()
+            self.session.set_status("Atomized All Geometry")
+
+    # --- End Business Logic ---
 
     def _spawn_context_menu(self, pos):
         mx, my = pos

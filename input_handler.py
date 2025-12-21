@@ -18,60 +18,54 @@ class InputHandler:
         self.ui = controller.ui
         self.layout = controller.layout
         
-        # Mappings
-        self.tool_btn_map = {
-            self.ui.tools['brush']: config.TOOL_BRUSH, self.ui.tools['select']: config.TOOL_SELECT,
-            self.ui.tools['line']: config.TOOL_LINE, self.ui.tools['rect']: config.TOOL_RECT,
-            self.ui.tools['circle']: config.TOOL_CIRCLE, self.ui.tools['point']: config.TOOL_POINT,
-            self.ui.tools['ref']: config.TOOL_REF
+        # Mappings - Using safe initialization
+        self.tool_btn_map = {}
+        tool_defs = {
+            'brush': config.TOOL_BRUSH, 'select': config.TOOL_SELECT,
+            'line': config.TOOL_LINE, 'rect': config.TOOL_RECT,
+            'circle': config.TOOL_CIRCLE, 'point': config.TOOL_POINT,
+            'ref': config.TOOL_REF
         }
+        for key, val in tool_defs.items():
+            if key in self.ui.tools:
+                self.tool_btn_map[self.ui.tools[key]] = val
         
-        self.constraint_btn_map = {
-            self.ui.buttons['const_length']: 'LENGTH', self.ui.buttons['const_equal']: 'EQUAL',
-            self.ui.buttons['const_parallel']: 'PARALLEL', self.ui.buttons['const_perp']: 'PERPENDICULAR',
-            self.ui.buttons['const_coincident']: 'COINCIDENT', self.ui.buttons['const_collinear']: 'COLLINEAR',
-            self.ui.buttons['const_midpoint']: 'MIDPOINT', self.ui.buttons['const_angle']: 'ANGLE',
-            self.ui.buttons['const_horiz']: 'HORIZONTAL', self.ui.buttons['const_vert']: 'VERTICAL'
+        self.constraint_btn_map = {}
+        constraint_defs = {
+            'const_length': 'LENGTH', 'const_equal': 'EQUAL',
+            'const_parallel': 'PARALLEL', 'const_perp': 'PERPENDICULAR',
+            'const_coincident': 'COINCIDENT', 'const_collinear': 'COLLINEAR',
+            'const_midpoint': 'MIDPOINT', 'const_angle': 'ANGLE',
+            'const_horiz': 'HORIZONTAL', 'const_vert': 'VERTICAL'
         }
+        for key, val in constraint_defs.items():
+            if key in self.ui.buttons:
+                self.constraint_btn_map[self.ui.buttons[key]] = val
 
-        # Action Map
-        self.ui_action_map = {
-            self.ui.buttons.get('reset'): lambda: self.sim.reset_simulation(),
-            self.ui.buttons.get('clear'): lambda: self.sim.clear_particles(),
-            self.ui.buttons.get('undo'): lambda: (self.sim.undo(), self.session.set_status("Undo")),
-            self.ui.buttons.get('redo'): lambda: (self.sim.redo(), self.session.set_status("Redo")),
-            
-            self.ui.buttons.get('atomize'): self.atomize_selected,
-            self.ui.buttons.get('mode_ghost'): self.toggle_ghost_mode,
-            
-            self.ui.buttons.get('discard_geo'): lambda: self.controller.exit_editor_mode(None), 
-            self.ui.buttons.get('save_geo'): self.controller.save_geo_dialog,
-            self.ui.buttons.get('extend'): self.controller.toggle_extend,
-            self.ui.buttons.get('editor_play'): self.controller.toggle_editor_play,
-            self.ui.buttons.get('show_const'): self.controller.toggle_show_constraints,
-        }
+        # Action Map - Now mostly delegates to Controller
+        self.ui_action_map = {}
+        
+        # Helper to safely map buttons if they exist
+        def bind_action(btn_key, action):
+            if btn_key in self.ui.buttons:
+                self.ui_action_map[self.ui.buttons[btn_key]] = action
+
+        bind_action('reset', lambda: self.sim.reset_simulation())
+        bind_action('clear', lambda: self.sim.clear_particles())
+        bind_action('undo', lambda: (self.sim.undo(), self.session.set_status("Undo")))
+        bind_action('redo', lambda: (self.sim.redo(), self.session.set_status("Redo")))
+        
+        # Delegated to Controller
+        bind_action('atomize', self.controller.atomize_selected)
+        bind_action('mode_ghost', self.controller.toggle_ghost_mode)
+        bind_action('discard_geo', lambda: self.controller.exit_editor_mode(None))
+        bind_action('save_geo', self.controller.save_geo_dialog)
+        bind_action('extend', self.controller.toggle_extend)
+        bind_action('editor_play', self.controller.toggle_editor_play)
+        bind_action('show_const', self.controller.toggle_show_constraints)
         
         if 'resize' in self.ui.buttons and 'world' in self.ui.inputs:
              self.ui_action_map[self.ui.buttons['resize']] = lambda: self.sim.resize_world(self.ui.inputs['world'].get_value(50.0))
-
-    def toggle_ghost_mode(self):
-        self.session.show_wall_atoms = not self.session.show_wall_atoms
-        self.ui.buttons['mode_ghost'].active = not self.session.show_wall_atoms 
-        state = "Hidden" if not self.session.show_wall_atoms else "Visible"
-        self.session.set_status(f"Wall Atoms: {state}")
-
-    def atomize_selected(self):
-        if self.session.selected_walls:
-            count = 0
-            for idx in self.session.selected_walls:
-                if idx < len(self.sim.walls):
-                    self.sim.update_wall_props(idx, {'physical': True})
-                    count += 1
-            self.sim.rebuild_static_atoms()
-            self.session.set_status(f"Atomized {count} entities")
-        else:
-            self.sim.rebuild_static_atoms()
-            self.session.set_status("Atomized All Geometry")
 
     def handle_input(self):
         self.layout = self.controller.layout
