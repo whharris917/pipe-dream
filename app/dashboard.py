@@ -48,7 +48,7 @@ class Dashboard:
         self.width = 800  # Default width
         self.height = 600 # Default height
         
-        bg_path = os.path.join(self.base_dir, "art", "colorful_vessels.jpg")
+        bg_path = os.path.join(self.base_dir, "..", "art", "colorful_vessels.jpg")
         if os.path.exists(bg_path):
             try:
                 self.bg_image = pygame.image.load(bg_path)
@@ -88,7 +88,7 @@ class Dashboard:
 
     def _start_music(self):
         # Look for the music file in the 'music' subdirectory
-        music_path = os.path.join(self.base_dir, "music", "flow_dynamics.mp3")
+        music_path = os.path.join(self.base_dir, "..", "music", "flow_dynamics.mp3")
         
         if os.path.exists(music_path):
             try:
@@ -162,7 +162,7 @@ class Dashboard:
         try:
             # Spawn the new independent instance using main.py
             # This respects the new entry point architecture
-            script_path = os.path.join(self.base_dir, "main.py")
+            script_path = os.path.join(self.base_dir, "..", "main.py")
             cmd = [sys.executable, script_path, "--mode", mode]
             
             print(f"Launching subprocess: {' '.join(cmd)}")
