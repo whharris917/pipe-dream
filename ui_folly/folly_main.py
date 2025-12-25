@@ -1,8 +1,8 @@
 import pygame
 import math
 import random
-from ui_folly.folly_assets import AssetManager
-from ui_folly.folly_ui import (
+from folly_assets import AssetManager
+from folly_ui import (
     JuicyButton, Dropdown, Checkbox, Slider, Knob, TextInput, ProgressBar, 
     FactoryGear, FactoryTank, FactoryPower, FactoryGauge, FactoryHazard, 
     FactoryFan, FactoryLight, FactoryPiston, FactoryGraph,
