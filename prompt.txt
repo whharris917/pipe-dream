@@ -1,0 +1,25 @@
+The audit identified 5 CRITICAL violations in app/app_controller.py. I need to fix them by implementing the missing Commands.
+
+Task 1: Update core/commands.py Add the following new Command classes. ensure they follow the standard pattern (do/undo logic, historize=True):
+
+ToggleInfiniteCommand(sketch, entity_idx): Toggles the boolean .infinite property of a line.
+
+SetPhysicalCommand(sketch, entity_idx, is_physical): Updates the .physical property.
+
+SetMaterialCommand(sketch, entity_idx, material): Sets the material ID. (Note: Ensure the material is added to the sketch if needed, or handle that logic safely).
+
+SetDriverCommand(sketch, constraint_idx, values): Updates the driver parameters for a constraint.
+
+Task 2: Refactor app/app_controller.py Update the following methods to use self.scene.execute(Command(...)) instead of direct assignment:
+
+action_toggle_extend -> Use ToggleInfiniteCommand.
+
+handle_context_menu_action (Anchor case) -> Use the EXISTING ToggleAnchorCommand (Audit found it at core/commands.py:544).
+
+action_atomize_selected -> Use SetPhysicalCommand.
+
+apply_material_from_dialog -> Use SetMaterialCommand.
+
+apply_animation_from_dialog -> Use SetDriverCommand.
+
+Output: Show the new Command classes and the updated Controller code.
