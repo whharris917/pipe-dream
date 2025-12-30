@@ -32,7 +32,6 @@ The engine relies on `physics_core.py`, which contains the JIT-compiled kernels.
 | --- | --- | --- |
 | **0** | **Fluid** | Standard dynamic particles obeying gravity and LJ potentials. |
 | **1** | **Wall** | Infinite mass, zero velocity; purely reflective boundaries. |
-| **2** | **Kinematic** | Moves according to a script or user drag; ignores physical forces. |
 | **3** | **Tethered** | The "Skin" particles. They integrate like fluid but are constrained to an anchor. |
 
 ### The Tether Physics
