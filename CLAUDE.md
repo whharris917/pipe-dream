@@ -31,11 +31,11 @@ The application is launched via `main.py`, which utilizes `argparse` to determin
 
 The `Scene` class is the root container for the document state. It serves as the **Single Source of Truth** for the user's project. The Scene owns and orchestrates the interaction between the subsystems:
 
-* **Sketch:** Stores entities and constraints.
+* **Sketch:** Stores entities (Lines, Circles) and constraints.
 * **Simulation:** Stores particle arrays and physics logic.
 * **Compiler:** A one-way bridge that translates Sketch geometry into Simulation atoms.
-* **ProcessObjects:** Dynamic entities like Emitters (Sources) or Drains (Sinks) that bridge the two domains.
-* **CommandQueue:** The exclusive gatekeeper for modifying the Sketch or Simulation (see Section 3).
+* **ProcessObjects:** Dynamic entities like Emitters (Sources) or Drains (Sinks).
+* **CommandQueue:** The exclusive gatekeeper for modifying the Sketch or Simulation.
 
 ### 2.3 The Session (`core/session.py`)
 
@@ -44,27 +44,26 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 * Current Camera view (Pan/Zoom).
 * Active Tool (Brush, Line, Select).
 * Selection state (highlighted entities).
-* Editor modes (Paused/Playing, Show/Hide Constraints).
+* **Interaction Data:** Live data for the constraint solver regarding mouse drag targets.
 
 ---
 
 ## 3. The Command Architecture & The "Air Gap"
 
-This is the most critical architectural rule of Flow State. To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model.
+To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model.
 
 ### 3.1 The "Air Gap" Principle
 
 The UI (Tools, Widgets, Inputs) is **strictly forbidden** from modifying the Data Model (`Sketch` or `Simulation`) directly.
 * **Illegal:** `select_tool.py` directly setting `line.end_point = (10, 10)`.
-* **Legal:** `select_tool.py` constructing a `SetPointCommand` and submitting it to `scene.execute()`.
+* **Legal:** `select_tool.py` constructing a `SetEntityGeometryCommand` (or `SetPointCommand`) and submitting it to `scene.execute()`.
 
 This separation ensures that no "sneaky" state changes occur without being recorded in the history stack.
 
 ### 3.2 The Command Pattern (`core/commands.py`)
 
 The `Command` class is the atomic unit of change in the application. It serves as the primary history chronicle for the project.
-
-* **Source of Truth:** While `.mdl` files are used for saving/loading, the **Command History** is the ultimate authority. We must be able to exactly re-create the model's current state by re-executing its entire command history from zero.
+* **Source of Truth:** The Command History is the ultimate authority.
 * **Replayability:** Any tool that modifies the model without recording a Command breaks the chain of custody and is considered a critical bug.
 * **Structure:** Every command implements:
     * `execute()`: Apply the mutation.
@@ -73,54 +72,57 @@ The `Command` class is the atomic unit of change in the application. It serves a
 
 ### 3.3 Physics vs. Geometry Undo
 
-The application handles reversibility differently depending on the domain:
-
-1.  **Geometric Undo (Mathematical Reversal):**
-    * CAD operations (moving a line, adding a constraint) are mathematically invertible.
-    * *Strategy:* The Command stores the `delta` or the `previous_value` and simply restores it.
+1.  **Geometric Undo (State Snapshots):**
+    * Because the Solver introduces complex behavior (rotation, constraint satisfaction) that cannot be captured by simple deltas, geometric manipulation commands now store **Absolute State Snapshots** (start pos vs. end pos).
+    * *Command:* `SetEntityGeometryCommand` restores the exact coordinates and rotation of entities, ensuring the solver's work is preserved/reverted perfectly.
 
 2.  **Physics Undo (Time Travel):**
-    * Fluid dynamics and entropy are **not** easily reversible. You cannot "un-simulate" a fluid step mathematically.
-    * *Strategy:* Commands that alter physics state (e.g., `PaintAtomCommand`, `ClearParticlesCommand`) must rely on **State Snapshots**.
-    * *Execution:* Before a destructive physics command runs, the system captures the full state of the simulation. Undo is achieved by reverting the scene to that specific point in time, not by calculating a "reverse velocity."
+    * Fluid dynamics are irreversible.
+    * *Strategy:* Commands that alter physics state rely on full **State Snapshots**. Undo reverts the scene to a specific point in time.
 
 ---
 
-## 4. State Classification: The Vault vs. The Lobby
+## 4. State Classification
 
 To adhere to the Air Gap, developers must classify all data into one of two categories.
 
 ### 4.1 Persistent State ("The Vault") -> **Must Use Commands**
-This is data that constitutes the "Document." If the user saves the file and re-opens it, this data must be present.
-* **Examples:** Entity coordinates, Material properties, Constraints, Connectivity, Simulation Atoms.
-* **Rule:** **Zero Trust.** No direct mutation allowed. Must flow through `scene.execute(Command)`.
+Data that constitutes the "Document."
+* **Examples:** Entity coordinates, Constraints, Simulation Atoms.
+* **Rule:** **Zero Trust.** No direct mutation allowed. Must flow through `scene.execute()`.
 
 ### 4.2 Transient State ("The Lobby") -> **Direct Access Allowed**
-This is data that describes *how the user is looking at* the document right now.
-* **Examples:** Camera Zoom, Scroll Position, Current Selection, Mouse "Hover" Highlighting, Drag Previews.
-* **Rule:** Direct modification via Managers (e.g., `Session.camera.zoom = 2.0`) is acceptable and preferred. These do not belong in the Undo stack.
+Data that describes *how the user is looking at* the document.
+* **Examples:** Camera Zoom, Selection, Interaction Targets (Mouse Pos).
+* **Rule:** Direct modification via Managers is acceptable.
 
 ---
 
 ## 5. Core Systems Detail
 
-### 5.1 The Sketch (CAD Engine)
+### 5.1 The Sketch & Solver (`model/sketch.py`, `model/solver.py`)
 
-Located in `model/sketch.py`, the Sketch maintains a list of vector entities and geometric constraints.
+The CAD engine uses a **Position-Based Dynamics (PBD)** solver to enforce geometric rules.
 
-* **Entities:** `Line`, `Circle`, `Point`.
-* **Constraints:** Defined in `model/constraints.py`. Includes `Length`, `EqualLength`, `Angle`, `Parallel`, `Perpendicular`, `Coincident`.
-* **Solver:** The application uses an iterative geometric solver (`model/solver.py`) to satisfy constraints when entities are moved.
+* **Hybrid Architecture:** The solver has two backends:
+    1.  **Legacy (Python):** OOP-based, easier to debug.
+    2.  **Numba (Compiled):** High-performance JIT kernels (`model/solver_kernels.py`) operating on flat Numpy arrays.
+* **Runtime Toggle:** Users can switch backends live (F9) to benchmark performance.
 
-### 5.2 The Simulation (Physics Engine)
+### 5.2 The Simulation (`engine/simulation.py`)
 
-Located in `engine/simulation.py`, the physics engine is designed for performance using NumPy arrays.
+The particle engine uses Data-Oriented Design (DOD) with flat arrays.
+* **Integration:** Verlet integration with spatial hashing.
+* **Optimization:** Designed for Numba JIT compilation.
 
-* **Data Structure:** Particles are stored in flat, contiguous arrays (`pos_x`, `pos_y`, `vel_x`, `vel_y`) rather than object instances. This is a Data-Oriented Design (DOD) approach.
-* **Integration:** Uses a Verlet integration step with spatial hashing (Neighbor Lists) for collision detection.
-* **Numba Optimization:** The system is designed to use Numba JIT compilation for high-performance physics loops.
+### 5.3 The Interaction Model (The "Servo")
 
-### 5.3 The Compiler (The Bridge)
+We do not use "Forces" to move geometry with the mouse. We use **Interaction Constraints**.
+* **Concept:** The Mouse Cursor is treated as a temporary constraint target with infinite mass.
+* **The Loop:** Every frame, the `SelectTool` injects `interaction_data` (Target Pos, Handle Parameter `t`) into the solver.
+* **Behavior:** The solver negotiates the Mouse position against geometric constraints (Length, Anchors). This allows for physical behaviors like **Torque** and **Rotation** (pivoting around an anchor) while maintaining 1:1 cursor responsiveness.
+
+### 5.4 The Compiler (The Bridge)
 
 The `Compiler` (`engine/compiler.py`) is responsible for the transition from CAD to Physics.
 
@@ -158,48 +160,39 @@ Input is handled via a strict 4-layer protocol to ensure events are consumed by 
 3. **Modal Layer:** Context Menus, Property Dialogs (blocks lower layers).
 4. **HUD Layer:** Passes events to the UI Tree (which eventually reaches the `SceneViewport`).
 
----
-
-## 7. File Formats & I/O
-
-The system supports two distinct file types, managed by `core/scene.py` and `core/file_io.py`.
-
-### 7.1 `.mdl` (Model File)
-
-* **Scope:** Contains **only** the Sketch (Entities, Constraints, Materials).
-* **Use Case:** Saving reusable components or geometry snippets.
-* **Structure:** JSON serialization of `scene.sketch`.
-
-### 7.2 `.scn` (Scene File)
-
-* **Scope:** The full state. Includes the Sketch, the compiled Simulation state (particles), Process Objects, and View state (Camera).
-* **Use Case:** Saving the exact state of a simulation or project.
-* **Structure:** JSON wrapper containing `sketch`, `simulation`, `process_objects`, and `view` blocks.
+### 6.3 Smart Batching
+Tools are designed to be "Polymorphic" and "Batch-Aware":
+* **Unary (H/V/Fix):** Applies to *all* selected entities.
+* **Binary (Equal/Parallel):** Treats the first selection as "Master" and subsequent selections as "Followers."
 
 ---
 
-## 8. The Orchestration Loop
+## 7. The Orchestration Loop
 
-The main application loop (`FlowStateApp.run`) delegates to `FlowStateApp.update_physics`, which calls `Scene.update`. The order of operations in a single frame is critical:
+The order of operations in `Scene.update` is critical:
 
-1. **Drivers:** Update animated constraints (e.g., motors).
-2. **Solver:** Solve geometric constraints to position lines/circles.
-3. **Rebuild:** If geometry moved (via Command), recompile static atoms.
-4. **Process Objects:** Run logic for Sources/Emitters (spawn particles).
-5. **Physics Step:** Run the integration for dynamic particles.
+1.  **Update Drivers:** Animate motors or dynamic parameters.
+2.  **Snapshot:** Capture constraint values to detect changes.
+3.  **Solver Step:**
+    * Inject `interaction_data` (Mouse) as a constraint.
+    * Iterate `solver.solve()` (Geometric Constraints).
+    * *Note:* Solver runs if constraints exist **OR** if user is interacting.
+4.  **Rebuild:** If geometry changed, recompile static atoms for physics.
+5.  **Physics Step:** Run the particle simulation integration.
 
 ---
 
-## 9. Developer Cheatsheet
+## 8. Developer Cheatsheet
 
 | Component | File Path | Responsibility |
 | --- | --- | --- |
 | **Command Factory** | `core/commands.py` | **CRITICAL:** The only legal way to mutate the Model. |
 | **Orchestrator** | `core/scene.py` | Owns Sketch/Sim, manages updates & I/O. |
+| **Solver (Bridge)** | `model/solver.py` | Manages constraints & calls kernels. |
+| **Solver (Math)** | `model/solver_kernels.py` | Numba-optimized PBD math functions. |
 | **CAD Data** | `model/sketch.py` | Geometric entities & constraints. |
 | **Physics Data** | `engine/simulation.py` | Particle arrays & integration. |
 | **UI Builder** | `ui/ui_manager.py` | Layouts, panels, and widget tree. |
-| **Input** | `ui/input_handler.py` | Event routing & hotkeys. |
-| **Entry** | `main.py` | CLI args & App bootstrapping. |
+| **Tools** | `ui/tools.py` | Mouse interaction logic (Select, Line, etc.). |
 
 *Welcome to the codebase. Please ensure any changes to geometry logic are wrapped in Commands to maintain synchronization with the Undo Stack and the physics engine.*
