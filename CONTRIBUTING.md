@@ -1,96 +1,80 @@
-This **Developer Guide** is designed to provide deep-tissue context for engineers and physicists looking to contribute to **Flow State**. It covers the internal mechanics of our custom physics engine, the data lifecycle from CAD to Kernel, and the "Skin & Bone" architecture that powers our rigid-body dynamics.
+# 🔬 Contributing to Flow State
+
+Welcome to the lab! **Flow State** is not just a software project; it is a computational physics engine wrapped in a CAD interface.
+
+This guide is for human engineers and physicists. It explains the "Mental Model" of the engine—the math, the physics, and the philosophy.
+
+> **⚠️ Before You Code:**
+> We adhere to a strict architectural constitution. Please read [CLAUDE.md](./CLAUDE.md) for our **Coding Standards**, **Architectural Patterns**, and the **"Addition via Generalization"** principle.
 
 ---
 
-# 🛠 Flow State: Developer Guide
+## 1. The Core Philosophy: "Skin & Bone"
 
-Welcome to the internal architecture of Flow State. This project is a hybrid of a **CAD Drawing Suite** and a **Numba-Accelerated Physics Engine**. Contributing requires an understanding of how high-level Python objects interface with low-level JIT-compiled kernels.
+Most particle simulators treat boundaries as static mathematical walls (`if x < 0: flip velocity`). Flow State is different. We implement **Bi-Directional Momentum Transfer**.
 
----
+To achieve this, every physical object is a composite of two systems:
 
-## 1. The Physics Philosophy: "Skin & Bone"
-
-In Flow State, every physical object is a composite of two systems:
-
-1. **The Bone (Rigid Body):** A Python-side `Entity` object (Circle or Line) that holds the "Truth" of the object’s position (), rotation (), velocity, and mass.
-2. **The Skin (Tethered Particles):** A collection of particles in the Numba arrays where `is_static == 3`. These act as the sensory interface for the object.
+1.  **The Bone (Geometry):** A high-level Python object (e.g., `Circle`, `Line`) managed by a Position-Based Dynamics (PBD) solver. It holds the "Truth" of the object’s position ($P$), rotation ($\theta$), and mass.
+2.  **The Skin (Atoms):** A low-level collection of particles in the Numba arrays. These act as the sensory interface.
 
 ### The Lifecycle of a Collision
-
-* **Step A:** A fluid particle strikes a "Skin" particle.
-* **Step B:** The Numba kernel calculates the collision force.
-* **Step C:** The "Skin" particle, being tethered, transfers that force back to its "Bone" (Entity).
-* **Step D:** The Entity integrates those forces into torque and linear acceleration, moving the entire chassis.
+1.  **Impact:** A fluid particle strikes a "Skin" particle.
+2.  **Force:** The Numba kernel calculates a collision force ($F$).
+3.  **Transfer:** The "Skin" particle is tethered to the "Bone," so it transfers $F$ back to the Entity.
+4.  **Reaction:** The Entity integrates $F$ into torque ($\tau$) and acceleration ($a$), moving the entire chassis.
 
 ---
 
-## 2. Numba Kernels & Particle States
+## 2. The Physics Engine (`engine/`)
 
-The engine relies on `physics_core.py`, which contains the JIT-compiled kernels. The `is_static` array is the most critical data structure in the engine:
+The physics core is built on **Data-Oriented Design**. We do not use objects for particles; we use flat NumPy arrays (Structure of Arrays).
+
+### The Particle States (`is_static` Array)
+The engine differentiates particles using the `is_static` integer array:
 
 | Value | State | Description |
-| --- | --- | --- |
-| **0** | **Fluid** | Standard dynamic particles obeying gravity and LJ potentials. |
-| **1** | **Wall** | Infinite mass, zero velocity; purely reflective boundaries. |
-| **3** | **Tethered** | The "Skin" particles. They integrate like fluid but are constrained to an anchor. |
+| :--- | :--- | :--- |
+| **0** | **Fluid** | Standard dynamic particles obeying gravity and Lennard-Jones potentials. |
+| **1** | **Wall** | Infinite mass, zero velocity. Purely reflective boundaries. |
+| **3** | **Tethered** | The "Skin." They move like fluid but are constrained to an anchor point on a Bone. |
 
-### The Tether Physics
+### The Tether Math
+Tethered particles are governed by a Hookean spring force:
 
-Tethered particles () are governed by a Hookean spring force:
+$$F_{tether} = -k \cdot (P_{particle} - P_{anchor})$$
 
-
-
-Where  is the `TETHER_STIFFNESS` (Default: **5000.0**). This high stiffness allows the skin to feel "hard," but requires the high temporal resolution (**20 sub-steps**) we have implemented to prevent divergence.
-
----
-
-## 3. Rigid Body Integration
-
-Forces are converted to movement in `model/geometry.py`. When an entity is "Dynamic," it calculates its own motion based on the sum of forces () and torques () reported by its atoms.
-
-### Torque Calculation
-
-For every atom in an entity, the torque contributed is the cross-product of the displacement vector () and the force vector ():
-
-
-
-The total torque is then used to update the angular velocity:
-
-
-
-Where  is the **Inertia**, which we artificially boost by a factor of **5.0** to ensure rotational stability during high-energy collisions.
+Where $k$ is `TETHER_STIFFNESS` (defined in `core/config.py`). This high stiffness allows the skin to feel "hard" but requires our simulation to run at **20 sub-steps per frame** to prevent numerical explosions.
 
 ---
 
-## 4. The Compiler: From CAD to Atoms
+## 3. The Compiler (`engine/compiler.py`)
 
-When a user clicks "Atomize," the `engine/compiler.py` takes over. This module is responsible for:
+The "Compiler" is the bridge between the CAD domain and the Physics domain. It runs whenever geometry is modified.
 
-1. **Discretization:** Calculating how many particles are needed to cover a line or circle based on `material.spacing`.
-2. **Mapping:** Every tethered particle is assigned a `tether_entity_idx`. This is the "ID" of the parent CAD object.
-3. **Intra-Entity Exclusion:** The compiler flags these atoms so the Numba kernel can skip Lennard-Jones calculations between atoms of the same parent. This is vital; without it, the atoms would repel each other and "shatter" the geometry.
-
----
-
-## 5. Coding Standards & Performance
-
-* **Avoid Python Loops in Physics:** Any code that runs per-particle must be inside a `@njit` decorated function in `physics_core.py`.
-* **Memory Management:** We use pre-allocated NumPy arrays for particles. Avoid resizing arrays during the simulation loop (`Scene.rebuild()` is the only place for allocation).
-* **Magic Numbers:** **Never** hardcode constants. Use `core/config.py`. If a value needs to be tuned (like Gravity or Damping), it should be there.
+1.  **Discretization:** It walks along the vector geometry (Lines/Circles) and calculates how many particles are needed to cover the surface based on `material.spacing`.
+2.  **Mapping:** It assigns every tethered particle a `tether_entity_idx`. This is the link back to the parent CAD object.
+3.  **Exclusion:** It flags atoms belonging to the same object so they ignore each other's Lennard-Jones forces. This prevents the object from "exploding" due to internal pressure.
 
 ---
 
-## 6. Developing UI Components
+## 4. Setting Up Your Environment
 
-We use `DearPyGui` (or your ImGui wrapper) for the interface.
+Flow State requires a specific environment to handle the Numba JIT compilation.
 
-* **Material Sync:** When adding new sliders to the `MaterialPropertyWidget`, ensure you implement "Live Sync." Changes to the slider should immediately update the `active_material` in the `Session` and, if an object is selected, the `entity.material` directly.
+### Prerequisites
+* Python 3.8+
+* **Visual C++ Build Tools** (Windows) or `build-essential` (Linux) — required for compiling Numba dependencies.
 
----
+### Installation
 
-## 7. Current Technical Debt & Roadmap
+```bash
+# 1. Clone the repo
+git clone [https://github.com/whharris917/flow-state.git](https://github.com/whharris917/flow-state.git)
 
-* **The Phase Lag:** Currently, the Entity integrates its position *before* the atoms calculate their new anchors. This creates a 1-frame lag (the "jellyfish" effect). Future contributors should look into a semi-implicit integration scheme to sync these perfectly.
-* **Motor Torque:** We are moving toward "Active Power." The next major task is implementing a `motor_speed` property that overrides angular velocity for revolute-jointed entities.
+# 2. Create a virtual env (Recommended)
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
 
----
+# 3. Install dependencies
+pip install -r requirements.txt
