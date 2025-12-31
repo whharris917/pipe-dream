@@ -1,17 +1,60 @@
 # Flow State: Technical Architecture & Onboarding Guide
 
-## 1. Project Overview
+## 1. Project Overview & Philosophy
 
 **Flow State** (codenamed *Pipe Dream*) is a hybrid interactive application that combines a **Geometric Constraint Solver (CAD)** with a **Particle-Based Physics Engine**.
 
-The primary goal of the system is to allow users to design rigorous geometric structures (pipes, containers, funnels) using CAD tools, and then immediately "compile" that geometry into a physical simulation where fluid particles interact with the structures in real-time.
+### 1.1 The "Addition via Generalization" (AvG) Principle (Global SOP-001)
+**Rule:** When fixing a bug or adding a feature, do not solve the *specific instance* of the problem. Solve the *general class* of the problem. 
 
-### Key Domains
+#### The Philosophy
+* **The Anti-Pattern:** "The text field in the 'Material Properties' dialog is not losing focus." -> *Fix:* Add a check in `MaterialDialog.update()` to un-focus that specific field.
+* **The AvG Approach:** "Text fields in general lack a robust way to relinquish focus." -> *Fix:* Implement `on_focus_lost()` in the base `UIElement` class and have the global `InputHandler` manage focus transitions for *all* widgets.
+
+#### Canonical Case Studies (Do This)
+1.  **UI Modularity (The Overlay Protocol):**
+    * *Problem:* The `UIManager` needed to render dropdowns from the Material Widget.
+    * *Bad Fix:* Hardcoding `if material_widget.is_open: draw(material_widget)`.
+    * *AvG Fix:* Created an `OverlayProvider` protocol. The `UIManager` now iterates over *any* registered overlay provider. New widgets get overlay support for free.
+
+2.  **Input Handling (The Modal Stack):**
+    * *Problem:* We needed to block input when the "Save File" dialog was open.
+    * *Bad Fix:* Checking `if save_dialog.is_active or settings_dialog.is_active` in the input loop.
+    * *AvG Fix:* Implemented a central `modal_stack` in `AppController`. Input is blocked whenever `modal_stack` is not empty.
+
+3.  **Focus Management:**
+    * *Problem:* Multiple widgets fighting for keyboard focus.
+    * *Bad Fix:* Manually setting `widget.active = False` inside other widgets.
+    * *AvG Fix:* Centralized `focused_element` tracking in `Session`. The `InputHandler` manages focus switching, and widgets implement `wants_focus()` and `on_focus_lost()` to handle their own state changes.
+
+4.  **Interaction State (Stale Clicks):**
+    * *Problem:* Buttons clicked just before a modal opened would sometimes re-trigger when it closed.
+    * *Bad Fix:* Manually resetting the specific button's flag in the specific dialog's close logic.
+    * *AvG Fix:* Implemented a recursive `reset_interaction_state()` on `UIContainer`. When *any* modal opens via `push_modal()`, the engine wipes the interaction state of the entire UI tree automatically.
+
+5.  **Material Management (Single Source of Truth):**
+    * *Problem:* Material definitions were scattered, with widgets directly mutating properties like color or mass.
+    * *Bad Fix:* Hardcoding "Steel" properties into specific widgets and modifying `material.color` directly from the UI event loop.
+    * *AvG Fix:* Implemented a centralized `MaterialManager`. The UI acts only as a view; it submits `MaterialModificationCommands` to the CommandQueue to request changes.
+
+6.  **Rendering Hierarchy (Relative Z-Order):**
+    * *Problem:* Dropdown menus were being clipped (hidden) by subsequent UI elements drawn later in the frame.
+    * *Bad Fix:* A global hack to "render all dropdowns last" at the end of the `draw()` loop.
+    * *AvG Fix:* Established a relative depth rule. Overlays are rendered with a Z-order of `parent.z + 1`. This solves the specific clipping issue by enforcing a general hierarchical rule rather than patching the render loop.
+
+7.  **Configuration (The "No Magic Numbers" Rule):**
+    * *Problem:* Physics constants and UI layout values were buried in local scripts.
+    * *Bad Fix:* Manually hunting down every instance of `0.5` when tuning friction.
+    * *AvG Fix:* All constants are extracted to `core/config.py`. The code now references `config.DEFAULT_FRICTION`, allowing global tuning.
+
+---
+
+### 1.2 Key Domains (Separation of Concerns)
 
 The application is strictly divided into two distinct domains to maintain a Separation of Concerns (SoC):
 
-1. **The Sketch (CAD Domain):** High-level vector geometry (lines, circles), logical constraints (parallel, perpendicular), and material properties.
-2. **The Simulation (Physics Domain):** Low-level arrays of particle data (positions, velocities). It has **no knowledge** of high-level geometry.
+1.  **The Sketch (CAD Domain):** High-level vector geometry (lines, circles), logical constraints (parallel, perpendicular), and material properties.
+2.  **The Simulation (Physics Domain):** Low-level arrays of particle data (positions, velocities). It has **no knowledge** of high-level geometry.
 
 ---
 
@@ -44,6 +87,7 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 * Current Camera view (Pan/Zoom).
 * Active Tool (Brush, Line, Select).
 * Selection state (highlighted entities).
+* **Focused Element:** The specific UI widget currently capturing keyboard input.
 * **Interaction Data:** Live data for the constraint solver regarding mouse drag targets.
 
 ---
@@ -52,13 +96,13 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 
 To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model.
 
-### 3.1 The "Air Gap" Principle
+### 3.1 The "Air Gap" Principle (The Prime Directive)
 
 The UI (Tools, Widgets, Inputs) is **strictly forbidden** from modifying the Data Model (`Sketch` or `Simulation`) directly.
-* **Illegal:** `select_tool.py` directly setting `line.end_point = (10, 10)`.
-* **Legal:** `select_tool.py` constructing a `SetEntityGeometryCommand` (or `SetPointCommand`) and submitting it to `scene.execute()`.
+* **ILLEGAL:** `select_tool.py` directly setting `line.end_point = (10, 10)`.
+* **LEGAL:** `select_tool.py` constructing a `SetEntityGeometryCommand` (or `SetPointCommand`) and submitting it to `scene.execute()`.
 
-This separation ensures that no "sneaky" state changes occur without being recorded in the history stack.
+**Why:** If a state change does not happen via a Command, it is not recorded in history. If it isn't in history, the simulation state is corrupted upon replay or undo.
 
 ### 3.2 The Command Pattern (`core/commands.py`)
 
@@ -126,44 +170,49 @@ We do not use "Forces" to move geometry with the mouse. We use **Interaction Con
 
 The `Compiler` (`engine/compiler.py`) is responsible for the transition from CAD to Physics.
 
-1. **Input:** Reads vector data from the `Sketch`.
-2. **Process:** Discretizes lines and curves into individual static particles ("atoms").
-3. **Output:** Writes these atoms into the `is_static` arrays of the `Simulation`.
-4. **Rebuild:** When CAD geometry changes (via Command), the `Scene` triggers `compiler.rebuild()` to refresh the physics representation.
+1.  **Input:** Reads vector data from the `Sketch`.
+2.  **Process:** Discretizes lines and curves into individual static particles ("atoms").
+3.  **Output:** Writes these atoms into the `is_static` arrays of the `Simulation`.
+4.  **Rebuild:** When CAD geometry changes (via Command), the `Scene` triggers `compiler.rebuild()` to refresh the physics representation.
 
 ---
 
 ## 6. UI & Input Management
 
-The project employs a custom UI framework and an explicit input handling chain.
+The project employs a custom UI framework with a focus on **Modularity** and **Generic Protocols**.
 
-### 6.1 Hierarchical UI Tree (`ui/ui_manager.py`)
+### 6.1 Hierarchical UI Tree & Overlays (`ui/ui_manager.py`)
 
-The UI is not immediate mode; it is a retained object tree. The `UIManager` constructs a hierarchy:
-
-1. **Root Container**
-2. **Menu Bar** (File, Edit, etc.)
-3. **Middle Region**
-* *Left Panel:* Physics controls (Sliders for Gravity, Time Step).
-* *SceneViewport:* The rendering area for the game world.
-* *Right Panel:* Editor tools (Brush, Line, Constraint buttons).
-4. **Status Bar**: Footer information.
-
-The `SceneViewport` class acts as a UI widget that captures mouse events specifically for the simulation/editor view.
+The UI is a retained object tree managed by `UIManager`.
+* **Main Tree:** Root -> Panels -> Widgets -> Elements.
+* **The Overlay Protocol:** Widgets that need to spawn floating elements (Dropdowns, Tooltips) must implement the `OverlayProvider` protocol.
+    * The `UIManager` automatically iterates registered providers and renders their overlays *after* the main tree to ensure correct Z-ordering.
+    * **Rule:** Never hardcode widget-specific rendering calls in the UIManager (e.g., `if dropdown.is_open: draw()`). Rely on the protocol.
 
 ### 6.2 Input Chain of Responsibility (`ui/input_handler.py`)
 
-Input is handled via a strict 4-layer protocol to ensure events are consumed by the correct system. The `InputHandler` processes events in this order:
+Input is handled via a strict 4-layer protocol to ensure events are consumed by the correct system.
 
-1. **System Layer:** `QUIT`, `VIDEORESIZE`.
-2. **Global Layer:** Hotkeys (e.g., `Ctrl+Z` for Undo, `B` for Brush).
-3. **Modal Layer:** Context Menus, Property Dialogs (blocks lower layers).
-4. **HUD Layer:** Passes events to the UI Tree (which eventually reaches the `SceneViewport`).
+1.  **System Layer:** `QUIT`, `VIDEORESIZE`.
+2.  **Global Layer:** Hotkeys (e.g., `Ctrl+Z` for Undo, `B` for Brush).
+3.  **Modal Layer (Blocking):**
+    * Checks the **Central Modal Stack** in `AppController`.
+    * If `modal_stack` is not empty, all lower layers are blocked.
+    * Dialogs are managed via `push_modal()` and `pop_modal()`.
+4.  **HUD Layer (Generic Focus):**
+    * Passes events to the UI Tree.
+    * Manages **Generic Focus**: Checks `wants_focus()` on widgets and updates `session.focused_element`.
+    * Triggers `on_focus_lost()` on widgets when they lose focus to ensure clean state transitions.
 
 ### 6.3 Smart Batching
 Tools are designed to be "Polymorphic" and "Batch-Aware":
 * **Unary (H/V/Fix):** Applies to *all* selected entities.
 * **Binary (Equal/Parallel):** Treats the first selection as "Master" and subsequent selections as "Followers."
+
+### 6.4 Interaction State & Reset
+To prevent "Ghost Inputs" (e.g., a button click registering immediately after a modal closes):
+* **Rule:** When the modal stack changes (open or close), the entire UI tree must be reset.
+* **Mechanism:** `push_modal()` triggers a recursive `reset_interaction_state()` on the Root Container, clearing `is_hovered`, `is_clicked`, and `hot` states from all widgets.
 
 ---
 
@@ -195,4 +244,28 @@ The order of operations in `Scene.update` is critical:
 | **UI Builder** | `ui/ui_manager.py` | Layouts, panels, and widget tree. |
 | **Tools** | `ui/tools.py` | Mouse interaction logic (Select, Line, etc.). |
 
-*Welcome to the codebase. Please ensure any changes to geometry logic are wrapped in Commands to maintain synchronization with the Undo Stack and the physics engine.*
+---
+
+## 9. Claude's Thinking Checklist
+
+*Before every code generation, I must pause and verify:*
+
+### 🚦 Pre-Flight (The Surgeon's Prep)
+* [ ] **AvG Check (The Generalizer):** Is this a hack, or a first-principles improvement of the code's genome?
+    * *Action:* Stop. Generalize the solution (e.g., "Add protocol" instead of "Add if-statement").
+* [ ] **Air Gap Check (The Law):** Does this UI action strictly avoid mutating the Model directly?
+    * *Action:* If No, refactor to use a `Command`.
+* [ ] **Surgical Precision (The Potency Test):** Is this the *minimum viable mutation* to achieve the maximum result?
+    * *Question:* Can I do this by deleting code rather than adding it?
+* [ ] **Root Cause Analysis:** Am I treating a symptom (e.g., "reset button state") or curing the disease (e.g., "reset interaction state globally")?
+* [ ] **Dependency Check:** Am I introducing a circular dependency or hard-coded import?
+    * *If Yes:* Use a protocol, event, or the central `Session` to decouple.
+
+### 🏁 Post-Flight (The Recovery Room)
+* [ ] **No Scar Tissue:** Did I remove all unused imports, debug prints, and commented-out blocks?
+* [ ] **Config Hygiene:** Did I extract new magic numbers/strings to `core/config.py`?
+* [ ] **Undo Safety:** Did I implement `undo()` for any new Commands I created?
+* [ ] **Focus Hygiene:** If I added a new widget, did I implement `on_focus_lost()`?
+* [ ] **Potency Check:** Does this change enable future features "for free" (e.g., a new protocol that all future widgets can use)?
+
+Remember: Reusability first. Generalization second. New code last.
