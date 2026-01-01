@@ -1,143 +1,16 @@
-# Flow State: Technical Architecture & Quality Management Guide
+# Flow State: Technical Architecture Guide
 
 ---
 
-## 0. Quality Management Framework
+## Quality Management Reference
 
-*Effective 2026-01-01 — Replaces Constitutional Framework of 2025-12-31*
+This project operates under GMP (Good Manufacturing Practice) and GDocP (Good Documentation Practice) principles. For governance procedures and quality requirements, see:
 
-This project operates under **GMP (Good Manufacturing Practice)** and **GDocP (Good Documentation Practice)** principles adapted for software development. All code changes are governed by Standard Operating Procedures (SOPs), not constitutional law.
+- **SOP-001** - GMP Governance Framework (CRB procedures, two-stage approval)
+- **SOP-002** - Quality Assurance Requirements (AvG, Air Gap, Command Pattern)
+- **SOP-003 through SOP-009** - Domain-specific review procedures
 
-### 0.1 Leadership & Roles
-
-| Role | Title | Responsibility |
-|------|-------|----------------|
-| **Lead Engineer** | The User | Project owner. Final authority on all decisions. Approves SOPs and major changes. |
-| **Senior Staff Engineer** | Claude | Orchestrates sessions, spawns reviewers, implements changes, maintains documentation. |
-
-### 0.2 The Change Review Board (CRB)
-
-The **Change Review Board** is a team of specialized reviewers responsible for evaluating all code changes. Each member reviews changes within their domain of expertise.
-
-| Member | Abbreviation | Domain | Responsibility |
-|--------|--------------|--------|----------------|
-| **Quality Assurance** | QA | Process & Architecture | Enforces AvG Principle, assigns reviewers, ensures SOP compliance |
-| **TU-UI** | TU-UI | User Interface | Air Gap, Overlay Protocol, Z-ordering, widget standards |
-| **TU-INPUT** | TU-INPUT | Input Handling | 4-Layer Input Chain, Modal Stack, Focus Management |
-| **TU-SCENE** | TU-SCENE | Orchestration | Update Pipeline, Command Pattern, Undo/Redo integrity |
-| **TU-SKETCH** | TU-SKETCH | CAD/Geometry | Domain purity, Geometric Constraints, Solver |
-| **TU-SIM** | TU-SIM | Simulation | Physics, Numba optimization, Compiler bridge, DOD |
-| **BU** | BU | User Experience | Usability, fun factor, product value (at QA discretion) |
-
-**Model Requirement:** All CRB members must be spawned using the **Opus 4.5** model (`model: "opus"`).
-
-### 0.3 Change Control Process
-
-All code changes require a **Change Record** and follow a two-stage approval workflow.
-
-#### Reviewer Assignment
-
-| Change Scope | Required Reviewers |
-|--------------|-------------------|
-| All changes | QA (always required) |
-| Domain-specific changes | All affected TUs (at QA discretion) |
-| User-facing changes | BU (at QA discretion) |
-
-QA determines reviewer assignment based on change scope and impact. For changes with no domain impact (e.g., documentation, configuration), QA may approve without TU review.
-
-#### Two-Stage Approval
-
-**Stage 1: Pre-Approval**
-1. Change proposal is drafted (plan, impact assessment)
-2. QA assigns appropriate reviewers
-3. Reviewers evaluate the plan against domain standards
-4. **Unanimous approval required** — all assigned reviewers must approve
-5. Implementation may proceed
-
-**Stage 2: Post-Approval**
-1. Implementation is completed
-2. Testing is performed per Test Protocol
-3. Reviewers verify implementation matches pre-approved plan
-4. **Unanimous approval required** — all assigned reviewers must confirm
-5. Change is closed
-
-#### Approval Outcomes
-
-| Outcome | Meaning |
-|---------|---------|
-| **APPROVED** | All reviewers approve; proceed to next stage |
-| **REJECTED** | One or more reviewers reject; revise and resubmit (comments provided) |
-
-**There is no majority voting.** Unanimous consent of all assigned reviewers is required.
-
-### 0.4 The Chronicle
-
-All session transcripts are automatically captured via hooks and stored in `.claude/chronicles/`. The Chronicle serves as the institutional memory of the project.
-
-| Directory | Purpose |
-|-----------|---------|
-| `.claude/chronicles/` | Automatically-generated session transcripts |
-| `SDLC/` | SOPs, Change Records, Test Protocols, Requirements |
-
-#### Session Naming Convention
-
-Session transcripts follow the naming format:
-
-```
-Session-YYYY-MM-DD-NNN
-```
-
-Where:
-- `YYYY-MM-DD` is the date (e.g., `2026-01-01`)
-- `NNN` is a zero-padded sequence number for that date (e.g., `001`, `002`, `003`)
-
-**Examples:**
-- `Session-2026-01-01-001` — First session of January 1, 2026
-- `Session-2026-03-11-002` — Second session of March 11, 2026
-
-### 0.5 Document Authority
-
-This document (CLAUDE.md) defines the quality management framework for the Flow State project.
-
-**SOP Hierarchy:**
-1. This document (CLAUDE.md) — Master framework
-2. Domain-specific SOPs in `SDLC/SOPs/`
-3. Change Records and Test Protocols in `SDLC/`
-
-**Amendment:** The Lead Engineer may amend this document at any time. QA may propose amendments for Lead Engineer approval.
-
-### 0.6 Archival Procedure
-
-When files are retired, superseded, or preserved for historical reference, they are archived using the following procedure:
-
-**Step 1: Create Archive Directory**
-```
-archive/.claude_{ProjectName}_{SessionName}/
-```
-
-Where `{ProjectName}` is the project directory name (e.g., `pipe-dream`) and `{SessionName}` is the current session identifier (e.g., `Session-2026-01-01-001`). This directory represents a snapshot of the project root.
-
-**Step 2: Mirror Directory Structure**
-
-Recreate the file's original directory path within the archive, preserving the full path from project root.
-
-**Step 3: Move and Rename File**
-
-Move the file into the mirrored location, renaming it:
-```
-{original_file_name}_ARCHIVED.{original_file_extension}
-```
-
-**Example:**
-- Original: `.claude/agents/secretary.md`
-- Project: `pipe-dream`
-- Session: `Session-2026-01-01-003`
-- Archived: `archive/.claude_pipe-dream_Session-2026-01-01-003/.claude/agents/secretary_ARCHIVED.md`
-
-**Notes:**
-- The archive directory mirrors the project root; all paths are preserved relative to it
-- The session name contains the date, so no additional date suffix is needed in the filename
-- Archived files are read-only references; they should not be modified after archival
+All SOPs are located in `SDLC/SOPs/`.
 
 ---
 
@@ -145,53 +18,7 @@ Move the file into the mirrored location, renaming it:
 
 **Flow State** (codenamed *Pipe Dream*) is a hybrid interactive application that combines a **Geometric Constraint Solver (CAD)** with a **Particle-Based Physics Engine**.
 
-### 1.1 The "Addition via Generalization" (AvG) Principle — SOP-001
-
-**Rule:** When fixing a bug or adding a feature, do not solve the *specific instance* of the problem. Solve the *general class* of the problem.
-
-#### The Philosophy
-* **The Anti-Pattern:** "The text field in the 'Material Properties' dialog is not losing focus." -> *Fix:* Add a check in `MaterialDialog.update()` to un-focus that specific field.
-* **The AvG Approach:** "Text fields in general lack a robust way to relinquish focus." -> *Fix:* Implement `on_focus_lost()` in the base `UIElement` class and have the global `InputHandler` manage focus transitions for *all* widgets.
-
-#### Canonical Case Studies (Do This)
-1.  **UI Modularity (The Overlay Protocol):**
-    * *Problem:* The `UIManager` needed to render dropdowns from the Material Widget.
-    * *Bad Fix:* Hardcoding `if material_widget.is_open: draw(material_widget)`.
-    * *AvG Fix:* Created an `OverlayProvider` protocol. The `UIManager` now iterates over *any* registered overlay provider. New widgets get overlay support for free.
-
-2.  **Input Handling (The Modal Stack):**
-    * *Problem:* We needed to block input when the "Save File" dialog was open.
-    * *Bad Fix:* Checking `if save_dialog.is_active or settings_dialog.is_active` in the input loop.
-    * *AvG Fix:* Implemented a central `modal_stack` in `AppController`. Input is blocked whenever `modal_stack` is not empty.
-
-3.  **Focus Management:**
-    * *Problem:* Multiple widgets fighting for keyboard focus.
-    * *Bad Fix:* Manually setting `widget.active = False` inside other widgets.
-    * *AvG Fix:* Centralized `focused_element` tracking in `Session`. The `InputHandler` manages focus switching, and widgets implement `wants_focus()` and `on_focus_lost()` to handle their own state changes.
-
-4.  **Interaction State (Stale Clicks):**
-    * *Problem:* Buttons clicked just before a modal opened would sometimes re-trigger when it closed.
-    * *Bad Fix:* Manually resetting the specific button's flag in the specific dialog's close logic.
-    * *AvG Fix:* Implemented a recursive `reset_interaction_state()` on `UIContainer`. When *any* modal opens via `push_modal()`, the engine wipes the interaction state of the entire UI tree automatically.
-
-5.  **Material Management (Single Source of Truth):**
-    * *Problem:* Material definitions were scattered, with widgets directly mutating properties like color or mass.
-    * *Bad Fix:* Hardcoding "Steel" properties into specific widgets and modifying `material.color` directly from the UI event loop.
-    * *AvG Fix:* Implemented a centralized `MaterialManager`. The UI acts only as a view; it submits `MaterialModificationCommands` to the CommandQueue to request changes.
-
-6.  **Rendering Hierarchy (Relative Z-Order):**
-    * *Problem:* Dropdown menus were being clipped (hidden) by subsequent UI elements drawn later in the frame.
-    * *Bad Fix:* A global hack to "render all dropdowns last" at the end of the `draw()` loop.
-    * *AvG Fix:* Established a relative depth rule. Overlays are rendered with a Z-order of `parent.z + 1`. This solves the specific clipping issue by enforcing a general hierarchical rule rather than patching the render loop.
-
-7.  **Configuration (The "No Magic Numbers" Rule):**
-    * *Problem:* Physics constants and UI layout values were buried in local scripts.
-    * *Bad Fix:* Manually hunting down every instance of `0.5` when tuning friction.
-    * *AvG Fix:* All constants are extracted to `core/config.py`. The code now references `config.DEFAULT_FRICTION`, allowing global tuning.
-
----
-
-### 1.2 Key Domains (Separation of Concerns)
+### 1.1 Key Domains (Separation of Concerns)
 
 The application is strictly divided into two distinct domains to maintain a Separation of Concerns (SoC):
 
@@ -234,19 +61,19 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 
 ---
 
-## 3. The Command Architecture & The "Air Gap"
+## 3. The Command Architecture & The Air Gap
 
-To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model.
+To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model. See **SOP-002** for the complete specification.
 
-### 3.1 The "Air Gap" Principle — SOP-002
+### 3.1 The Air Gap Principle
 
 The UI (Tools, Widgets, Inputs) is **strictly forbidden** from modifying the Data Model (`Sketch` or `Simulation`) directly.
 * **NON-CONFORMING:** `select_tool.py` directly setting `line.end_point = (10, 10)`.
-* **CONFORMING:** `select_tool.py` constructing a `SetEntityGeometryCommand` (or `SetPointCommand`) and submitting it to `scene.execute()`.
+* **CONFORMING:** `select_tool.py` constructing a `SetEntityGeometryCommand` and submitting it to `scene.execute()`.
 
 **Why:** If a state change does not happen via a Command, it is not recorded in history. If it isn't in history, the simulation state is corrupted upon replay or undo.
 
-### 3.2 The Command Pattern (`core/commands.py`) — SOP-003
+### 3.2 The Command Pattern (`core/commands.py`)
 
 The `Command` class is the atomic unit of change in the application. It serves as the primary history chronicle for the project.
 * **Source of Truth:** The Command History is the ultimate authority.
@@ -393,7 +220,7 @@ The order of operations in `Scene.update` is critical:
 *Before every code generation, I must pause and verify:*
 
 ### Pre-Flight (Quality Check)
-* [ ] **AvG Check (SOP-001):** Is this a hack, or a first-principles improvement of the code's genome?
+* [ ] **AvG Check (SOP-002):** Is this a hack, or a first-principles improvement of the code's genome?
     * *Action:* Stop. Generalize the solution (e.g., "Add protocol" instead of "Add if-statement").
 * [ ] **Air Gap Check (SOP-002):** Does this UI action strictly avoid mutating the Model directly?
     * *Action:* If No, refactor to use a `Command`.
