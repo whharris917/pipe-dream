@@ -14,44 +14,85 @@ import os
 from pathlib import Path
 from datetime import datetime
 
+
+# Message types to skip entirely
+SKIP_TYPES = {
+    'file-history-snapshot',
+    'summary',
+}
+
+
+def extract_text_content(content) -> str:
+    """Extract text from various content formats."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict):
+                if block.get('type') == 'text':
+                    text_parts.append(block.get('text', ''))
+            elif isinstance(block, str):
+                text_parts.append(block)
+        return '\n'.join(text_parts).strip()
+    return ""
+
+
 def parse_message(msg: dict) -> str:
     """Convert a single message to Markdown format."""
-    role = msg.get('type', 'unknown')
+    msg_type = msg.get('type', 'unknown')
 
-    if role == 'human':
-        # User message
-        content = msg.get('message', {}).get('content', '')
-        if isinstance(content, list):
-            # Handle content blocks
-            text_parts = []
-            for block in content:
-                if isinstance(block, dict) and block.get('type') == 'text':
-                    text_parts.append(block.get('text', ''))
-                elif isinstance(block, str):
-                    text_parts.append(block)
-            content = '\n'.join(text_parts)
+    # Skip internal/metadata message types
+    if msg_type in SKIP_TYPES:
+        return ""
+
+    # Handle human/user messages
+    if msg_type in ('human', 'user'):
+        # Try to extract the actual text content
+        # The message structure can vary - check multiple paths
+        content = ""
+
+        # Path 1: message.content (standard format)
+        message_obj = msg.get('message', {})
+        if isinstance(message_obj, dict):
+            content = extract_text_content(message_obj.get('content', ''))
+
+        # Path 2: Direct content field
+        if not content:
+            content = extract_text_content(msg.get('content', ''))
+
+        # Path 3: Text field directly
+        if not content:
+            content = extract_text_content(msg.get('text', ''))
+
+        # Skip if no actual content found
+        if not content:
+            return ""
+
         return f"**User:**\n\n{content}\n"
 
-    elif role == 'assistant':
-        # Assistant message
-        content = msg.get('message', {}).get('content', '')
-        if isinstance(content, list):
-            text_parts = []
-            for block in content:
-                if isinstance(block, dict) and block.get('type') == 'text':
-                    text_parts.append(block.get('text', ''))
-                elif isinstance(block, str):
-                    text_parts.append(block)
-            content = '\n'.join(text_parts)
+    # Handle assistant messages
+    elif msg_type == 'assistant':
+        message_obj = msg.get('message', {})
+        content = ""
+
+        if isinstance(message_obj, dict):
+            content = extract_text_content(message_obj.get('content', ''))
+
+        if not content:
+            content = extract_text_content(msg.get('content', ''))
+
+        # Skip empty assistant messages (tool-only responses)
+        if not content:
+            return ""
+
         return f"**The Primus:**\n\n{content}\n"
 
-    elif role == 'summary':
-        # Context summary (internal, may skip or note)
-        return ""  # Skip summaries in Chronicle
-
+    # Skip unknown internal types silently
     else:
-        # Unknown type - preserve for debugging
-        return f"**[{role}]:** {json.dumps(msg)[:200]}...\n"
+        return ""
 
 
 def main():
@@ -117,7 +158,11 @@ def main():
             markdown_parts.append(parsed)
             markdown_parts.append("---\n")
 
-    markdown_parts.append(f"\n*End of Chronicle - {datetime.now().isoformat()}*\n")
+    # Remove trailing separator if present
+    if markdown_parts and markdown_parts[-1] == "---\n":
+        markdown_parts.pop()
+
+    markdown_parts.append(f"\n*End of Chronicle - {datetime.now().strftime('%Y-%m-%d %H:%M')}*\n")
 
     # Write chronicle
     chronicle_content = '\n'.join(markdown_parts)
