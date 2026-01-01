@@ -13,9 +13,9 @@
 |----------------|-------|--------|
 | Priority 0 (Critical) | 4 | 2 Closed, 2 Open |
 | Priority 1 (High) | 9 | All Open |
-| Priority 2 (Medium) | 5 | All Open |
+| Priority 2 (Medium) | 6 | All Open |
 | Priority 3 (Backlog) | 5 | All Open |
-| **Total** | **23** | **2 Closed, 21 Open** |
+| **Total** | **24** | **2 Closed, 22 Open** |
 
 ### By Owner
 
@@ -465,6 +465,49 @@ Focus acquisition logic contains hardcoded widget type checks rather than using 
 1. Ensure all focusable widgets implement `wants_focus()` consistently
 2. Remove any isinstance() checks in focus management code
 3. Use the centralized `focused_element` tracking in Session as documented
+
+---
+
+### AIT-024: Modal Close Methods Missing Interaction Reset
+
+| Field | Value |
+|-------|-------|
+| **Creation Date** | 2025-12-31 |
+| **Priority** | P2 (Medium) |
+| **Owner** | Input Guardian |
+| **Status** | Open |
+| **Effort** | Small |
+| **Source** | Guardian review of AIT-003 |
+
+**Description:**
+
+While AIT-003 fixed `pop_modal()` to reset interaction state, two other modal-closing methods bypass this fix:
+
+1. `close_modal(specific_modal)` (line 106-107): Directly manipulates `_modal_stack` without reset
+2. `close_all_modals()` (line 109-111): Clears stack without reset
+
+This creates latent ghost input risk when these alternative code paths are used.
+
+**Identified by:** Input Guardian, UI Guardian (independent review)
+
+**Resolution:**
+```python
+def close_modal(self, modal=None):
+    if modal is None:
+        self.pop_modal()
+    else:
+        original_len = len(self._modal_stack)
+        self._modal_stack = [m for m in self._modal_stack if m['modal'] is not modal]
+        if len(self._modal_stack) < original_len:
+            if hasattr(self.app, 'ui') and hasattr(self.app.ui, 'root'):
+                self.app.ui.root.reset_interaction_state()
+
+def close_all_modals(self):
+    if self._modal_stack:
+        self._modal_stack.clear()
+        if hasattr(self.app, 'ui') and hasattr(self.app.ui, 'root'):
+            self.app.ui.root.reset_interaction_state()
+```
 
 ---
 
