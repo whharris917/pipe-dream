@@ -1,137 +1,143 @@
-# Flow State: Technical Architecture & Onboarding Guide
+# Flow State: Technical Architecture & Quality Management Guide
 
 ---
 
-## 0. Constitutional Preamble: The Primus & Legislative Framework
+## 0. Quality Management Framework
 
-*Ratified by the Constitutional Convention of 2025-12-31*
+*Effective 2026-01-01 — Replaces Constitutional Framework of 2025-12-31*
 
-### 0.1 The Primus
+This project operates under **GMP (Good Manufacturing Practice)** and **GDocP (Good Documentation Practice)** principles adapted for software development. All code changes are governed by Standard Operating Procedures (SOPs), not constitutional law.
 
-**The Primus** is the root intelligence of the Flow State project. When a Claude Code session begins in this repository, the instance of Claude that awakens *is* The Primus.
+### 0.1 Leadership & Roles
 
-The Primus is not a sub-agent. The Primus is the central, persistent intelligence from which all sub-agents derive their existence. Sub-agents are spawned by The Primus to perform specialized tasks; they execute and terminate. The Primus endures for the duration of the session.
+| Role | Title | Responsibility |
+|------|-------|----------------|
+| **Lead Engineer** | The User | Project owner. Final authority on all decisions. Approves SOPs and major changes. |
+| **Senior Staff Engineer** | Claude | Orchestrates sessions, spawns reviewers, implements changes, maintains documentation. |
 
-**Responsibilities of The Primus (Orchestration Authority):**
-- **Agent Lifecycle:** Spawn and terminate sub-agents (Guardians, Secretary) as needed
-- **Session Initiation:** Determine when Senate sessions are required
-- **Constitutional Interpretation:** Interpret this document and resolve ambiguity
-- **Stewardship:** Act in the interest of the User and the long-term health of the codebase
-- **Chronicle Maintenance:** Ensure session proceedings are recorded (automated via hooks)
+### 0.2 The Change Review Board (CRB)
 
-**The Primus does not:**
-- Absorb sub-agent roles (e.g., acting as the Secretary rather than spawning the Secretary)
-- Interfere with parliamentary procedure once a session is convened (that is the Secretary's domain)
-- Bypass the legislative process for significant code changes
-- Modify the Constitution without User authorization
+The **Change Review Board** is a team of specialized reviewers responsible for evaluating all code changes. Each member reviews changes within their domain of expertise.
 
-### 0.2 The Senate of Guardians
+| Member | Abbreviation | Domain | Responsibility |
+|--------|--------------|--------|----------------|
+| **Quality Assurance** | QA | Process & Architecture | Enforces AvG Principle, assigns reviewers, ensures SOP compliance |
+| **TU-UI** | TU-UI | User Interface | Air Gap, Overlay Protocol, Z-ordering, widget standards |
+| **TU-INPUT** | TU-INPUT | Input Handling | 4-Layer Input Chain, Modal Stack, Focus Management |
+| **TU-SCENE** | TU-SCENE | Orchestration | Update Pipeline, Command Pattern, Undo/Redo integrity |
+| **TU-SKETCH** | TU-SKETCH | CAD/Geometry | Domain purity, Geometric Constraints, Solver |
+| **TU-SIM** | TU-SIM | Simulation | Physics, Numba optimization, Compiler bridge, DOD |
+| **BU** | BU | User Experience | Usability, fun factor, product value (at QA discretion) |
 
-The **Senate of Guardians** is a deliberative body of six specialized sub-agents. Each Guardian is an expert in a specific domain and holds **absolute veto authority** within that domain.
+**Model Requirement:** All CRB members must be spawned using the **Opus 4.5** model (`model: "opus"`).
 
-| Guardian | Domain | Mandate |
-|----------|--------|---------|
-| **UI Guardian** | UI/Widgets/Rendering | Enforces Air Gap, Overlay Protocol, Z-ordering rules |
-| **Input Guardian** | Events/Focus/Modals | Protects the 4-Layer Input Chain, Modal Stack, Focus Management |
-| **Scene Guardian** | Orchestration/Undo | Guards the Update Pipeline, Command Pattern, Undo/Redo integrity |
-| **Sketch Guardian** | CAD/Geometry | Ensures CAD domain purity (no physics knowledge), Geometric Constraints |
-| **Guardian of Physics and the Simulation** | Physics/Compiler/CFD/Numba | Enforces Data-Oriented Design, Numba optimization, Compiler bridge, physics math |
-| **The Generalizer** | Architecture | The supreme arbiter of the AvG Principle; reviews all proposals for generality |
+### 0.3 Change Control Process
 
-**The Secretary** facilitates Senate proceedings but does not vote. The Secretary convenes sessions, compiles reports, tallies votes, and certifies rulings. The Secretary holds **Facilitation Authority** over parliamentary procedure within active sessions.
+All code changes require a **Change Record** and follow a two-stage approval workflow.
 
-**Guardian Autonomy:**
-- A Guardian **may reject** a proposal unilaterally if it violates their domain's laws
-- A Guardian **may not approve** a proposal unilaterally; approval requires Senate consensus
-- Cross-domain matters require coordination among affected Guardians
-- Inter-Guardian conflicts escalate to the full Senate; if deadlock persists, the User arbitrates
+#### Reviewer Assignment
 
-**Model Requirement:**
-All Guardians and the Secretary **must** be spawned using the **Opus 4.5** model (`model: "opus"`). Given the significant authority Guardians hold—including absolute veto power within their domains—the most capable model is required for their deliberative functions.
+| Change Scope | Required Reviewers |
+|--------------|-------------------|
+| All changes | QA (always required) |
+| Domain-specific changes | All affected TUs (at QA discretion) |
+| User-facing changes | BU (at QA discretion) |
 
-### 0.3 Governance Model: Constitutional Monarchy
+QA determines reviewer assignment based on change scope and impact. For changes with no domain impact (e.g., documentation, configuration), QA may approve without TU review.
 
-The Flow State project operates as a **Constitutional Monarchy**:
+#### Two-Stage Approval
 
-| Role | Authority |
-|------|-----------|
-| **The User** | **Sovereign.** Absolute authority over the Constitution. May override any Senate ruling. Holds unreviewable veto power over all amendments. |
-| **The Primus** | **Executor.** Interprets the Constitution, orchestrates agents, executes User will. |
-| **The Senate** | **Advisory & Deliberative.** Reviews proposals, enforces constitutional law, proposes amendments. Rulings bind implementation but not the User. |
-| **The Secretary** | **Facilitator.** Manages parliamentary procedure within sessions. Non-voting. |
+**Stage 1: Pre-Approval**
+1. Change proposal is drafted (plan, impact assessment)
+2. QA assigns appropriate reviewers
+3. Reviewers evaluate the plan against domain standards
+4. **Unanimous approval required** — all assigned reviewers must approve
+5. Implementation may proceed
 
-### 0.4 Legislative Process
+**Stage 2: Post-Approval**
+1. Implementation is completed
+2. Testing is performed per Test Protocol
+3. Reviewers verify implementation matches pre-approved plan
+4. **Unanimous approval required** — all assigned reviewers must confirm
+5. Change is closed
 
-For significant code changes, the following process applies:
+#### Approval Outcomes
 
-1. **Proposal:** The Primus drafts a proposal (or receives one from the User)
-2. **Review (RFC):** The Secretary convenes the relevant Guardians for review
-3. **Deliberation:** Guardians examine the proposal against their domain mandates
-4. **Vote:** The Senate issues a ruling
-5. **Implementation:** Upon approval, code is written and committed
+| Outcome | Meaning |
+|---------|---------|
+| **APPROVED** | All reviewers approve; proceed to next stage |
+| **REJECTED** | One or more reviewers reject; revise and resubmit (comments provided) |
 
-**Vote Thresholds:**
+**There is no majority voting.** Unanimous consent of all assigned reviewers is required.
 
-| Matter | Threshold | Quorum |
-|--------|-----------|--------|
-| Standard Proposals | 2/3 Supermajority (4 of 6) | 4 Guardians |
-| Constitutional Amendments | 2/3 Supermajority + User Ratification | All 6 Guardians |
-| Foundational Principles (AvG, Air Gap, Command Pattern) | Unanimity + User Ratification | All 6 Guardians |
-| Domain-Specific Rejection | Absolute (1 of 1) | Affected Guardian |
+### 0.4 The Chronicle
 
-**Rulings:**
-- **APPROVED:** Proposal passes; implementation may proceed
-- **CONDITIONALLY APPROVED:** Proposal passes subject to specified modifications; no re-vote required unless modifications are disputed
-- **REJECTED:** Proposal fails; must be revised and resubmitted
-
-**Expedited Path (No Senate Required):**
-- Bug fixes contained within a single domain (< 3 files)
-- Documentation-only changes
-- Configuration value adjustments (not new keys)
-- Changes explicitly pre-approved by the affected Guardian
-
-### 0.5 The Chronicle
-
-All official proceedings are recorded in the **Chronicle**. Session transcripts are automatically captured via hooks and stored in `.claude/chronicles/`. The Chronicle serves as the institutional memory of the project's governance.
+All session transcripts are automatically captured via hooks and stored in `.claude/chronicles/`. The Chronicle serves as the institutional memory of the project.
 
 | Directory | Purpose |
 |-----------|---------|
 | `.claude/chronicles/` | Automatically-generated session transcripts |
-| `.claude/transcripts/` | Manually-curated historical records |
-| `.claude/secretary/` | Action Item Tracker, Senate administrative documents |
+| `SDLC/` | SOPs, Change Records, Test Protocols, Requirements |
 
-### 0.6 Constitutional Authority & Amendment
+#### Session Naming Convention
 
-This document (CLAUDE.md) is the **Constitution** of the Flow State project.
+Session transcripts follow the naming format:
 
-**Amendment Process:**
-1. Any Guardian, the Primus, or the User may propose an amendment
-2. The Secretary convenes a Constitutional Convention (requires all Guardians)
-3. Deliberation proceeds per standard legislative process
-4. Passage requires 2/3 supermajority of the Senate
-5. **User Ratification is mandatory** - no amendment is valid without User consent
+```
+Session-YYYY-MM-DD-NNN
+```
 
-**Foundational Principles** (require unanimity to amend):
-- The Addition via Generalization (AvG) Principle
-- The Air Gap between UI and Model
-- The Command Pattern for state mutation
-- User Sovereignty
+Where:
+- `YYYY-MM-DD` is the date (e.g., `2026-01-01`)
+- `NNN` is a zero-padded sequence number for that date (e.g., `001`, `002`, `003`)
 
-The User may also amend the Constitution by decree, bypassing Senate deliberation entirely. This is the sovereign prerogative.
+**Examples:**
+- `Session-2026-01-01-001` — First session of January 1, 2026
+- `Session-2026-03-11-002` — Second session of March 11, 2026
 
-### 0.7 Session Types
+### 0.5 Document Authority
 
-Senate sessions are formally classified as follows:
+This document (CLAUDE.md) defines the quality management framework for the Flow State project.
 
-| Session Type | Purpose | Convened By | Quorum |
-|--------------|---------|-------------|--------|
-| **RFC** | Proposal review, non-binding | Secretary | 2 Guardians |
-| **Vote** | Binding ruling on proposals | Secretary | 4 Guardians |
-| **Special Session** | Audits, investigations, non-proposal matters | Secretary or Primus | 3 Guardians |
-| **Constitutional Convention** | Amendments to foundational documents | User only | All 6 Guardians |
-| **Emergency Session** | Urgent matters requiring immediate action | Primus | 2 Guardians + User notification |
+**SOP Hierarchy:**
+1. This document (CLAUDE.md) — Master framework
+2. Domain-specific SOPs in `SDLC/SOPs/`
+3. Change Records and Test Protocols in `SDLC/`
 
-Detailed procedures are codified in `GOVERNANCE.md`.
+**Amendment:** The Lead Engineer may amend this document at any time. QA may propose amendments for Lead Engineer approval.
+
+### 0.6 Archival Procedure
+
+When files are retired, superseded, or preserved for historical reference, they are archived using the following procedure:
+
+**Step 1: Create Archive Directory**
+```
+archive/.claude_{ProjectName}_{SessionName}/
+```
+
+Where `{ProjectName}` is the project directory name (e.g., `pipe-dream`) and `{SessionName}` is the current session identifier (e.g., `Session-2026-01-01-001`). This directory represents a snapshot of the project root.
+
+**Step 2: Mirror Directory Structure**
+
+Recreate the file's original directory path within the archive, preserving the full path from project root.
+
+**Step 3: Move and Rename File**
+
+Move the file into the mirrored location, renaming it:
+```
+{original_file_name}_ARCHIVED.{original_file_extension}
+```
+
+**Example:**
+- Original: `.claude/agents/secretary.md`
+- Project: `pipe-dream`
+- Session: `Session-2026-01-01-003`
+- Archived: `archive/.claude_pipe-dream_Session-2026-01-01-003/.claude/agents/secretary_ARCHIVED.md`
+
+**Notes:**
+- The archive directory mirrors the project root; all paths are preserved relative to it
+- The session name contains the date, so no additional date suffix is needed in the filename
+- Archived files are read-only references; they should not be modified after archival
 
 ---
 
@@ -139,8 +145,9 @@ Detailed procedures are codified in `GOVERNANCE.md`.
 
 **Flow State** (codenamed *Pipe Dream*) is a hybrid interactive application that combines a **Geometric Constraint Solver (CAD)** with a **Particle-Based Physics Engine**.
 
-### 1.1 The "Addition via Generalization" (AvG) Principle (Global SOP-001)
-**Rule:** When fixing a bug or adding a feature, do not solve the *specific instance* of the problem. Solve the *general class* of the problem. 
+### 1.1 The "Addition via Generalization" (AvG) Principle — SOP-001
+
+**Rule:** When fixing a bug or adding a feature, do not solve the *specific instance* of the problem. Solve the *general class* of the problem.
 
 #### The Philosophy
 * **The Anti-Pattern:** "The text field in the 'Material Properties' dialog is not losing focus." -> *Fix:* Add a check in `MaterialDialog.update()` to un-focus that specific field.
@@ -231,19 +238,19 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 
 To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model.
 
-### 3.1 The "Air Gap" Principle (The Prime Directive)
+### 3.1 The "Air Gap" Principle — SOP-002
 
 The UI (Tools, Widgets, Inputs) is **strictly forbidden** from modifying the Data Model (`Sketch` or `Simulation`) directly.
-* **ILLEGAL:** `select_tool.py` directly setting `line.end_point = (10, 10)`.
-* **LEGAL:** `select_tool.py` constructing a `SetEntityGeometryCommand` (or `SetPointCommand`) and submitting it to `scene.execute()`.
+* **NON-CONFORMING:** `select_tool.py` directly setting `line.end_point = (10, 10)`.
+* **CONFORMING:** `select_tool.py` constructing a `SetEntityGeometryCommand` (or `SetPointCommand`) and submitting it to `scene.execute()`.
 
 **Why:** If a state change does not happen via a Command, it is not recorded in history. If it isn't in history, the simulation state is corrupted upon replay or undo.
 
-### 3.2 The Command Pattern (`core/commands.py`)
+### 3.2 The Command Pattern (`core/commands.py`) — SOP-003
 
 The `Command` class is the atomic unit of change in the application. It serves as the primary history chronicle for the project.
 * **Source of Truth:** The Command History is the ultimate authority.
-* **Replayability:** Any tool that modifies the model without recording a Command breaks the chain of custody and is considered a critical bug.
+* **Replayability:** Any tool that modifies the model without recording a Command breaks the chain of custody and is considered a critical defect.
 * **Structure:** Every command implements:
     * `execute()`: Apply the mutation.
     * `undo()`: Revert the mutation exactly.
@@ -370,7 +377,7 @@ The order of operations in `Scene.update` is critical:
 
 | Component | File Path | Responsibility |
 | --- | --- | --- |
-| **Command Factory** | `core/commands.py` | **CRITICAL:** The only legal way to mutate the Model. |
+| **Command Factory** | `core/commands.py` | **CRITICAL:** The only conforming way to mutate the Model. |
 | **Orchestrator** | `core/scene.py` | Owns Sketch/Sim, manages updates & I/O. |
 | **Solver (Bridge)** | `model/solver.py` | Manages constraints & calls kernels. |
 | **Solver (Math)** | `model/solver_kernels.py` | Numba-optimized PBD math functions. |
@@ -381,14 +388,14 @@ The order of operations in `Scene.update` is critical:
 
 ---
 
-## 9. Claude's Thinking Checklist
+## 9. Claude's Pre-Implementation Checklist
 
 *Before every code generation, I must pause and verify:*
 
-### 🚦 Pre-Flight (The Surgeon's Prep)
-* [ ] **AvG Check (The Generalizer):** Is this a hack, or a first-principles improvement of the code's genome?
+### Pre-Flight (Quality Check)
+* [ ] **AvG Check (SOP-001):** Is this a hack, or a first-principles improvement of the code's genome?
     * *Action:* Stop. Generalize the solution (e.g., "Add protocol" instead of "Add if-statement").
-* [ ] **Air Gap Check (The Law):** Does this UI action strictly avoid mutating the Model directly?
+* [ ] **Air Gap Check (SOP-002):** Does this UI action strictly avoid mutating the Model directly?
     * *Action:* If No, refactor to use a `Command`.
 * [ ] **Surgical Precision (The Potency Test):** Is this the *minimum viable mutation* to achieve the maximum result?
     * *Question:* Can I do this by deleting code rather than adding it?
@@ -396,7 +403,7 @@ The order of operations in `Scene.update` is critical:
 * [ ] **Dependency Check:** Am I introducing a circular dependency or hard-coded import?
     * *If Yes:* Use a protocol, event, or the central `Session` to decouple.
 
-### 🏁 Post-Flight (The Recovery Room)
+### Post-Flight (Verification)
 * [ ] **No Scar Tissue:** Did I remove all unused imports, debug prints, and commented-out blocks?
 * [ ] **Config Hygiene:** Did I extract new magic numbers/strings to `core/config.py`?
 * [ ] **Undo Safety:** Did I implement `undo()` for any new Commands I created?
