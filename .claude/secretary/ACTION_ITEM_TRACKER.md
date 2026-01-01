@@ -11,11 +11,11 @@
 
 | Priority Level | Count | Status |
 |----------------|-------|--------|
-| Priority 0 (Critical) | 4 | All Open |
+| Priority 0 (Critical) | 4 | 1 Closed, 3 Open |
 | Priority 1 (High) | 9 | All Open |
 | Priority 2 (Medium) | 5 | All Open |
 | Priority 3 (Backlog) | 5 | All Open |
-| **Total** | **23** | **23 Open** |
+| **Total** | **23** | **1 Closed, 22 Open** |
 
 ### By Owner
 
@@ -44,8 +44,10 @@ These items have **unanimous Senate consensus** and must be resolved before any 
 | **Creation Date** | 2025-12-31 |
 | **Priority** | P0 (Critical) |
 | **Owner** | Scene Guardian |
-| **Status** | Open |
+| **Status** | **Closed** |
 | **Effort** | Medium |
+| **Closed Date** | 2025-12-31 |
+| **Resolution** | PROP-2025-001 implemented |
 
 **Description:**
 
@@ -56,7 +58,11 @@ The `SelectTool.cancel()` method in `ui/tools.py` (lines 764-796) directly mutat
 - Line 776: `entity.radius = self.original_radius`
 - Lines 783, 786: `self.sketch.entities[idx].move(-self.total_dx, -self.total_dy)`
 
-**Resolution:** Refactor to use the `Scene.discard()` pattern, consistent with how `LineTool` handles uncommitted changes. The discard pattern properly reverts state without creating spurious history entries.
+**Resolution:** ✓ IMPLEMENTED via PROP-2025-001. SelectTool now uses the supersede pattern:
+- All drag start methods create initial commands with `historize=True, supersede=False`
+- All drag handlers use `historize=True, supersede=True`
+- `cancel()` now calls `scene.discard()` instead of direct entity mutation
+- Senate approved unanimously (6-0) on 2025-12-31
 
 ---
 
