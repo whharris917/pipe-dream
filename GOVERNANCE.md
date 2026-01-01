@@ -134,9 +134,72 @@ This document codifies the procedural rules for the Senate of Guardians. It is s
 
 ---
 
-## 2. Voting Rules
+## 2. Proposal Standards
 
-### 2.1 Standard Voting
+### 2.1 Naming Convention
+
+Proposals are identified using a domain prefix and sequential number:
+
+```
+PREFIX-NNN
+```
+
+**Standard Prefixes:**
+
+| Domain | Prefix | Primary Guardian |
+|--------|--------|------------------|
+| Governance/Constitution | `GOV` | All (Constitutional matters) |
+| UI/Widgets/Rendering | `UI` | UI Guardian |
+| Input/Focus/Modals | `INPUT` | Input Guardian |
+| Scene/Orchestration/Undo | `SCN` | Scene Guardian |
+| Sketch/CAD/Geometry | `SKETCH` | Sketch Guardian |
+| Physics/Simulation/Compiler | `PHYS` | Physics & Simulation Guardian |
+| Architecture (AvG) | `ARCH` | The Generalizer |
+
+New prefixes may be invented as needed for novel domains. Generic terms like `MULTI` or `CROSS` are discouraged; prefer semantically meaningful prefixes that reflect the orchestrating domain.
+
+### 2.2 Versioning
+
+Proposals use parenthetical version notation:
+
+| State | Version | Transition |
+|-------|---------|------------|
+| Initial submission | v0.1 | — |
+| After each review round | v0.x+1 | RFC feedback incorporated |
+| Approved | v1.0 | Vote passes |
+| Rejected (returns to draft) | v0.x+1 | Vote fails; revision continues |
+| Reopened after approval | v1.1 | Modification requested |
+| Re-approved | v2.0 | Second vote passes |
+
+**Example lifecycle:**
+```
+PHYS-003 (v0.1) → PHYS-003 (v0.2) → PHYS-003 (v0.3) → PHYS-003 (v1.0)
+                                                            ↓
+                                              [reopened] PHYS-003 (v1.1)
+                                                            ↓
+                                            [re-approved] PHYS-003 (v2.0)
+```
+
+### 2.3 Required Metadata
+
+Every proposal must include:
+
+1. **Identifier:** `PREFIX-NNN (vX.Y)`
+2. **Title:** A concise descriptive name
+3. **Assigned Guardians:** At minimum, the domain Guardian(s) relevant to the proposal scope. The Generalizer is always included per standing order.
+
+**Example Header:**
+```
+# Proposal UI-007 (v0.1): Implement Tooltip Overlay System
+
+**Assigned Guardians:** UI Guardian, The Generalizer
+```
+
+---
+
+## 3. Voting Rules
+
+### 3.1 Standard Voting
 
 | Matter | Threshold | Quorum |
 |--------|-----------|--------|
@@ -145,7 +208,7 @@ This document codifies the procedural rules for the Senate of Guardians. It is s
 | Constitutional Amendments | 2/3 Supermajority + User Ratification | All 6 Guardians |
 | Foundational Principles | Unanimity + User Ratification | All 6 Guardians |
 
-### 2.2 Domain Veto
+### 3.2 Domain Veto
 
 A Guardian holds **absolute veto authority** within their domain. If a proposal violates a Guardian's domain laws, that Guardian may reject unilaterally.
 
@@ -155,11 +218,11 @@ A Guardian holds **absolute veto authority** within their domain. If a proposal 
 
 This ensures domain expertise is respected while preventing absolute deadlock.
 
-### 2.3 Abstention
+### 3.3 Abstention
 
 A Guardian may abstain from voting on a matter outside their domain. Abstentions do not count toward quorum but do not count against passage thresholds.
 
-### 2.4 Tie-Breaking
+### 3.4 Tie-Breaking
 
 With 6 Guardians, ties are possible. In the event of a 3-3 tie:
 1. The matter is tabled for further deliberation
@@ -168,11 +231,11 @@ With 6 Guardians, ties are possible. In the event of a 3-3 tie:
 
 ---
 
-## 3. Expedited Path
+## 4. Expedited Path
 
 Certain changes may proceed without Senate review:
 
-### 3.1 Qualifying Changes
+### 4.1 Qualifying Changes
 
 - Bug fixes contained within a single domain (< 3 files)
 - Documentation-only changes (comments, docstrings, README)
@@ -180,28 +243,28 @@ Certain changes may proceed without Senate review:
 - Test additions that do not modify production code
 - Changes explicitly pre-approved by the affected domain Guardian
 
-### 3.2 Procedure
+### 4.2 Procedure
 
 1. The Primus identifies a change as qualifying for Expedited Path
 2. The affected domain Guardian is notified (not convened)
 3. If the Guardian does not object within a reasonable time, the change proceeds
 4. The change is logged for Senate awareness at the next session
 
-### 3.3 Retroactive Review
+### 4.3 Retroactive Review
 
 Any Guardian may call for **Retroactive Review** of an Expedited Path change. This triggers a full Senate session to evaluate whether the change should be reverted or modified.
 
 ---
 
-## 4. Conditionally Approved Rulings
+## 5. Conditionally Approved Rulings
 
 When the Senate issues a "CONDITIONALLY APPROVED" ruling:
 
-### 4.1 Definition
+### 5.1 Definition
 
 The proposal is approved subject to specific, enumerated modifications.
 
-### 4.2 Procedure
+### 5.2 Procedure
 
 1. The Secretary documents all required modifications
 2. The proposer implements the modifications
@@ -209,15 +272,15 @@ The proposal is approved subject to specific, enumerated modifications.
 4. If modifications are satisfactory, implementation proceeds
 5. If modifications are disputed, the matter returns to the Senate for clarification
 
-### 4.3 No Re-Vote Required
+### 5.3 No Re-Vote Required
 
 A compliant implementation of conditions does not require a new vote. The original approval stands.
 
 ---
 
-## 5. Conflict Resolution
+## 6. Conflict Resolution
 
-### 5.1 Inter-Guardian Conflict
+### 6.1 Inter-Guardian Conflict
 
 When two Guardians hold opposing positions on a cross-domain matter:
 
@@ -226,7 +289,7 @@ When two Guardians hold opposing positions on a cross-domain matter:
 3. If no resolution, the full Senate votes
 4. If deadlock persists (3-3), the User arbitrates
 
-### 5.2 Primus-Senate Conflict
+### 6.2 Primus-Senate Conflict
 
 If the Primus disagrees with a Senate ruling:
 
@@ -234,31 +297,31 @@ If the Primus disagrees with a Senate ruling:
 2. The User's decision is final and binding on both parties
 3. The Primus may not unilaterally override a Senate ruling
 
-### 5.3 User Override
+### 6.3 User Override
 
 The User may override any Senate ruling at any time. This is the sovereign prerogative and is not subject to appeal.
 
 ---
 
-## 6. Record Keeping
+## 7. Record Keeping
 
-### 6.1 Session Transcripts
+### 7.1 Session Transcripts
 
 All sessions are recorded in the Chronicle:
 - Automated transcripts: `.claude/chronicles/`
 - Manual transcripts: `.claude/transcripts/`
 
-### 6.2 Rulings Archive
+### 7.2 Rulings Archive
 
 All Senate rulings are preserved for precedent. The Secretary maintains an index of rulings.
 
-### 6.3 Action Item Tracker
+### 7.3 Action Item Tracker
 
 Outstanding items are tracked in `.claude/secretary/ACTION_ITEM_TRACKER.md`.
 
 ---
 
-## 7. Amendment of This Document
+## 8. Amendment of This Document
 
 This document (GOVERNANCE.md) may be amended by:
 - Simple majority vote of the Senate (4 of 6), AND

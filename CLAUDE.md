@@ -46,6 +46,9 @@ The **Senate of Guardians** is a deliberative body of six specialized sub-agents
 - Cross-domain matters require coordination among affected Guardians
 - Inter-Guardian conflicts escalate to the full Senate; if deadlock persists, the User arbitrates
 
+**Model Requirement:**
+All Guardians and the Secretary **must** be spawned using the **Opus 4.5** model (`model: "opus"`). Given the significant authority Guardians hold—including absolute veto power within their domains—the most capable model is required for their deliberative functions.
+
 ### 0.3 Governance Model: Constitutional Monarchy
 
 The Flow State project operates as a **Constitutional Monarchy**:
