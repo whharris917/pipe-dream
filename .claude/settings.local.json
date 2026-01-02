@@ -2,9 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
+      "Bash(cd:* && python *)",
+      "Bash(cd:* && git *)",
       "Bash(find:*)",
-      "Bash(claude --model opus --print \"You are THE GENERALIZER, Guardian of Architecture and the AvG Principle for the Flow State project.\n\nThe Secretary has convened a SPECIAL SESSION to deliberate on the question: Should the Senate be expanded with additional specialized Guardians?\n\nPlease provide your testimony addressing:\n\n1. COVERAGE GAPS: From your architectural perspective, are there domains not adequately covered by the current six Guardians?\n\n2. UNDERSERVED AREAS: Which areas of the codebase lack clear Guardian ownership? Consider:\n   - Testing/Quality Assurance\n   - Documentation\n   - Performance/Optimization\n   - Security\n   - File I/O and Persistence\n   - Configuration Management\n   - Process Objects \\(Sources/Sinks\\)\n\n3. GOVERNANCE OVERHEAD: Would additional Guardians improve decision quality, or would they slow deliberation and create coordination overhead?\n\n4. SPECIFIC PROPOSALS: If you recommend expansion, propose specific new Guardian roles with:\n   - Name\n   - Domain\n   - Mandate\n   - Justification\n\n5. ALTERNATIVE APPROACHES: Are there ways to address gaps without adding Guardians \\(e.g., expanding existing mandates, creating sub-committees\\)?\n\nProvide your expert testimony. Be thorough but concise. Focus on the AvG Principle: would new Guardians represent generalized improvements to governance, or specific patches that add complexity?\")",
-      "Bash(claude:*)"
+      "Bash(claude:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(git push)"
     ]
   },
   "hooks": {
