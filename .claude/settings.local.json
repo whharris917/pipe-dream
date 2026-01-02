@@ -2,13 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
-      "Bash(cd:* && python *)",
-      "Bash(cd:* && git *)",
+      "Bash(cd:*)",
       "Bash(find:*)",
       "Bash(claude:*)",
       "Bash(mkdir:*)",
       "Bash(cat:*)",
-      "Bash(git push)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(source:*)",
+      "Bash(qms:*)",
+      "Bash(export:*)"
     ]
   },
   "hooks": {

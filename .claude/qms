@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# QMS CLI wrapper - works from any directory
+
+# Find the script's directory (handles symlinks)
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+# QMS_USER must be set explicitly - no default allowed
+if [ -z "$QMS_USER" ]; then
+    echo "Error: QMS_USER environment variable not set."
+    echo "Set your identity with: export QMS_USER=<username>"
+    exit 1
+fi
+
+# Run the Python script
+python "$SCRIPT_DIR/qms.py" "$@"
