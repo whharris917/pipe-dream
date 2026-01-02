@@ -140,12 +140,157 @@ def get_current_user() -> str:
 # Valid QMS users
 VALID_USERS = {"lead", "claude", "qa", "bu", "tu_input", "tu_ui", "tu_scene", "tu_sketch", "tu_sim"}
 
+# =============================================================================
+# User Groups & Permissions
+# =============================================================================
+
+# User group definitions
+USER_GROUPS = {
+    "initiators": {"lead", "claude"},      # Can create documents, initiate workflows
+    "qa": {"qa"},                           # Can modify workflows, review, approve
+    "reviewers": {"tu_input", "tu_ui", "tu_scene", "tu_sketch", "tu_sim", "bu"},  # Review/approve only
+}
+
+# Permission definitions by command
+# "all" = any valid user, "assigned" = must be assigned to workflow
+PERMISSIONS = {
+    "create":    {"groups": ["initiators"]},
+    "checkout":  {"groups": ["initiators"]},
+    "checkin":   {"groups": ["initiators"], "owner_only": True},
+    "route":     {"groups": ["initiators"]},
+    "assign":    {"groups": ["qa"]},
+    "review":    {"groups": ["initiators", "qa", "reviewers"], "assigned_only": True},
+    "approve":   {"groups": ["qa", "reviewers"], "assigned_only": True},
+    "reject":    {"groups": ["qa", "reviewers"], "assigned_only": True},
+    "release":   {"groups": ["initiators"], "owner_only": True},
+    "revert":    {"groups": ["initiators"], "owner_only": True},
+    "close":     {"groups": ["initiators"], "owner_only": True},
+    "read":      {"groups": ["initiators", "qa", "reviewers"]},
+    "status":    {"groups": ["initiators", "qa", "reviewers"]},
+    "inbox":     {"groups": ["initiators", "qa", "reviewers"]},
+    "workspace": {"groups": ["initiators", "qa", "reviewers"]},
+}
+
+# Helpful guidance messages for each group
+GROUP_GUIDANCE = {
+    "initiators": """
+As an Initiator (lead, claude), you can:
+  - Create new documents: qms create SOP --title "Title"
+  - Check out documents for editing: qms checkout DOC-ID
+  - Check in edited documents: qms checkin DOC-ID
+  - Route documents for review/approval: qms route DOC-ID --review
+  - Release/close executable documents you own
+
+You cannot:
+  - Assign additional reviewers (QA only)
+  - Approve or reject documents
+""",
+    "qa": """
+As QA, you can:
+  - Assign reviewers to workflows: qms assign DOC-ID --user tu_ui tu_scene
+  - Review documents: qms review DOC-ID --recommend --comment "..."
+  - Approve documents: qms approve DOC-ID
+  - Reject documents: qms reject DOC-ID --comment "..."
+
+You cannot:
+  - Create new documents (Initiators only)
+  - Route documents for workflows (Initiators only)
+""",
+    "reviewers": """
+As a Reviewer (TU/BU), you can:
+  - Review documents when assigned: qms review DOC-ID --recommend --comment "..."
+  - Approve documents when assigned: qms approve DOC-ID
+  - Reject documents when assigned: qms reject DOC-ID --comment "..."
+  - Check your inbox: qms inbox
+  - Read any document: qms read DOC-ID
+
+You cannot:
+  - Create documents (Initiators only)
+  - Route documents (Initiators only)
+  - Assign reviewers (QA only)
+""",
+}
+
+
+def get_user_group(user: str) -> str:
+    """Get the group a user belongs to."""
+    for group_name, members in USER_GROUPS.items():
+        if user in members:
+            return group_name
+    return "unknown"
+
+
+def check_permission(user: str, command: str, doc_owner: str = None, assigned_users: List[str] = None) -> tuple[bool, str]:
+    """
+    Check if user has permission to execute a command.
+    Returns (allowed, error_message).
+    """
+    if command not in PERMISSIONS:
+        return True, ""  # Unknown command, let it through
+
+    perm = PERMISSIONS[command]
+    user_group = get_user_group(user)
+    allowed_groups = perm.get("groups", [])
+
+    # Check group membership
+    if user_group not in allowed_groups:
+        group_names = ", ".join(allowed_groups)
+        error = f"""
+Permission Denied: '{command}' command
+
+Your role: {user_group} ({user})
+Required role(s): {group_names}
+
+{GROUP_GUIDANCE.get(user_group, '')}
+"""
+        return False, error
+
+    # Check owner requirement
+    if perm.get("owner_only") and doc_owner and doc_owner != user:
+        # For initiators, any initiator can act on behalf of documents
+        if user_group == "initiators" and doc_owner in USER_GROUPS.get("initiators", set()):
+            pass  # Allow initiators to act on each other's documents
+        else:
+            error = f"""
+Permission Denied: '{command}' command
+
+You ({user}) are not the responsible user for this document.
+Responsible user: {doc_owner}
+
+Only the document owner or another Initiator can perform this action.
+"""
+            return False, error
+
+    # Check assignment requirement
+    if perm.get("assigned_only") and assigned_users is not None:
+        if user not in assigned_users:
+            error = f"""
+Permission Denied: '{command}' command
+
+You ({user}) are not assigned to this workflow.
+Assigned users: {', '.join(assigned_users) if assigned_users else 'None'}
+
+You can only {command} documents you are assigned to.
+Check your inbox for assigned tasks: qms inbox
+"""
+            return False, error
+
+    return True, ""
+
 
 def verify_user_identity(user: str) -> bool:
     """Verify that the user is a valid QMS user."""
     if user not in VALID_USERS:
-        print(f"Error: '{user}' is not a valid QMS user.")
-        print(f"Valid users: {', '.join(sorted(VALID_USERS))}")
+        print(f"""
+Error: '{user}' is not a valid QMS user.
+
+Valid users by group:
+  Initiators: {', '.join(sorted(USER_GROUPS['initiators']))}
+  QA:         {', '.join(sorted(USER_GROUPS['qa']))}
+  Reviewers:  {', '.join(sorted(USER_GROUPS['reviewers']))}
+
+Set your identity with: export QMS_USER=<username>
+""")
         return False
     return True
 
@@ -153,8 +298,16 @@ def verify_user_identity(user: str) -> bool:
 def verify_folder_access(user: str, target_user: str, operation: str) -> bool:
     """Verify that user has access to target_user's folder."""
     if user != target_user:
-        print(f"Error: Access denied. User '{user}' cannot {operation} for user '{target_user}'.")
-        print(f"You can only access your own inbox and workspace.")
+        print(f"""
+Error: Access denied.
+
+User '{user}' cannot {operation} for user '{target_user}'.
+You can only access your own inbox and workspace.
+
+Commands:
+  qms inbox      - View your pending tasks
+  qms workspace  - View your checked-out documents
+""")
         return False
     return True
 
@@ -316,6 +469,12 @@ def cmd_create(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check
+    allowed, error = check_permission(user, "create")
+    if not allowed:
+        print(error)
+        return 1
+
     doc_type = args.type.upper()
 
     if doc_type not in DOCUMENT_TYPES:
@@ -453,6 +612,12 @@ def cmd_checkout(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check
+    allowed, error = check_permission(user, "checkout")
+    if not allowed:
+        print(error)
+        return 1
+
     # Find the document (effective or draft)
     effective_path = get_doc_path(doc_id, draft=False)
     draft_path = get_doc_path(doc_id, draft=True)
@@ -521,18 +686,32 @@ def cmd_checkin(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level)
+    allowed, error = check_permission(user, "checkin")
+    if not allowed:
+        print(error)
+        return 1
+
     workspace_path = get_workspace_path(user, doc_id)
     if not workspace_path.exists():
-        print(f"Error: {doc_id} not in your workspace")
+        print(f"""
+Error: {doc_id} not found in your workspace.
+
+Your workspace contains documents you have checked out for editing.
+To check out a document: qms checkout {doc_id}
+To see your workspace: qms workspace
+""")
         return 1
 
     draft_path = get_doc_path(doc_id, draft=True)
 
-    # Verify user has it checked out
+    # Verify user has it checked out (ownership check)
     if draft_path.exists():
         frontmatter, _ = read_document(draft_path)
-        if frontmatter.get("responsible_user") != user:
-            print(f"Error: {doc_id} is not checked out by you")
+        doc_owner = frontmatter.get("responsible_user")
+        allowed, error = check_permission(user, "checkin", doc_owner=doc_owner)
+        if not allowed:
+            print(error)
             return 1
 
     # Read workspace version
@@ -549,8 +728,15 @@ def cmd_checkin(args):
             shutil.copy(draft_path, archive_path)
             print(f"Archived: v{old_version}")
 
-    # Copy workspace to QMS
-    shutil.copy(workspace_path, draft_path)
+    # Clear checkout state
+    frontmatter["checked_out"] = False
+    frontmatter["checked_out_date"] = None
+
+    # Write to QMS with cleared checkout state
+    write_document(draft_path, frontmatter, body)
+
+    # Remove from workspace
+    workspace_path.unlink()
 
     print(f"Checked in: {doc_id} (v{frontmatter.get('version', '?')})")
 
@@ -565,22 +751,40 @@ def cmd_route(args):
     if not verify_user_identity(user):
         return 1
 
-    assignees = args.assign
-
-    if not assignees:
-        print("Error: Must specify --assign with at least one user")
+    # Permission check (group level)
+    allowed, error = check_permission(user, "route")
+    if not allowed:
+        print(error)
         return 1
 
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+The document may not exist, or it may already be effective.
+To create a new document: qms create SOP --title "Title"
+To check out an effective document for revision: qms checkout {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
 
-    # Verify ownership
-    if frontmatter.get("responsible_user") != user:
-        print(f"Error: You are not the responsible user for {doc_id}")
+    # Verify document is checked in (not checked out)
+    if frontmatter.get("checked_out"):
+        checked_out_by = frontmatter.get("responsible_user", "unknown")
+        print(f"""
+Error: {doc_id} is still checked out by {checked_out_by}.
+
+Documents must be checked in before routing for review/approval.
+The workflow operates on the QMS copy, not the workspace copy.
+
+If you are the owner, check it in first:
+  qms checkin {doc_id}
+
+Then route for review:
+  qms route {doc_id} --review
+""")
         return 1
 
     current_status = Status(frontmatter.get("status", "DRAFT"))
@@ -635,6 +839,39 @@ def cmd_route(args):
     else:
         print("Error: Must specify workflow type (--review, --approval, etc.)")
         return 1
+
+    # For approval routing, verify most recent review has all RECOMMEND outcomes
+    if "APPROVAL" in workflow_type:
+        review_history = frontmatter.get("review_history", [])
+        if not review_history:
+            print("Error: No review history found. Document must be reviewed before approval.")
+            return 1
+
+        # Find the most recent review round
+        latest_review = None
+        for entry in reversed(review_history):
+            if entry.get("type") in ["REVIEW", "PRE_REVIEW", "POST_REVIEW"]:
+                latest_review = entry
+                break
+
+        if not latest_review:
+            print("Error: No review round found. Document must be reviewed before approval.")
+            return 1
+
+        # Check all assignees recommended
+        assignees_list = latest_review.get("assignees", [])
+        all_recommend = all(a.get("outcome") == "RECOMMEND" for a in assignees_list)
+        if not all_recommend:
+            print("Error: Cannot route for approval. Not all reviewers recommended approval.")
+            print("Most recent review outcomes:")
+            for a in assignees_list:
+                outcome = a.get("outcome", "PENDING")
+                print(f"  - {a.get('user')}: {outcome}")
+            print("\nDocument must go through another review round with all RECOMMEND outcomes.")
+            return 1
+
+    # Auto-assign QA if no --assign provided
+    assignees = args.assign if args.assign else ["qa"]
 
     # Validate transition
     if target_status not in TRANSITIONS.get(current_status, []):
@@ -692,13 +929,153 @@ Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
 
 ## Commands
 
-{'```' + f'qms review {doc_id} --comment "Your review comments"' + '```' if task_type == 'REVIEW' else '```' + f'qms approve {doc_id}' + '```' + ' or ' + '```' + f'qms reject {doc_id} --comment "Rejection reason"' + '```'}
+{'```' + f'qms review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms approve {doc_id}' + '```' + ' or ' + '```' + f'qms reject {doc_id} --comment "Rejection reason"' + '```'}
 """
         task_path.write_text(task_content, encoding="utf-8")
 
     print(f"Routed: {doc_id} for {workflow_type}")
     print(f"Status: {current_status.value} -> {target_status.value}")
     print(f"Assigned to: {', '.join(assignees)}")
+
+    return 0
+
+
+def cmd_assign(args):
+    """Add reviewers/approvers to an active workflow."""
+    doc_id = args.doc_id
+    user = get_current_user()
+
+    if not verify_user_identity(user):
+        return 1
+
+    # Permission check - only QA can assign
+    allowed, error = check_permission(user, "assign")
+    if not allowed:
+        print(error)
+        return 1
+
+    new_assignees = args.user
+    if not new_assignees:
+        print("""
+Error: Must specify --user with at least one user.
+
+Usage: qms assign DOC-ID --user user1 user2 ...
+
+Example:
+  qms assign SOP-003 --user tu_ui tu_scene
+
+Valid users to assign:
+  Technical Units: tu_input, tu_ui, tu_scene, tu_sketch, tu_sim
+  Business Unit: bu
+""")
+        return 1
+
+    # Validate assignees are valid users
+    invalid_users = [u for u in new_assignees if u not in VALID_USERS]
+    if invalid_users:
+        print(f"""
+Error: Invalid user(s): {', '.join(invalid_users)}
+
+Valid users to assign:
+  Technical Units: tu_input, tu_ui, tu_scene, tu_sketch, tu_sim
+  Business Unit: bu
+  QA: qa
+  Initiators: lead, claude
+""")
+        return 1
+
+    draft_path = get_doc_path(doc_id, draft=True)
+    if not draft_path.exists():
+        print(f"""
+Error: No draft found for {doc_id}.
+
+You can only assign users to documents that are in an active workflow.
+Check the document status: qms status {doc_id}
+""")
+        return 1
+
+    frontmatter, body = read_document(draft_path)
+    current_status = Status(frontmatter.get("status", "DRAFT"))
+
+    # Determine if we're in a review or approval workflow
+    review_statuses = [Status.IN_REVIEW, Status.IN_PRE_REVIEW, Status.IN_POST_REVIEW]
+    approval_statuses = [Status.IN_APPROVAL, Status.IN_PRE_APPROVAL, Status.IN_POST_APPROVAL]
+
+    if current_status in review_statuses:
+        history_key = "review_history"
+        workflow_name = "review"
+    elif current_status in approval_statuses:
+        history_key = "approval_history"
+        workflow_name = "approval"
+    else:
+        print(f"Error: {doc_id} is not in an active workflow (status: {current_status.value})")
+        print("Can only assign users during IN_REVIEW or IN_APPROVAL states.")
+        return 1
+
+    # Find the current (most recent) workflow round
+    history = frontmatter.get(history_key, [])
+    if not history:
+        print(f"Error: No {workflow_name} history found")
+        return 1
+
+    current_round = history[-1]
+
+    # Add new assignees
+    existing_users = {a.get("user") for a in current_round.get("assignees", [])}
+    added = []
+    for new_user in new_assignees:
+        if new_user in existing_users:
+            print(f"Note: {new_user} is already assigned")
+        else:
+            current_round["assignees"].append({
+                "user": new_user,
+                "status": "PENDING",
+                "date": None,
+                "comments": None
+            })
+            added.append(new_user)
+
+            # Create task in new assignee's inbox
+            inbox_path = get_inbox_path(new_user)
+            inbox_path.mkdir(parents=True, exist_ok=True)
+
+            task_type = "REVIEW" if "review" in history_key else "APPROVAL"
+            workflow_type = current_round.get("type", workflow_name.upper())
+            round_num = current_round.get("round", 1)
+            task_id = f"task-{doc_id}-{workflow_type.lower()}-r{round_num}"
+            task_path = inbox_path / f"{task_id}.md"
+
+            responsible_user = frontmatter.get("responsible_user", "unknown")
+            task_content = f"""---
+task_id: {task_id}
+task_type: {task_type}
+workflow_type: {workflow_type}
+doc_id: {doc_id}
+assigned_by: {user}
+assigned_date: {today()}
+round: {round_num}
+---
+
+# {task_type} Request: {doc_id}
+
+**Workflow:** {workflow_type}
+**Round:** {round_num}
+**Assigned By:** {user} (added by QA)
+**Date:** {today()}
+
+Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
+
+## Commands
+
+{'```' + f'qms review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms approve {doc_id}' + '```' + ' or ' + '```' + f'qms reject {doc_id} --comment "Rejection reason"' + '```'}
+"""
+            task_path.write_text(task_content, encoding="utf-8")
+
+    if added:
+        write_document(draft_path, frontmatter, body)
+        print(f"Assigned to {doc_id} ({workflow_name}): {', '.join(added)}")
+    else:
+        print("No new users assigned (all already in workflow)")
 
     return 0
 
@@ -711,15 +1088,53 @@ def cmd_review(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level - assigned check done later)
+    allowed, error = check_permission(user, "review")
+    if not allowed:
+        print(error)
+        return 1
+
     comment = args.comment
 
     if not comment:
-        print("Error: Must provide --comment with review")
+        print("""
+Error: Must provide --comment with review.
+
+Usage:
+  qms review DOC-ID --recommend --comment "Your comments"
+  qms review DOC-ID --request-updates --comment "Changes needed"
+
+The comment should explain your review findings and rationale.
+""")
+        return 1
+
+    # Determine outcome
+    if args.recommend:
+        outcome = "RECOMMEND"
+    elif args.request_updates:
+        outcome = "UPDATES_REQUIRED"
+    else:
+        print("""
+Error: Must specify review outcome.
+
+Options:
+  --recommend        Recommend the document for approval
+  --request-updates  Request changes before approval
+
+Usage:
+  qms review DOC-ID --recommend --comment "Approved. No issues found."
+  qms review DOC-ID --request-updates --comment "Section 3 needs clarification."
+""")
         return 1
 
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+Check your inbox for assigned review tasks: qms inbox
+Check document status: qms status {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
@@ -728,7 +1143,18 @@ def cmd_review(args):
     # Verify document is in a review state
     review_statuses = [Status.IN_REVIEW, Status.IN_PRE_REVIEW, Status.IN_POST_REVIEW]
     if current_status not in review_statuses:
-        print(f"Error: {doc_id} is not in review (status: {current_status.value})")
+        print(f"""
+Error: {doc_id} is not in review.
+
+Current status: {current_status.value}
+
+Documents can only be reviewed when in one of these states:
+  - IN_REVIEW (non-executable documents)
+  - IN_PRE_REVIEW (executable documents, before execution)
+  - IN_POST_REVIEW (executable documents, after execution)
+
+Check document status: qms status {doc_id}
+""")
         return 1
 
     # Find current review round and update user's entry
@@ -739,6 +1165,7 @@ def cmd_review(args):
             for assignee in entry.get("assignees", []):
                 if assignee.get("user") == user and assignee.get("status") == "PENDING":
                     assignee["status"] = "COMPLETE"
+                    assignee["outcome"] = outcome
                     assignee["date"] = today()
                     assignee["comments"] = comment
                     current_round = entry
@@ -747,7 +1174,23 @@ def cmd_review(args):
                 break
 
     if not current_round:
-        print(f"Error: You are not assigned to review {doc_id}")
+        # Get list of assigned users for helpful message
+        assigned_users = []
+        for entry in reversed(review_history):
+            if entry.get("type") in ["REVIEW", "PRE_REVIEW", "POST_REVIEW"]:
+                assigned_users = [a.get("user") for a in entry.get("assignees", [])]
+                break
+        print(f"""
+Error: You ({user}) are not assigned to review {doc_id}.
+
+Currently assigned reviewers: {', '.join(assigned_users) if assigned_users else 'None'}
+
+You can only review documents you are assigned to.
+Check your inbox for assigned tasks: qms inbox
+
+If you should be reviewing this document, ask QA to assign you:
+  (QA) qms assign {doc_id} --user {user}
+""")
         return 1
 
     # Check if all reviews complete
@@ -763,7 +1206,13 @@ def cmd_review(args):
         new_status = status_map.get(current_status)
         if new_status:
             frontmatter["status"] = new_status.value
-            print(f"All reviews complete. Status: {current_status.value} -> {new_status.value}")
+            # Check if all recommended
+            all_recommend = all(a.get("outcome") == "RECOMMEND" for a in current_round.get("assignees", []))
+            if all_recommend:
+                print(f"All reviews complete (all recommend). Status: {current_status.value} -> {new_status.value}")
+            else:
+                print(f"All reviews complete (updates requested). Status: {current_status.value} -> {new_status.value}")
+                print("Note: Document cannot be routed for approval until a clean review round.")
 
     write_document(draft_path, frontmatter, body)
 
@@ -785,9 +1234,20 @@ def cmd_approve(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level)
+    allowed, error = check_permission(user, "approve")
+    if not allowed:
+        print(error)
+        return 1
+
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+Check your inbox for assigned approval tasks: qms inbox
+Check document status: qms status {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
@@ -797,7 +1257,18 @@ def cmd_approve(args):
     # Verify document is in an approval state
     approval_statuses = [Status.IN_APPROVAL, Status.IN_PRE_APPROVAL, Status.IN_POST_APPROVAL]
     if current_status not in approval_statuses:
-        print(f"Error: {doc_id} is not in approval (status: {current_status.value})")
+        print(f"""
+Error: {doc_id} is not in approval.
+
+Current status: {current_status.value}
+
+Documents can only be approved when in one of these states:
+  - IN_APPROVAL (non-executable documents)
+  - IN_PRE_APPROVAL (executable documents, before execution)
+  - IN_POST_APPROVAL (executable documents, after execution)
+
+Check document status: qms status {doc_id}
+""")
         return 1
 
     # Find current approval round and update user's entry
@@ -814,7 +1285,19 @@ def cmd_approve(args):
             break
 
     if not current_round:
-        print(f"Error: You are not assigned to approve {doc_id}")
+        # Get list of assigned users for helpful message
+        assigned_users = []
+        for entry in reversed(approval_history):
+            assigned_users = [a.get("user") for a in entry.get("assignees", [])]
+            break
+        print(f"""
+Error: You ({user}) are not assigned to approve {doc_id}.
+
+Currently assigned approvers: {', '.join(assigned_users) if assigned_users else 'None'}
+
+You can only approve documents you are assigned to.
+Check your inbox for assigned tasks: qms inbox
+""")
         return 1
 
     # Check if all approvals complete
@@ -878,15 +1361,34 @@ def cmd_reject(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level)
+    allowed, error = check_permission(user, "reject")
+    if not allowed:
+        print(error)
+        return 1
+
     comment = args.comment
 
     if not comment:
-        print("Error: Must provide --comment with rejection")
+        print("""
+Error: Must provide --comment with rejection.
+
+Usage:
+  qms reject DOC-ID --comment "Reason for rejection"
+
+The comment should explain why the document is being rejected
+and what changes are needed before re-submission.
+""")
         return 1
 
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+Check your inbox for assigned approval tasks: qms inbox
+Check document status: qms status {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
@@ -895,7 +1397,14 @@ def cmd_reject(args):
     # Verify document is in an approval state
     approval_statuses = [Status.IN_APPROVAL, Status.IN_PRE_APPROVAL, Status.IN_POST_APPROVAL]
     if current_status not in approval_statuses:
-        print(f"Error: {doc_id} is not in approval (status: {current_status.value})")
+        print(f"""
+Error: {doc_id} is not in approval.
+
+Current status: {current_status.value}
+
+Documents can only be rejected when in an approval state.
+Check document status: qms status {doc_id}
+""")
         return 1
 
     # Find current approval round and update user's entry
@@ -952,24 +1461,49 @@ def cmd_release(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level)
+    allowed, error = check_permission(user, "release")
+    if not allowed:
+        print(error)
+        return 1
+
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+Check document status: qms status {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
 
     if not frontmatter.get("executable"):
-        print(f"Error: {doc_id} is not an executable document")
+        print(f"""
+Error: {doc_id} is not an executable document.
+
+Only executable documents (CR, INV, CAPA, TP, ER) can be released.
+Non-executable documents (SOP, RS, DS, etc.) become EFFECTIVE after approval.
+""")
         return 1
 
-    if frontmatter.get("responsible_user") != user:
-        print(f"Error: You are not the responsible user for {doc_id}")
+    # Check ownership
+    doc_owner = frontmatter.get("responsible_user")
+    allowed, error = check_permission(user, "release", doc_owner=doc_owner)
+    if not allowed:
+        print(error)
         return 1
 
     current_status = Status(frontmatter.get("status", "DRAFT"))
     if current_status != Status.PRE_APPROVED:
-        print(f"Error: {doc_id} must be PRE_APPROVED to release (currently {current_status.value})")
+        print(f"""
+Error: {doc_id} must be PRE_APPROVED to release.
+
+Current status: {current_status.value}
+
+Workflow for executable documents:
+  DRAFT -> IN_PRE_REVIEW -> PRE_REVIEWED -> IN_PRE_APPROVAL -> PRE_APPROVED -> release -> IN_EXECUTION
+""")
         return 1
 
     frontmatter["status"] = Status.IN_EXECUTION.value
@@ -990,26 +1524,53 @@ def cmd_revert(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level)
+    allowed, error = check_permission(user, "revert")
+    if not allowed:
+        print(error)
+        return 1
+
     reason = args.reason
 
     if not reason:
-        print("Error: Must provide --reason for revert")
+        print("""
+Error: Must provide --reason for revert.
+
+Usage:
+  qms revert DOC-ID --reason "Reason for reverting to execution"
+
+The reason should explain why additional execution work is needed.
+""")
         return 1
 
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+Check document status: qms status {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
 
-    if frontmatter.get("responsible_user") != user:
-        print(f"Error: You are not the responsible user for {doc_id}")
+    # Check ownership
+    doc_owner = frontmatter.get("responsible_user")
+    allowed, error = check_permission(user, "revert", doc_owner=doc_owner)
+    if not allowed:
+        print(error)
         return 1
 
     current_status = Status(frontmatter.get("status", "DRAFT"))
     if current_status != Status.POST_REVIEWED:
-        print(f"Error: {doc_id} must be POST_REVIEWED to revert (currently {current_status.value})")
+        print(f"""
+Error: {doc_id} must be POST_REVIEWED to revert.
+
+Current status: {current_status.value}
+
+Revert moves a document from POST_REVIEWED back to IN_EXECUTION
+when additional execution work is discovered during post-review.
+""")
         return 1
 
     frontmatter["status"] = Status.IN_EXECUTION.value
@@ -1036,24 +1597,49 @@ def cmd_close(args):
     if not verify_user_identity(user):
         return 1
 
+    # Permission check (group level)
+    allowed, error = check_permission(user, "close")
+    if not allowed:
+        print(error)
+        return 1
+
     draft_path = get_doc_path(doc_id, draft=True)
     if not draft_path.exists():
-        print(f"Error: No draft found for {doc_id}")
+        print(f"""
+Error: No draft found for {doc_id}.
+
+Check document status: qms status {doc_id}
+""")
         return 1
 
     frontmatter, body = read_document(draft_path)
 
     if not frontmatter.get("executable"):
-        print(f"Error: {doc_id} is not an executable document")
+        print(f"""
+Error: {doc_id} is not an executable document.
+
+Only executable documents (CR, INV, CAPA, TP, ER) can be closed.
+Non-executable documents (SOP, RS, DS, etc.) become EFFECTIVE after approval.
+""")
         return 1
 
-    if frontmatter.get("responsible_user") != user:
-        print(f"Error: You are not the responsible user for {doc_id}")
+    # Check ownership
+    doc_owner = frontmatter.get("responsible_user")
+    allowed, error = check_permission(user, "close", doc_owner=doc_owner)
+    if not allowed:
+        print(error)
         return 1
 
     current_status = Status(frontmatter.get("status", "DRAFT"))
     if current_status != Status.POST_APPROVED:
-        print(f"Error: {doc_id} must be POST_APPROVED to close (currently {current_status.value})")
+        print(f"""
+Error: {doc_id} must be POST_APPROVED to close.
+
+Current status: {current_status.value}
+
+Workflow for executable documents:
+  ... -> IN_POST_REVIEW -> POST_REVIEWED -> IN_POST_APPROVAL -> POST_APPROVED -> close -> CLOSED
+""")
         return 1
 
     frontmatter["status"] = Status.CLOSED.value
@@ -1244,12 +1830,20 @@ Environment:
     p_route.add_argument("--approval", action="store_true", help="Route for approval")
     p_route.add_argument("--pre-approval", action="store_true", help="Route for pre-approval")
     p_route.add_argument("--post-approval", action="store_true", help="Route for post-approval")
-    p_route.add_argument("--assign", nargs="+", help="Users to assign")
+    p_route.add_argument("--assign", nargs="+", help="Users to assign (optional, defaults to QA)")
+
+    # assign
+    p_assign = subparsers.add_parser("assign", help="Add reviewers/approvers to active workflow (QA only)")
+    p_assign.add_argument("doc_id", help="Document ID")
+    p_assign.add_argument("--user", nargs="+", required=True, help="Users to add to workflow")
 
     # review
     p_review = subparsers.add_parser("review", help="Submit a review")
     p_review.add_argument("doc_id", help="Document ID")
     p_review.add_argument("--comment", required=True, help="Review comments")
+    review_outcome = p_review.add_mutually_exclusive_group(required=True)
+    review_outcome.add_argument("--recommend", action="store_true", help="Recommend for approval")
+    review_outcome.add_argument("--request-updates", action="store_true", help="Request updates before approval")
 
     # approve
     p_approve = subparsers.add_parser("approve", help="Approve a document")
@@ -1295,6 +1889,7 @@ Environment:
         "checkout": cmd_checkout,
         "checkin": cmd_checkin,
         "route": cmd_route,
+        "assign": cmd_assign,
         "review": cmd_review,
         "approve": cmd_approve,
         "reject": cmd_reject,

@@ -13,9 +13,24 @@
       "Bash(source:*)",
       "Bash(qms:*)",
       "Bash(export:*)"
+    ],
+    "deny": [
+      "Edit(QMS/**)",
+      "Write(QMS/**)"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/qms-write-guard.py"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [
