@@ -132,13 +132,13 @@ def get_current_user() -> str:
     if not user:
         print("Error: QMS_USER environment variable not set.")
         print("Set your identity with: export QMS_USER=<username>")
-        print("Valid users: lead, claude, qa, bu, tu_input, tu_ui, tu_scene, tu_sketch, tu_sim")
+        print("Valid users: lead, claude, qa, bu, tu_ui, tu_scene, tu_sketch, tu_sim")
         sys.exit(1)
     return user
 
 
 # Valid QMS users
-VALID_USERS = {"lead", "claude", "qa", "bu", "tu_input", "tu_ui", "tu_scene", "tu_sketch", "tu_sim"}
+VALID_USERS = {"lead", "claude", "qa", "bu", "tu_ui", "tu_scene", "tu_sketch", "tu_sim"}
 
 # =============================================================================
 # User Groups & Permissions
@@ -148,7 +148,7 @@ VALID_USERS = {"lead", "claude", "qa", "bu", "tu_input", "tu_ui", "tu_scene", "t
 USER_GROUPS = {
     "initiators": {"lead", "claude"},      # Can create documents, initiate workflows
     "qa": {"qa"},                           # Can modify workflows, review, approve
-    "reviewers": {"tu_input", "tu_ui", "tu_scene", "tu_sketch", "tu_sim", "bu"},  # Review/approve only
+    "reviewers": {"tu_ui", "tu_scene", "tu_sketch", "tu_sim", "bu"},  # Review/approve only
 }
 
 # Permission definitions by command
@@ -965,7 +965,7 @@ Example:
   qms assign SOP-003 --user tu_ui tu_scene
 
 Valid users to assign:
-  Technical Units: tu_input, tu_ui, tu_scene, tu_sketch, tu_sim
+  Technical Units: tu_ui, tu_scene, tu_sketch, tu_sim
   Business Unit: bu
 """)
         return 1
@@ -977,7 +977,7 @@ Valid users to assign:
 Error: Invalid user(s): {', '.join(invalid_users)}
 
 Valid users to assign:
-  Technical Units: tu_input, tu_ui, tu_scene, tu_sketch, tu_sim
+  Technical Units: tu_ui, tu_scene, tu_sketch, tu_sim
   Business Unit: bu
   QA: qa
   Initiators: lead, claude

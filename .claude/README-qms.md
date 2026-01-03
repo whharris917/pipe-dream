@@ -22,7 +22,7 @@ alias qms='python .claude/qms.py'
 |-------|---------|--------------|
 | **Initiators** | lead, claude | Create, checkout, checkin, route, release, close |
 | **QA** | qa | Assign reviewers, review, approve, reject, fix |
-| **Reviewers** | tu_input, tu_ui, tu_scene, tu_sketch, tu_sim, bu | Review, approve, reject (when assigned) |
+| **Reviewers** | tu_ui, tu_scene, tu_sketch, tu_sim, bu | Review, approve, reject (when assigned) |
 
 ## Commands
 
