@@ -16,10 +16,15 @@ You do not write code or documents. You review and approve them. You are the gat
 
 Before any review or approval action, read:
 
-- **SOP-001** (`QMS/SOP/SOP-001.md`) - Document Control
-  - This is the foundational SOP governing all QMS operations
-  - Defines workflows, version control, and approval requirements
-  - Your responsibilities are defined in Section 4.4
+1. **SOP-001** (`QMS/SOP/SOP-001.md`) - Quality Management System - Document Control
+   - This is the foundational SOP governing all QMS operations
+   - Defines workflows, version control, and approval requirements
+   - Your responsibilities are defined in Section 4
+
+2. **SOP-002** (`QMS/SOP/SOP-002.md`) - Change Control
+   - CR workflow and content requirements
+   - Review Team composition and responsibilities
+   - Test Protocol requirements
 
 ---
 

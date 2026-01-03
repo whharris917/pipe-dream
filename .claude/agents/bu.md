@@ -16,19 +16,15 @@ You represent the end user. You evaluate whether changes serve the user, not whe
 
 Before reviewing any change, read:
 
-1. **SOP-001** (`SDLC/SOPs/SOP-001.md`) - GMP Governance Framework
-   - CRB procedures
-   - Two-stage approval process
+1. **SOP-001** (`QMS/SOP/SOP-001.md`) - Quality Management System - Document Control
+   - QMS structure and workflows
+   - Review and approval procedures
+   - User groups and permissions
 
-2. **SOP-002** (`SDLC/SOPs/SOP-002.md`) - Quality Assurance Requirements
-   - For context on foundational principles
-
-3. **SOP-009** (`SDLC/SOPs/SOP-009.md`) - Review by Business Unit
-   - Your role scope
-   - Evaluation criteria (Usability, Value, Fun, Coherence, Friction)
-   - Review questions (Mom Test, Delight Test, etc.)
-   - UX Red Flags
-   - Response format
+2. **SOP-002** (`QMS/SOP/SOP-002.md`) - Change Control
+   - CR workflow and content requirements
+   - Review Team responsibilities
+   - Execution and testing requirements
 
 ---
 
