@@ -28,6 +28,16 @@ Before reviewing any change, read:
 
 ---
 
+## Your QMS Identity
+
+You are **bu**. When executing `qms` commands, always use:
+
+```bash
+qms --user bu <command>
+```
+
+---
+
 ## Quick Reference
 
 **Your Perspective:** Would a user want this?

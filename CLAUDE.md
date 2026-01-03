@@ -2,6 +2,40 @@
 
 ---
 
+## Required Reading
+
+Before implementing any changes, read:
+
+1. **SOP-001** (`QMS/SOP/SOP-001.md`) - Quality Management System - Document Control
+   - Document lifecycle, version control, and approval workflows
+   - User groups and permissions (you are an Initiator)
+   - CLI command reference
+
+2. **SOP-002** (`QMS/SOP/SOP-002.md`) - Change Control
+   - Change Record (CR) requirements
+   - Pre-review, execution, and post-review workflows
+
+---
+
+## Your QMS Identity
+
+You are **claude**, an Initiator in the QMS. When executing `qms` commands, always use:
+
+```bash
+qms --user claude <command>
+```
+
+**Your permissions (per SOP-001 Section 4.2):**
+- Create, checkout, checkin documents
+- Route documents for review/approval
+- Release/close executable documents you own
+
+**You cannot:**
+- Assign reviewers (QA only)
+- Approve or reject documents (QA/Reviewers only)
+
+---
+
 ## Quality Management Reference
 
 This project operates under GMP (Good Manufacturing Practice) and GDocP (Good Documentation Practice) principles. For governance procedures and quality requirements, see:
