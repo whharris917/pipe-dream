@@ -6,11 +6,10 @@
 
 This project operates under GMP (Good Manufacturing Practice) and GDocP (Good Documentation Practice) principles. For governance procedures and quality requirements, see:
 
-- **SOP-001** - GMP Governance Framework (CRB procedures, two-stage approval)
-- **SOP-002** - Quality Assurance Requirements (AvG, Air Gap, Command Pattern)
-- **SOP-003 through SOP-009** - Domain-specific review procedures
+- **SOP-001** - Quality Management System - Document Control
+- **SOP-002** - Change Control
 
-All SOPs are located in `SDLC/SOPs/`.
+All SOPs are located in `QMS/SOP/`.
 
 ---
 
@@ -144,6 +143,18 @@ The `Compiler` (`engine/compiler.py`) is responsible for the transition from CAD
 3.  **Output:** Writes these atoms into the `is_static` arrays of the `Simulation`.
 4.  **Rebuild:** When CAD geometry changes (via Command), the `Scene` triggers `compiler.rebuild()` to refresh the physics representation.
 
+### 5.5 The ToolContext (Air Gap Enforcement)
+
+The `ToolContext` (`core/tool_context.py`) is a facade that enforces the Air Gap at the tool level:
+
+* **Problem Solved:** Tools previously received the full `FlowStateApp` reference (a "God Object"), allowing direct access to any subsystem.
+* **Solution:** Tools now receive a `ToolContext` which exposes only authorized operations:
+    * **Command Execution:** `ctx.execute(command)` - the only way to mutate state.
+    * **View Queries:** `ctx.zoom`, `ctx.pan`, `ctx.mode` - read-only access.
+    * **Geometry Queries:** `ctx.find_entity_at()`, `ctx.get_entity_type()` - read-only.
+    * **Interaction State:** `ctx.selection`, `ctx.interaction_state` - transient state (read/write allowed).
+* **Tool Base Class:** All tools must extend the `Tool` base class, which extracts `self.app = ctx._app` for backward compatibility during migration.
+
 ---
 
 ## 6. UI & Input Management
@@ -212,6 +223,7 @@ The order of operations in `Scene.update` is critical:
 | **Physics Data** | `engine/simulation.py` | Particle arrays & integration. |
 | **UI Builder** | `ui/ui_manager.py` | Layouts, panels, and widget tree. |
 | **Tools** | `ui/tools.py` | Mouse interaction logic (Select, Line, etc.). |
+| **Tool Context** | `core/tool_context.py` | Facade providing tools a controlled interface to the app. |
 
 ---
 
