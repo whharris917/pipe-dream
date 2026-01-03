@@ -259,9 +259,9 @@ The order of operations in `Scene.update` is critical:
 *Before every code generation, I must pause and verify:*
 
 ### Pre-Flight (Quality Check)
-* [ ] **AvG Check (SOP-002):** Is this a hack, or a first-principles improvement of the code's genome?
+* [ ] **AvG Check:** Is this a hack, or a first-principles improvement of the code's genome?
     * *Action:* Stop. Generalize the solution (e.g., "Add protocol" instead of "Add if-statement").
-* [ ] **Air Gap Check (SOP-002):** Does this UI action strictly avoid mutating the Model directly?
+* [ ] **Air Gap Check:** Does this UI action strictly avoid mutating the Model directly?
     * *Action:* If No, refactor to use a `Command`.
 * [ ] **Surgical Precision (The Potency Test):** Is this the *minimum viable mutation* to achieve the maximum result?
     * *Question:* Can I do this by deleting code rather than adding it?
