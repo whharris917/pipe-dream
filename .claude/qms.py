@@ -187,7 +187,7 @@ You cannot:
 """,
     "qa": """
 As QA, you can:
-  - Assign reviewers to workflows: qms --user qa assign DOC-ID --user tu_ui tu_scene
+  - Assign reviewers to workflows: qms --user qa assign DOC-ID --assignees tu_ui tu_scene
   - Review documents: qms --user qa review DOC-ID --recommend --comment "..."
   - Approve documents: qms --user qa approve DOC-ID
   - Reject documents: qms --user qa reject DOC-ID --comment "..."
@@ -954,15 +954,15 @@ def cmd_assign(args):
         print(error)
         return 1
 
-    new_assignees = args.user
+    new_assignees = args.assignees
     if not new_assignees:
         print("""
-Error: Must specify --user with at least one user to assign.
+Error: Must specify --assignees with at least one user to assign.
 
-Usage: qms --user qa assign DOC-ID --user user1 user2 ...
+Usage: qms --user qa assign DOC-ID --assignees user1 user2 ...
 
 Example:
-  qms --user qa assign SOP-003 --user tu_ui tu_scene
+  qms --user qa assign SOP-003 --assignees tu_ui tu_scene
 
 Valid users to assign:
   Technical Units: tu_ui, tu_scene, tu_sketch, tu_sim
@@ -1189,7 +1189,7 @@ You can only review documents you are assigned to.
 Check your inbox for assigned tasks: qms --user {user} inbox
 
 If you should be reviewing this document, ask QA to assign you:
-  (QA) qms --user qa assign {doc_id} --user {user}
+  (QA) qms --user qa assign {doc_id} --assignees {user}
 """)
         return 1
 
@@ -1902,7 +1902,7 @@ Valid users:
     # assign
     p_assign = subparsers.add_parser("assign", help="Add reviewers/approvers to active workflow (QA only)")
     p_assign.add_argument("doc_id", help="Document ID")
-    p_assign.add_argument("--user", nargs="+", required=True, help="Users to add to workflow")
+    p_assign.add_argument("--assignees", nargs="+", required=True, help="Users to add to workflow")
 
     # review
     p_review = subparsers.add_parser("review", help="Submit a review")

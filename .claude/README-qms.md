@@ -78,7 +78,7 @@ qms --user qa approve SOP-001
 qms --user qa reject SOP-001 --comment "Does not meet requirements."
 
 # QA: Assign additional reviewers
-qms --user qa assign SOP-001 --user tu_ui tu_scene
+qms --user qa assign SOP-001 --assignees tu_ui tu_scene
 ```
 
 ### Status & Tasks
@@ -203,7 +203,7 @@ qms --user claude checkin CR-001
 qms --user claude route CR-001 --pre-review
 
 # QA assigns technical reviewer and reviews
-qms --user qa assign CR-001 --user tu_ui
+qms --user qa assign CR-001 --assignees tu_ui
 qms --user qa review CR-001 --recommend --comment "Approach is sound."
 
 # TU-UI reviews

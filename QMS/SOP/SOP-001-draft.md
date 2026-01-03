@@ -1,13 +1,13 @@
 ---
 doc_id: SOP-001
 title: Quality Management System - Document Control
-version: '3.0'
-status: EFFECTIVE
+version: '3.1'
+status: DRAFT
 document_type: SOP
 executable: false
 responsible_user: lead
 checked_out: false
-effective_version: '2.0'
+effective_version: '3.0'
 supersedes: null
 review_history:
 - round: 1
@@ -138,7 +138,6 @@ approval_history:
     date: '2026-01-03'
     comments: null
 checked_out_date: null
-has_draft: true
 ---
 
 # SOP-001: Quality Management System - Document Control
@@ -375,7 +374,7 @@ qms --user {USER} route {DOC_ID} --post-review    # After execution
 
 QA is automatically assigned when a document is routed. QA then assigns Technical Units as needed:
 ```
-qms --user qa assign {DOC_ID} --user tu_ui tu_scene   # QA assigns additional reviewers
+qms --user qa assign {DOC_ID} --assignees tu_ui tu_scene   # QA assigns additional reviewers
 ```
 
 **Completing Review:**
@@ -664,7 +663,7 @@ All commands require the `--user` flag to identify the calling user.
 | `qms --user {USER} route {DOC_ID} --approval` | Route for approval |
 | `qms --user {USER} route {DOC_ID} --pre-approval` | Route for pre-approval (executable docs) |
 | `qms --user {USER} route {DOC_ID} --post-approval` | Route for post-approval (executable docs) |
-| `qms --user qa assign {DOC_ID} --user {users}` | Add reviewers to active workflow (QA only) |
+| `qms --user qa assign {DOC_ID} --assignees {users}` | Add reviewers to active workflow (QA only) |
 | `qms --user {USER} review {DOC_ID} --recommend --comment "{text}"` | Submit review recommending approval |
 | `qms --user {USER} review {DOC_ID} --request-updates --comment "{text}"` | Submit review requesting changes |
 | `qms --user {USER} approve {DOC_ID}` | Approve document |
@@ -692,6 +691,7 @@ All commands require the `--user` flag to identify the calling user.
 | 1.0 | 2026-01-02 | claude | Initial release |
 | 1.1 | 2026-01-02 | claude | Add user groups, permissions, review outcomes, qms assign/fix commands |
 | 2.1 | 2026-01-03 | lead | Replace QMS_USER env var with required --user CLI flag |
+| 3.1 | 2026-01-03 | lead | Rename assign --user to --assignees to avoid confusion |
 
 ---
 
