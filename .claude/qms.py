@@ -366,6 +366,57 @@ def write_document(path: Path, frontmatter: Dict[str, Any], body: str):
     path.write_text(content, encoding="utf-8")
 
 
+# Author-maintained frontmatter fields (everything else comes from .meta)
+AUTHOR_FRONTMATTER_FIELDS = {"title", "revision_summary"}
+
+
+def filter_author_frontmatter(frontmatter: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract only author-maintained fields from frontmatter."""
+    return {k: v for k, v in frontmatter.items() if k in AUTHOR_FRONTMATTER_FIELDS}
+
+
+def write_document_minimal(path: Path, frontmatter: Dict[str, Any], body: str):
+    """Write a document with minimal (author-maintained only) frontmatter."""
+    minimal_fm = filter_author_frontmatter(frontmatter)
+    write_document(path, minimal_fm, body)
+
+
+def build_full_frontmatter(
+    minimal_fm: Dict[str, Any],
+    doc_id: str,
+    doc_type: str,
+    meta: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Build full frontmatter by merging author fields with workflow state from .meta.
+
+    Used when displaying documents (e.g., qms read).
+    """
+    if meta is None:
+        meta = read_meta(doc_id, doc_type) or {}
+
+    # Start with identity fields
+    full_fm = {
+        "doc_id": doc_id,
+        "document_type": doc_type,
+    }
+
+    # Add workflow state from .meta
+    if meta:
+        full_fm["version"] = meta.get("version", "0.1")
+        full_fm["status"] = meta.get("status", "DRAFT")
+        full_fm["executable"] = meta.get("executable", False)
+        full_fm["responsible_user"] = meta.get("responsible_user")
+        full_fm["checked_out"] = meta.get("checked_out", False)
+        if meta.get("effective_version"):
+            full_fm["effective_version"] = meta["effective_version"]
+
+    # Add author-maintained fields
+    full_fm.update(filter_author_frontmatter(minimal_fm))
+
+    return full_fm
+
+
 def get_doc_type(doc_id: str) -> str:
     """Determine document type from doc_id."""
     if doc_id.startswith("SDLC-FLOW-"):
@@ -520,21 +571,11 @@ def cmd_create(args):
         folder_path = QMS_ROOT / config["path"] / doc_id
         folder_path.mkdir(parents=True, exist_ok=True)
 
-    # Create frontmatter
+    # Create minimal frontmatter (author-maintained fields only)
+    # All workflow state is managed in .meta files
     frontmatter = {
-        "doc_id": doc_id,
         "title": args.title or f"{doc_type} - [Title]",
-        "version": "0.1",
-        "status": "DRAFT",
-        "document_type": doc_type,
-        "executable": config["executable"],
-        "responsible_user": user,
-        "checked_out": True,
-        "checked_out_date": today(),
-        "effective_version": None,
-        "supersedes": None,
-        "review_history": [],
-        "approval_history": [],
+        # revision_summary added when document is revised
     }
 
     # Create body template
@@ -575,8 +616,8 @@ def cmd_create(args):
 **END OF DOCUMENT**
 """
 
-    # Write to draft path
-    write_document(draft_path, frontmatter, body)
+    # Write to draft path (minimal frontmatter only)
+    write_document_minimal(draft_path, frontmatter, body)
 
     # DUAL-WRITE: Create .meta file
     meta = create_initial_meta(
@@ -653,64 +694,47 @@ def cmd_checkout(args):
     effective_path = get_doc_path(doc_id, draft=False)
     draft_path = get_doc_path(doc_id, draft=True)
 
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+
     if draft_path.exists():
-        # Already a draft - check if already checked out
-        frontmatter, body = read_document(draft_path)
-        if frontmatter.get("checked_out"):
-            current_owner = frontmatter.get("responsible_user", "unknown")
+        # Already a draft - check if already checked out (from .meta)
+        if meta.get("checked_out"):
+            current_owner = meta.get("responsible_user", "unknown")
             if current_owner == user:
                 print(f"You already have {doc_id} checked out")
             else:
                 print(f"Error: {doc_id} is checked out by {current_owner}")
             return 1
 
-        # Check out existing draft
-        frontmatter["checked_out"] = True
-        frontmatter["checked_out_date"] = today()
-        frontmatter["responsible_user"] = user
-        write_document(draft_path, frontmatter, body)
-        source_path = draft_path
-
-        # DUAL-WRITE: Update .meta file
-        doc_type = get_doc_type(doc_id)
-        meta = read_meta(doc_id, doc_type) or {}
+        # Check out existing draft - only update .meta, no document write needed
+        version = meta.get("version", "0.1")
         meta = update_meta_checkout(meta, user)
         write_meta(doc_id, doc_type, meta)
 
-        # DUAL-WRITE: Log CHECKOUT event
-        log_checkout(doc_id, doc_type, user, frontmatter.get("version", "0.1"))
+        # Log CHECKOUT event
+        log_checkout(doc_id, doc_type, user, version)
+
+        source_path = draft_path
 
     elif effective_path.exists():
         # Create new draft from effective
         frontmatter, body = read_document(effective_path)
-        current_version = str(frontmatter.get("version", "1.0"))
-        major = int(current_version.split(".")[0])
+        current_version = meta.get("version", "1.0")
+        major = int(str(current_version).split(".")[0])
         new_version = f"{major}.1"
 
-        frontmatter["version"] = new_version
-        frontmatter["status"] = "DRAFT"
-        frontmatter["checked_out"] = True
-        frontmatter["checked_out_date"] = today()
-        frontmatter["responsible_user"] = user
-        frontmatter["effective_version"] = current_version
-
-        write_document(draft_path, frontmatter, body)
+        # Write draft with minimal frontmatter
+        write_document_minimal(draft_path, frontmatter, body)
         source_path = draft_path
 
-        # Mark effective as having a draft
-        eff_fm, eff_body = read_document(effective_path)
-        eff_fm["has_draft"] = True
-        write_document(effective_path, eff_fm, eff_body)
-
-        # DUAL-WRITE: Update .meta file for new draft
-        doc_type = get_doc_type(doc_id)
-        meta = read_meta(doc_id, doc_type) or {}
+        # Update .meta file for new draft
         meta = update_meta_checkout(meta, user, new_version=new_version)
         meta["status"] = "DRAFT"
         meta["effective_version"] = current_version
         write_meta(doc_id, doc_type, meta)
 
-        # DUAL-WRITE: Log CHECKOUT event
+        # Log CHECKOUT event
         log_checkout(doc_id, doc_type, user, new_version, from_version=current_version)
 
         print(f"Created draft v{new_version} from effective v{current_version}")
@@ -779,26 +803,25 @@ To see your workspace: qms --user {user} workspace
             shutil.copy(draft_path, archive_path)
             print(f"Archived: v{old_version}")
 
-    # Clear checkout state
-    frontmatter["checked_out"] = False
-    frontmatter["checked_out_date"] = None
-
-    # Write to QMS with cleared checkout state
-    write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Update .meta file
+    # Get version from .meta (authoritative source)
     doc_type = get_doc_type(doc_id)
     meta = read_meta(doc_id, doc_type) or {}
+    version = meta.get("version", frontmatter.get("version", "0.1"))
+
+    # Write to QMS with minimal frontmatter (workflow state is in .meta)
+    write_document_minimal(draft_path, frontmatter, body)
+
+    # Update .meta file
     meta = update_meta_checkin(meta)
     write_meta(doc_id, doc_type, meta)
 
-    # DUAL-WRITE: Log CHECKIN event
-    log_checkin(doc_id, doc_type, user, frontmatter.get("version", "0.1"))
+    # Log CHECKIN event
+    log_checkin(doc_id, doc_type, user, version)
 
     # Remove from workspace
     workspace_path.unlink()
 
-    print(f"Checked in: {doc_id} (v{frontmatter.get('version', '?')})")
+    print(f"Checked in: {doc_id} (v{version})")
 
     return 0
 
@@ -938,35 +961,14 @@ Then route for review:
         print(f"Error: Cannot transition from {current_status.value} to {target_status.value}")
         return 1
 
-    # Update frontmatter
-    frontmatter["status"] = target_status.value
-
-    # Add to review/approval history
-    history_key = "review_history" if "REVIEW" in workflow_type else "approval_history"
-    history = frontmatter.get(history_key, [])
-
-    round_num = len([h for h in history if h.get("type") == workflow_type]) + 1
-
-    history_entry = {
-        "round": round_num,
-        "type": workflow_type,
-        "date_initiated": today(),
-        "assignees": [{"user": u, "status": "PENDING", "date": None, "comments": None} for u in assignees]
-    }
-    history.append(history_entry)
-    frontmatter[history_key] = history
-
-    # Write updated document
-    write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Update .meta file
+    # Update .meta file (authoritative workflow state)
     doc_type = get_doc_type(doc_id)
     meta = read_meta(doc_id, doc_type) or {}
+    version = meta.get("version", "0.1")
     meta = update_meta_route(meta, target_status.value, assignees)
     write_meta(doc_id, doc_type, meta)
 
-    # DUAL-WRITE: Log routing event to audit trail
-    version = frontmatter.get("version", "0.1")
+    # Log routing event to audit trail
     if "REVIEW" in workflow_type:
         log_route_review(doc_id, doc_type, user, version, assignees, workflow_type)
     else:
@@ -978,7 +980,7 @@ Then route for review:
         inbox_path.mkdir(parents=True, exist_ok=True)
 
         task_type = "REVIEW" if "REVIEW" in workflow_type else "APPROVAL"
-        task_id = f"task-{doc_id}-{workflow_type.lower()}-r{round_num}"
+        task_id = f"task-{doc_id}-{workflow_type.lower()}-v{version.replace('.', '-')}"
         task_path = inbox_path / f"{task_id}.md"
 
         task_content = f"""---
@@ -988,13 +990,13 @@ workflow_type: {workflow_type}
 doc_id: {doc_id}
 assigned_by: {user}
 assigned_date: {today()}
-round: {round_num}
+version: {version}
 ---
 
 # {task_type} Request: {doc_id}
 
 **Workflow:** {workflow_type}
-**Round:** {round_num}
+**Version:** {version}
 **Assigned By:** {user}
 **Date:** {today()}
 
@@ -1210,8 +1212,12 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
-    current_status = Status(frontmatter.get("status", "DRAFT"))
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    version = meta.get("version", "0.1")
+    pending_assignees = meta.get("pending_assignees", [])
 
     # Verify document is in a review state
     review_statuses = [Status.IN_REVIEW, Status.IN_PRE_REVIEW, Status.IN_POST_REVIEW]
@@ -1230,33 +1236,12 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    # Find current review round and update user's entry
-    review_history = frontmatter.get("review_history", [])
-    current_round = None
-    for entry in reversed(review_history):
-        if entry.get("type") in ["REVIEW", "PRE_REVIEW", "POST_REVIEW"]:
-            for assignee in entry.get("assignees", []):
-                if assignee.get("user") == user and assignee.get("status") == "PENDING":
-                    assignee["status"] = "COMPLETE"
-                    assignee["outcome"] = outcome
-                    assignee["date"] = today()
-                    assignee["comments"] = comment
-                    current_round = entry
-                    break
-            if current_round:
-                break
-
-    if not current_round:
-        # Get list of assigned users for helpful message
-        assigned_users = []
-        for entry in reversed(review_history):
-            if entry.get("type") in ["REVIEW", "PRE_REVIEW", "POST_REVIEW"]:
-                assigned_users = [a.get("user") for a in entry.get("assignees", [])]
-                break
+    # Check if user is assigned to review
+    if user not in pending_assignees:
         print(f"""
 Error: You ({user}) are not assigned to review {doc_id}.
 
-Currently assigned reviewers: {', '.join(assigned_users) if assigned_users else 'None'}
+Currently assigned reviewers: {', '.join(pending_assignees) if pending_assignees else 'None'}
 
 You can only review documents you are assigned to.
 Check your inbox for assigned tasks: qms --user {user} inbox
@@ -1266,9 +1251,14 @@ If you should be reviewing this document, ask QA to assign you:
 """)
         return 1
 
-    # Check if all reviews complete
-    all_complete = all(a.get("status") == "COMPLETE" for a in current_round.get("assignees", []))
+    # Log REVIEW event to audit trail (comments only live here now)
+    log_review(doc_id, doc_type, user, version, outcome, comment)
 
+    # Update .meta file - remove this user from pending assignees
+    remaining_assignees = [u for u in pending_assignees if u != user]
+    all_complete = len(remaining_assignees) == 0
+
+    new_status = None
     if all_complete:
         # Transition to REVIEWED state
         status_map = {
@@ -1278,29 +1268,11 @@ If you should be reviewing this document, ask QA to assign you:
         }
         new_status = status_map.get(current_status)
         if new_status:
-            frontmatter["status"] = new_status.value
-            # Check if all recommended
-            all_recommend = all(a.get("outcome") == "RECOMMEND" for a in current_round.get("assignees", []))
-            if all_recommend:
-                print(f"All reviews complete (all recommend). Status: {current_status.value} -> {new_status.value}")
-            else:
-                print(f"All reviews complete (updates requested). Status: {current_status.value} -> {new_status.value}")
-                print("Note: Document cannot be routed for approval until a clean review round.")
+            print(f"All reviews complete. Status: {current_status.value} -> {new_status.value}")
 
-    write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Log REVIEW event to audit trail (comment goes here, not just frontmatter)
-    doc_type = get_doc_type(doc_id)
-    version = frontmatter.get("version", "0.1")
-    log_review(doc_id, doc_type, user, version, outcome, comment)
-
-    # DUAL-WRITE: Update .meta file
-    remaining_assignees = [a.get("user") for a in current_round.get("assignees", []) if a.get("status") == "PENDING"]
-    new_status_value = frontmatter.get("status")
-    meta = read_meta(doc_id, doc_type) or {}
     meta = update_meta_review_complete(
         meta, user, remaining_assignees,
-        new_status=new_status_value if all_complete else None
+        new_status=new_status.value if new_status else None
     )
     write_meta(doc_id, doc_type, meta)
 
@@ -1338,9 +1310,13 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
-    current_status = Status(frontmatter.get("status", "DRAFT"))
-    is_executable = frontmatter.get("executable", False)
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    current_version = meta.get("version", "0.1")
+    is_executable = meta.get("executable", False)
+    pending_assignees = meta.get("pending_assignees", [])
 
     # Verify document is in an approval state
     approval_statuses = [Status.IN_APPROVAL, Status.IN_PRE_APPROVAL, Status.IN_POST_APPROVAL]
@@ -1359,37 +1335,24 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    # Find current approval round and update user's entry
-    approval_history = frontmatter.get("approval_history", [])
-    current_round = None
-    for entry in reversed(approval_history):
-        for assignee in entry.get("assignees", []):
-            if assignee.get("user") == user and assignee.get("status") == "PENDING":
-                assignee["status"] = "APPROVED"
-                assignee["date"] = today()
-                current_round = entry
-                break
-        if current_round:
-            break
-
-    if not current_round:
-        # Get list of assigned users for helpful message
-        assigned_users = []
-        for entry in reversed(approval_history):
-            assigned_users = [a.get("user") for a in entry.get("assignees", [])]
-            break
+    # Check if user is assigned to approve
+    if user not in pending_assignees:
         print(f"""
 Error: You ({user}) are not assigned to approve {doc_id}.
 
-Currently assigned approvers: {', '.join(assigned_users) if assigned_users else 'None'}
+Currently assigned approvers: {', '.join(pending_assignees) if pending_assignees else 'None'}
 
 You can only approve documents you are assigned to.
 Check your inbox for assigned tasks: qms --user {user} inbox
 """)
         return 1
 
-    # Check if all approvals complete
-    all_approved = all(a.get("status") == "APPROVED" for a in current_round.get("assignees", []))
+    # Log APPROVE event to audit trail
+    log_approve(doc_id, doc_type, user, current_version)
+
+    # Update .meta file - remove this user from pending assignees
+    remaining_assignees = [u for u in pending_assignees if u != user]
+    all_approved = len(remaining_assignees) == 0
 
     if all_approved:
         # Transition to APPROVED state and bump version
@@ -1401,13 +1364,9 @@ Check your inbox for assigned tasks: qms --user {user} inbox
         new_status = status_map.get(current_status)
 
         if new_status:
-            frontmatter["status"] = new_status.value
-
             # Bump to major version
-            current_version = str(frontmatter.get("version", "0.1"))
-            major = int(current_version.split(".")[0])
+            major = int(str(current_version).split(".")[0])
             new_version = f"{major + 1}.0"
-            frontmatter["version"] = new_version
 
             # Archive current draft
             archive_path = get_archive_path(doc_id, current_version)
@@ -1419,40 +1378,19 @@ Check your inbox for assigned tasks: qms --user {user} inbox
 
             # For non-executable, transition to EFFECTIVE
             if new_status == Status.APPROVED:
-                frontmatter["status"] = Status.EFFECTIVE.value
+                # Read document to move to effective location
+                frontmatter, body = read_document(draft_path)
                 effective_path = get_doc_path(doc_id, draft=False)
-                write_document(effective_path, frontmatter, body)
+                write_document_minimal(effective_path, frontmatter, body)
                 draft_path.unlink()
                 print(f"Document is now EFFECTIVE at {effective_path.relative_to(PROJECT_ROOT)}")
+
+                # Update meta - clear owner for effective docs
+                meta = update_meta_approval(meta, new_status=Status.EFFECTIVE.value, new_version=new_version, clear_owner=True)
+                log_effective(doc_id, doc_type, user, current_version, new_version)
             else:
                 # Executable document - stays as draft until closed
-                write_document(draft_path, frontmatter, body)
-    else:
-        # Not all approvals complete yet
-        write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Log APPROVE event to audit trail
-    doc_type = get_doc_type(doc_id)
-    version = frontmatter.get("version", "0.1")
-    log_approve(doc_id, doc_type, user, version)
-
-    # DUAL-WRITE: Update .meta file
-    remaining_assignees = [a.get("user") for a in current_round.get("assignees", []) if a.get("status") == "PENDING"]
-    meta = read_meta(doc_id, doc_type) or {}
-
-    if all_approved:
-        # Document approved - update status and version, clear owner for EFFECTIVE
-        new_version = frontmatter.get("version")
-        clear_owner = (frontmatter.get("status") == "EFFECTIVE")
-        meta = update_meta_approval(
-            meta,
-            new_status=frontmatter.get("status"),
-            new_version=new_version,
-            clear_owner=clear_owner
-        )
-        # Log EFFECTIVE event if becoming effective
-        if clear_owner:
-            log_effective(doc_id, doc_type, user, current_version, new_version)
+                meta = update_meta_approval(meta, new_status=new_status.value, new_version=new_version, clear_owner=False)
     else:
         # Still waiting for more approvals
         meta["pending_assignees"] = remaining_assignees
@@ -1507,8 +1445,12 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
-    current_status = Status(frontmatter.get("status", "DRAFT"))
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    version = meta.get("version", "0.1")
+    pending_assignees = meta.get("pending_assignees", [])
 
     # Verify document is in an approval state
     approval_statuses = [Status.IN_APPROVAL, Status.IN_PRE_APPROVAL, Status.IN_POST_APPROVAL]
@@ -1523,23 +1465,13 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    # Find current approval round and update user's entry
-    approval_history = frontmatter.get("approval_history", [])
-    current_round = None
-    for entry in reversed(approval_history):
-        for assignee in entry.get("assignees", []):
-            if assignee.get("user") == user and assignee.get("status") == "PENDING":
-                assignee["status"] = "REJECTED"
-                assignee["date"] = today()
-                assignee["comments"] = comment
-                current_round = entry
-                break
-        if current_round:
-            break
-
-    if not current_round:
+    # Check if user is assigned to approve
+    if user not in pending_assignees:
         print(f"Error: You are not assigned to approve {doc_id}")
         return 1
+
+    # Log REJECT event to audit trail (comment goes here)
+    log_reject(doc_id, doc_type, user, version, comment)
 
     # Transition back to REVIEWED state
     status_map = {
@@ -1550,18 +1482,9 @@ Check document status: qms --user {user} status {doc_id}
     new_status = status_map.get(current_status)
 
     if new_status:
-        frontmatter["status"] = new_status.value
         print(f"Document rejected. Status: {current_status.value} -> {new_status.value}")
 
-    write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Log REJECT event to audit trail (comment goes here)
-    doc_type = get_doc_type(doc_id)
-    version = frontmatter.get("version", "0.1")
-    log_reject(doc_id, doc_type, user, version, comment)
-
-    # DUAL-WRITE: Update .meta file
-    meta = read_meta(doc_id, doc_type) or {}
+    # Update .meta file
     meta = update_meta_approval(meta, new_status=new_status.value if new_status else None)
     meta["pending_assignees"] = []  # Clear pending assignees on rejection
     write_meta(doc_id, doc_type, meta)
@@ -1603,9 +1526,14 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    version = meta.get("version", "0.1")
+    is_executable = meta.get("executable", False)
 
-    if not frontmatter.get("executable"):
+    if not is_executable:
         print(f"""
 Error: {doc_id} is not an executable document.
 
@@ -1615,13 +1543,12 @@ Non-executable documents (SOP, RS, DS, etc.) become EFFECTIVE after approval.
         return 1
 
     # Check ownership
-    doc_owner = frontmatter.get("responsible_user")
+    doc_owner = meta.get("responsible_user")
     allowed, error = check_permission(user, "release", doc_owner=doc_owner)
     if not allowed:
         print(error)
         return 1
 
-    current_status = Status(frontmatter.get("status", "DRAFT"))
     if current_status != Status.PRE_APPROVED:
         print(f"""
 Error: {doc_id} must be PRE_APPROVED to release.
@@ -1633,17 +1560,10 @@ Workflow for executable documents:
 """)
         return 1
 
-    frontmatter["status"] = Status.IN_EXECUTION.value
-    frontmatter["released_date"] = today()
-    write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Log RELEASE event to audit trail
-    doc_type = get_doc_type(doc_id)
-    version = frontmatter.get("version", "0.1")
+    # Log RELEASE event to audit trail
     log_release(doc_id, doc_type, user, version)
 
-    # DUAL-WRITE: Update .meta file
-    meta = read_meta(doc_id, doc_type) or {}
+    # Update .meta file
     meta["status"] = Status.IN_EXECUTION.value
     write_meta(doc_id, doc_type, meta)
 
@@ -1689,16 +1609,19 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    version = meta.get("version", "0.1")
 
     # Check ownership
-    doc_owner = frontmatter.get("responsible_user")
+    doc_owner = meta.get("responsible_user")
     allowed, error = check_permission(user, "revert", doc_owner=doc_owner)
     if not allowed:
         print(error)
         return 1
 
-    current_status = Status(frontmatter.get("status", "DRAFT"))
     if current_status != Status.POST_REVIEWED:
         print(f"""
 Error: {doc_id} must be POST_REVIEWED to revert.
@@ -1710,22 +1633,10 @@ when additional execution work is discovered during post-review.
 """)
         return 1
 
-    frontmatter["status"] = Status.IN_EXECUTION.value
-
-    # Log revert
-    reverts = frontmatter.get("revert_history", [])
-    reverts.append({"date": today(), "user": user, "reason": reason})
-    frontmatter["revert_history"] = reverts
-
-    write_document(draft_path, frontmatter, body)
-
-    # DUAL-WRITE: Log REVERT event to audit trail
-    doc_type = get_doc_type(doc_id)
-    version = frontmatter.get("version", "0.1")
+    # Log REVERT event to audit trail
     log_revert(doc_id, doc_type, user, version, reason)
 
-    # DUAL-WRITE: Update .meta file
-    meta = read_meta(doc_id, doc_type) or {}
+    # Update .meta file
     meta["status"] = Status.IN_EXECUTION.value
     write_meta(doc_id, doc_type, meta)
 
@@ -1759,9 +1670,14 @@ Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    version = meta.get("version", "0.1")
+    is_executable = meta.get("executable", False)
 
-    if not frontmatter.get("executable"):
+    if not is_executable:
         print(f"""
 Error: {doc_id} is not an executable document.
 
@@ -1771,13 +1687,12 @@ Non-executable documents (SOP, RS, DS, etc.) become EFFECTIVE after approval.
         return 1
 
     # Check ownership
-    doc_owner = frontmatter.get("responsible_user")
+    doc_owner = meta.get("responsible_user")
     allowed, error = check_permission(user, "close", doc_owner=doc_owner)
     if not allowed:
         print(error)
         return 1
 
-    current_status = Status(frontmatter.get("status", "DRAFT"))
     if current_status != Status.POST_APPROVED:
         print(f"""
 Error: {doc_id} must be POST_APPROVED to close.
@@ -1789,22 +1704,16 @@ Workflow for executable documents:
 """)
         return 1
 
-    frontmatter["status"] = Status.CLOSED.value
-    frontmatter["closed_date"] = today()
-    frontmatter["checked_out"] = False
-
-    # Move to effective location
+    # Move to effective location with minimal frontmatter
+    frontmatter, body = read_document(draft_path)
     effective_path = get_doc_path(doc_id, draft=False)
-    write_document(effective_path, frontmatter, body)
+    write_document_minimal(effective_path, frontmatter, body)
     draft_path.unlink()
 
-    # DUAL-WRITE: Log CLOSE event to audit trail
-    doc_type = get_doc_type(doc_id)
-    version = frontmatter.get("version", "0.1")
+    # Log CLOSE event to audit trail
     log_close(doc_id, doc_type, user, version)
 
-    # DUAL-WRITE: Update .meta file (clear ownership on close)
-    meta = read_meta(doc_id, doc_type) or {}
+    # Update .meta file (clear ownership on close)
     meta["status"] = Status.CLOSED.value
     meta["responsible_user"] = None
     meta["checked_out"] = False
@@ -1841,35 +1750,34 @@ def cmd_status(args):
         print(f"Error: Document not found: {doc_id}")
         return 1
 
+    # Read title from document frontmatter
     frontmatter, _ = read_document(path)
+
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
 
     print(f"Document: {doc_id}")
     print(f"Title: {frontmatter.get('title', 'N/A')}")
-    print(f"Version: {frontmatter.get('version', 'N/A')}")
-    print(f"Status: {frontmatter.get('status', 'N/A')}")
+    print(f"Version: {meta.get('version', 'N/A')}")
+    print(f"Status: {meta.get('status', 'N/A')}")
     print(f"Location: {location}")
-    print(f"Type: {frontmatter.get('document_type', 'N/A')}")
-    print(f"Executable: {frontmatter.get('executable', False)}")
-    print(f"Responsible User: {frontmatter.get('responsible_user', 'N/A')}")
-    print(f"Checked Out: {frontmatter.get('checked_out', False)}")
+    print(f"Type: {doc_type}")
+    print(f"Executable: {meta.get('executable', False)}")
+    print(f"Responsible User: {meta.get('responsible_user') or 'N/A'}")
+    print(f"Checked Out: {meta.get('checked_out', False)}")
 
-    if frontmatter.get("effective_version"):
-        print(f"Effective Version: {frontmatter.get('effective_version')}")
+    if meta.get("effective_version"):
+        print(f"Effective Version: {meta.get('effective_version')}")
 
-    # Show current workflow
-    review_history = frontmatter.get("review_history", [])
-    if review_history:
-        latest = review_history[-1]
-        print(f"\nLatest Review ({latest.get('type', 'REVIEW')}, Round {latest.get('round', '?')}):")
-        for a in latest.get("assignees", []):
-            print(f"  - {a.get('user')}: {a.get('status', 'PENDING')}")
-
-    approval_history = frontmatter.get("approval_history", [])
-    if approval_history:
-        latest = approval_history[-1]
-        print(f"\nLatest Approval ({latest.get('type', 'APPROVAL')}, Round {latest.get('round', '?')}):")
-        for a in latest.get("assignees", []):
-            print(f"  - {a.get('user')}: {a.get('status', 'PENDING')}")
+    # Show pending assignees from .meta
+    pending_assignees = meta.get("pending_assignees", [])
+    if pending_assignees:
+        status = meta.get("status", "")
+        if "REVIEW" in status:
+            print(f"\nPending Reviewers: {', '.join(pending_assignees)}")
+        elif "APPROVAL" in status:
+            print(f"\nPending Approvers: {', '.join(pending_assignees)}")
 
     return 0
 
