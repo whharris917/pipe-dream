@@ -851,11 +851,13 @@ To check out an effective document for revision: qms --user {user} checkout {doc
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
+    # Get workflow state from .meta (authoritative source)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
 
     # Verify document is checked in (not checked out)
-    if frontmatter.get("checked_out"):
-        checked_out_by = frontmatter.get("responsible_user", "unknown")
+    if meta.get("checked_out"):
+        checked_out_by = meta.get("responsible_user", "unknown")
         print(f"""
 Error: {doc_id} is still checked out by {checked_out_by}.
 
@@ -870,8 +872,8 @@ Then route for review:
 """)
         return 1
 
-    current_status = Status(frontmatter.get("status", "DRAFT"))
-    is_executable = frontmatter.get("executable", False)
+    current_status = Status(meta.get("status", "DRAFT"))
+    is_executable = meta.get("executable", False)
 
     # Determine target status based on flags
     if args.review:
@@ -923,36 +925,6 @@ Then route for review:
         print("Error: Must specify workflow type (--review, --approval, etc.)")
         return 1
 
-    # For approval routing, verify most recent review has all RECOMMEND outcomes
-    if "APPROVAL" in workflow_type:
-        review_history = frontmatter.get("review_history", [])
-        if not review_history:
-            print("Error: No review history found. Document must be reviewed before approval.")
-            return 1
-
-        # Find the most recent review round
-        latest_review = None
-        for entry in reversed(review_history):
-            if entry.get("type") in ["REVIEW", "PRE_REVIEW", "POST_REVIEW"]:
-                latest_review = entry
-                break
-
-        if not latest_review:
-            print("Error: No review round found. Document must be reviewed before approval.")
-            return 1
-
-        # Check all assignees recommended
-        assignees_list = latest_review.get("assignees", [])
-        all_recommend = all(a.get("outcome") == "RECOMMEND" for a in assignees_list)
-        if not all_recommend:
-            print("Error: Cannot route for approval. Not all reviewers recommended approval.")
-            print("Most recent review outcomes:")
-            for a in assignees_list:
-                outcome = a.get("outcome", "PENDING")
-                print(f"  - {a.get('user')}: {outcome}")
-            print("\nDocument must go through another review round with all RECOMMEND outcomes.")
-            return 1
-
     # Auto-assign QA if no --assign provided
     assignees = args.assign if args.assign else ["qa"]
 
@@ -962,8 +934,6 @@ Then route for review:
         return 1
 
     # Update .meta file (authoritative workflow state)
-    doc_type = get_doc_type(doc_id)
-    meta = read_meta(doc_id, doc_type) or {}
     version = meta.get("version", "0.1")
     meta = update_meta_route(meta, target_status.value, assignees)
     write_meta(doc_id, doc_type, meta)

@@ -18,3 +18,10 @@
 {"ts": "2026-01-03T16:57:08+00:00", "event": "APPROVE", "user": "qa", "version": "4.0"}
 {"ts": "2026-01-03T16:57:08+00:00", "event": "ROUTE_APPROVAL", "user": "system", "version": "4.0", "assignees": ["qa"], "approval_type": "APPROVAL"}
 {"ts": "2026-01-03T16:57:08+00:00", "event": "APPROVE", "user": "qa", "version": "4.0"}
+{"ts": "2026-01-03T21:42:50+00:00", "event": "CHECKOUT", "user": "lead", "version": "4.1", "from_version": "4.0"}
+{"ts": "2026-01-03T21:45:19+00:00", "event": "CHECKIN", "user": "lead", "version": "4.1"}
+{"ts": "2026-01-03T21:47:32+00:00", "event": "ROUTE_REVIEW", "user": "lead", "version": "4.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-03T21:50:35+00:00", "event": "REVIEW", "user": "qa", "version": "4.1", "outcome": "RECOMMEND", "comment": "QA Review of SOP-001 v4.1: RECOMMEND APPROVAL. This revision documents the three-tier metadata architecture (.meta/.audit sidecar files). Verified: (1) Section 5 clearly defines all three tiers - Document Frontmatter (author-maintained), Workflow State (.meta/ JSON), and Audit Trail (.audit/ JSONL); (2) Section 5.3 documents all event types for the audit trail; (3) Section 6 updates directory structure to show .meta/ and .audit/ directories; (4) Section 11.1 and 11.2 correctly reference .meta file for responsible user tracking; (5) Section 13 adds new commands: history, comments, migrate, verify-migration; (6) Section 15 revision history correctly documents v4.1 changes. The draft frontmatter correctly uses the simplified schema with only title and revision_summary fields. Implementation verified: .meta/ and .audit/ directories exist with proper structure. Document is internally consistent and ready for approval."}
+{"ts": "2026-01-03T21:54:23+00:00", "event": "ROUTE_APPROVAL", "user": "lead", "version": "4.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-03T21:56:25+00:00", "event": "APPROVE", "user": "qa", "version": "4.1"}
+{"ts": "2026-01-03T21:56:25+00:00", "event": "EFFECTIVE", "user": "qa", "version": "5.0", "from_version": "4.1"}

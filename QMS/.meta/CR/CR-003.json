@@ -1,0 +1,13 @@
+{
+  "doc_id": "CR-003",
+  "doc_type": "CR",
+  "version": "0.1",
+  "status": "PRE_REVIEWED",
+  "executable": true,
+  "responsible_user": "claude",
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}
