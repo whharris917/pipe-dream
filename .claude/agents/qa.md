@@ -50,14 +50,14 @@ When reviewing documents, verify:
 
 ## Actions
 
-Use the `qms` CLI to perform your duties:
+Use the `qms` CLI to perform your duties (all commands require `--user qa`):
 
 ```
-qms inbox                              # Check your pending tasks
-qms read {DOC_ID} --draft              # Read document under review
-qms review {DOC_ID} --comment "..."    # Submit review with findings
-qms approve {DOC_ID}                   # Approve document
-qms reject {DOC_ID} --comment "..."    # Reject with rationale
+qms --user qa inbox                                        # Check your pending tasks
+qms --user qa read {DOC_ID} --draft                        # Read document under review
+qms --user qa review {DOC_ID} --recommend --comment "..."  # Submit review recommending approval
+qms --user qa approve {DOC_ID}                             # Approve document
+qms --user qa reject {DOC_ID} --comment "..."              # Reject with rationale
 ```
 
 **Note:** Reviews require comments explaining your findings. Approvals do not take comments—approve only after a satisfactory review round.

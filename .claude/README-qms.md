@@ -2,18 +2,19 @@
 
 Document control system for the Flow State project. See **SOP-001** for complete procedural documentation.
 
-## Setup
+## Usage
 
-Set your identity before using any commands:
+All commands require the `--user` (or `-u`) flag to identify yourself:
 
 ```bash
-export QMS_USER=claude    # or: lead, qa, tu_ui, tu_scene, etc.
+python .claude/qms.py --user <username> <command> [options]
 ```
 
-Alias for convenience:
+Or with an alias:
 
 ```bash
 alias qms='python .claude/qms.py'
+qms --user claude <command> [options]
 ```
 
 ## User Groups & Permissions
@@ -30,19 +31,19 @@ alias qms='python .claude/qms.py'
 
 ```bash
 # Create a new document (auto-generates ID, auto-checkouts)
-qms create SOP --title "My Procedure"
-qms create CR --title "Feature Implementation"
+qms --user claude create SOP --title "My Procedure"
+qms --user claude create CR --title "Feature Implementation"
 
 # Check out existing document for editing
-qms checkout SOP-001
+qms --user claude checkout SOP-001
 
 # Check in edited document (saves to QMS, clears checkout)
-qms checkin SOP-001
+qms --user claude checkin SOP-001
 
-# Read documents
-qms read SOP-001                    # Effective version
-qms read SOP-001 --draft            # Draft version
-qms read SOP-001 --version 1.0      # Archived version
+# Read documents (any user can read)
+qms --user claude read SOP-001                    # Effective version
+qms --user claude read SOP-001 --draft            # Draft version
+qms --user claude read SOP-001 --version 1.0      # Archived version
 ```
 
 ### Workflow Routing
@@ -50,49 +51,49 @@ qms read SOP-001 --version 1.0      # Archived version
 **Non-executable documents (SOP, RS, DS, CS, RTM, OQ):**
 
 ```bash
-qms route SOP-001 --review              # Route for review (QA auto-assigned)
-qms route SOP-001 --approval            # Route for approval (after REVIEWED)
+qms --user claude route SOP-001 --review      # Route for review (QA auto-assigned)
+qms --user claude route SOP-001 --approval    # Route for approval (after REVIEWED)
 ```
 
 **Executable documents (CR, INV, CAPA, TP, ER):**
 
 ```bash
-qms route CR-001 --pre-review           # Before execution
-qms route CR-001 --pre-approval         # After PRE_REVIEWED
-qms release CR-001                      # Start execution
-qms route CR-001 --post-review          # After execution
-qms route CR-001 --post-approval        # After POST_REVIEWED
-qms close CR-001                        # Finalize
+qms --user claude route CR-001 --pre-review      # Before execution
+qms --user claude route CR-001 --pre-approval    # After PRE_REVIEWED
+qms --user claude release CR-001                 # Start execution
+qms --user claude route CR-001 --post-review     # After execution
+qms --user claude route CR-001 --post-approval   # After POST_REVIEWED
+qms --user claude close CR-001                   # Finalize
 ```
 
 ### Review & Approval
 
 ```bash
 # Submit review (must specify outcome)
-qms review SOP-001 --recommend --comment "Approved. No issues."
-qms review SOP-001 --request-updates --comment "Section 3 needs work."
+qms --user qa review SOP-001 --recommend --comment "Approved. No issues."
+qms --user tu_ui review SOP-001 --request-updates --comment "Section 3 needs work."
 
 # Approve or reject
-qms approve SOP-001
-qms reject SOP-001 --comment "Does not meet requirements."
+qms --user qa approve SOP-001
+qms --user qa reject SOP-001 --comment "Does not meet requirements."
 
 # QA: Assign additional reviewers
-qms assign SOP-001 --user tu_ui tu_scene
+qms --user qa assign SOP-001 --user tu_ui tu_scene
 ```
 
 ### Status & Tasks
 
 ```bash
-qms status SOP-001    # Document status and workflow state
-qms inbox             # Your pending review/approval tasks
-qms workspace         # Your checked-out documents
+qms --user claude status SOP-001    # Document status and workflow state
+qms --user qa inbox                 # Your pending review/approval tasks
+qms --user claude workspace         # Your checked-out documents
 ```
 
 ### Administrative
 
 ```bash
 # Fix metadata on EFFECTIVE documents (QA/lead only)
-qms fix SOP-001
+qms --user qa fix SOP-001
 ```
 
 ## Document Types
@@ -175,55 +176,53 @@ QMS/
 ### Create and approve a new SOP
 
 ```bash
-export QMS_USER=claude
-qms create SOP --title "New Procedure"
+# Initiator creates and routes document
+qms --user claude create SOP --title "New Procedure"
 # Edit the document in workspace...
-qms checkin SOP-003
-qms route SOP-003 --review
+qms --user claude checkin SOP-003
+qms --user claude route SOP-003 --review
 
-export QMS_USER=qa
-qms review SOP-003 --recommend --comment "Looks good."
-qms inbox  # empty now
+# QA reviews
+qms --user qa review SOP-003 --recommend --comment "Looks good."
+qms --user qa inbox  # empty now
 
-export QMS_USER=claude
-qms route SOP-003 --approval
+# Initiator routes for approval
+qms --user claude route SOP-003 --approval
 
-export QMS_USER=qa
-qms approve SOP-003
+# QA approves
+qms --user qa approve SOP-003
 # Document is now EFFECTIVE
 ```
 
 ### Create and execute a Change Record
 
 ```bash
-export QMS_USER=claude
-qms create CR --title "Add feature X"
-qms checkin CR-001
-qms route CR-001 --pre-review
+# Initiator creates CR
+qms --user claude create CR --title "Add feature X"
+qms --user claude checkin CR-001
+qms --user claude route CR-001 --pre-review
 
-export QMS_USER=qa
-qms assign CR-001 --user tu_ui        # Assign technical reviewer
-qms review CR-001 --recommend --comment "Approach is sound."
+# QA assigns technical reviewer and reviews
+qms --user qa assign CR-001 --user tu_ui
+qms --user qa review CR-001 --recommend --comment "Approach is sound."
 
-export QMS_USER=tu_ui
-qms review CR-001 --recommend --comment "UI changes approved."
+# TU-UI reviews
+qms --user tu_ui review CR-001 --recommend --comment "UI changes approved."
 
-export QMS_USER=claude
-qms route CR-001 --pre-approval
+# Route for pre-approval
+qms --user claude route CR-001 --pre-approval
 
-export QMS_USER=qa
-qms approve CR-001
+# Approvals
+qms --user qa approve CR-001
+qms --user tu_ui approve CR-001
 
-export QMS_USER=tu_ui
-qms approve CR-001
-
-export QMS_USER=claude
-qms release CR-001                     # Begin execution
+# Execute the change
+qms --user claude release CR-001
 # ... implement the change ...
-qms route CR-001 --post-review
+qms --user claude route CR-001 --post-review
 
 # ... post-review and post-approval ...
-qms close CR-001
+qms --user claude close CR-001
 ```
 
 ## Error Messages

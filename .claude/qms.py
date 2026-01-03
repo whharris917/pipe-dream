@@ -126,12 +126,12 @@ TRANSITIONS = {
 # Utilities
 # =============================================================================
 
-def get_current_user() -> str:
-    """Get the current QMS user. Must be explicitly set via QMS_USER environment variable."""
-    user = os.environ.get("QMS_USER")
+def get_current_user(args) -> str:
+    """Get the current QMS user from the --user command-line argument."""
+    user = getattr(args, 'user', None)
     if not user:
-        print("Error: QMS_USER environment variable not set.")
-        print("Set your identity with: export QMS_USER=<username>")
+        print("Error: --user argument is required.")
+        print("Specify your identity with: --user <username>")
         print("Valid users: lead, claude, qa, bu, tu_ui, tu_scene, tu_sketch, tu_sim")
         sys.exit(1)
     return user
@@ -175,10 +175,10 @@ PERMISSIONS = {
 GROUP_GUIDANCE = {
     "initiators": """
 As an Initiator (lead, claude), you can:
-  - Create new documents: qms create SOP --title "Title"
-  - Check out documents for editing: qms checkout DOC-ID
-  - Check in edited documents: qms checkin DOC-ID
-  - Route documents for review/approval: qms route DOC-ID --review
+  - Create new documents: qms --user {you} create SOP --title "Title"
+  - Check out documents for editing: qms --user {you} checkout DOC-ID
+  - Check in edited documents: qms --user {you} checkin DOC-ID
+  - Route documents for review/approval: qms --user {you} route DOC-ID --review
   - Release/close executable documents you own
 
 You cannot:
@@ -187,10 +187,10 @@ You cannot:
 """,
     "qa": """
 As QA, you can:
-  - Assign reviewers to workflows: qms assign DOC-ID --user tu_ui tu_scene
-  - Review documents: qms review DOC-ID --recommend --comment "..."
-  - Approve documents: qms approve DOC-ID
-  - Reject documents: qms reject DOC-ID --comment "..."
+  - Assign reviewers to workflows: qms --user qa assign DOC-ID --user tu_ui tu_scene
+  - Review documents: qms --user qa review DOC-ID --recommend --comment "..."
+  - Approve documents: qms --user qa approve DOC-ID
+  - Reject documents: qms --user qa reject DOC-ID --comment "..."
 
 You cannot:
   - Create new documents (Initiators only)
@@ -198,11 +198,11 @@ You cannot:
 """,
     "reviewers": """
 As a Reviewer (TU/BU), you can:
-  - Review documents when assigned: qms review DOC-ID --recommend --comment "..."
-  - Approve documents when assigned: qms approve DOC-ID
-  - Reject documents when assigned: qms reject DOC-ID --comment "..."
-  - Check your inbox: qms inbox
-  - Read any document: qms read DOC-ID
+  - Review documents when assigned: qms --user {you} review DOC-ID --recommend --comment "..."
+  - Approve documents when assigned: qms --user {you} approve DOC-ID
+  - Reject documents when assigned: qms --user {you} reject DOC-ID --comment "..."
+  - Check your inbox: qms --user {you} inbox
+  - Read any document: qms --user {you} read DOC-ID
 
 You cannot:
   - Create documents (Initiators only)
@@ -271,7 +271,7 @@ You ({user}) are not assigned to this workflow.
 Assigned users: {', '.join(assigned_users) if assigned_users else 'None'}
 
 You can only {command} documents you are assigned to.
-Check your inbox for assigned tasks: qms inbox
+Check your inbox for assigned tasks: qms --user {user} inbox
 """
             return False, error
 
@@ -305,8 +305,8 @@ User '{user}' cannot {operation} for user '{target_user}'.
 You can only access your own inbox and workspace.
 
 Commands:
-  qms inbox      - View your pending tasks
-  qms workspace  - View your checked-out documents
+  qms --user {user} inbox      - View your pending tasks
+  qms --user {user} workspace  - View your checked-out documents
 """)
         return False
     return True
@@ -464,7 +464,7 @@ def today() -> str:
 
 def cmd_create(args):
     """Create a new document."""
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -607,7 +607,7 @@ def cmd_read(args):
 def cmd_checkout(args):
     """Check out a document for editing."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -681,7 +681,7 @@ def cmd_checkout(args):
 def cmd_checkin(args):
     """Check in a document from workspace."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -698,8 +698,8 @@ def cmd_checkin(args):
 Error: {doc_id} not found in your workspace.
 
 Your workspace contains documents you have checked out for editing.
-To check out a document: qms checkout {doc_id}
-To see your workspace: qms workspace
+To check out a document: qms --user {user} checkout {doc_id}
+To see your workspace: qms --user {user} workspace
 """)
         return 1
 
@@ -746,7 +746,7 @@ To see your workspace: qms workspace
 def cmd_route(args):
     """Route a document for review or approval."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -763,8 +763,8 @@ def cmd_route(args):
 Error: No draft found for {doc_id}.
 
 The document may not exist, or it may already be effective.
-To create a new document: qms create SOP --title "Title"
-To check out an effective document for revision: qms checkout {doc_id}
+To create a new document: qms --user {user} create SOP --title "Title"
+To check out an effective document for revision: qms --user {user} checkout {doc_id}
 """)
         return 1
 
@@ -780,10 +780,10 @@ Documents must be checked in before routing for review/approval.
 The workflow operates on the QMS copy, not the workspace copy.
 
 If you are the owner, check it in first:
-  qms checkin {doc_id}
+  qms --user {checked_out_by} checkin {doc_id}
 
 Then route for review:
-  qms route {doc_id} --review
+  qms --user {checked_out_by} route {doc_id} --review
 """)
         return 1
 
@@ -929,7 +929,7 @@ Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
 
 ## Commands
 
-{'```' + f'qms review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms approve {doc_id}' + '```' + ' or ' + '```' + f'qms reject {doc_id} --comment "Rejection reason"' + '```'}
+{'```' + f'qms --user {assignee} review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms --user {assignee} review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms --user {assignee} approve {doc_id}' + '```' + ' or ' + '```' + f'qms --user {assignee} reject {doc_id} --comment "Rejection reason"' + '```'}
 """
         task_path.write_text(task_content, encoding="utf-8")
 
@@ -943,7 +943,7 @@ Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
 def cmd_assign(args):
     """Add reviewers/approvers to an active workflow."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -957,12 +957,12 @@ def cmd_assign(args):
     new_assignees = args.user
     if not new_assignees:
         print("""
-Error: Must specify --user with at least one user.
+Error: Must specify --user with at least one user to assign.
 
-Usage: qms assign DOC-ID --user user1 user2 ...
+Usage: qms --user qa assign DOC-ID --user user1 user2 ...
 
 Example:
-  qms assign SOP-003 --user tu_ui tu_scene
+  qms --user qa assign SOP-003 --user tu_ui tu_scene
 
 Valid users to assign:
   Technical Units: tu_ui, tu_scene, tu_sketch, tu_sim
@@ -990,7 +990,7 @@ Valid users to assign:
 Error: No draft found for {doc_id}.
 
 You can only assign users to documents that are in an active workflow.
-Check the document status: qms status {doc_id}
+Check the document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1067,7 +1067,7 @@ Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
 
 ## Commands
 
-{'```' + f'qms review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms approve {doc_id}' + '```' + ' or ' + '```' + f'qms reject {doc_id} --comment "Rejection reason"' + '```'}
+{'```' + f'qms --user {new_user} review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms --user {new_user} review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms --user {new_user} approve {doc_id}' + '```' + ' or ' + '```' + f'qms --user {new_user} reject {doc_id} --comment "Rejection reason"' + '```'}
 """
             task_path.write_text(task_content, encoding="utf-8")
 
@@ -1083,7 +1083,7 @@ Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
 def cmd_review(args):
     """Submit a review for a document."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1097,12 +1097,12 @@ def cmd_review(args):
     comment = args.comment
 
     if not comment:
-        print("""
+        print(f"""
 Error: Must provide --comment with review.
 
 Usage:
-  qms review DOC-ID --recommend --comment "Your comments"
-  qms review DOC-ID --request-updates --comment "Changes needed"
+  qms --user {user} review DOC-ID --recommend --comment "Your comments"
+  qms --user {user} review DOC-ID --request-updates --comment "Changes needed"
 
 The comment should explain your review findings and rationale.
 """)
@@ -1114,7 +1114,7 @@ The comment should explain your review findings and rationale.
     elif args.request_updates:
         outcome = "UPDATES_REQUIRED"
     else:
-        print("""
+        print(f"""
 Error: Must specify review outcome.
 
 Options:
@@ -1122,8 +1122,8 @@ Options:
   --request-updates  Request changes before approval
 
 Usage:
-  qms review DOC-ID --recommend --comment "Approved. No issues found."
-  qms review DOC-ID --request-updates --comment "Section 3 needs clarification."
+  qms --user {user} review DOC-ID --recommend --comment "Approved. No issues found."
+  qms --user {user} review DOC-ID --request-updates --comment "Section 3 needs clarification."
 """)
         return 1
 
@@ -1132,8 +1132,8 @@ Usage:
         print(f"""
 Error: No draft found for {doc_id}.
 
-Check your inbox for assigned review tasks: qms inbox
-Check document status: qms status {doc_id}
+Check your inbox for assigned review tasks: qms --user {user} inbox
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1153,7 +1153,7 @@ Documents can only be reviewed when in one of these states:
   - IN_PRE_REVIEW (executable documents, before execution)
   - IN_POST_REVIEW (executable documents, after execution)
 
-Check document status: qms status {doc_id}
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1186,10 +1186,10 @@ Error: You ({user}) are not assigned to review {doc_id}.
 Currently assigned reviewers: {', '.join(assigned_users) if assigned_users else 'None'}
 
 You can only review documents you are assigned to.
-Check your inbox for assigned tasks: qms inbox
+Check your inbox for assigned tasks: qms --user {user} inbox
 
 If you should be reviewing this document, ask QA to assign you:
-  (QA) qms assign {doc_id} --user {user}
+  (QA) qms --user qa assign {doc_id} --user {user}
 """)
         return 1
 
@@ -1229,7 +1229,7 @@ If you should be reviewing this document, ask QA to assign you:
 def cmd_approve(args):
     """Approve a document."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1245,8 +1245,8 @@ def cmd_approve(args):
         print(f"""
 Error: No draft found for {doc_id}.
 
-Check your inbox for assigned approval tasks: qms inbox
-Check document status: qms status {doc_id}
+Check your inbox for assigned approval tasks: qms --user {user} inbox
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1267,7 +1267,7 @@ Documents can only be approved when in one of these states:
   - IN_PRE_APPROVAL (executable documents, before execution)
   - IN_POST_APPROVAL (executable documents, after execution)
 
-Check document status: qms status {doc_id}
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1296,7 +1296,7 @@ Error: You ({user}) are not assigned to approve {doc_id}.
 Currently assigned approvers: {', '.join(assigned_users) if assigned_users else 'None'}
 
 You can only approve documents you are assigned to.
-Check your inbox for assigned tasks: qms inbox
+Check your inbox for assigned tasks: qms --user {user} inbox
 """)
         return 1
 
@@ -1356,7 +1356,7 @@ Check your inbox for assigned tasks: qms inbox
 def cmd_reject(args):
     """Reject a document."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1370,11 +1370,11 @@ def cmd_reject(args):
     comment = args.comment
 
     if not comment:
-        print("""
+        print(f"""
 Error: Must provide --comment with rejection.
 
 Usage:
-  qms reject DOC-ID --comment "Reason for rejection"
+  qms --user {user} reject DOC-ID --comment "Reason for rejection"
 
 The comment should explain why the document is being rejected
 and what changes are needed before re-submission.
@@ -1386,8 +1386,8 @@ and what changes are needed before re-submission.
         print(f"""
 Error: No draft found for {doc_id}.
 
-Check your inbox for assigned approval tasks: qms inbox
-Check document status: qms status {doc_id}
+Check your inbox for assigned approval tasks: qms --user {user} inbox
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1403,7 +1403,7 @@ Error: {doc_id} is not in approval.
 Current status: {current_status.value}
 
 Documents can only be rejected when in an approval state.
-Check document status: qms status {doc_id}
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1456,7 +1456,7 @@ Check document status: qms status {doc_id}
 def cmd_release(args):
     """Release an executable document for execution."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1472,7 +1472,7 @@ def cmd_release(args):
         print(f"""
 Error: No draft found for {doc_id}.
 
-Check document status: qms status {doc_id}
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1519,7 +1519,7 @@ Workflow for executable documents:
 def cmd_revert(args):
     """Revert an executable document back to execution."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1533,11 +1533,11 @@ def cmd_revert(args):
     reason = args.reason
 
     if not reason:
-        print("""
+        print(f"""
 Error: Must provide --reason for revert.
 
 Usage:
-  qms revert DOC-ID --reason "Reason for reverting to execution"
+  qms --user {user} revert DOC-ID --reason "Reason for reverting to execution"
 
 The reason should explain why additional execution work is needed.
 """)
@@ -1548,7 +1548,7 @@ The reason should explain why additional execution work is needed.
         print(f"""
 Error: No draft found for {doc_id}.
 
-Check document status: qms status {doc_id}
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1592,7 +1592,7 @@ when additional execution work is discovered during post-review.
 def cmd_close(args):
     """Close an executable document."""
     doc_id = args.doc_id
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1608,7 +1608,7 @@ def cmd_close(args):
         print(f"""
 Error: No draft found for {doc_id}.
 
-Check document status: qms status {doc_id}
+Check document status: qms --user {user} status {doc_id}
 """)
         return 1
 
@@ -1715,7 +1715,7 @@ def cmd_status(args):
 
 def cmd_inbox(args):
     """List tasks in current user's inbox."""
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1747,7 +1747,7 @@ def cmd_inbox(args):
 
 def cmd_workspace(args):
     """List documents in current user's workspace."""
-    user = get_current_user()
+    user = get_current_user(args)
 
     if not verify_user_identity(user):
         return 1
@@ -1778,7 +1778,7 @@ def cmd_workspace(args):
 
 def cmd_fix(args) -> int:
     """Administrative fix for EFFECTIVE documents (QA/lead only)."""
-    current_user = get_current_user()
+    current_user = get_current_user(args)
 
     if current_user not in {"qa", "lead"}:
         print("Error: Only QA or lead can run administrative fixes.", file=sys.stderr)
@@ -1847,19 +1847,25 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  qms create SOP --title "New Procedure"
-  qms checkout SOP-001
-  qms route SOP-001 --review --assign qa tu_ui
-  qms review SOP-001 --comment "Looks good"
-  qms approve SOP-001
-  qms status SOP-001
-  qms inbox
-  qms workspace
+  qms --user claude create SOP --title "New Procedure"
+  qms --user claude checkout SOP-001
+  qms --user claude route SOP-001 --review
+  qms --user qa review SOP-001 --recommend --comment "Looks good"
+  qms --user qa approve SOP-001
+  qms --user claude status SOP-001
+  qms --user qa inbox
+  qms --user claude workspace
 
-Environment:
-  QMS_USER    Current user (default: claude)
+Valid users:
+  Initiators: lead, claude
+  QA:         qa
+  Reviewers:  tu_ui, tu_scene, tu_sketch, tu_sim, bu
         """
     )
+
+    # Global --user argument (required for most commands)
+    parser.add_argument("--user", "-u", required=True,
+                        help="Your QMS identity (required)")
 
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
