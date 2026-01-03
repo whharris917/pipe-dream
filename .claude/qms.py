@@ -578,6 +578,21 @@ def cmd_create(args):
     # Write to draft path
     write_document(draft_path, frontmatter, body)
 
+    # DUAL-WRITE: Create .meta file
+    meta = create_initial_meta(
+        doc_id=doc_id,
+        doc_type=doc_type,
+        version="0.1",
+        status="DRAFT",
+        executable=config["executable"],
+        responsible_user=user
+    )
+    write_meta(doc_id, doc_type, meta)
+
+    # DUAL-WRITE: Log CREATE event to audit trail
+    title = args.title or f"{doc_type} - [Title]"
+    log_create(doc_id, doc_type, user, "0.1", title)
+
     # Copy to user's workspace
     workspace_path = get_workspace_path(user, doc_id)
     workspace_path.parent.mkdir(parents=True, exist_ok=True)
@@ -656,6 +671,15 @@ def cmd_checkout(args):
         write_document(draft_path, frontmatter, body)
         source_path = draft_path
 
+        # DUAL-WRITE: Update .meta file
+        doc_type = get_doc_type(doc_id)
+        meta = read_meta(doc_id, doc_type) or {}
+        meta = update_meta_checkout(meta, user)
+        write_meta(doc_id, doc_type, meta)
+
+        # DUAL-WRITE: Log CHECKOUT event
+        log_checkout(doc_id, doc_type, user, frontmatter.get("version", "0.1"))
+
     elif effective_path.exists():
         # Create new draft from effective
         frontmatter, body = read_document(effective_path)
@@ -677,6 +701,17 @@ def cmd_checkout(args):
         eff_fm, eff_body = read_document(effective_path)
         eff_fm["has_draft"] = True
         write_document(effective_path, eff_fm, eff_body)
+
+        # DUAL-WRITE: Update .meta file for new draft
+        doc_type = get_doc_type(doc_id)
+        meta = read_meta(doc_id, doc_type) or {}
+        meta = update_meta_checkout(meta, user, new_version=new_version)
+        meta["status"] = "DRAFT"
+        meta["effective_version"] = current_version
+        write_meta(doc_id, doc_type, meta)
+
+        # DUAL-WRITE: Log CHECKOUT event
+        log_checkout(doc_id, doc_type, user, new_version, from_version=current_version)
 
         print(f"Created draft v{new_version} from effective v{current_version}")
     else:
@@ -750,6 +785,15 @@ To see your workspace: qms --user {user} workspace
 
     # Write to QMS with cleared checkout state
     write_document(draft_path, frontmatter, body)
+
+    # DUAL-WRITE: Update .meta file
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    meta = update_meta_checkin(meta)
+    write_meta(doc_id, doc_type, meta)
+
+    # DUAL-WRITE: Log CHECKIN event
+    log_checkin(doc_id, doc_type, user, frontmatter.get("version", "0.1"))
 
     # Remove from workspace
     workspace_path.unlink()
@@ -914,6 +958,19 @@ Then route for review:
 
     # Write updated document
     write_document(draft_path, frontmatter, body)
+
+    # DUAL-WRITE: Update .meta file
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    meta = update_meta_route(meta, target_status.value, assignees)
+    write_meta(doc_id, doc_type, meta)
+
+    # DUAL-WRITE: Log routing event to audit trail
+    version = frontmatter.get("version", "0.1")
+    if "REVIEW" in workflow_type:
+        log_route_review(doc_id, doc_type, user, version, assignees, workflow_type)
+    else:
+        log_route_approval(doc_id, doc_type, user, version, assignees, workflow_type)
 
     # Create tasks in assignee inboxes
     for assignee in assignees:
@@ -1232,6 +1289,21 @@ If you should be reviewing this document, ask QA to assign you:
 
     write_document(draft_path, frontmatter, body)
 
+    # DUAL-WRITE: Log REVIEW event to audit trail (comment goes here, not just frontmatter)
+    doc_type = get_doc_type(doc_id)
+    version = frontmatter.get("version", "0.1")
+    log_review(doc_id, doc_type, user, version, outcome, comment)
+
+    # DUAL-WRITE: Update .meta file
+    remaining_assignees = [a.get("user") for a in current_round.get("assignees", []) if a.get("status") == "PENDING"]
+    new_status_value = frontmatter.get("status")
+    meta = read_meta(doc_id, doc_type) or {}
+    meta = update_meta_review_complete(
+        meta, user, remaining_assignees,
+        new_status=new_status_value if all_complete else None
+    )
+    write_meta(doc_id, doc_type, meta)
+
     # Remove task from inbox
     inbox_path = get_inbox_path(user)
     for task_file in inbox_path.glob(f"task-{doc_id}-*.md"):
@@ -1359,6 +1431,34 @@ Check your inbox for assigned tasks: qms --user {user} inbox
         # Not all approvals complete yet
         write_document(draft_path, frontmatter, body)
 
+    # DUAL-WRITE: Log APPROVE event to audit trail
+    doc_type = get_doc_type(doc_id)
+    version = frontmatter.get("version", "0.1")
+    log_approve(doc_id, doc_type, user, version)
+
+    # DUAL-WRITE: Update .meta file
+    remaining_assignees = [a.get("user") for a in current_round.get("assignees", []) if a.get("status") == "PENDING"]
+    meta = read_meta(doc_id, doc_type) or {}
+
+    if all_approved:
+        # Document approved - update status and version, clear owner for EFFECTIVE
+        new_version = frontmatter.get("version")
+        clear_owner = (frontmatter.get("status") == "EFFECTIVE")
+        meta = update_meta_approval(
+            meta,
+            new_status=frontmatter.get("status"),
+            new_version=new_version,
+            clear_owner=clear_owner
+        )
+        # Log EFFECTIVE event if becoming effective
+        if clear_owner:
+            log_effective(doc_id, doc_type, user, current_version, new_version)
+    else:
+        # Still waiting for more approvals
+        meta["pending_assignees"] = remaining_assignees
+
+    write_meta(doc_id, doc_type, meta)
+
     # Remove task from inbox
     inbox_path = get_inbox_path(user)
     for task_file in inbox_path.glob(f"task-{doc_id}-*.md"):
@@ -1455,6 +1555,17 @@ Check document status: qms --user {user} status {doc_id}
 
     write_document(draft_path, frontmatter, body)
 
+    # DUAL-WRITE: Log REJECT event to audit trail (comment goes here)
+    doc_type = get_doc_type(doc_id)
+    version = frontmatter.get("version", "0.1")
+    log_reject(doc_id, doc_type, user, version, comment)
+
+    # DUAL-WRITE: Update .meta file
+    meta = read_meta(doc_id, doc_type) or {}
+    meta = update_meta_approval(meta, new_status=new_status.value if new_status else None)
+    meta["pending_assignees"] = []  # Clear pending assignees on rejection
+    write_meta(doc_id, doc_type, meta)
+
     # Remove all pending approval tasks for this document
     for user_dir in USERS_ROOT.iterdir():
         if user_dir.is_dir():
@@ -1525,6 +1636,16 @@ Workflow for executable documents:
     frontmatter["status"] = Status.IN_EXECUTION.value
     frontmatter["released_date"] = today()
     write_document(draft_path, frontmatter, body)
+
+    # DUAL-WRITE: Log RELEASE event to audit trail
+    doc_type = get_doc_type(doc_id)
+    version = frontmatter.get("version", "0.1")
+    log_release(doc_id, doc_type, user, version)
+
+    # DUAL-WRITE: Update .meta file
+    meta = read_meta(doc_id, doc_type) or {}
+    meta["status"] = Status.IN_EXECUTION.value
+    write_meta(doc_id, doc_type, meta)
 
     print(f"Released: {doc_id}")
     print(f"Status: PRE_APPROVED -> IN_EXECUTION")
@@ -1598,6 +1719,16 @@ when additional execution work is discovered during post-review.
 
     write_document(draft_path, frontmatter, body)
 
+    # DUAL-WRITE: Log REVERT event to audit trail
+    doc_type = get_doc_type(doc_id)
+    version = frontmatter.get("version", "0.1")
+    log_revert(doc_id, doc_type, user, version, reason)
+
+    # DUAL-WRITE: Update .meta file
+    meta = read_meta(doc_id, doc_type) or {}
+    meta["status"] = Status.IN_EXECUTION.value
+    write_meta(doc_id, doc_type, meta)
+
     print(f"Reverted: {doc_id}")
     print(f"Status: POST_REVIEWED -> IN_EXECUTION")
     print(f"Reason: {reason}")
@@ -1666,6 +1797,20 @@ Workflow for executable documents:
     effective_path = get_doc_path(doc_id, draft=False)
     write_document(effective_path, frontmatter, body)
     draft_path.unlink()
+
+    # DUAL-WRITE: Log CLOSE event to audit trail
+    doc_type = get_doc_type(doc_id)
+    version = frontmatter.get("version", "0.1")
+    log_close(doc_id, doc_type, user, version)
+
+    # DUAL-WRITE: Update .meta file (clear ownership on close)
+    meta = read_meta(doc_id, doc_type) or {}
+    meta["status"] = Status.CLOSED.value
+    meta["responsible_user"] = None
+    meta["checked_out"] = False
+    meta["checked_out_date"] = None
+    meta["pending_assignees"] = []
+    write_meta(doc_id, doc_type, meta)
 
     # Remove from workspace
     workspace_path = get_workspace_path(user, doc_id)
