@@ -1,0 +1,13 @@
+{
+  "doc_id": "CR-002",
+  "doc_type": "CR",
+  "version": "2.0",
+  "status": "CLOSED",
+  "executable": true,
+  "responsible_user": "claude",
+  "checked_out": false,
+  "checked_out_date": "2026-01-02",
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}

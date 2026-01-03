@@ -1,0 +1,12 @@
+{"ts": "2026-01-03T16:57:08+00:00", "event": "ROUTE_REVIEW", "user": "system", "version": "2.0", "assignees": ["qa", "lead"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "REVIEW", "user": "qa", "version": "2.0", "outcome": "RECOMMEND", "comment": "QA pre-review complete."}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "REVIEW", "user": "lead", "version": "2.0", "outcome": "RECOMMEND", "comment": "Pre-review complete. Approved."}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "ROUTE_REVIEW", "user": "system", "version": "2.0", "assignees": ["qa", "lead"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "REVIEW", "user": "qa", "version": "2.0", "outcome": "RECOMMEND", "comment": "QA post-review complete. All conditions met."}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "REVIEW", "user": "lead", "version": "2.0", "outcome": "RECOMMEND", "comment": "Post-review complete. Execution verified."}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "ROUTE_APPROVAL", "user": "system", "version": "2.0", "assignees": ["qa", "lead"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "APPROVE", "user": "qa", "version": "2.0"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "APPROVE", "user": "lead", "version": "2.0"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "ROUTE_APPROVAL", "user": "system", "version": "2.0", "assignees": ["qa", "lead"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "APPROVE", "user": "qa", "version": "2.0"}
+{"ts": "2026-01-03T16:57:08+00:00", "event": "APPROVE", "user": "lead", "version": "2.0"}

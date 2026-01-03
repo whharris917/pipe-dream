@@ -1,0 +1,13 @@
+{
+  "doc_id": "SOP-002",
+  "doc_type": "SOP",
+  "version": "1.0",
+  "status": "EFFECTIVE",
+  "executable": false,
+  "responsible_user": "claude",
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}

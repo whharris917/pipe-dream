@@ -24,6 +24,22 @@ from typing import Optional, List, Dict, Any
 from enum import Enum
 import yaml
 
+# Import new metadata management modules
+from qms_meta import (
+    read_meta, write_meta, create_initial_meta,
+    update_meta_checkout, update_meta_checkin, update_meta_route,
+    update_meta_review_complete, update_meta_approval,
+    get_pending_assignees, is_user_responsible, can_user_modify,
+    get_meta_path, ensure_meta_dir
+)
+from qms_audit import (
+    read_audit_log, get_comments, get_latest_version_comments,
+    log_create, log_checkout, log_checkin, log_route_review, log_route_approval,
+    log_review, log_approve, log_reject, log_effective, log_release, log_revert, log_close,
+    format_audit_history, format_comments
+)
+from qms_schema import get_doc_type_from_id, increment_minor_version, increment_major_version
+
 
 # =============================================================================
 # Configuration
@@ -1838,6 +1854,270 @@ def cmd_fix(args) -> int:
 
 
 # =============================================================================
+# New Audit/History Commands
+# =============================================================================
+
+def cmd_history(args):
+    """Show full audit history for a document."""
+    user = get_current_user(args)
+
+    if not verify_user_identity(user):
+        return 1
+
+    doc_id = args.doc_id
+    doc_type = get_doc_type(doc_id)
+
+    # Read audit log
+    events = read_audit_log(doc_id, doc_type)
+
+    if not events:
+        # Check if document exists but has no audit log (pre-migration)
+        draft_path = get_doc_path(doc_id, draft=True)
+        effective_path = get_doc_path(doc_id, draft=False)
+        if draft_path.exists() or effective_path.exists():
+            print(f"Document {doc_id} exists but has no audit log.")
+            print("Run 'qms migrate' to generate audit logs from frontmatter history.")
+        else:
+            print(f"Document not found: {doc_id}")
+        return 1
+
+    print(f"Audit History: {doc_id}")
+    print("=" * 70)
+    print(format_audit_history(events))
+
+    return 0
+
+
+def cmd_comments(args):
+    """Show review/approval comments for a document."""
+    user = get_current_user(args)
+
+    if not verify_user_identity(user):
+        return 1
+
+    doc_id = args.doc_id
+    doc_type = get_doc_type(doc_id)
+
+    # Get document status to enforce visibility rules
+    draft_path = get_doc_path(doc_id, draft=True)
+    effective_path = get_doc_path(doc_id, draft=False)
+
+    if draft_path.exists():
+        frontmatter, _ = read_document(draft_path)
+    elif effective_path.exists():
+        frontmatter, _ = read_document(effective_path)
+    else:
+        print(f"Document not found: {doc_id}")
+        return 1
+
+    status = frontmatter.get("status", "")
+    version = frontmatter.get("version", "")
+
+    # Enforce visibility rule: comments only visible after REVIEWED state
+    review_states = {"IN_REVIEW", "IN_PRE_REVIEW", "IN_POST_REVIEW"}
+    if status in review_states:
+        print(f"Comments are not visible while document is in {status}.")
+        print("Comments become visible after review phase completes.")
+        return 1
+
+    # Get comments
+    if args.version:
+        comments = get_comments(doc_id, doc_type, version=args.version)
+        print(f"Comments for {doc_id} v{args.version}:")
+    else:
+        comments = get_latest_version_comments(doc_id, doc_type, version)
+        print(f"Comments for {doc_id} (current version {version}):")
+
+    print("=" * 70)
+
+    if not comments:
+        print("No comments found.")
+        # Check if there's frontmatter history (pre-migration)
+        if frontmatter.get("review_history") or frontmatter.get("approval_history"):
+            print("\nNote: This document has legacy frontmatter comments.")
+            print("Run 'qms migrate' to convert them to the new audit system.")
+    else:
+        print(format_comments(comments))
+
+    return 0
+
+
+def cmd_migrate(args):
+    """Migrate existing documents to new metadata architecture."""
+    user = get_current_user(args)
+
+    if not verify_user_identity(user):
+        return 1
+
+    # Only lead can run migration
+    if user != "lead":
+        print("Error: Only 'lead' can run document migration.")
+        return 1
+
+    dry_run = args.dry_run if hasattr(args, 'dry_run') else False
+
+    if dry_run:
+        print("DRY RUN - No changes will be made")
+        print("=" * 70)
+
+    # Find all documents
+    migrated = 0
+    skipped = 0
+    errors = 0
+
+    for doc_type, config in DOCUMENT_TYPES.items():
+        doc_path = QMS_ROOT / config["path"]
+        if not doc_path.exists():
+            continue
+
+        # Find all markdown files
+        for md_file in doc_path.rglob("*.md"):
+            # Skip archive
+            if ".archive" in str(md_file):
+                continue
+
+            try:
+                frontmatter, body = read_document(md_file)
+                doc_id = frontmatter.get("doc_id")
+
+                if not doc_id:
+                    continue
+
+                # Check if already migrated (has .meta file)
+                actual_type = get_doc_type(doc_id)
+                meta_path = get_meta_path(doc_id, actual_type)
+
+                if meta_path.exists() and not args.force:
+                    skipped += 1
+                    continue
+
+                print(f"Migrating: {doc_id}")
+
+                if not dry_run:
+                    # Create .meta file
+                    meta = create_initial_meta(
+                        doc_id=doc_id,
+                        doc_type=frontmatter.get("document_type", actual_type),
+                        version=frontmatter.get("version", "0.1"),
+                        status=frontmatter.get("status", "DRAFT"),
+                        executable=frontmatter.get("executable", False),
+                        responsible_user=frontmatter.get("responsible_user")
+                    )
+                    meta["checked_out"] = frontmatter.get("checked_out", False)
+                    meta["checked_out_date"] = frontmatter.get("checked_out_date")
+                    meta["effective_version"] = frontmatter.get("effective_version")
+                    meta["supersedes"] = frontmatter.get("supersedes")
+
+                    write_meta(doc_id, actual_type, meta)
+
+                    # Convert review_history to audit events
+                    for review in frontmatter.get("review_history", []):
+                        review_type = review.get("type", "REVIEW")
+                        version = frontmatter.get("version", "0.1")
+
+                        # Log routing event
+                        assignees = [a.get("user") for a in review.get("assignees", [])]
+                        log_route_review(doc_id, actual_type, "system", version, assignees, review_type)
+
+                        # Log individual reviews
+                        for assignee in review.get("assignees", []):
+                            if assignee.get("status") == "COMPLETE":
+                                outcome = assignee.get("outcome", "RECOMMEND")
+                                comment = assignee.get("comments", "")
+                                log_review(doc_id, actual_type, assignee.get("user"), version, outcome, comment)
+
+                    # Convert approval_history to audit events
+                    for approval in frontmatter.get("approval_history", []):
+                        approval_type = approval.get("type", "APPROVAL")
+                        version = frontmatter.get("version", "0.1")
+
+                        # Log routing event
+                        assignees = [a.get("user") for a in approval.get("assignees", [])]
+                        log_route_approval(doc_id, actual_type, "system", version, assignees, approval_type)
+
+                        # Log individual approvals/rejections
+                        for assignee in approval.get("assignees", []):
+                            if assignee.get("status") == "APPROVED":
+                                log_approve(doc_id, actual_type, assignee.get("user"), version)
+                            elif assignee.get("status") == "REJECTED":
+                                comment = assignee.get("comments", "")
+                                log_reject(doc_id, actual_type, assignee.get("user"), version, comment)
+
+                migrated += 1
+
+            except Exception as e:
+                print(f"  Error: {e}")
+                errors += 1
+
+    print()
+    print("=" * 70)
+    print(f"Migration complete:")
+    print(f"  Migrated: {migrated}")
+    print(f"  Skipped (already migrated): {skipped}")
+    print(f"  Errors: {errors}")
+
+    if dry_run:
+        print("\nThis was a dry run. Run without --dry-run to apply changes.")
+
+    return 0 if errors == 0 else 1
+
+
+def cmd_verify_migration(args):
+    """Verify migration completed successfully."""
+    user = get_current_user(args)
+
+    if not verify_user_identity(user):
+        return 1
+
+    print("Verifying migration...")
+    print("=" * 70)
+
+    issues = []
+
+    for doc_type, config in DOCUMENT_TYPES.items():
+        doc_path = QMS_ROOT / config["path"]
+        if not doc_path.exists():
+            continue
+
+        for md_file in doc_path.rglob("*.md"):
+            if ".archive" in str(md_file):
+                continue
+
+            try:
+                frontmatter, _ = read_document(md_file)
+                doc_id = frontmatter.get("doc_id")
+
+                if not doc_id:
+                    continue
+
+                actual_type = get_doc_type(doc_id)
+                meta_path = get_meta_path(doc_id, actual_type)
+
+                if not meta_path.exists():
+                    issues.append(f"{doc_id}: Missing .meta file")
+                else:
+                    # Verify meta matches frontmatter
+                    meta = read_meta(doc_id, actual_type)
+                    if meta:
+                        if meta.get("version") != frontmatter.get("version"):
+                            issues.append(f"{doc_id}: Version mismatch (meta={meta.get('version')}, fm={frontmatter.get('version')})")
+                        if meta.get("status") != frontmatter.get("status"):
+                            issues.append(f"{doc_id}: Status mismatch (meta={meta.get('status')}, fm={frontmatter.get('status')})")
+
+            except Exception as e:
+                issues.append(f"{md_file}: Error - {e}")
+
+    if issues:
+        print("Issues found:")
+        for issue in issues:
+            print(f"  - {issue}")
+        return 1
+    else:
+        print("All documents verified successfully.")
+        return 0
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -1948,6 +2228,23 @@ Valid users:
     p_fix = subparsers.add_parser("fix", help="Administrative fix for EFFECTIVE documents (QA/lead only)")
     p_fix.add_argument("doc_id", help="Document ID to fix")
 
+    # history (audit trail)
+    p_history = subparsers.add_parser("history", help="Show full audit history for a document")
+    p_history.add_argument("doc_id", help="Document ID")
+
+    # comments
+    p_comments = subparsers.add_parser("comments", help="Show review/approval comments")
+    p_comments.add_argument("doc_id", help="Document ID")
+    p_comments.add_argument("--version", help="Show comments for specific version (e.g., 1.1)")
+
+    # migrate
+    p_migrate = subparsers.add_parser("migrate", help="Migrate documents to new metadata architecture (lead only)")
+    p_migrate.add_argument("--dry-run", action="store_true", help="Show what would be migrated without making changes")
+    p_migrate.add_argument("--force", action="store_true", help="Re-migrate documents that already have .meta files")
+
+    # verify-migration
+    p_verify = subparsers.add_parser("verify-migration", help="Verify migration completed successfully")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -1971,6 +2268,10 @@ Valid users:
         "inbox": cmd_inbox,
         "workspace": cmd_workspace,
         "fix": cmd_fix,
+        "history": cmd_history,
+        "comments": cmd_comments,
+        "migrate": cmd_migrate,
+        "verify-migration": cmd_verify_migration,
     }
 
     return commands[args.command](args)
