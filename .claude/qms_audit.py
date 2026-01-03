@@ -29,6 +29,7 @@ EVENT_EFFECTIVE = "EFFECTIVE"
 EVENT_RELEASE = "RELEASE"
 EVENT_REVERT = "REVERT"
 EVENT_CLOSE = "CLOSE"
+EVENT_RETIRE = "RETIRE"
 EVENT_STATUS_CHANGE = "STATUS_CHANGE"
 
 
@@ -287,6 +288,12 @@ def log_close(doc_id: str, doc_type: str, user: str, version: str) -> bool:
     return append_audit_event(doc_id, doc_type, event)
 
 
+def log_retire(doc_id: str, doc_type: str, user: str, from_version: str, to_version: str) -> bool:
+    """Log document retirement."""
+    event = create_event(EVENT_RETIRE, user, to_version, from_version=from_version)
+    return append_audit_event(doc_id, doc_type, event)
+
+
 def log_status_change(
     doc_id: str,
     doc_type: str,
@@ -379,6 +386,10 @@ def format_audit_history(events: List[Dict[str, Any]]) -> str:
 
         elif event_type == EVENT_CLOSE:
             lines.append(f"[{ts}] CLOSE by {user} - v{version}")
+
+        elif event_type == EVENT_RETIRE:
+            from_ver = event.get("from_version", "?")
+            lines.append(f"[{ts}] RETIRE by {user} - v{from_ver} -> v{version} (RETIRED)")
 
         elif event_type == EVENT_STATUS_CHANGE:
             from_status = event.get("from_status", "?")
