@@ -201,14 +201,15 @@ def update_meta_approval(
     meta["pending_assignees"] = []
 
     if new_version:
-        if meta["version"] != new_version:
-            meta["effective_version"] = meta["version"]
         meta["version"] = new_version
 
     if clear_owner:
+        # Document is becoming effective - clear draft-related fields
         meta["responsible_user"] = None
         meta["checked_out"] = False
         meta["checked_out_date"] = None
+        # effective_version = version when document is effective
+        meta["effective_version"] = meta["version"]
 
     return meta
 
