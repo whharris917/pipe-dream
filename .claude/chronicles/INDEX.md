@@ -35,3 +35,6 @@ All session chronicles, in chronological order.
 - [Session-2026-01-01-016](Session-2026-01-01-016.md)
 - [Session-2026-01-01-017](Session-2026-01-01-017.md)
 - [Session-2026-01-01-018](Session-2026-01-01-018.md)
+- [Session-2026-01-01-019](Session-2026-01-01-019.md)
+- [Session-2026-01-02-001](Session-2026-01-02-001.md)
+- [Session-2026-01-02-002](Session-2026-01-02-002.md)

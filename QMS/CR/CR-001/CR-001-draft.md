@@ -1,0 +1,76 @@
+---
+doc_id: CR-001
+title: QMS Executable Workflow Test
+version: '1.0'
+status: IN_EXECUTION
+document_type: CR
+executable: true
+responsible_user: claude
+checked_out: true
+checked_out_date: '2026-01-02'
+effective_version: null
+supersedes: null
+review_history:
+- round: 1
+  type: PRE_REVIEW
+  date_initiated: '2026-01-02'
+  assignees:
+  - user: qa
+    status: COMPLETE
+    date: '2026-01-02'
+    comments: QA pre-review complete. Approved for pre-approval routing.
+  - user: lead
+    status: COMPLETE
+    date: '2026-01-02'
+    comments: Pre-review complete. Workflow test looks good.
+approval_history:
+- round: 1
+  type: PRE_APPROVAL
+  date_initiated: '2026-01-02'
+  assignees:
+  - user: qa
+    status: APPROVED
+    date: '2026-01-02'
+    comments: null
+  - user: lead
+    status: APPROVED
+    date: '2026-01-02'
+    comments: null
+released_date: '2026-01-02'
+---
+
+# CR-001: QMS Executable Workflow Test
+
+**Version:** 0.1 (DRAFT)
+**Effective Date:** TBD
+**Responsible User:** claude
+
+---
+
+## 1. Purpose
+
+[Describe the purpose of this document]
+
+---
+
+## 2. Scope
+
+[Define what this document covers]
+
+---
+
+## 3. Content
+
+[Main content here]
+
+---
+
+## Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 0.1 | 2026-01-02 | claude | Initial draft |
+
+---
+
+**END OF DOCUMENT**
