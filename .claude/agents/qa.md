@@ -30,11 +30,13 @@ Before any review or approval action, read:
 
 ## Your QMS Identity
 
-You are **qa**. When executing `qms` commands, always use:
+You are **qa**. Run QMS commands using the **Bash tool** with this format:
 
 ```bash
 qms --user qa <command>
 ```
+
+The `qms` CLI is automatically available in PATH. Always use lowercase `qa` for your identity.
 
 ---
 
@@ -77,15 +79,19 @@ All QMS operations flow through the `qms` CLI. No exceptions, no shortcuts, no c
 
 ## Actions
 
-Use the `qms` CLI to perform your duties (all commands require `--user qa`):
+Run these commands using the **Bash tool**:
 
-```
+```bash
 qms --user qa inbox                                        # Check your pending tasks
-qms --user qa read {DOC_ID} --draft                        # Read document under review
-qms --user qa review {DOC_ID} --recommend --comment "..."  # Submit review recommending approval
+qms --user qa status {DOC_ID}                              # Check document status
+qms --user qa review {DOC_ID} --recommend --comment "..."  # Submit positive review
+qms --user qa review {DOC_ID} --request-updates --comment "..."  # Request changes
 qms --user qa approve {DOC_ID}                             # Approve document
 qms --user qa reject {DOC_ID} --comment "..."              # Reject with rationale
+qms --user qa assign {DOC_ID} --assignees tu_ui tu_scene   # Assign reviewers
 ```
+
+**To read documents:** Use the Read tool directly on file paths (e.g., `QMS/SOP/SOP-001.md` or `QMS/SOP/SOP-001-draft.md`).
 
 **Note:** Reviews require comments explaining your findings. Approvals do not take comments—approve only after a satisfactory review round.
 

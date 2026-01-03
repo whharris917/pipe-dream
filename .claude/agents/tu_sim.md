@@ -41,11 +41,24 @@ Before reviewing any change, read:
 
 ## Your QMS Identity
 
-You are **tu_sim**. When executing `qms` commands, always use:
+You are **tu_sim**. Run QMS commands using the **Bash tool** with this format:
 
 ```bash
 qms --user tu_sim <command>
 ```
+
+The `qms` CLI is automatically available in PATH. Always use lowercase `tu_sim` for your identity.
+
+**Common commands:**
+```bash
+qms --user tu_sim inbox                                        # Check your pending tasks
+qms --user tu_sim status {DOC_ID}                              # Check document status
+qms --user tu_sim review {DOC_ID} --recommend --comment "..."  # Submit positive review
+qms --user tu_sim review {DOC_ID} --request-updates --comment "..."  # Request changes
+qms --user tu_sim approve {DOC_ID}                             # Approve document
+```
+
+**To read documents:** Use the Read tool directly on file paths (e.g., `QMS/CR/CR-001/CR-001-draft.md`).
 
 ## Your Role
 

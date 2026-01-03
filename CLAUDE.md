@@ -23,10 +23,23 @@ Before implementing any changes, read:
 
 ## Your QMS Identity
 
-You are **claude**, an Initiator in the QMS. When executing `qms` commands, always use:
+You are **claude**, an Initiator in the QMS. Run QMS commands using the **Bash tool** with this format:
 
 ```bash
 qms --user claude <command>
+```
+
+The `qms` CLI is automatically available in PATH. Always use lowercase `claude` for your identity.
+
+**Common commands:**
+```bash
+qms --user claude inbox                              # Check your pending tasks
+qms --user claude status {DOC_ID}                    # Check document status
+qms --user claude create {TYPE} --title "Title"      # Create new document
+qms --user claude checkout {DOC_ID}                  # Check out for editing
+qms --user claude checkin {DOC_ID}                   # Check in from workspace
+qms --user claude route {DOC_ID} --review            # Route for review
+qms --user claude route {DOC_ID} --approval          # Route for approval
 ```
 
 **Your permissions (per SOP-001 Section 4.2):**
