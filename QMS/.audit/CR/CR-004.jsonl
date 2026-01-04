@@ -1,0 +1,12 @@
+{"ts": "2026-01-04T02:09:14+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Require CR ID in revision summaries for traceability"}
+{"ts": "2026-01-04T02:12:55+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-04T02:14:10+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-04T02:15:16+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "QA Pre-Review: CR-004 is procedurally compliant and technically sound. Frontmatter meets SOP-001 Section 5.1 requirements. CR content satisfies all requirements per SOP-002 Section 6 (description, rationale, testing summary). The proposed CR ID prefix format for revision_summary is clear and will improve traceability. Execution plan follows proper workflow. Minor observation: the specific SOP-002 changes could be more detailed, but this can be verified during post-review. RECOMMEND proceeding to pre-approval."}
+{"ts": "2026-01-04T02:15:34+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-04T02:15:56+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-04T02:16:11+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T02:23:37+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-04T02:24:35+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "QA Post-Review: CR-004 execution verified. SOP-001 v9.0 Section 5.1 now requires CR ID prefix in revision_summary with clear format and exception for v0.1. SOP-002 v2.0 contains new Section 8 (Document Traceability) with matching requirements. All test criteria passed. Execution complete and correct. RECOMMEND post-approval."}
+{"ts": "2026-01-04T02:24:51+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-04T02:25:13+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-04T02:25:27+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
