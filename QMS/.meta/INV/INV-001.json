@@ -1,0 +1,13 @@
+{
+  "doc_id": "INV-001",
+  "doc_type": "INV",
+  "version": "2.0",
+  "status": "CLOSED",
+  "executable": true,
+  "responsible_user": null,
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}
