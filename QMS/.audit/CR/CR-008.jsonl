@@ -1,0 +1,14 @@
+{"ts": "2026-01-04T19:15:24+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "SOP-002 Post-Review Gate - Require Completed Documentation Approvals"}
+{"ts": "2026-01-04T19:18:00+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-04T19:18:01+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-04T19:18:56+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Procedural compliance verified. CR-008 addresses a genuine gap identified in INV-001: SOP-002 lacks explicit post-review eligibility criteria. Proposed Section 7.3 defines: (1) execution completion requirements, (2) documentation approval requirements, (3) QA verification responsibilities. Execution plan is complete with 5 items. Proposed text in Section 5 is well-structured and actionable. No TU reviewers required - this is a procedural SOP update with no technical domain content."}
+{"ts": "2026-01-04T19:19:04+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-04T19:19:12+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-04T19:19:46+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:22:08+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:22:48+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:22:48+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-04T19:23:33+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification per SOP-002 Section 7.3 PASSED. (1) Execution Items: All 5 EIs show COMPLETE with documented evidence - no DEFERRED items. (2) Documentation Status: SOP-002 is EFFECTIVE v4.0 (verified via qms status). (3) Revision Summary: SOP-002 revision_summary correctly references CR-008. This is the first CR verified under the new Section 7.3 requirements that CR-008 itself introduced. All conditions met."}
+{"ts": "2026-01-04T19:23:39+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-04T19:23:44+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-04T19:24:08+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}

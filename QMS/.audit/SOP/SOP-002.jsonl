@@ -16,3 +16,10 @@
 {"ts": "2026-01-04T19:07:20+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "2.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
 {"ts": "2026-01-04T19:07:29+00:00", "event": "APPROVE", "user": "qa", "version": "2.1"}
 {"ts": "2026-01-04T19:07:29+00:00", "event": "EFFECTIVE", "user": "qa", "version": "3.0", "from_version": "2.1"}
+{"ts": "2026-01-04T19:19:54+00:00", "event": "CHECKOUT", "user": "claude", "version": "3.1", "from_version": "3.0"}
+{"ts": "2026-01-04T19:20:49+00:00", "event": "CHECKIN", "user": "claude", "version": "3.1"}
+{"ts": "2026-01-04T19:20:49+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "3.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-04T19:21:29+00:00", "event": "REVIEW", "user": "qa", "version": "3.1", "outcome": "RECOMMEND", "comment": "Procedural compliance verified. SOP-002 v3.1 correctly implements CR-008. Verification: (1) revision_summary references CR-008, (2) Section 7.3 Post-Review Requirements added at lines 142-160, (3) Content matches CR-008 Section 5 proposed text exactly - three eligibility conditions and QA verification responsibilities. Section numbering is correct (7.3 follows 7.2 Execution). Document Traceability appropriately renumbered to Section 8."}
+{"ts": "2026-01-04T19:21:34+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "3.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-04T19:21:40+00:00", "event": "APPROVE", "user": "qa", "version": "3.1"}
+{"ts": "2026-01-04T19:21:40+00:00", "event": "EFFECTIVE", "user": "qa", "version": "4.0", "from_version": "3.1"}

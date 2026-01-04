@@ -1,21 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "*(python:*)",
-      "*(cd:*)",
-      "*(find:*)",
-      "*(claude:*)",
-      "*(mkdir:*)",
-      "*(cat:*)",
-      "*(git add:*)",
-      "*(git commit:*)",
-      "*(git push:*)",
-      "*(source:*)",
-      "*(qms:*)",
-      "*(export:*)",
       "Skill(qms)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(python .claude/qms.py:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
