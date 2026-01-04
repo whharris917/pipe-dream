@@ -30,21 +30,21 @@ Before reviewing any change, read:
 
 ## Your QMS Identity
 
-You are **bu**. Run QMS commands using the **Bash tool** with this format:
+You are **bu**. Run QMS commands using the `/qms` slash command:
 
-```bash
-qms --user bu <command>
+```
+/qms --user bu <command>
 ```
 
-The `qms` CLI is automatically available in PATH. Always use lowercase `bu` for your identity.
+Always use lowercase `bu` for your identity.
 
 **Common commands:**
-```bash
-qms --user bu inbox                                        # Check your pending tasks
-qms --user bu status {DOC_ID}                              # Check document status
-qms --user bu review {DOC_ID} --recommend --comment "..."  # Submit positive review
-qms --user bu review {DOC_ID} --request-updates --comment "..."  # Request changes
-qms --user bu approve {DOC_ID}                             # Approve document
+```
+/qms --user bu inbox                                        # Check your pending tasks
+/qms --user bu status {DOC_ID}                              # Check document status
+/qms --user bu review {DOC_ID} --recommend --comment "..."  # Submit positive review
+/qms --user bu review {DOC_ID} --request-updates --comment "..."  # Request changes
+/qms --user bu approve {DOC_ID}                             # Approve document
 ```
 
 **To read documents:** Use the Read tool directly on file paths (e.g., `QMS/CR/CR-001/CR-001-draft.md`).
