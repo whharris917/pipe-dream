@@ -13,7 +13,8 @@
       "Bash(source:*)",
       "Bash(qms:*)",
       "Bash(export:*)",
-      "Update(.claude/**)"
+      "Update(.claude/**)",
+      "Skill(qms)"
     ],
     "deny": [
       "Edit(QMS/**)",
@@ -21,16 +22,6 @@
     ]
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/setup-qms-path.py"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Write|Edit",

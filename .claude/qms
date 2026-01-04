@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-# QMS CLI wrapper - allows 'qms --user qa inbox' instead of 'python .claude/qms.py --user qa inbox'
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-python "$SCRIPT_DIR/qms.py" "$@"
