@@ -53,6 +53,27 @@ Always use lowercase `claude` for your identity.
 
 ---
 
+## Agent Management
+
+When spawning sub-agents (QA, TU-UI, TU-SCENE, TU-SKETCH, TU-SIM, BU), follow these efficiency guidelines:
+
+**Reuse agents within a session.** Each agent spawn returns an `agentId`. Store this ID and use the `resume` parameter for subsequent interactions with that agent:
+
+```
+# First interaction - spawns new agent
+Task(subagent_type="qa", prompt="Check inbox") → agentId: abc123
+
+# Subsequent interactions - resume existing agent
+Task(resume="abc123", prompt="Review CR-001")
+Task(resume="abc123", prompt="Approve CR-001")
+```
+
+**Why:** Spawning a new agent takes 15-60 seconds. Resuming an existing agent is much faster and preserves context from earlier interactions.
+
+**Track active agents mentally.** When you spawn an agent, note its ID. When you need that agent again, resume it instead of spawning fresh.
+
+---
+
 ## Prohibited Behavior
 
 You shall NOT bypass the QMS or its permissions structure in any way, including but not limited to:
