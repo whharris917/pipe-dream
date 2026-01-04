@@ -133,10 +133,23 @@ def update_meta_checkin(meta: Dict[str, Any]) -> Dict[str, Any]:
     Update metadata for checkin operation.
 
     Note: responsible_user persists until approval (per lifecycle rules).
+
+    When checking in from a reviewed state (REVIEWED, PRE_REVIEWED, POST_REVIEWED),
+    the status reverts to DRAFT since the new version hasn't been reviewed yet.
     """
     meta = meta.copy()
     meta["checked_out"] = False
     meta["checked_out_date"] = None
+
+    # Revert reviewed states to DRAFT - new version needs review
+    current_status = meta.get("status", "DRAFT")
+    if current_status in ("REVIEWED", "PRE_REVIEWED", "POST_REVIEWED"):
+        meta["status"] = "DRAFT"
+        # Clear review-related fields since we're starting fresh
+        meta["pending_reviewers"] = []
+        meta["completed_reviewers"] = []
+        meta["review_outcomes"] = {}
+
     return meta
 
 
