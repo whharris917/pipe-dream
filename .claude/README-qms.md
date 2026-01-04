@@ -58,13 +58,15 @@ qms --user claude route SOP-001 --approval    # Route for approval (after REVIEW
 **Executable documents (CR, INV, CAPA, TP, ER):**
 
 ```bash
-qms --user claude route CR-001 --pre-review      # Before execution
-qms --user claude route CR-001 --pre-approval    # After PRE_REVIEWED
-qms --user claude release CR-001                 # Start execution
-qms --user claude route CR-001 --post-review     # After execution
-qms --user claude route CR-001 --post-approval   # After POST_REVIEWED
-qms --user claude close CR-001                   # Finalize
+qms --user claude route CR-001 --review      # Routes to pre-review (from DRAFT)
+qms --user claude route CR-001 --approval    # Routes to pre-approval (from PRE_REVIEWED)
+qms --user claude release CR-001             # Start execution
+qms --user claude route CR-001 --review      # Routes to post-review (from IN_EXECUTION)
+qms --user claude route CR-001 --approval    # Routes to post-approval (from POST_REVIEWED)
+qms --user claude close CR-001               # Finalize
 ```
+
+The CLI automatically infers pre/post phase from the document's current status.
 
 ### Review & Approval
 
@@ -200,7 +202,7 @@ qms --user qa approve SOP-003
 # Initiator creates CR
 qms --user claude create CR --title "Add feature X"
 qms --user claude checkin CR-001
-qms --user claude route CR-001 --pre-review
+qms --user claude route CR-001 --review       # -> IN_PRE_REVIEW (from DRAFT)
 
 # QA assigns technical reviewer and reviews
 qms --user qa assign CR-001 --assignees tu_ui
@@ -210,7 +212,7 @@ qms --user qa review CR-001 --recommend --comment "Approach is sound."
 qms --user tu_ui review CR-001 --recommend --comment "UI changes approved."
 
 # Route for pre-approval
-qms --user claude route CR-001 --pre-approval
+qms --user claude route CR-001 --approval     # -> IN_PRE_APPROVAL (from PRE_REVIEWED)
 
 # Approvals
 qms --user qa approve CR-001
@@ -219,9 +221,10 @@ qms --user tu_ui approve CR-001
 # Execute the change
 qms --user claude release CR-001
 # ... implement the change ...
-qms --user claude route CR-001 --post-review
+qms --user claude route CR-001 --review       # -> IN_POST_REVIEW (from IN_EXECUTION)
 
 # ... post-review and post-approval ...
+qms --user claude route CR-001 --approval     # -> IN_POST_APPROVAL (from POST_REVIEWED)
 qms --user claude close CR-001
 ```
 
