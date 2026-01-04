@@ -91,4 +91,4 @@ All QMS operations flow through the `qms` CLI. No exceptions, no shortcuts, no c
 
 ---
 
-*Effective Date: 2026-01-01*
+*Effective Date: 2026-01-02*

@@ -175,7 +175,7 @@ PERMISSIONS = {
     "create":    {"groups": ["initiators"]},
     "checkout":  {"groups": ["initiators"]},
     "checkin":   {"groups": ["initiators"], "owner_only": True},
-    "route":     {"groups": ["initiators"]},
+    "route":     {"groups": ["initiators", "qa"]},
     "assign":    {"groups": ["qa"]},
     "review":    {"groups": ["initiators", "qa", "reviewers"], "assigned_only": True},
     "approve":   {"groups": ["qa", "reviewers"], "assigned_only": True},
@@ -580,14 +580,8 @@ def cmd_create(args):
         # revision_summary added when document is revised
     }
 
-    # Create body template
+    # Create body template (no manual metadata per SOP-001 Section 5.4)
     body = f"""# {doc_id}: {args.title or '[Title]'}
-
-**Version:** 0.1 (DRAFT)
-**Effective Date:** TBD
-**Responsible User:** {user}
-
----
 
 ## 1. Purpose
 
@@ -604,14 +598,6 @@ def cmd_create(args):
 ## 3. Content
 
 [Main content here]
-
----
-
-## Revision History
-
-| Version | Date | Author | Description |
-|---------|------|--------|-------------|
-| 0.1 | {today()} | {user} | Initial draft |
 
 ---
 
@@ -725,6 +711,12 @@ def cmd_checkout(args):
         current_version = meta.get("version", "1.0")
         major = int(str(current_version).split(".")[0])
         new_version = f"{major}.1"
+
+        # Archive effective version before creating draft (per CR-005)
+        archive_path = get_archive_path(doc_id, current_version)
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(effective_path, archive_path)
+        print(f"Archived: v{current_version}")
 
         # Write draft with minimal frontmatter
         write_document_minimal(draft_path, frontmatter, body)

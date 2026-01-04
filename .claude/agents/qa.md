@@ -53,7 +53,7 @@ Always use lowercase `qa` for your identity.
 
 When reviewing documents, verify:
 
-- [ ] Frontmatter is complete and accurate per SOP-001 Section 12
+- [ ] Frontmatter is complete and accurate per SOP-001 Section 5.1
 - [ ] Document follows the correct workflow state machine
 - [ ] Review round completed before approval was initiated
 - [ ] Content is technically accurate and complete

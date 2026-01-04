@@ -139,7 +139,7 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 
 ## 3. The Command Architecture & The Air Gap
 
-To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model. See **SOP-002** for the complete specification.
+To ensure stability, replayability, and reliable undo/redo, the application enforces a strict **Air Gap** between the UI and the Data Model.
 
 ### 3.1 The Air Gap Principle
 
