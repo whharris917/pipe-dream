@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Environment Verified
 """
 QMS - Quality Management System CLI
 

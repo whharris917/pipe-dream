@@ -1,0 +1,14 @@
+{"ts": "2026-01-04T18:56:57+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "SOP-001 Permission Matrix Update - Grant QA Route Permission"}
+{"ts": "2026-01-04T18:59:06+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-04T18:59:13+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-04T19:00:24+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Procedural compliance verified. CR-006 accurately identifies that SOP-001 Section 4.2 lacks 'route' permission for QA. The permission matrix at lines 61-68 confirms QA has: assign, review, approve, reject, fix - but NOT route. This CR correctly proposes adding 'route' to align the SOP with CLI implementation from CR-005. Scope is appropriately limited. No TU reviewers required - this is a straightforward SOP text update."}
+{"ts": "2026-01-04T19:00:34+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-04T19:00:44+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-04T19:01:21+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:03:34+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:04:21+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:04:29+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-04T19:05:22+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. EI table shows all 3 items COMPLETE with evidence. SOP-001 v9.1 verified: (1) revision_summary correctly references CR-006, (2) Section 4.2 Permission Matrix line 63 now shows 'route, release, close | Yes | Yes | -' granting QA the route permission. Change executed exactly as documented. Conflict with CLI implementation resolved."}
+{"ts": "2026-01-04T19:05:32+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-04T19:05:42+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-04T19:06:28+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}

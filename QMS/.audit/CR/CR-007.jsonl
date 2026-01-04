@@ -1,0 +1,14 @@
+{"ts": "2026-01-04T18:56:59+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "SOP-002 ID Reuse Policy Clarification"}
+{"ts": "2026-01-04T18:59:07+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-04T18:59:13+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-04T19:00:26+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Procedural compliance verified. CR-007 accurately identifies a genuine conflict: SOP-002 Section 5 states IDs 'are never reused' (line 82), while SOP-001 Section 9.7.1 states canceled document IDs 'are freed for reuse' (line 478). The proposed clarification - distinguishing between completed documents (no reuse) and canceled never-effective documents (reuse permitted) - is logically sound and resolves the conflict. Scope is appropriately limited. No TU reviewers required - this is a straightforward SOP text clarification."}
+{"ts": "2026-01-04T19:00:35+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-04T19:00:45+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-04T19:01:21+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:03:34+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:04:21+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-04T19:04:30+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-04T19:05:24+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. EI table shows all 3 items COMPLETE with evidence. SOP-002 v2.1 verified: (1) revision_summary correctly references CR-007, (2) Section 5 updated with ID Reuse Policy clarification distinguishing completed documents (never reused) from canceled documents (freed for reuse per SOP-001 Section 9.7.1). Conflict between SOP-001 and SOP-002 resolved."}
+{"ts": "2026-01-04T19:05:33+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-04T19:05:43+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-04T19:06:28+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}

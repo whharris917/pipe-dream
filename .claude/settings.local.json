@@ -1,26 +1,27 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(python:*)",
-      "Bash(cd:*)",
-      "Bash(find:*)",
-      "Bash(claude:*)",
-      "Bash(mkdir:*)",
-      "Bash(cat:*)",
+      "*(python:*)",
+      "*(cd:*)",
+      "*(find:*)",
+      "*(claude:*)",
+      "*(mkdir:*)",
+      "*(cat:*)",
+      "*(git add:*)",
+      "*(git commit:*)",
+      "*(git push:*)",
+      "*(source:*)",
+      "*(qms:*)",
+      "*(export:*)",
+      "Skill(qms)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(source:*)",
-      "Bash(qms:*)",
-      "Bash(export:*)",
-      "Update(.claude/**)",
-      "Skill(qms)"
+      "Bash(git commit:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
       "Write(QMS/**)"
-    ]
+    ],
+    "defaultMode": "acceptEdits"
   },
   "hooks": {
     "PreToolUse": [
