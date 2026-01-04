@@ -307,7 +307,7 @@ Valid users by group:
   QA:         {', '.join(sorted(USER_GROUPS['qa']))}
   Reviewers:  {', '.join(sorted(USER_GROUPS['reviewers']))}
 
-Set your identity with: export QMS_USER=<username>
+Specify your identity with: qms --user <username> <command>
 """)
         return False
     return True
