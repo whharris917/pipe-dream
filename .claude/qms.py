@@ -877,61 +877,51 @@ Then route for review:
     current_status = Status(meta.get("status", "DRAFT"))
     is_executable = meta.get("executable", False)
 
-    # Determine target status based on flags
+    # Determine target status based on flags (pre/post inferred from current status for executable docs)
     if args.review:
         if is_executable:
-            print("Error: Use --pre-review or --post-review for executable documents")
-            return 1
-        target_status = Status.IN_REVIEW
-        workflow_type = "REVIEW"
-    elif args.pre_review:
-        if not is_executable:
-            print("Error: --pre-review is only for executable documents")
-            return 1
-        target_status = Status.IN_PRE_REVIEW
-        workflow_type = "PRE_REVIEW"
-    elif args.post_review:
-        if not is_executable:
-            print("Error: --post-review is only for executable documents")
-            return 1
-        target_status = Status.IN_POST_REVIEW
-        workflow_type = "POST_REVIEW"
+            # Infer pre vs post from current status
+            if current_status == Status.DRAFT:
+                target_status = Status.IN_PRE_REVIEW
+                workflow_type = "PRE_REVIEW"
+            elif current_status == Status.IN_EXECUTION:
+                target_status = Status.IN_POST_REVIEW
+                workflow_type = "POST_REVIEW"
+            else:
+                print(f"Error: Cannot route for review from {current_status.value}")
+                print("  Review routing is valid from: DRAFT (pre-review), IN_EXECUTION (post-review)")
+                return 1
+        else:
+            target_status = Status.IN_REVIEW
+            workflow_type = "REVIEW"
     elif args.approval:
         if is_executable:
-            print("Error: Use --pre-approval or --post-approval for executable documents")
-            return 1
-        if current_status != Status.REVIEWED:
-            print(f"Error: Must be REVIEWED before approval (currently {current_status.value})")
-            return 1
-        target_status = Status.IN_APPROVAL
-        workflow_type = "APPROVAL"
-    elif args.pre_approval:
-        if not is_executable:
-            print("Error: --pre-approval is only for executable documents")
-            return 1
-        if current_status != Status.PRE_REVIEWED:
-            print(f"Error: Must be PRE_REVIEWED before pre-approval (currently {current_status.value})")
-            return 1
-        target_status = Status.IN_PRE_APPROVAL
-        workflow_type = "PRE_APPROVAL"
-    elif args.post_approval:
-        if not is_executable:
-            print("Error: --post-approval is only for executable documents")
-            return 1
-        if current_status != Status.POST_REVIEWED:
-            print(f"Error: Must be POST_REVIEWED before post-approval (currently {current_status.value})")
-            return 1
-        target_status = Status.IN_POST_APPROVAL
-        workflow_type = "POST_APPROVAL"
+            # Infer pre vs post from current status
+            if current_status == Status.PRE_REVIEWED:
+                target_status = Status.IN_PRE_APPROVAL
+                workflow_type = "PRE_APPROVAL"
+            elif current_status == Status.POST_REVIEWED:
+                target_status = Status.IN_POST_APPROVAL
+                workflow_type = "POST_APPROVAL"
+            else:
+                print(f"Error: Cannot route for approval from {current_status.value}")
+                print("  Approval routing is valid from: PRE_REVIEWED (pre-approval), POST_REVIEWED (post-approval)")
+                return 1
+        else:
+            if current_status != Status.REVIEWED:
+                print(f"Error: Must be REVIEWED before approval (currently {current_status.value})")
+                return 1
+            target_status = Status.IN_APPROVAL
+            workflow_type = "APPROVAL"
     else:
-        print("Error: Must specify workflow type (--review, --approval, etc.)")
+        print("Error: Must specify workflow type (--review or --approval)")
         return 1
 
     # Handle --retire flag
     if getattr(args, 'retire', False):
         # --retire only applies to final approval routing
         if workflow_type not in ("APPROVAL", "POST_APPROVAL"):
-            print("Error: --retire only applies to --approval or --post-approval routing")
+            print("Error: --retire only applies to --approval routing (for final approval phase)")
             return 1
         # Set retiring flag in meta (will be checked during approval)
         meta["retiring"] = True
@@ -2332,12 +2322,8 @@ Valid users:
     # route
     p_route = subparsers.add_parser("route", help="Route document for review/approval")
     p_route.add_argument("doc_id", help="Document ID")
-    p_route.add_argument("--review", action="store_true", help="Route for review")
-    p_route.add_argument("--pre-review", action="store_true", help="Route for pre-review")
-    p_route.add_argument("--post-review", action="store_true", help="Route for post-review")
-    p_route.add_argument("--approval", action="store_true", help="Route for approval")
-    p_route.add_argument("--pre-approval", action="store_true", help="Route for pre-approval")
-    p_route.add_argument("--post-approval", action="store_true", help="Route for post-approval")
+    p_route.add_argument("--review", action="store_true", help="Route for review (pre/post inferred from status)")
+    p_route.add_argument("--approval", action="store_true", help="Route for approval (pre/post inferred from status)")
     p_route.add_argument("--assign", nargs="+", help="Users to assign (optional, defaults to QA)")
     p_route.add_argument("--retire", action="store_true", help="Retirement approval (leads to RETIRED instead of EFFECTIVE/CLOSED)")
 
