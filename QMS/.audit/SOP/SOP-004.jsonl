@@ -1,0 +1,7 @@
+{"ts": "2026-01-04T23:59:10+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Document Execution"}
+{"ts": "2026-01-05T00:00:24+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-05T00:00:31+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-05T00:01:50+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "SOP-004 review complete. Document aligns with CR-009 Section 6 approved outline. All required sections present: Purpose, Scope, Definitions, Executable Block structure, Document States, Scope Integrity, Progress Tracking, Evidence Requirements, Exception Reports. Critical INV-001 lesson explicitly stated in Section 6.2: 'Different execution mechanism is NOT a scope exclusion.' Section 10 correctly references SOP-002 Section 7.3 post-review requirements. Terminology consistent with SOP-001 and SOP-002. Cross-references to SOP-001, SOP-002, and SOP-003 present. No procedural issues identified."}
+{"ts": "2026-01-05T00:02:06+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-05T00:02:19+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-05T00:02:19+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}

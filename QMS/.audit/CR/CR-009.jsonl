@@ -1,0 +1,14 @@
+{"ts": "2026-01-04T22:18:40+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Create SOP-003 (Deviation Management) and SOP-004 (Document Execution)"}
+{"ts": "2026-01-04T23:28:09+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-04T23:28:14+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-04T23:30:27+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review complete. CR-009 is well-structured and comprehensive. The proposed SOPs address gaps identified by INV-001, particularly: (1) Scope integrity requirements in SOP-004 Section 6.6 directly address the root cause of CR-005 scope deviation; (2) CAPA tracking within INVs provides formal structure for corrective actions; (3) Evidence requirements formalize documentation expectations. Alignment with SOP-001 and SOP-002 is correct. No TU reviewers required - this is procedural documentation governing QMS operations, not technical domain changes. Minor observation for implementation: ensure SOP-003 Section 5.7 clarifies that CAPA child-CR verification occurs during INV post-review by QA."}
+{"ts": "2026-01-04T23:52:40+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-04T23:54:38+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-04T23:56:46+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T00:02:48+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T00:03:21+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T00:03:26+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-05T00:04:09+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review complete per SOP-002 Section 7.3. Verified: (1) All execution items EI-1 through EI-7 show status COMPLETE with evidence documented; (2) SOP-003 v1.0 is EFFECTIVE; (3) SOP-004 v1.0 is EFFECTIVE. Both SOPs align with CR-009 approved outlines and properly cross-reference each other and SOP-001/SOP-002. INV-001 lessons learned are explicitly incorporated in SOP-004 Section 6.6. All post-review requirements satisfied."}
+{"ts": "2026-01-05T00:04:17+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-05T00:04:22+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-05T00:04:54+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}

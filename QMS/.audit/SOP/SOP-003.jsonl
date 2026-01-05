@@ -1,0 +1,7 @@
+{"ts": "2026-01-04T23:57:01+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Deviation Management"}
+{"ts": "2026-01-04T23:58:52+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-04T23:59:09+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-05T00:01:48+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "SOP-003 review complete. Document aligns with CR-009 Section 5 approved outline. All required sections present: Purpose, Scope, Definitions, When to Create INV (with guidance, QA oversight, judgment role), Investigation Structure (Background, Evidence, Findings, RCA, CAPAs), CAPAs as Execution Items, and Closure Criteria. Section 6.3 explicitly states QA verification of CAPA child-CR completion occurs during INV post-review. Terminology consistent with SOP-001. Cross-references to SOP-001, SOP-002, and SOP-004 present. No procedural issues identified."}
+{"ts": "2026-01-05T00:02:06+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-05T00:02:19+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-05T00:02:19+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}
