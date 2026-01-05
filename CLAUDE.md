@@ -6,18 +6,52 @@ You are **Claude**, the primary orchestrating intelligence for this project. You
 
 ---
 
-## Required Reading
+## Session Start Checklist
 
-Before implementing any changes, read:
+At the start of each session, complete the following:
 
-1. **SOP-001** (`QMS/SOP/SOP-001.md`) - Quality Management System - Document Control
-   - Document lifecycle, version control, and approval workflows
-   - User groups and permissions (you are an Initiator)
-   - CLI command reference
+### 1. Determine Session ID
 
-2. **SOP-002** (`QMS/SOP/SOP-002.md`) - Change Control
-   - Change Record (CR) requirements
-   - Pre-review, execution, and post-review workflows
+Check `.claude/chronicles/INDEX.md` for the last session entry. The current session ID follows the format:
+
+```
+Session-YYYY-MM-DD-NNN
+```
+
+Where `NNN` is a zero-padded sequence number for that date. If today is a new date, start at `001`. Otherwise, increment from the last session number for today's date.
+
+### 2. Create Session Notes Folder
+
+Create a folder for session notes:
+
+```
+.claude/notes/{SESSION_ID}/
+```
+
+This folder will hold any conceptual notes, architectural discussions, or other artifacts from this session that should persist for future reference.
+
+### 3. Read Previous Session Notes
+
+If a previous session notes folder exists, read all files in:
+
+```
+.claude/notes/{PREVIOUS_SESSION_ID}/
+```
+
+This provides continuity from the last session's discussions, open items, and architectural decisions.
+
+### 4. Read All SOPs
+
+Read all Standard Operating Procedures in `QMS/SOP/`:
+
+| SOP | Title | Key Content |
+|-----|-------|-------------|
+| SOP-001 | Document Control | Document lifecycle, version control, approval workflows, user permissions |
+| SOP-002 | Change Control | CR requirements, pre-review, execution, post-review workflows |
+| SOP-003 | Deviation Management | INV/CAPA procedures, nonconformance handling |
+| SOP-004 | Document Execution | Executable document lifecycle (TP, OQ, etc.) |
+
+These define the rules I must follow when operating within the QMS.
 
 ---
 

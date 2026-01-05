@@ -5,26 +5,19 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "Bash(python .claude/qms.py:*)"
+      "Bash(python .claude/qms.py:*)",
+      "Bash(dir:*)",
+      "Bash(ls:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
-      "Write(QMS/**)"
+      "Write(QMS/**)",
+      "Edit(**/QMS/**)",
+      "Write(**/QMS/**)"
     ],
     "defaultMode": "acceptEdits"
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/qms-write-guard.py"
-          }
-        ]
-      }
-    ],
     "SessionEnd": [
       {
         "hooks": [
