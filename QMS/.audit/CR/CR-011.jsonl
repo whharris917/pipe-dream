@@ -1,0 +1,14 @@
+{"ts": "2026-01-05T21:47:15+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "CAPA-001: Add revision_summary to SOP-005"}
+{"ts": "2026-01-05T21:48:38+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-05T21:48:38+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-05T21:49:30+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review complete. CR-011 meets all criteria: (1) Purpose clearly states corrective action for INV-002 nonconformance. (2) Scope is precise - SOP-005 frontmatter only. (3) Rationale correctly references INV-002, violated requirements (SOP-001 Section 5.2, SOP-002 Section 8), and authorizing CR (CR-010). (4) Execution plan is complete with 5 items. (5) Proposed change is explicit and correct - adds revision_summary referencing CR-010. Traceability chain verified. Recommend pre-approval."}
+{"ts": "2026-01-05T21:49:49+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-05T21:50:11+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-05T21:50:32+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T21:52:44+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T21:53:25+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T21:53:25+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-05T21:54:14+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review complete. All requirements per SOP-002 Section 7.3 verified: (1) All 5 execution items show status COMPLETE with evidence. (2) SOP-005 is EFFECTIVE at v2.0. (3) Direct verification of SOP-005 frontmatter confirms revision_summary field present: 'CR-010: Initial creation of Code Governance SOP'. Testing summary requirements verified. CAPA-001 from INV-002 successfully executed. Recommend post-approval."}
+{"ts": "2026-01-05T21:54:34+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-05T21:54:57+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-05T21:55:13+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
