@@ -1,0 +1,7 @@
+{"ts": "2026-01-05T21:23:40+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Code Governance"}
+{"ts": "2026-01-05T21:27:59+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-05T21:28:46+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-05T21:35:04+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Review complete. SOP-005 meets all review criteria: (1) Purpose and scope are clear and well-defined. (2) Definitions are complete and accurate - six key terms defined. (3) Procedures are actionable and unambiguous - clear workflows for Execution Branch and Genesis Sandbox models, adoption process, versioning, and traceability. (4) Three ASCII diagrams are clear and helpful. (5) Document follows SOP format conventions. Content accurately reflects CR-010 proposed content. Recommend approval."}
+{"ts": "2026-01-05T21:35:17+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-05T21:35:41+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-05T21:35:41+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}

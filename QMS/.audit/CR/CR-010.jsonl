@@ -1,0 +1,14 @@
+{"ts": "2026-01-05T20:54:12+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Create SOP-005: Code Governance"}
+{"ts": "2026-01-05T21:18:46+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-05T21:19:03+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-05T21:21:52+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review complete. CR-010 meets all pre-review criteria per SOP-002: (1) Purpose is clear - establish SOP-005 for code governance. (2) Scope is well-defined - single new SOP document. (3) Rationale identifies specific gaps in current QMS coverage for code governance. (4) Execution plan is complete with 5 sequential execution items. (5) Proposed SOP-005 content is comprehensive, covering separation of concerns, development models (Execution Branch and Genesis Sandbox), traceability, and version control. Recommend proceeding to pre-approval."}
+{"ts": "2026-01-05T21:22:06+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-05T21:23:01+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-05T21:23:17+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T21:36:01+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T21:37:24+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-05T21:37:24+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-05T21:38:15+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review complete. All requirements per SOP-002 Section 7.3 verified: (1) All 5 execution items show status COMPLETE. (2) SOP-005 created under this CR is EFFECTIVE at v1.0. (3) Completion evidence is recorded for each execution item. Testing summary requirements verified: SOP-005 created, all 11 sections present, diagrams clear, procedures actionable. Recommend post-approval."}
+{"ts": "2026-01-05T21:38:29+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-05T21:38:55+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-05T21:39:08+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
