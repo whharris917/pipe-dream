@@ -59,3 +59,4 @@ All session chronicles, in chronological order.
 - [Session-2026-01-05-001](Session-2026-01-05-001.md)
 - [Session-2026-01-05-002](Session-2026-01-05-002.md) *(recovered)*
 - [Session-2026-01-05-003](Session-2026-01-05-003.md)
+- [Session-2026-01-05-004](Session-2026-01-05-004.md)

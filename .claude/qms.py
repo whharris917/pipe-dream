@@ -37,7 +37,7 @@ from qms_audit import (
     read_audit_log, get_comments, get_latest_version_comments,
     log_create, log_checkout, log_checkin, log_route_review, log_route_approval,
     log_review, log_approve, log_reject, log_effective, log_release, log_revert, log_close,
-    log_retire, format_audit_history, format_comments
+    log_retire, log_status_change, format_audit_history, format_comments
 )
 from qms_schema import get_doc_type_from_id, increment_minor_version, increment_major_version
 
@@ -529,6 +529,203 @@ def today() -> str:
 
 
 # =============================================================================
+# Review Task Content Generation (CR-012: QA Review Safeguards)
+# =============================================================================
+
+def generate_review_task_content(
+    doc_id: str,
+    version: str,
+    workflow_type: str,
+    assignee: str,
+    assigned_by: str,
+    task_id: str
+) -> str:
+    """Generate enhanced review task content with mandatory checklist."""
+    return f"""---
+task_id: {task_id}
+task_type: REVIEW
+workflow_type: {workflow_type}
+doc_id: {doc_id}
+assigned_by: {assigned_by}
+assigned_date: {today()}
+version: {version}
+---
+
+# REVIEW REQUEST: {doc_id}
+
+**Workflow:** {workflow_type}
+**Version:** {version}
+**Assigned By:** {assigned_by}
+**Date:** {today()}
+
+---
+
+## MANDATORY VERIFICATION CHECKLIST
+
+**YOU MUST verify each item below. ANY failure = REJECT.**
+
+Before submitting your review, complete this checklist:
+
+### Frontmatter Verification
+
+| Item | Status | Evidence (quote actual value) |
+|------|--------|-------------------------------|
+| `title:` field present and non-empty | PASS / FAIL | |
+| `revision_summary:` present (required for v1.0+) | PASS / FAIL / N/A | |
+| `revision_summary:` begins with CR ID (e.g., "CR-XXX:") | PASS / FAIL / N/A | |
+
+### Document Structure
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Document follows type-specific template | PASS / FAIL | |
+| All required sections present | PASS / FAIL | |
+| Section numbering sequential and correct | PASS / FAIL | |
+
+### Content Integrity
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| No placeholder text (TBD, TODO, XXX, FIXME) | PASS / FAIL | |
+| No obvious factual errors or contradictions | PASS / FAIL | |
+| References to other documents are valid | PASS / FAIL | |
+| No typos or grammatical errors | PASS / FAIL | |
+| Formatting consistent throughout | PASS / FAIL | |
+
+---
+
+## STRUCTURED REVIEW RESPONSE FORMAT
+
+Your review comment MUST follow this format:
+
+```
+## {assignee} Review: {doc_id}
+
+### Checklist Verification
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Frontmatter: title present | PASS/FAIL | "[quoted value]" or "MISSING" |
+| Frontmatter: revision_summary present | PASS/FAIL/N/A | "[quoted value]" or "N/A for v0.x" |
+| Frontmatter: CR ID in revision_summary | PASS/FAIL/N/A | "[CR-XXX]" or "N/A" |
+| Template compliance | PASS/FAIL | [note deviation if any] |
+| Required sections present | PASS/FAIL | [list sections] |
+| No placeholder content | PASS/FAIL | "None found" or "[quoted]" |
+| No typos/errors | PASS/FAIL | "None found" or "[list]" |
+| Formatting consistent | PASS/FAIL | [note inconsistency if any] |
+
+### Findings
+
+[List ALL findings. Every finding is a deficiency.]
+
+1. [Finding or "No findings"]
+
+### Recommendation
+
+[RECOMMEND / REQUEST UPDATES] - [Brief rationale]
+```
+
+---
+
+## CRITICAL REMINDERS
+
+- **Compliance is BINARY**: Document is either compliant or non-compliant
+- **ONE FAILED ITEM = REJECT**: No exceptions, no "minor issues"
+- **VERIFY WITH EVIDENCE**: Quote actual values, do not assume
+- **REJECTION IS CORRECT**: A rejected document prevents nonconformance
+
+**There is no "approve with comments." There is no severity classification.**
+**If ANY deficiency exists, the only valid outcome is REQUEST UPDATES.**
+
+---
+
+## Commands
+
+Submit your review:
+
+**If ALL items PASS:**
+```
+/qms --user {assignee} review {doc_id} --recommend --comment "[your structured review]"
+```
+
+**If ANY item FAILS:**
+```
+/qms --user {assignee} review {doc_id} --request-updates --comment "[your structured review with findings]"
+```
+"""
+
+
+def generate_approval_task_content(
+    doc_id: str,
+    version: str,
+    workflow_type: str,
+    assignee: str,
+    assigned_by: str,
+    task_id: str
+) -> str:
+    """Generate enhanced approval task content with final verification."""
+    return f"""---
+task_id: {task_id}
+task_type: APPROVAL
+workflow_type: {workflow_type}
+doc_id: {doc_id}
+assigned_by: {assigned_by}
+assigned_date: {today()}
+version: {version}
+---
+
+# APPROVAL REQUEST: {doc_id}
+
+**Workflow:** {workflow_type}
+**Version:** {version}
+**Assigned By:** {assigned_by}
+**Date:** {today()}
+
+---
+
+## FINAL VERIFICATION - YOU ARE THE LAST LINE OF DEFENSE
+
+Before approving, you MUST confirm:
+
+### Pre-Approval Checklist
+
+| Item | Verified |
+|------|----------|
+| Frontmatter complete (title, revision_summary with CR ID if v1.0+) | YES / NO |
+| All review findings from previous cycle addressed | YES / NO |
+| No new deficiencies introduced since review | YES / NO |
+| Document is 100% compliant with all requirements | YES / NO |
+
+**If ANY item is NO: REJECT**
+
+---
+
+## CRITICAL REMINDERS
+
+- An incorrectly approved document creates **nonconformance**
+- A rejected document creates a **correction cycle** (much lower cost)
+- **Rejection is always the safer choice**
+- You are the final gatekeeper - if you miss something, it becomes effective
+
+**IF ANY DOUBT EXISTS: REJECT**
+
+---
+
+## Commands
+
+**Approve (only if 100% compliant):**
+```
+/qms --user {assignee} approve {doc_id}
+```
+
+**Reject (if any deficiency):**
+```
+/qms --user {assignee} reject {doc_id} --comment "[reason for rejection]"
+```
+"""
+
+
+# =============================================================================
 # Commands
 # =============================================================================
 
@@ -869,37 +1066,64 @@ Then route for review:
 
     current_status = Status(meta.get("status", "DRAFT"))
     is_executable = meta.get("executable", False)
+    # CAPA-4: Use execution_phase to determine workflow path (not just current status)
+    # This ensures documents that were checked out and back in after release
+    # continue in the post-release workflow
+    execution_phase = meta.get("execution_phase")
 
-    # Determine target status based on flags (pre/post inferred from current status for executable docs)
+    # Determine target status based on flags
+    # For executable docs, use execution_phase to determine pre vs post workflow
     if args.review:
         if is_executable:
-            # Infer pre vs post from current status
-            if current_status == Status.DRAFT:
-                target_status = Status.IN_PRE_REVIEW
-                workflow_type = "PRE_REVIEW"
-            elif current_status == Status.IN_EXECUTION:
-                target_status = Status.IN_POST_REVIEW
-                workflow_type = "POST_REVIEW"
+            # CAPA-4: Use execution_phase (if set) to determine workflow path
+            # Also handle legacy documents without execution_phase by checking status
+            is_post_release = (execution_phase == "post_release" or
+                               current_status == Status.IN_EXECUTION)
+            if is_post_release:
+                # Post-release: route to post-review (even if status is DRAFT after checkout/checkin)
+                if current_status in (Status.DRAFT, Status.IN_EXECUTION):
+                    target_status = Status.IN_POST_REVIEW
+                    workflow_type = "POST_REVIEW"
+                else:
+                    print(f"Error: Cannot route for post-review from {current_status.value}")
+                    print("  Post-review routing is valid from: DRAFT, IN_EXECUTION")
+                    return 1
             else:
-                print(f"Error: Cannot route for review from {current_status.value}")
-                print("  Review routing is valid from: DRAFT (pre-review), IN_EXECUTION (post-review)")
-                return 1
+                # Pre-release: route to pre-review
+                if current_status == Status.DRAFT:
+                    target_status = Status.IN_PRE_REVIEW
+                    workflow_type = "PRE_REVIEW"
+                else:
+                    print(f"Error: Cannot route for pre-review from {current_status.value}")
+                    print("  Pre-review routing is valid from: DRAFT")
+                    return 1
         else:
             target_status = Status.IN_REVIEW
             workflow_type = "REVIEW"
     elif args.approval:
         if is_executable:
-            # Infer pre vs post from current status
-            if current_status == Status.PRE_REVIEWED:
-                target_status = Status.IN_PRE_APPROVAL
-                workflow_type = "PRE_APPROVAL"
-            elif current_status == Status.POST_REVIEWED:
-                target_status = Status.IN_POST_APPROVAL
-                workflow_type = "POST_APPROVAL"
+            # CAPA-4: Use execution_phase to determine workflow path
+            # Also handle legacy documents without execution_phase by checking status
+            is_post_release = (execution_phase == "post_release" or
+                               current_status == Status.POST_REVIEWED)
+            if is_post_release:
+                # Post-release: route to post-approval
+                if current_status == Status.POST_REVIEWED:
+                    target_status = Status.IN_POST_APPROVAL
+                    workflow_type = "POST_APPROVAL"
+                else:
+                    print(f"Error: Cannot route for post-approval from {current_status.value}")
+                    print("  Post-approval routing is valid from: POST_REVIEWED")
+                    return 1
             else:
-                print(f"Error: Cannot route for approval from {current_status.value}")
-                print("  Approval routing is valid from: PRE_REVIEWED (pre-approval), POST_REVIEWED (post-approval)")
-                return 1
+                # Pre-release: route to pre-approval
+                if current_status == Status.PRE_REVIEWED:
+                    target_status = Status.IN_PRE_APPROVAL
+                    workflow_type = "PRE_APPROVAL"
+                else:
+                    print(f"Error: Cannot route for pre-approval from {current_status.value}")
+                    print("  Pre-approval routing is valid from: PRE_REVIEWED")
+                    return 1
         else:
             if current_status != Status.REVIEWED:
                 print(f"Error: Must be REVIEWED before approval (currently {current_status.value})")
@@ -932,13 +1156,16 @@ Then route for review:
     meta = update_meta_route(meta, target_status.value, assignees)
     write_meta(doc_id, doc_type, meta)
 
+    # Log status change (CAPA-3: audit trail completeness)
+    log_status_change(doc_id, doc_type, user, version, current_status.value, target_status.value)
+
     # Log routing event to audit trail
     if "REVIEW" in workflow_type:
         log_route_review(doc_id, doc_type, user, version, assignees, workflow_type)
     else:
         log_route_approval(doc_id, doc_type, user, version, assignees, workflow_type)
 
-    # Create tasks in assignee inboxes
+    # Create tasks in assignee inboxes (CR-012: Enhanced with QA Review Safeguards)
     for assignee in assignees:
         inbox_path = get_inbox_path(assignee)
         inbox_path.mkdir(parents=True, exist_ok=True)
@@ -947,29 +1174,26 @@ Then route for review:
         task_id = f"task-{doc_id}-{workflow_type.lower()}-v{version.replace('.', '-')}"
         task_path = inbox_path / f"{task_id}.md"
 
-        task_content = f"""---
-task_id: {task_id}
-task_type: {task_type}
-workflow_type: {workflow_type}
-doc_id: {doc_id}
-assigned_by: {user}
-assigned_date: {today()}
-version: {version}
----
+        # Generate enhanced task content with mandatory checklist and structured format
+        if task_type == "REVIEW":
+            task_content = generate_review_task_content(
+                doc_id=doc_id,
+                version=version,
+                workflow_type=workflow_type,
+                assignee=assignee,
+                assigned_by=user,
+                task_id=task_id
+            )
+        else:
+            task_content = generate_approval_task_content(
+                doc_id=doc_id,
+                version=version,
+                workflow_type=workflow_type,
+                assignee=assignee,
+                assigned_by=user,
+                task_id=task_id
+            )
 
-# {task_type} Request: {doc_id}
-
-**Workflow:** {workflow_type}
-**Version:** {version}
-**Assigned By:** {user}
-**Date:** {today()}
-
-Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
-
-## Commands
-
-{'```' + f'qms --user {assignee} review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms --user {assignee} review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms --user {assignee} approve {doc_id}' + '```' + ' or ' + '```' + f'qms --user {assignee} reject {doc_id} --comment "Rejection reason"' + '```'}
-"""
         task_path.write_text(task_content, encoding="utf-8")
 
     print(f"Routed: {doc_id} for {workflow_type}")
@@ -1033,85 +1257,82 @@ Check the document status: qms --user {user} status {doc_id}
 """)
         return 1
 
-    frontmatter, body = read_document(draft_path)
-    current_status = Status(frontmatter.get("status", "DRAFT"))
+    # Get workflow state from .meta (authoritative source) - CR-012 fix
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
+    current_status = Status(meta.get("status", "DRAFT"))
+    version = meta.get("version", "0.1")
+    pending_assignees = meta.get("pending_assignees", [])
 
     # Determine if we're in a review or approval workflow
     review_statuses = [Status.IN_REVIEW, Status.IN_PRE_REVIEW, Status.IN_POST_REVIEW]
     approval_statuses = [Status.IN_APPROVAL, Status.IN_PRE_APPROVAL, Status.IN_POST_APPROVAL]
 
     if current_status in review_statuses:
-        history_key = "review_history"
         workflow_name = "review"
+        # Determine workflow type from status
+        if current_status == Status.IN_PRE_REVIEW:
+            workflow_type = "PRE_REVIEW"
+        elif current_status == Status.IN_POST_REVIEW:
+            workflow_type = "POST_REVIEW"
+        else:
+            workflow_type = "REVIEW"
     elif current_status in approval_statuses:
-        history_key = "approval_history"
         workflow_name = "approval"
+        if current_status == Status.IN_PRE_APPROVAL:
+            workflow_type = "PRE_APPROVAL"
+        elif current_status == Status.IN_POST_APPROVAL:
+            workflow_type = "POST_APPROVAL"
+        else:
+            workflow_type = "APPROVAL"
     else:
         print(f"Error: {doc_id} is not in an active workflow (status: {current_status.value})")
         print("Can only assign users during IN_REVIEW or IN_APPROVAL states.")
         return 1
 
-    # Find the current (most recent) workflow round
-    history = frontmatter.get(history_key, [])
-    if not history:
-        print(f"Error: No {workflow_name} history found")
-        return 1
-
-    current_round = history[-1]
-
-    # Add new assignees
-    existing_users = {a.get("user") for a in current_round.get("assignees", [])}
+    # Add new assignees to pending_assignees in .meta
     added = []
     for new_user in new_assignees:
-        if new_user in existing_users:
+        if new_user in pending_assignees:
             print(f"Note: {new_user} is already assigned")
         else:
-            current_round["assignees"].append({
-                "user": new_user,
-                "status": "PENDING",
-                "date": None,
-                "comments": None
-            })
+            pending_assignees.append(new_user)
             added.append(new_user)
 
-            # Create task in new assignee's inbox
+            # Create task in new assignee's inbox (CR-012: Use enhanced task content)
             inbox_path = get_inbox_path(new_user)
             inbox_path.mkdir(parents=True, exist_ok=True)
 
-            task_type = "REVIEW" if "review" in history_key else "APPROVAL"
-            workflow_type = current_round.get("type", workflow_name.upper())
-            round_num = current_round.get("round", 1)
-            task_id = f"task-{doc_id}-{workflow_type.lower()}-r{round_num}"
+            task_type = "REVIEW" if workflow_name == "review" else "APPROVAL"
+            task_id = f"task-{doc_id}-{workflow_type.lower()}-v{version.replace('.', '-')}"
             task_path = inbox_path / f"{task_id}.md"
 
-            responsible_user = frontmatter.get("responsible_user", "unknown")
-            task_content = f"""---
-task_id: {task_id}
-task_type: {task_type}
-workflow_type: {workflow_type}
-doc_id: {doc_id}
-assigned_by: {user}
-assigned_date: {today()}
-round: {round_num}
----
+            # Generate enhanced task content
+            if task_type == "REVIEW":
+                task_content = generate_review_task_content(
+                    doc_id=doc_id,
+                    version=version,
+                    workflow_type=workflow_type,
+                    assignee=new_user,
+                    assigned_by=user,
+                    task_id=task_id
+                )
+            else:
+                task_content = generate_approval_task_content(
+                    doc_id=doc_id,
+                    version=version,
+                    workflow_type=workflow_type,
+                    assignee=new_user,
+                    assigned_by=user,
+                    task_id=task_id
+                )
 
-# {task_type} Request: {doc_id}
-
-**Workflow:** {workflow_type}
-**Round:** {round_num}
-**Assigned By:** {user} (added by QA)
-**Date:** {today()}
-
-Please {'review' if task_type == 'REVIEW' else 'approve or reject'} {doc_id}.
-
-## Commands
-
-{'```' + f'qms --user {new_user} review {doc_id} --recommend --comment "Your review comments"' + '```' + ' or ' + '```' + f'qms --user {new_user} review {doc_id} --request-updates --comment "Changes needed"' + '```' if task_type == 'REVIEW' else '```' + f'qms --user {new_user} approve {doc_id}' + '```' + ' or ' + '```' + f'qms --user {new_user} reject {doc_id} --comment "Rejection reason"' + '```'}
-"""
             task_path.write_text(task_content, encoding="utf-8")
 
     if added:
-        write_document(draft_path, frontmatter, body)
+        # Update .meta with new pending_assignees
+        meta["pending_assignees"] = pending_assignees
+        write_meta(doc_id, doc_type, meta)
         print(f"Assigned to {doc_id} ({workflow_name}): {', '.join(added)}")
     else:
         print("No new users assigned (all already in workflow)")
@@ -1233,6 +1454,8 @@ If you should be reviewing this document, ask QA to assign you:
         new_status = status_map.get(current_status)
         if new_status:
             print(f"All reviews complete. Status: {current_status.value} -> {new_status.value}")
+            # Log status change (CAPA-3: audit trail completeness)
+            log_status_change(doc_id, doc_type, user, version, current_status.value, new_status.value)
 
     meta = update_meta_review_complete(
         meta, user, remaining_assignees,
@@ -1340,6 +1563,9 @@ Check your inbox for assigned tasks: qms --user {user} inbox
             print(f"All approvals complete. Status: {current_status.value} -> {new_status.value}")
             print(f"Version: {current_version} -> {new_version}")
 
+            # Log status change (CAPA-3: audit trail completeness)
+            log_status_change(doc_id, doc_type, user, new_version, current_status.value, new_status.value)
+
             # Check if this is a retirement approval
             is_retiring = meta.get("retiring", False)
 
@@ -1365,6 +1591,8 @@ Check your inbox for assigned tasks: qms --user {user} inbox
                 meta = update_meta_approval(meta, new_status=Status.RETIRED.value, new_version=new_version, clear_owner=True)
                 meta.pop("retiring", None)  # Clear the retiring flag
                 log_retire(doc_id, doc_type, user, current_version, new_version)
+                # Log additional status change to RETIRED (CAPA-3)
+                log_status_change(doc_id, doc_type, user, new_version, new_status.value, Status.RETIRED.value)
                 print(f"Document is now RETIRED")
 
             elif new_status == Status.APPROVED:
@@ -1378,6 +1606,8 @@ Check your inbox for assigned tasks: qms --user {user} inbox
                 # Update meta - clear owner for effective docs
                 meta = update_meta_approval(meta, new_status=Status.EFFECTIVE.value, new_version=new_version, clear_owner=True)
                 log_effective(doc_id, doc_type, user, current_version, new_version)
+                # Log additional status change to EFFECTIVE (CAPA-3)
+                log_status_change(doc_id, doc_type, user, new_version, new_status.value, Status.EFFECTIVE.value)
             else:
                 # Executable document - stays as draft until closed
                 meta = update_meta_approval(meta, new_status=new_status.value, new_version=new_version, clear_owner=False)
@@ -1473,6 +1703,8 @@ Check document status: qms --user {user} status {doc_id}
 
     if new_status:
         print(f"Document rejected. Status: {current_status.value} -> {new_status.value}")
+        # Log status change (CAPA-3: audit trail completeness)
+        log_status_change(doc_id, doc_type, user, version, current_status.value, new_status.value)
 
     # Update .meta file
     meta = update_meta_approval(meta, new_status=new_status.value if new_status else None)
@@ -1553,8 +1785,13 @@ Workflow for executable documents:
     # Log RELEASE event to audit trail
     log_release(doc_id, doc_type, user, version)
 
+    # Log status change (CAPA-3: audit trail completeness)
+    log_status_change(doc_id, doc_type, user, version, Status.PRE_APPROVED.value, Status.IN_EXECUTION.value)
+
     # Update .meta file
     meta["status"] = Status.IN_EXECUTION.value
+    # CAPA-4: Set execution_phase to post_release on release
+    meta["execution_phase"] = "post_release"
     write_meta(doc_id, doc_type, meta)
 
     print(f"Released: {doc_id}")
@@ -1702,6 +1939,9 @@ Workflow for executable documents:
 
     # Log CLOSE event to audit trail
     log_close(doc_id, doc_type, user, version)
+
+    # Log status change (CAPA-3: audit trail completeness)
+    log_status_change(doc_id, doc_type, user, version, current_status.value, Status.CLOSED.value)
 
     # Update .meta file (clear ownership on close)
     meta["status"] = Status.CLOSED.value

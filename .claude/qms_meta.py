@@ -90,6 +90,11 @@ def create_initial_meta(
         status: Initial status (e.g., "DRAFT")
         executable: Whether document is executable type
         responsible_user: User creating the document (becomes owner)
+
+    Note on execution_phase (per CR-013 / INV-003-CAPA-4):
+        - Non-executable documents: always null
+        - Executable documents before release: "pre_release"
+        - Executable documents after release: "post_release"
     """
     return {
         "doc_id": doc_id,
@@ -97,6 +102,7 @@ def create_initial_meta(
         "version": version,
         "status": status,
         "executable": executable,
+        "execution_phase": "pre_release" if executable else None,
         "responsible_user": responsible_user,
         "checked_out": True if responsible_user else False,
         "checked_out_date": str(date.today()) if responsible_user else None,
@@ -136,10 +142,17 @@ def update_meta_checkin(meta: Dict[str, Any]) -> Dict[str, Any]:
 
     When checking in from a reviewed state (REVIEWED, PRE_REVIEWED, POST_REVIEWED),
     the status reverts to DRAFT since the new version hasn't been reviewed yet.
+
+    IMPORTANT (per CR-013 / INV-003-CAPA-4): execution_phase is ALWAYS preserved.
+    This ensures documents in post_release phase stay in post_release workflow
+    after checkout/checkin cycles.
     """
     meta = meta.copy()
     meta["checked_out"] = False
     meta["checked_out_date"] = None
+
+    # execution_phase is preserved - do NOT modify it here
+    # This is critical for CAPA-4: post-release documents must stay in post-release workflow
 
     # Revert reviewed states to DRAFT - new version needs review
     current_status = meta.get("status", "DRAFT")
