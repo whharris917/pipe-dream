@@ -1,0 +1,12 @@
+{"ts": "2026-01-07T20:40:24+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Software Development Life Cycle (SDLC) Governance"}
+{"ts": "2026-01-07T20:41:44+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-07T20:41:44+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-07T20:41:44+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-07T20:42:47+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Full verification: (1) Frontmatter title: 'Software Development Life Cycle (SDLC) Governance', (2) Frontmatter revision_summary: 'Initial creation' - acceptable for v0.1 per SOP-001 Section 5.1 exception, (3) All required SOP sections present: Purpose, Scope, Definitions, procedural content (Sections 4-7), References (Section 8), (4) Cross-references validated: SOP-001 covers RS/RTM document control, SOP-002 requires CR for all changes, SOP-005 Section 7.2 covers Genesis Sandbox, (5) No placeholder content (TBD/TODO/FIXME/XXX), (6) Consistent formatting throughout, (7) No typographical errors found. Recommend for approval."}
+{"ts": "2026-01-07T20:42:47+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-07T20:46:18+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-07T20:46:18+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-07T20:46:45+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-07T20:46:45+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-07T20:46:45+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}
+{"ts": "2026-01-07T20:46:45+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

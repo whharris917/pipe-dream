@@ -154,14 +154,6 @@ Add rows as needed. Each row:
 
 ---
 
-#### Reviewer Comments
-
-| Comment | Reviewed By — Date |
-|---------|-------------------|
-| [COMMENT] | [REVIEWER] — [DATE] |
-
----
-
 ## 7. ER Closure
 
 | Details of Resolution | Outcome | Performed By — Date |

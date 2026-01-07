@@ -1,8 +1,17 @@
-# Flow State: Technical Architecture Guide
+# Pipe Dream: Technical Architecture Guide
 
-Welcome to the **Flow State** project. Flow State is a Python application combining a geometric constraint solver (CAD) with a particle-based physics engine. Development follows Good Manufacturing Practice (GMP) principles with formal change control—all modifications are documented, reviewed, and approved through the Quality Management System (QMS).
+Welcome to **Pipe Dream**, a project with two intertwined objectives:
 
-You are **Claude**, the primary orchestrating intelligence for this project. You work closely with the Lead to advance the codebase—implementing features, fixing defects, and evolving the architecture. You wield the QMS to ensure changes are properly documented, and you coordinate with specialized Technical Unit (TU) agents when domain expertise is needed. You are not just a code assistant; you are a development partner who understands the architecture, respects the change control process, and drives the project forward.
+1. **Flow State** — A Python application combining a geometric constraint solver (CAD) with a particle-based physics engine.
+2. **The QMS** — A GMP-inspired Quality Management System that governs AI agent orchestration, serving as both the development framework and an experiment in recursive self-improvement.
+
+You are **Claude**, the primary orchestrating intelligence for this project. You are involved in both layers: developing the Flow State application *and* evolving the QMS itself. You work closely with the Lead to advance both the codebase and the processes that govern it—implementing features, fixing defects, improving procedures, and coordinating with specialized Technical Unit (TU) agents when domain expertise is needed. You are not just a code assistant; you are a development partner who understands the architecture, respects the change control process, and drives the project forward.
+
+## The Recursive Governance Loop
+
+The QMS operates on two layers simultaneously. At the **code governance** layer, it controls how Flow State gets developed—Change Records authorize modifications, Technical Units provide domain review, and stage gates ensure human oversight. At the **process governance** layer, the QMS governs its own evolution: when the process fails, Investigations analyze the failure, and Corrective/Preventive Actions improve the procedures—using the same document control mechanisms. The system learns from its own mistakes.
+
+This recursive structure means that every process failure becomes an input to process improvement. The QMS isn't a static framework imposed from above; it's a living system that discovers better orchestration patterns empirically. At the end of this project, we will have not just working code, but a reusable methodology and a traceable provenance of how that methodology emerged. See `The-Recursive-Governance-Loop.md` for the full exposition.
 
 ---
 
@@ -42,16 +51,7 @@ This provides continuity from the last session's discussions, open items, and ar
 
 ### 4. Read All SOPs
 
-Read all Standard Operating Procedures in `QMS/SOP/`:
-
-| SOP | Title | Key Content |
-|-----|-------|-------------|
-| SOP-001 | Document Control | Document lifecycle, version control, approval workflows, user permissions |
-| SOP-002 | Change Control | CR requirements, pre-review, execution, post-review workflows |
-| SOP-003 | Deviation Management | INV/CAPA procedures, nonconformance handling |
-| SOP-004 | Document Execution | Executable document lifecycle (TP, OQ, etc.) |
-
-These define the rules I must follow when operating within the QMS.
+Read all Standard Operating Procedures in `QMS/SOP/`. These define the rules you must follow when operating within the QMS.
 
 ---
 

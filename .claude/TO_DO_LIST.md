@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-01-07
+
+- [ ] Create an SOP template
+  - Add to `.claude/workshop/templates/` alongside existing CR, TC, TP, VAR, ER templates
+  - Follow same structure conventions as other templates
+
+- [ ] Remove document status EFFECTIVE as an option; rename to APPROVED
+  - Simplify non-executable document workflow: APPROVED is the terminal success state
+  - Update SOP-001 status definitions and state machine diagrams
+  - Update QMS CLI to use APPROVED instead of EFFECTIVE
+
+- [ ] Metadata injection into viewable rendition of QMS documentation
+  - Inject version, revision history, document status into rendered view
+  - Consider header/footer display or frontmatter expansion
+  - Enables viewing complete document state without running `qms status`
+
+---
+
 ## 2026-01-06
 
 ### Handle "pass with exception" scenario
@@ -23,17 +41,10 @@
 
 ---
 
-### Remove "Reviewer Comments" section from all templates
+### ~~Remove "Reviewer Comments" section from all templates~~ ✓ DONE
 
-The Reviewer Comments table in executable document templates (CR, TP, TC, VAR, ER) is redundant since the entire document goes through the QMS review process anyway. Review comments are captured in the audit trail via `qms review --comment`.
+*Completed: Session-2026-01-07-001*
 
-**Files affected:**
-- `.claude/workshop/templates/CR-TEMPLATE.md`
-- `.claude/workshop/templates/TP-TEMPLATE.md`
-- `.claude/workshop/templates/TC-TEMPLATE.md`
-- `.claude/workshop/templates/VAR-TEMPLATE.md`
-- `.claude/workshop/templates/ER-TEMPLATE.md` (if exists)
-
-**Action:** Remove the `### Reviewer Comments` section and its table from each template.
+Removed `### Reviewer Comments` sections from CR-TEMPLATE, TC-TEMPLATE, VAR-TEMPLATE, ER-TEMPLATE, and the reference in TP-TEMPLATE.
 
 ---

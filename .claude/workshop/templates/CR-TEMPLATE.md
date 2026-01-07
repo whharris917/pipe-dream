@@ -179,19 +179,6 @@ to any individual execution item, but apply to the CR as a whole.
 
 ---
 
-### Reviewer Comments
-
-| Comment | Reviewed By — Date |
-|---------|-------------------|
-| [COMMENT] | [REVIEWER] — [DATE] |
-
-<!--
-Reviewer observations during post-execution review.
-Add rows as needed.
--->
-
----
-
 ## 7. Execution Summary
 
 <!--

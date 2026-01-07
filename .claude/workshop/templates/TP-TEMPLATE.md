@@ -91,9 +91,6 @@ Insert Test Cases below following TC-TEMPLATE structure:
   #### Test Execution Comments
   (per TC-TEMPLATE)
 
-  #### Reviewer Comments
-  (per TC-TEMPLATE)
-
 Number TCs sequentially: TC-001, TC-002, etc.
 Step IDs follow format: TC-NNN-001, TC-NNN-002, etc.
 

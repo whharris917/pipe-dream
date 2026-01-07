@@ -1,0 +1,30 @@
+{"ts": "2026-01-07T20:33:14+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "SOP-006 Creation and SOP Internal Consistency"}
+{"ts": "2026-01-07T20:34:59+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-07T20:35:13+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-07T20:35:13+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-07T20:36:55+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "UPDATES_REQUIRED", "comment": "NON-COMPLIANT: Character encoding defect detected. The 'Performed By - Date' field in EI-1, EI-2, and EI-3 tables displays as 'Performed By \\ufffd Date' (replacement character). This formatting error must be corrected before approval. All other content is compliant: (1) Frontmatter title verified: 'SOP-006 Creation and SOP Internal Consistency', (2) Description, Rationale, and Testing Summary present per SOP-002 Section 6, (3) Execution items properly structured per SOP-004, (4) No placeholder content found, (5) Line number references verified against effective SOPs. No Technical Units required - this is a QMS procedural CR."}
+{"ts": "2026-01-07T20:36:55+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-07T20:37:17+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-07T20:38:02+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-07T20:38:02+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-07T20:38:02+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-07T20:38:48+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Encoding defect resolved - 'Performed By / Date' now displays correctly in all three EIs. Full verification: (1) Frontmatter title: 'SOP-006 Creation and SOP Internal Consistency', (2) Description, Rationale, Testing Summary present per SOP-002 Section 6, (3) Execution items EI-1, EI-2, EI-3 properly structured per SOP-004, (4) No placeholder content (TBD/TODO/FIXME/XXX), (5) Consistent formatting throughout. No Technical Units assigned - QMS procedural change requires QA oversight only. Recommend for pre-approval."}
+{"ts": "2026-01-07T20:38:48+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-07T20:39:11+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-07T20:39:11+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-07T20:39:34+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-07T20:39:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-07T20:40:01+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-07T20:40:01+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-07T20:54:48+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-07T20:55:46+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-07T20:55:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-07T20:55:46+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-07T20:56:42+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "POST-REVIEW COMPLIANT. All SOP-002 Section 7.3 requirements verified: (1) Execution Complete: EI-1 Pass, EI-2 Pass, EI-3 Pass - all tasks completed as planned, (2) No VARs required - all tasks passed, (3) Documentation Approved: SOP-006 v1.0 EFFECTIVE, SOP-001 v12.0 EFFECTIVE, SOP-005 v3.0 EFFECTIVE - all three documents reviewed and approved by QA during this session, (4) Evidence Documented: All EIs have detailed Execution Summary entries with document versions and dates. revision_summary traceability verified: SOP-001 and SOP-005 reference CR-015, SOP-006 uses 'Initial creation' per v0.1 exception. Testing criteria from Section 4 verified during individual document reviews. Recommend for post-approval."}
+{"ts": "2026-01-07T20:56:42+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-07T20:57:05+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-07T20:57:05+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-07T20:57:27+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-07T20:57:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-07T20:57:49+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-07T20:57:49+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

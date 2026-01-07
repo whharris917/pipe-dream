@@ -80,3 +80,15 @@
 {"ts": "2026-01-07T01:43:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-07T01:43:27+00:00", "event": "EFFECTIVE", "user": "qa", "version": "11.0", "from_version": "10.1"}
 {"ts": "2026-01-07T01:43:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-07T20:47:28+00:00", "event": "CHECKOUT", "user": "claude", "version": "11.1", "from_version": "11.0"}
+{"ts": "2026-01-07T20:49:11+00:00", "event": "CHECKIN", "user": "claude", "version": "11.1"}
+{"ts": "2026-01-07T20:49:11+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "11.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-07T20:49:11+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "11.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-07T20:50:13+00:00", "event": "REVIEW", "user": "qa", "version": "11.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Full verification of CR-015 EI-2 changes: (1) Frontmatter: title='Quality Management System - Document Control', revision_summary='CR-015: Remove DS, CS, OQ; fix CAPA classification per SOP-006', (2) CAPA removed from scope list (Section 2), (3) SDLC types changed from (RS, DS, CS, RTM, OQ) to (RS, RTM) at line 26, (4) Executable Document definition (line 41) no longer includes CAPA, (5) Non-Executable Document definition (line 42) shows only (RS, RTM, SOP), (6) CAPA naming convention retained at line 244 for EI identification, (7) DS/CS/OQ rows removed from naming table, (8) Section 8.1 header shows (SOP, RS, RTM), (9) Section 8.2 header shows (CR, INV, TP, ER, VAR) without CAPA. Internal consistency verified across all sections. No placeholder content. Recommend for approval."}
+{"ts": "2026-01-07T20:50:13+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-07T20:50:32+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "11.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-07T20:50:32+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "11.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-07T20:50:57+00:00", "event": "APPROVE", "user": "qa", "version": "11.1"}
+{"ts": "2026-01-07T20:50:57+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "12.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-07T20:50:57+00:00", "event": "EFFECTIVE", "user": "qa", "version": "12.0", "from_version": "11.1"}
+{"ts": "2026-01-07T20:50:57+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "12.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

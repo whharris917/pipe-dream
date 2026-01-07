@@ -175,19 +175,6 @@ apply to any individual resolution item, but apply to the resolution as a whole.
 
 ---
 
-### Reviewer Comments
-
-| Comment | Reviewed By — Date |
-|---------|-------------------|
-| [COMMENT] | [REVIEWER] — [DATE] |
-
-<!--
-Reviewer observations during post-execution review.
-Add rows as needed.
--->
-
----
-
 ## 8. VAR Closure
 
 | Details of Resolution | Outcome | Performed By — Date |
