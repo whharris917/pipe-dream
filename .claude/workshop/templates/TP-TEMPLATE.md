@@ -28,6 +28,14 @@ revision_summary: 'Initial draft'
 TEMPLATE USAGE GUIDE
 ================================================================================
 
+DOCUMENT TYPE:
+TPs are EXECUTABLE documents that define and execute verification testing.
+
+WORKFLOW:
+  DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED
+       → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL
+       → POST_APPROVED → CLOSED
+
 PLACEHOLDER TYPES:
 1. {{DOUBLE_CURLY}} — Replace when AUTHORING the protocol (design time)
 2. [SQUARE_BRACKETS] — Replace when EXECUTING the protocol (run time)
@@ -36,16 +44,6 @@ After authoring:
 - NO {{...}} placeholders should remain
 - All [...] placeholders should remain until execution
 
-TEMPLATE NESTING:
-- Test Cases follow TC-TEMPLATE structure
-- Insert TC sections using the format shown in Section 3
-- Do not duplicate TC-TEMPLATE content here—reference it
-
-WORKFLOW SIGNATURES:
-- Pre-approval and post-approval signatures are handled by QMS CLI
-- Only execution-phase signatures appear in the document body
-  (e.g., step Performed By, Reviewer Comments)
-
 ID HIERARCHY:
 - Protocol ID: TP-NNN
 - Test Case ID: TP-NNN-TC-NNN (e.g., TP-001-TC-001)
@@ -53,6 +51,16 @@ ID HIERARCHY:
 - ER ID: TP-NNN-TC-NNN-ER-NNN (e.g., TP-001-TC-001-ER-001)
 - Nested ER: TP-NNN-TC-NNN-ER-NNN-ER-NNN
 
+TEMPLATE NESTING:
+- Test Cases follow TC-TEMPLATE structure
+- Insert TC sections using the format shown in Section 3
+- Do not duplicate TC-TEMPLATE content here—reference it
+
+LOCKED vs EDITABLE:
+- Sections 1-2 are locked after pre-approval
+- Section 3 (Test Cases) and Section 4 (Summary) are editable during execution
+
+Delete this comment block after reading.
 ================================================================================
 -->
 

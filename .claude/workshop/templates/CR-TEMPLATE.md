@@ -28,25 +28,32 @@ revision_summary: 'Initial draft'
 TEMPLATE USAGE GUIDE
 ================================================================================
 
-This template uses TWO types of placeholders:
+DOCUMENT TYPE:
+CRs are EXECUTABLE documents that authorize implementation activities.
 
-1. TEMPLATE PLACEHOLDERS: {{DOUBLE_CURLY_BRACES}}
-   - Replace these when DRAFTING the CR (before routing for review)
-   - Examples: {{TITLE}}, {{PURPOSE}}, {{FILE_PATH}}
-   - After drafting, NO double-curly-brace placeholders should remain
+WORKFLOW:
+  DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED
+       → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL
+       → POST_APPROVED → CLOSED
 
-2. EXECUTION PLACEHOLDERS: [SQUARE_BRACKETS]
-   - These REMAIN in the document after drafting
-   - Replace these during EXECUTION PHASE (after release)
-   - Examples: [PENDING], [EXECUTION]
-   - Only appear in Section 6 (Execution table)
+PLACEHOLDER TYPES:
+1. {{DOUBLE_CURLY}} — Replace when DRAFTING (before routing for review)
+2. [SQUARE_BRACKETS] — Replace during EXECUTION (after release)
 
-   Authors may define additional execution placeholders as needed to structure
-   their executable document. Use square brackets for any field that must be
-   filled during execution. Examples:
-   - [TEST_RESULT]
-   - [REVIEWER_NOTES]
-   - [MEASURED_VALUE]
+After authoring:
+- NO {{...}} placeholders should remain
+- All [...] placeholders should remain until execution
+
+Authors may define additional execution placeholders as needed. Use square
+brackets for any field that must be filled during execution.
+
+ID FORMAT:
+  CR-NNN
+  Example: CR-001, CR-015
+
+LOCKED vs EDITABLE:
+- Sections 1-5 are locked after pre-approval
+- Section 6 (Execution) is editable during execution
 
 Delete this comment block after reading.
 ================================================================================

@@ -28,6 +28,14 @@ revision_summary: 'Initial draft'
 TEMPLATE USAGE GUIDE
 ================================================================================
 
+DOCUMENT TYPE:
+VARs are EXECUTABLE documents that encapsulate resolution work for variances.
+
+WORKFLOW:
+  DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED
+       → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL
+       → POST_APPROVED → CLOSED
+
 CONCEPT:
 A Variance Report (VAR) is a blocking child container that encapsulates
 resolution work without cluttering the parent document with details.
@@ -66,6 +74,7 @@ LOCKED vs EDITABLE:
 - Sections 1-6 are locked after pre-approval
 - Section 7 (Resolution Work) and Section 8 (Closure) are editable during execution
 
+Delete this comment block after reading.
 ================================================================================
 -->
 

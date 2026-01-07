@@ -28,21 +28,29 @@ revision_summary: 'Initial creation'
 TEMPLATE USAGE GUIDE
 ================================================================================
 
+DOCUMENT TYPE:
 SOPs are NON-EXECUTABLE documents. They define procedures but do not authorize
-implementation activities. SOPs follow the standard document lifecycle:
+implementation activities.
 
+WORKFLOW:
   DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE
 
-PLACEHOLDER CONVENTION:
-- {{DOUBLE_CURLY_BRACES}}: Replace when drafting the SOP
-- After drafting, NO placeholders should remain
+PLACEHOLDER TYPES:
+1. {{DOUBLE_CURLY}} — Replace when drafting the SOP
 
-STANDARD SOP STRUCTURE:
+After authoring:
+- NO {{...}} placeholders should remain
+
+ID FORMAT:
+  SOP-NNN
+  Example: SOP-001, SOP-006
+
+STANDARD STRUCTURE:
 1. Purpose       - Why this procedure exists
 2. Scope         - What it covers and what it doesn't
 3. Definitions   - Terms specific to this procedure
 4. [Content]     - The actual procedure (sections 4+)
-5. References    - Related documents
+N. References    - Related documents
 
 Delete this comment block after reading.
 ================================================================================

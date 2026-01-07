@@ -28,26 +28,36 @@ revision_summary: 'Initial draft'
 TEMPLATE USAGE GUIDE
 ================================================================================
 
+DOCUMENT TYPE:
+ERs are EXECUTABLE documents created when a test step fails.
+
+WORKFLOW:
+  DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED
+       → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL
+       → POST_APPROVED → CLOSED
+
 PLACEHOLDER TYPES:
 1. {{DOUBLE_CURLY}} — Replace when AUTHORING the ER (design time)
 2. [SQUARE_BRACKETS] — Replace when EXECUTING the ER (run time)
 
-ER ID FORMAT:
+After authoring:
+- NO {{...}} placeholders should remain
+- All [...] placeholders should remain until execution
+
+ID FORMAT:
   {TC_ID}-ER-NNN
   Example: TP-001-TC-001-ER-001
 
-TEMPLATE NESTING:
+NESTING:
 - Re-test section follows TC-TEMPLATE structure
-- ERs can nest: if re-testing fails, create child ER (e.g., TP-001-TC-001-ER-001-ER-001)
-
-WORKFLOW SIGNATURES:
-- Pre-approval and post-approval signatures are handled by QMS CLI
-- Only execution-phase signatures appear in the document body
+- ERs can nest: if re-testing fails, create child ER
+- Example: TP-001-TC-001-ER-001-ER-001
 
 LOCKED vs EDITABLE:
 - Sections 1-5 are locked after pre-approval
 - Section 6 (Re-test) and Section 7 (Closure) are editable during execution
 
+Delete this comment block after reading.
 ================================================================================
 -->
 
