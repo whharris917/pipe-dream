@@ -87,6 +87,8 @@ Delete this comment block after reading.
 | {{PARENT_DOC_ID}} | {{ITEM_ID}} | {{TYPE_1_or_TYPE_2}} |
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 VAR TYPE:
 - Type 1: Full closure required to clear block on parent
 - Type 2: Pre-approval sufficient to clear block on parent
@@ -111,6 +113,8 @@ VAR TYPE:
 {{VARIANCE_TYPE}}
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 Select one:
 - Execution Error: Executor made a mistake or didn't follow instructions
 - Scope Error: Plan/scope was written or designed incorrectly
@@ -138,8 +142,10 @@ Select one:
 
 <!--
 ================================================================================
-RESOLUTION WORK INSTRUCTIONS
+RESOLUTION WORK INSTRUCTIONS (AUTHOR)
 ================================================================================
+AUTHOR NOTE: Delete this comment block after reading.
+
 This section contains the work performed to resolve the variance.
 Choose the appropriate structure based on the parent document type:
 
@@ -154,12 +160,16 @@ FOR CR/INV VARIANCES:
 FOR SIMPLE RESOLUTIONS:
   Use narrative + evidence format
 
-If the resolution work encounters issues, create a nested VAR.
-
-If the resolution involves modifying the original scope/plan, the author and
-reviewers must verify that the revised approach meets the intent of the
-original parent document objectives. If objectives are modified, justify.
+If the resolution involves modifying the original scope/plan, reviewers must
+verify that the revised approach meets the intent of the parent's objectives.
+If objectives are modified, justify.
 ================================================================================
+-->
+
+<!--
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+If the resolution work encounters issues, create a nested VAR.
 -->
 
 ### Resolution: {{PARENT_DOC_ID}}
@@ -175,10 +185,12 @@ original parent document objectives. If objectives are modified, justify.
 | [COMMENT] | [PERFORMER] — [DATE] |
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 Record observations, decisions, or issues encountered during resolution.
 Add rows as needed.
 
-NOTE: This section is the appropriate place to attach nested VARs that do not
+This section is the appropriate place to attach nested VARs that do not
 apply to any individual resolution item, but apply to the resolution as a whole.
 -->
 

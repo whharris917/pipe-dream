@@ -77,9 +77,17 @@ The signature above indicates that all listed test prerequisites have been satis
 | {{TEST_CASE_ID}}-003 | {{REQ_ID}} | {{INSTRUCTION}} | {{EXPECTED}} | [ACTUAL] | [Pass/Fail] | [PERFORMER] — [DATE] |
 
 <!--
-Add rows as needed. Each row:
-- Columns 1-4: Design-time (author fills during drafting)
-- Columns 5-7: Run-time (executor fills during execution)
+AUTHOR NOTE: Delete this comment after reading.
+
+Each test step row has design-time and run-time columns:
+- Columns 1-4 (Step, REQ ID, Instruction, Expected Result): Fill during drafting
+- Columns 5-7 (Actual Result, Pass/Fail, Performed By): Left for executor
+-->
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 5-7 during execution.
 -->
 
 ---
@@ -91,10 +99,12 @@ Add rows as needed. Each row:
 | [COMMENT] | [PERFORMER] — [DATE] |
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 Record observations, deviations, or issues encountered during execution.
 Add rows as needed.
 
-NOTE: This section is the appropriate place to attach ERs that do not apply
+This section is the appropriate place to attach ERs that do not apply
 to any individual test step, but apply to the test script or protocol as a
 whole (e.g., environmental issues, systemic problems discovered during testing).
 -->

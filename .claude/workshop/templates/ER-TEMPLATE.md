@@ -88,6 +88,8 @@ Delete this comment block after reading.
 {{EXCEPTION_TYPE}}
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 Select one:
 - Test Script Error: Test itself was written or designed incorrectly
 - Test Execution Error: Tester made a mistake by not following instructions as written
@@ -108,20 +110,26 @@ Select one:
 
 <!--
 ================================================================================
-RE-TEST INSTRUCTIONS
+RE-TEST INSTRUCTIONS (AUTHOR)
 ================================================================================
+AUTHOR NOTE: Delete this comment block after reading.
+
 This section contains a full re-execution of the test case (not just the
 failed step). The re-test may have different, more, or fewer steps than
 the original if the test script itself required correction.
 
-If the test script is modified, the test script author and all reviewers must
-verify that the revised test script meets the intent of the original test
-script, as expressed in the original test script's objectives. If the TC
-objectives themselves are modified, this must be justified.
-
 Follow TC-TEMPLATE structure for the re-test.
-If the re-test fails, create a nested ER.
+
+If the test script is modified, reviewers must verify that the revised test
+script meets the intent of the original test script's objectives. If the TC
+objectives themselves are modified, this must be justified.
 ================================================================================
+-->
+
+<!--
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+If the re-test fails, create a nested ER.
 -->
 
 ### Re-test: {{TC_ID}}
@@ -149,9 +157,17 @@ The signature above indicates that all listed test prerequisites have been satis
 | {{STEP_ID}}-003 | {{REQ_ID}} | {{INSTRUCTION}} | {{EXPECTED}} | [ACTUAL] | [Pass/Fail] | [PERFORMER] — [DATE] |
 
 <!--
-Add rows as needed. Each row:
-- Columns 1-4: Design-time (author fills during drafting)
-- Columns 5-7: Run-time (executor fills during execution)
+AUTHOR NOTE: Delete this comment after reading.
+
+Each test step row has design-time and run-time columns:
+- Columns 1-4 (Step, REQ ID, Instruction, Expected Result): Fill during drafting
+- Columns 5-7 (Actual Result, Pass/Fail, Performed By): Left for executor
+-->
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 5-7 during execution.
 -->
 
 ---
@@ -161,6 +177,16 @@ Add rows as needed. Each row:
 | Comment | Performed By — Date |
 |---------|---------------------|
 | [COMMENT] | [PERFORMER] — [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, deviations, or issues encountered during execution.
+Add rows as needed.
+
+This section is the appropriate place to attach nested ERs that do not apply
+to any individual test step, but apply to the re-test as a whole.
+-->
 
 ---
 

@@ -103,6 +103,8 @@ Number TCs sequentially: TC-001, TC-002, etc.
 Step IDs follow format: TC-NNN-001, TC-NNN-002, etc.
 
 See TC-TEMPLATE for full structure and boilerplate content.
+
+Delete this comment block after reading.
 ================================================================================
 -->
 

@@ -162,9 +162,17 @@ EXECUTION SUMMARY EXAMPLES:
 | EI-3 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
 
 <!--
-Add rows as needed. Each row:
-- Columns 1-2: Design-time (author fills during drafting)
-- Columns 3-5: Run-time (executor fills during execution)
+AUTHOR NOTE: Delete this comment after reading.
+
+Each EI row has design-time and run-time columns:
+- Columns 1-2 (EI, Task Description): Fill during drafting
+- Columns 3-5 (Execution Summary, Task Outcome, Performed By): Left for executor
+-->
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
 -->
 
 ---
@@ -176,10 +184,12 @@ Add rows as needed. Each row:
 | [COMMENT] | [PERFORMER] — [DATE] |
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 Record observations, decisions, or issues encountered during execution.
 Add rows as needed.
 
-NOTE: This section is the appropriate place to attach VARs that do not apply
+This section is the appropriate place to attach VARs that do not apply
 to any individual execution item, but apply to the CR as a whole.
 -->
 
@@ -188,6 +198,8 @@ to any individual execution item, but apply to the CR as a whole.
 ## 7. Execution Summary
 
 <!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
 Complete this section after all EIs are executed.
 Summarize the overall outcome and any deviations from the plan.
 -->
