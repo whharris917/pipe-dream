@@ -68,3 +68,15 @@
 {"ts": "2026-01-04T19:07:18+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "9.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
 {"ts": "2026-01-04T19:07:28+00:00", "event": "APPROVE", "user": "qa", "version": "9.1"}
 {"ts": "2026-01-04T19:07:28+00:00", "event": "EFFECTIVE", "user": "qa", "version": "10.0", "from_version": "9.1"}
+{"ts": "2026-01-07T01:28:58+00:00", "event": "CHECKOUT", "user": "claude", "version": "10.1", "from_version": "10.0"}
+{"ts": "2026-01-07T01:34:47+00:00", "event": "CHECKIN", "user": "claude", "version": "10.1"}
+{"ts": "2026-01-07T01:34:55+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "10.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-07T01:34:55+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "10.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-07T01:36:49+00:00", "event": "REVIEW", "user": "qa", "version": "10.1", "outcome": "RECOMMEND", "comment": "REVIEW FINDINGS - SOP-001 v10.1\n\nFRONTMATTER VERIFICATION:\n- title: 'Quality Management System - Document Control' - VERIFIED PRESENT\n- revision_summary: 'CR-014: Add VAR to controlled document types, definitions, and naming conventions' - VERIFIED PRESENT, begins with CR ID\n\nCHANGES VERIFIED:\n1. Section 2 (Scope): VAR added to controlled document types list - VERIFIED\n2. Section 3 (Definitions): VAR definition added with cross-reference to SOP-004 Section 9A - VERIFIED\n3. Section 6.1 (Naming Convention): VAR naming convention CR-NNN-VAR-NNN added - VERIFIED\n4. Section 8.2 (Executable Documents): VAR added to executable document list - VERIFIED\n\nCROSS-REFERENCE VALIDATION:\n- Section 3 VAR definition references 'SOP-004 Section 9A' which exists in SOP-004-draft\n\nPLACEHOLDER CONTENT CHECK: None found\nFORMATTING CHECK: Consistent throughout\nTYPO CHECK: None found\n\nRECOMMENDATION: APPROVE - All changes are internally consistent and properly cross-referenced."}
+{"ts": "2026-01-07T01:36:49+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-07T01:42:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "10.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-07T01:42:00+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "10.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-07T01:43:27+00:00", "event": "APPROVE", "user": "qa", "version": "10.1"}
+{"ts": "2026-01-07T01:43:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-07T01:43:27+00:00", "event": "EFFECTIVE", "user": "qa", "version": "11.0", "from_version": "10.1"}
+{"ts": "2026-01-07T01:43:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

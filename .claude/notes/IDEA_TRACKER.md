@@ -6,6 +6,74 @@
 
 ## 2026-01-06
 
+### Visual distinction for executed content in closed documents
+
+When viewing a post-approved/closed CR, it's not immediately obvious at a glance which parts were filled in during execution vs. what was pre-approved content. This requires prior knowledge of the document template structure.
+
+**Problem:** The execution table and execution summary blend in visually with the rest of the document.
+
+**Possible solutions:**
+
+1. **Section headers with visual markers:**
+   - `## 6. Execution ▶ COMPLETED` or similar suffix
+   - Use emoji or symbols to mark executed sections
+
+2. **Blockquote or callout wrapping:**
+   - Wrap execution content in a styled blockquote
+   - Use GitHub-style callouts: `> [!NOTE]` or custom `> [!EXECUTED]`
+
+3. **Horizontal rule boundaries:**
+   - Double horizontal rules (`---\n---`) to demarcate execution block
+   - Or distinctive ASCII art separators
+
+4. **Background shading (renderer-dependent):**
+   - HTML `<div>` with background color (works in some markdown renderers)
+   - Not portable across all viewing contexts
+
+5. **Prefix/suffix markers in content:**
+   - `[EXECUTION START]` / `[EXECUTION END]` visible markers
+   - Clear but adds textual noise
+
+**Considerations:**
+- Must work in raw markdown (Claude reads raw)
+- Should also render meaningfully in GitHub/rendered views
+- Should not interfere with auditability or document integrity
+- Consider whether this applies to all executable docs or just CRs
+
+---
+
+### VAR scope handoff requirements
+
+Just as an ER defines its own scope and closure requirements, a VAR must explicitly specify, from the parent EI:
+
+1. What was successfully accomplished in the parent (before the variance)
+2. What the VAR "absorbs" (takes responsibility for)
+3. Confirmation that no items were lost in the handoff
+
+If scope is truly reduced (i.e., something from the original plan will not be done), this must be explicitly stated and justified.
+
+**Auditor confidence:** When an auditor sees an EI with an attached VAR, they must have confidence that closure of the VAR is equivalent to complete closure/success of the EI. The VAR is not a loophole—it is a container that fully accounts for the remaining work.
+
+**Rationale:** Prevents scope leakage during variance handling. The VAR becomes a complete record of what transferred from parent to child, ensuring traceability and preventing items from silently disappearing.
+
+---
+
+### GMP conventions for signature and timestamp formats
+
+Define standard formats for signatures and timestamps in executable documents.
+
+**Example format:** `lead 06Jan2025 05:24 PM`
+
+**Considerations:**
+- User identifier (lowercase username)
+- Date format (DDMmmYYYY — no ambiguity between US/EU conventions)
+- Time format (12-hour with AM/PM, or 24-hour?)
+- Timezone handling: Use UTC for total unambiguity (e.g., `lead 06Jan2025 17:24 UTC`)
+
+This affects TC, TP, ER, and any document with execution-phase signatures.
+
+---
+
 ### Investigate: CRs in draft state in QMS directory when IN_EXECUTION
 
 Double check why CRs appear in draft state (`CR-XXX-draft.md`) in the QMS directory even when:

@@ -1,0 +1,114 @@
+---
+doc_id: TC-TEMPLATE
+title: 'Test Case Template'
+version: '0.1'
+status: DRAFT
+revision_summary: 'Initial draft of Test Case document fragment'
+---
+
+<!--
+================================================================================
+TEMPLATE DOCUMENT NOTICE
+================================================================================
+This is a DOCUMENT FRAGMENT template. Test Cases (TCs) do not exist in isolation
+within the QMS—they are composed into Test Protocols (TPs) or other executable
+documents.
+
+The frontmatter above is for QMS management of THIS TEMPLATE. When creating
+actual Test Cases, omit the frontmatter (the parent TP provides document control).
+================================================================================
+-->
+
+<!--
+================================================================================
+TEMPLATE USAGE GUIDE
+================================================================================
+
+PLACEHOLDER TYPES:
+1. {{DOUBLE_CURLY}} — Replace when AUTHORING the test case (design time)
+2. [SQUARE_BRACKETS] — Replace when EXECUTING the test case (run time)
+
+After authoring:
+- NO {{...}} placeholders should remain
+- All [...] placeholders should remain until execution
+
+ID HIERARCHY:
+- Test Case ID: TC-NNN (within parent TP)
+- Step ID: TC-NNN-NNN (e.g., TC-001-001, TC-001-002)
+- ER ID: TC-NNN-ER-NNN (e.g., TC-001-ER-001)
+- Nested ER ID: TC-NNN-ER-NNN-ER-NNN (e.g., TC-001-ER-001-ER-001)
+
+Full hierarchy example:
+  TP-001
+  └── TP-001-TC-001
+      ├── TP-001-TC-001-001 (step)
+      ├── TP-001-TC-001-002 (step)
+      └── TP-001-TC-001-ER-001 (exception)
+          └── TP-001-TC-001-ER-001-ER-001 (nested exception)
+
+================================================================================
+-->
+
+## {{TEST_CASE_ID}}: {{TEST_CASE_TITLE}}
+
+### Prerequisite Section
+
+| Test Case ID | Objectives | Prerequisites | Performed By — Date |
+|--------------|------------|---------------|---------------------|
+| {{TEST_CASE_ID}} | {{OBJECTIVES}} | {{PREREQUISITES}} | [PERFORMER] — [DATE] |
+
+The signature above indicates that all listed test prerequisites have been satisfied and that the test script below is ready for execution.
+
+---
+
+### Test Script
+
+**Instructions:** Test execution must be performed in accordance with SOP-004 Document Execution. The individual test steps must be executed in the order shown. If a test step fails, execution of the test script must pause. The executor of the test will explain what occurred in the Actual Result field, mark the outcome of the step as "Fail", sign the step, and follow the ER workflow to document and remedy the testing failure.
+
+**Acceptance Criteria:** A test case is accepted when either: (1) all test steps pass (Actual Results match Expected Results), or (2) a step failed, subsequent steps are marked N/A with ER reference, and the ER contains a successful full re-execution of the test case and is closed.
+
+| Step | REQ ID | Instruction | Expected Result | Actual Result | Pass/Fail | Performed By — Date |
+|------|--------|-------------|-----------------|---------------|-----------|---------------------|
+| {{TEST_CASE_ID}}-001 | {{REQ_ID}} | {{INSTRUCTION}} | {{EXPECTED}} | [ACTUAL] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| {{TEST_CASE_ID}}-002 | {{REQ_ID}} | {{INSTRUCTION}} | {{EXPECTED}} | [ACTUAL] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| {{TEST_CASE_ID}}-003 | {{REQ_ID}} | {{INSTRUCTION}} | {{EXPECTED}} | [ACTUAL] | [Pass/Fail] | [PERFORMER] — [DATE] |
+
+<!--
+Add rows as needed. Each row:
+- Columns 1-4: Design-time (author fills during drafting)
+- Columns 5-7: Run-time (executor fills during execution)
+-->
+
+---
+
+### Test Execution Comments
+
+| Comment | Performed By — Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] — [DATE] |
+
+<!--
+Record observations, deviations, or issues encountered during execution.
+Add rows as needed.
+
+NOTE: This section is the appropriate place to attach ERs that do not apply
+to any individual test step, but apply to the test script or protocol as a
+whole (e.g., environmental issues, systemic problems discovered during testing).
+-->
+
+---
+
+### Reviewer Comments
+
+| Comment | Reviewed By — Date |
+|---------|-------------------|
+| [COMMENT] | [REVIEWER] — [DATE] |
+
+<!--
+Reviewer observations during post-execution review.
+Add rows as needed.
+-->
+
+---
+
+**END OF TEST CASE**

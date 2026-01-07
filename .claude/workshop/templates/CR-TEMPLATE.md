@@ -126,35 +126,69 @@ EXECUTION PHASE INSTRUCTIONS
 NOTE: Do NOT delete this comment block. It provides guidance for execution.
 
 - Sections 1-5 are PRE-APPROVED content — do NOT modify during execution
-- Only THIS TABLE should be edited during execution phase
-- For each EI row, replace execution placeholders:
-  - [PENDING]   → COMPLETE, PARTIAL, SKIPPED, or BLOCKED
-  - [EXECUTION] → Actual evidence or follow-up notes
+- Only THIS TABLE and the comment sections below should be edited during execution phase
 
-STATUS VALUES:
-- [PENDING]  : Not yet started (initial state — do not remove until executing)
-- COMPLETE   : Successfully implemented and verified
-- PARTIAL    : Partially implemented (explain in Follow-up)
-- SKIPPED    : Not implemented (justify in Follow-up)
-- BLOCKED    : Cannot proceed (explain blocker in Follow-up)
+COLUMNS:
+- EI: Execution item identifier
+- Task Description: What to do (static, from Implementation Plan)
+- Execution Summary: Narrative of what was done, evidence, observations (editable)
+- Task Outcome: Pass or Fail (editable)
+- Performed By — Date: Signature (editable)
 
-EVIDENCE EXAMPLES:
-- "Commit abc123"
-- "src/module.py:45-67"
-- "Unit tests passing"
-- "Manual verification: [description]"
+TASK OUTCOME:
+- Pass: Task completed as planned
+- Fail: Task could not be completed as planned — attach VAR with explanation
 
-FOLLOW-UP EXAMPLES:
-- "Created INV-XXX for discovered issue"
-- "Deferred to CR-YYY"
-- "" (blank if nothing to note)
+VAR TYPES (see VAR-TEMPLATE):
+- Type 1: Use when the failed task is critical to CR objectives
+- Type 2: Use when impact is contained and CR can conceptually close
+
+EXECUTION SUMMARY EXAMPLES:
+- "Implemented per plan. Commit abc123."
+- "Modified src/module.py:45-67. Unit tests passing."
+- "Created SOP-007 (now EFFECTIVE)."
 -->
 
-| EI | Description | Status | Evidence | Follow-up |
-|----|-------------|--------|----------|-----------|
-| EI-1 | {{Description from 4.1 step 1}} | [PENDING] | [EXECUTION] | [EXECUTION] |
-| EI-2 | {{Description from 4.1 step 2}} | [PENDING] | [EXECUTION] | [EXECUTION] |
-| EI-3 | {{Description from 4.1 step 3}} | [PENDING] | [EXECUTION] | [EXECUTION] |
+| EI | Task Description | Execution Summary | Task Outcome | Performed By — Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-2 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-3 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+
+<!--
+Add rows as needed. Each row:
+- Columns 1-2: Design-time (author fills during drafting)
+- Columns 3-5: Run-time (executor fills during execution)
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By — Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] — [DATE] |
+
+<!--
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+
+NOTE: This section is the appropriate place to attach VARs that do not apply
+to any individual execution item, but apply to the CR as a whole.
+-->
+
+---
+
+### Reviewer Comments
+
+| Comment | Reviewed By — Date |
+|---------|-------------------|
+| [COMMENT] | [REVIEWER] — [DATE] |
+
+<!--
+Reviewer observations during post-execution review.
+Add rows as needed.
+-->
 
 ---
 
@@ -169,20 +203,7 @@ Summarize the overall outcome and any deviations from the plan.
 
 ---
 
-## 8. Comments
-
-<!--
-Record observations, decisions, or issues encountered during execution.
-Add rows as needed. Replace example row with actual comments.
--->
-
-| Date | User | Comment |
-|------|------|---------|
-| [DATE] | [USER] | [COMMENT] |
-
----
-
-## 9. References
+## 8. References
 
 {{REFERENCES — List related documents. At minimum, reference governing SOPs.}}
 
