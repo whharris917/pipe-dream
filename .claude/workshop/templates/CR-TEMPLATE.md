@@ -1,21 +1,20 @@
 ---
-doc_id: CR-TEMPLATE
 title: 'Change Record Template'
-version: '0.1'
-status: DRAFT
-revision_summary: 'Initial draft of CR template with execution-phase placeholders'
+revision_summary: 'Simplified frontmatter per SOP-001 three-tier architecture'
 ---
 
 <!--
 ================================================================================
 TEMPLATE DOCUMENT NOTICE
 ================================================================================
-The frontmatter above is for QMS management of THIS TEMPLATE as a controlled
-document. When this template is promoted to the QMS, it will be versioned and
-governed like any other document.
+This template is a QMS-controlled document. The frontmatter contains only:
+- title: Document title
+- revision_summary: Description of changes in this revision
 
-The frontmatter below is the EXAMPLE frontmatter for Change Records created
-from this template. Authors should copy from the example frontmatter onward.
+All other metadata (version, status, responsible_user, dates) is managed
+automatically by the QMS CLI in sidecar files (.meta/) per SOP-001 Section 5.
+
+When creating a CR from this template, copy from the EXAMPLE FRONTMATTER onward.
 ================================================================================
 -->
 

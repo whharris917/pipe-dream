@@ -1,21 +1,23 @@
 ---
-doc_id: TC-TEMPLATE
 title: 'Test Case Template'
-version: '0.1'
-status: DRAFT
-revision_summary: 'Initial draft of Test Case document fragment'
+revision_summary: 'Simplified frontmatter per SOP-001 three-tier architecture'
 ---
 
 <!--
 ================================================================================
 TEMPLATE DOCUMENT NOTICE
 ================================================================================
-This is a DOCUMENT FRAGMENT template. Test Cases (TCs) do not exist in isolation
-within the QMS—they are composed into Test Protocols (TPs) or other executable
-documents.
+This template is a QMS-controlled document. The frontmatter contains only:
+- title: Document title
+- revision_summary: Description of changes in this revision
 
-The frontmatter above is for QMS management of THIS TEMPLATE. When creating
-actual Test Cases, omit the frontmatter (the parent TP provides document control).
+All other metadata (version, status, responsible_user, dates) is managed
+automatically by the QMS CLI in sidecar files (.meta/) per SOP-001 Section 5.
+
+NOTE: This is a DOCUMENT FRAGMENT template. Test Cases (TCs) do not exist in
+isolation within the QMS—they are composed into Test Protocols (TPs) or other
+executable documents. When creating actual Test Cases, omit the frontmatter
+(the parent TP provides document control).
 ================================================================================
 -->
 

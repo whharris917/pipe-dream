@@ -6,9 +6,9 @@
 
 ## 2026-01-07
 
-- [ ] Create an SOP template
-  - Add to `.claude/workshop/templates/` alongside existing CR, TC, TP, VAR, ER templates
-  - Follow same structure conventions as other templates
+- [x] ~~Create an SOP template~~ ✓ DONE
+  - Added to `.claude/workshop/templates/SOP-TEMPLATE.md`
+  - Follows same conventions as CR template (template notice, usage guide, placeholders)
 
 - [ ] Remove document status EFFECTIVE as an option; rename to APPROVED
   - Simplify non-executable document workflow: APPROVED is the terminal success state

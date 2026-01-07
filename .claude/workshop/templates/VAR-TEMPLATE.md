@@ -1,20 +1,20 @@
 ---
-doc_id: VAR-TEMPLATE
-title: 'Variance Report Template (Experimental)'
-version: '0.1'
-status: DRAFT
-revision_summary: 'Initial draft of generalized Variance Report template'
+title: 'Variance Report Template'
+revision_summary: 'Simplified frontmatter per SOP-001 three-tier architecture'
 ---
 
 <!--
 ================================================================================
 TEMPLATE DOCUMENT NOTICE
 ================================================================================
-This is an EXPERIMENTAL template exploring the generalization of Exception
-Reports (ERs) into Variance Reports (VARs) that can link any executable
-documents, not just test cases.
+This template is a QMS-controlled document. The frontmatter contains only:
+- title: Document title
+- revision_summary: Description of changes in this revision
 
-The frontmatter above is for QMS management of THIS TEMPLATE.
+All other metadata (version, status, responsible_user, dates) is managed
+automatically by the QMS CLI in sidecar files (.meta/) per SOP-001 Section 5.
+
+When creating a VAR from this template, copy from the EXAMPLE FRONTMATTER onward.
 ================================================================================
 -->
 
