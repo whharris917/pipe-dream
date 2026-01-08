@@ -1,0 +1,155 @@
+---
+title: SOP and Template Cross-Validation Alignment
+revision_summary: Initial draft
+---
+
+# CR-016: SOP and Template Cross-Validation Alignment
+
+## 1. Purpose
+
+Align SOPs and document templates to ensure cross-consistency between procedural requirements and template structures. This CR addresses discrepancies identified during cross-validation of the six SOPs against the six document templates.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+- **Parent Document:** None (independent improvement identified during Session-2026-01-07-004)
+
+### 2.2 Changes Summary
+
+This CR implements three coordinated changes:
+
+1. **SOP-002 / CR-TEMPLATE:** Restructure CR content requirements with improved section organization
+2. **SOP-004:** Add "Proposed Corrective Action" to ER content requirements
+3. **SOP-003 / INV-TEMPLATE:** Restructure INV content requirements and create matching template
+
+### 2.3 Files Affected
+
+**SOPs:**
+- `QMS/SOP/SOP-002.md` — Section 6 (CR Content Requirements)
+- `QMS/SOP/SOP-003.md` — Section 5 (Investigation Structure)
+- `QMS/SOP/SOP-004.md` — Section 9.2 (ER Content)
+
+**Templates:**
+- `.claude/workshop/templates/CR-TEMPLATE.md` — Complete restructure
+- `.claude/workshop/templates/INV-TEMPLATE.md` — New file
+
+---
+
+## 3. Rationale
+
+The previous session (Session-2026-01-07-003) harmonized SOPs internally and templates internally. Cross-validation revealed:
+
+1. **CR terminology mismatch:** SOP-002 used "Description" while CR-TEMPLATE used "Scope" with different sub-structure
+2. **CR missing sections:** Template had "Implementation Plan" not required by SOP
+3. **ER missing section:** Template had "Proposed Corrective Action" not listed in SOP-004
+4. **No INV template:** SOP-003 defined INV structure but no template existed
+
+These discrepancies create ambiguity for document authors and reviewers. Aligning them ensures consistent document creation and review.
+
+---
+
+## 4. Implementation Plan
+
+### 4.1 CR Structure (SOP-002 Section 6 + CR-TEMPLATE)
+
+The new CR structure separates orientation (Scope, Context, Current/Proposed State) from detail (Change Description) and adds explicit Impact Assessment:
+
+| Section | Purpose |
+|---------|---------|
+| 1. Purpose | What problem does this solve? |
+| 2. Scope | Brief overview of affected system(s)/functionality |
+| 3. Context | Parent document references (if applicable) |
+| 4. Current State | Concise declarative statement(s), present tense |
+| 5. Proposed State | Concise declarative statement(s), present tense |
+| 6. Change Description | Full details, no rigid structure |
+| 7. Justification | Why is this change needed? |
+| 8. Impact Assessment | Files Affected, Documents Affected, Other |
+| 9. Testing Summary | Brief description of testing approach |
+| 10. Implementation Plan | EI table or executable blocks |
+| 11. Execution Comments | Free-form comments, VAR attachments |
+| 12. Execution Summary | Overall narrative after completion |
+| 13. References | Related documents |
+
+### 4.2 ER Content (SOP-004 Section 9.2)
+
+Add "Proposed Corrective Action" to the required ER content list, positioned between Root Cause and Re-test Section:
+
+- Exception Identification
+- Detailed Description
+- Root Cause
+- **Proposed Corrective Action** ← new
+- Exception Type
+- Re-test Section
+- ER Closure
+
+### 4.3 INV Structure (SOP-003 Section 5 + INV-TEMPLATE)
+
+Replace current SOP-003 Section 5 with structure mirroring CR organization:
+
+| Section | Purpose |
+|---------|---------|
+| 1. Purpose | Why this investigation exists |
+| 2. Scope | Affected system(s)/functionality |
+| 3. Background | Context, what happened, when discovered |
+| 4. Description of Deviation(s) | Full details of the deviation(s) |
+| 5. Impact Assessment | Effect on systems, documents, other |
+| 6. Root Cause Analysis | Why it happened |
+| 7. Remediation Plan (CAPAs) | EI table/blocks for corrective/preventive actions |
+| 8. Execution Comments | Free-form comments, VAR attachments |
+| 9. Execution Summary | Overall narrative after completion |
+| 10. References | Related documents |
+
+Create INV-TEMPLATE matching this structure.
+
+---
+
+## 5. Testing Summary
+
+- Manual verification that updated SOPs and templates are internally consistent
+- Manual verification that SOP requirements match template sections
+- Review of existing effective CRs to confirm new structure doesn't invalidate historical documents (historical documents are grandfathered)
+
+---
+
+## 6. Execution
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By — Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Update SOP-002 Section 6 with new CR content requirements | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-2 | Update CR-TEMPLATE to match new SOP-002 Section 6 structure | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-3 | Update SOP-004 Section 9.2 to add Proposed Corrective Action | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-4 | Update SOP-003 Section 5 with new INV structure | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-5 | Create INV-TEMPLATE matching SOP-003 Section 5 | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+| EI-6 | Cross-verify all SOP/template pairs for consistency | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By — Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] — [DATE] |
+
+---
+
+## 7. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 8. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control (being modified)
+- **SOP-003:** Deviation Management (being modified)
+- **SOP-004:** Document Execution (being modified)
+- **CR-TEMPLATE:** Being modified
+- **INV-TEMPLATE:** Being created
+
+---
+
+**END OF DOCUMENT**

@@ -35,3 +35,5 @@
 {"ts": "2026-01-07T01:43:29+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-07T01:43:29+00:00", "event": "EFFECTIVE", "user": "qa", "version": "5.0", "from_version": "4.1"}
 {"ts": "2026-01-07T01:43:29+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-08T02:33:13+00:00", "event": "CHECKOUT", "user": "claude", "version": "5.1", "from_version": "5.0"}
+{"ts": "2026-01-08T02:46:30+00:00", "event": "CHECKIN", "user": "claude", "version": "5.1"}

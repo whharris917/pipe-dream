@@ -1,10 +1,10 @@
 {
   "doc_id": "SOP-002",
   "doc_type": "SOP",
-  "version": "5.0",
-  "status": "EFFECTIVE",
+  "version": "5.1",
+  "status": "DRAFT",
   "executable": false,
-  "responsible_user": null,
+  "responsible_user": "claude",
   "checked_out": false,
   "checked_out_date": null,
   "effective_version": "5.0",
