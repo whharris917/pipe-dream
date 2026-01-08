@@ -1,0 +1,12 @@
+{
+  "doc_id": "TEMPLATE-TC",
+  "doc_type": "TEMPLATE",
+  "version": "1.0",
+  "status": "EFFECTIVE",
+  "executable": false,
+  "responsible_user": "claude",
+  "checked_out": false,
+  "pending_assignees": [],
+  "effective_date": "2026-01-08",
+  "effective_version": "1.0"
+}

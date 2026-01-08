@@ -1,6 +1,6 @@
 ---
 title: 'Exception Report Template'
-revision_summary: 'Simplified frontmatter per SOP-001 three-tier architecture'
+revision_summary: 'CR-017: Initial migration to QMS control'
 ---
 
 <!--
@@ -53,8 +53,9 @@ NESTING:
 - ERs can nest: if re-testing fails, create child ER
 - Example: TP-001-TC-001-ER-001-ER-001
 
-LOCKED vs EDITABLE:
+LOCKED vs EDITABLE (per SOP-004 Section 9.2):
 - Sections 1-5 are locked after pre-approval
+  (Exception ID, Description, Root Cause, Proposed Corrective Action, Exception Type)
 - Section 6 (Re-test) and Section 7 (Closure) are editable during execution
 
 Delete this comment block after reading.
@@ -83,7 +84,13 @@ Delete this comment block after reading.
 
 ---
 
-## 4. Exception Type
+## 4. Proposed Corrective Action
+
+{{PROPOSED_CORRECTIVE_ACTION — What will be done to address the root cause before re-testing?}}
+
+---
+
+## 5. Exception Type
 
 {{EXCEPTION_TYPE}}
 
@@ -97,12 +104,6 @@ Select one:
 - Documentation Error: Error in a document other than the test script itself
 - Other: See Detailed Description
 -->
-
----
-
-## 5. Proposed Corrective Action
-
-{{PROPOSED_CORRECTIVE_ACTION — What will be done to address the root cause before re-testing?}}
 
 ---
 

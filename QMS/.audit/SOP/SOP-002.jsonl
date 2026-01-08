@@ -37,3 +37,15 @@
 {"ts": "2026-01-07T01:43:29+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
 {"ts": "2026-01-08T02:33:13+00:00", "event": "CHECKOUT", "user": "claude", "version": "5.1", "from_version": "5.0"}
 {"ts": "2026-01-08T02:46:30+00:00", "event": "CHECKIN", "user": "claude", "version": "5.1"}
+{"ts": "2026-01-08T17:21:28+00:00", "event": "CHECKOUT", "user": "claude", "version": "5.1"}
+{"ts": "2026-01-08T17:23:04+00:00", "event": "CHECKIN", "user": "claude", "version": "5.1"}
+{"ts": "2026-01-08T17:30:14+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "5.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-08T17:30:14+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "5.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-08T17:31:48+00:00", "event": "REVIEW", "user": "qa", "version": "5.1", "outcome": "RECOMMEND", "comment": "Review of SOP-002-draft.md v5.1. FRONTMATTER: title='Change Control' (present, non-empty); revision_summary='CR-016: Restructure CR content requirements (Section 6)' (present, begins with CR ID). STRUCTURE: All 11 sections present (Purpose, Scope, Definitions, Responsibilities, CR Numbering, CR Content Requirements, CR Workflow, Document Traceability, Test Protocol, Rollback, References). CR-016 CHANGES VERIFIED: Section 6 restructured to define 12-section CR structure (Purpose, Scope, Current State, Proposed State, Change Description, Justification, Impact Assessment, Testing Summary, Implementation Plan, Execution, Execution Summary, References). PLACEHOLDERS: None found. FORMATTING: Consistent. VERDICT: COMPLIANT. Recommend approval."}
+{"ts": "2026-01-08T17:31:48+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-08T17:31:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-08T17:31:59+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "5.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-08T17:32:09+00:00", "event": "APPROVE", "user": "qa", "version": "5.1"}
+{"ts": "2026-01-08T17:32:09+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "6.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-08T17:32:09+00:00", "event": "EFFECTIVE", "user": "qa", "version": "6.0", "from_version": "5.1"}
+{"ts": "2026-01-08T17:32:09+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "6.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

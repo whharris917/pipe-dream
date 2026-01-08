@@ -23,3 +23,15 @@
 {"ts": "2026-01-07T01:43:31+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-07T01:43:31+00:00", "event": "EFFECTIVE", "user": "qa", "version": "2.0", "from_version": "1.1"}
 {"ts": "2026-01-07T01:43:31+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-08T17:24:33+00:00", "event": "CHECKOUT", "user": "claude", "version": "2.1", "from_version": "2.0"}
+{"ts": "2026-01-08T17:25:17+00:00", "event": "CHECKIN", "user": "claude", "version": "2.1"}
+{"ts": "2026-01-08T17:30:16+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-08T17:30:16+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "2.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-08T17:31:50+00:00", "event": "REVIEW", "user": "qa", "version": "2.1", "outcome": "RECOMMEND", "comment": "Review of SOP-004-draft.md v2.1. FRONTMATTER: title='Document Execution' (present, non-empty); revision_summary='CR-016: Add Proposed Corrective Action to ER content requirements' (present, begins with CR ID). STRUCTURE: All 11 sections present (Purpose, Scope, Definitions, The Executable Block, Document States During Execution, Scope Integrity, Execution Outcome Documentation, Evidence Requirements, Exception Reports, Variance Reports, Post-Review Requirements, References). CR-016 CHANGES VERIFIED: Section 9.2 now includes 'Proposed Corrective Action' in ER content list between Root Cause and Exception Type. PLACEHOLDERS: None found. FORMATTING: Consistent. VERDICT: COMPLIANT. Recommend approval."}
+{"ts": "2026-01-08T17:31:50+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-08T17:32:01+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-08T17:32:01+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "2.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-08T17:32:11+00:00", "event": "APPROVE", "user": "qa", "version": "2.1"}
+{"ts": "2026-01-08T17:32:11+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "3.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-08T17:32:11+00:00", "event": "EFFECTIVE", "user": "qa", "version": "3.0", "from_version": "2.1"}
+{"ts": "2026-01-08T17:32:11+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "3.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

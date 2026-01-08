@@ -80,6 +80,8 @@ DOCUMENT_TYPES = {
     "CS": {"path": "SDLC-FLOW", "executable": False, "prefix": "SDLC-FLOW-CS", "singleton": True},
     "RTM": {"path": "SDLC-FLOW", "executable": False, "prefix": "SDLC-FLOW-RTM", "singleton": True},
     "OQ": {"path": "SDLC-FLOW", "executable": False, "prefix": "SDLC-FLOW-OQ", "singleton": True},
+    # Named document types (name-based rather than numbered)
+    "TEMPLATE": {"path": "TEMPLATE", "executable": False, "prefix": "TEMPLATE"},
 }
 
 
@@ -118,7 +120,9 @@ class Status(Enum):
 # Valid transitions
 TRANSITIONS = {
     # Non-executable
-    Status.DRAFT: [Status.IN_REVIEW, Status.IN_PRE_REVIEW],
+    # BUGFIX: Allow DRAFT -> IN_POST_REVIEW for post-release checkout/checkin cycle
+    # The route command checks execution_phase before allowing this transition
+    Status.DRAFT: [Status.IN_REVIEW, Status.IN_PRE_REVIEW, Status.IN_POST_REVIEW],
     Status.IN_REVIEW: [Status.REVIEWED],
     Status.REVIEWED: [Status.IN_REVIEW, Status.IN_APPROVAL],
     Status.IN_APPROVAL: [Status.APPROVED, Status.REVIEWED],  # REVIEWED on rejection
@@ -428,6 +432,8 @@ def get_doc_type(doc_id: str) -> str:
             return suffix
     if doc_id.startswith("SOP-"):
         return "SOP"
+    if doc_id.startswith("TEMPLATE-"):
+        return "TEMPLATE"
     if "-TP-ER-" in doc_id:
         return "ER"
     if "-TP" in doc_id:

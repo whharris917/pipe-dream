@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 # Valid document types
-DOC_TYPES = {"SOP", "CR", "INV", "CAPA", "TP", "ER", "RS", "DS", "CS", "RTM", "OQ"}
+DOC_TYPES = {"SOP", "CR", "INV", "CAPA", "TP", "ER", "RS", "DS", "CS", "RTM", "OQ", "TEMPLATE"}
 
 # Document types that use folder-per-doc structure
 FOLDER_DOC_TYPES = {"CR", "INV", "CAPA", "TP", "ER"}
@@ -50,6 +50,8 @@ DOC_ID_PATTERNS = {
     "CS": re.compile(r"^SDLC-FLOW-CS$"),
     "RTM": re.compile(r"^SDLC-FLOW-RTM$"),
     "OQ": re.compile(r"^SDLC-FLOW-OQ$"),
+    # Named document types (name-based rather than numbered)
+    "TEMPLATE": re.compile(r"^TEMPLATE-[A-Z]+$"),
 }
 
 # Valid users

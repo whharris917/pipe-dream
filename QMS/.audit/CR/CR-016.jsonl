@@ -14,3 +14,19 @@
 {"ts": "2026-01-08T03:01:42+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
 {"ts": "2026-01-08T03:03:02+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
 {"ts": "2026-01-08T03:03:02+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-08T17:20:39+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T17:20:39+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-08T17:28:51+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T17:30:04+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T17:32:48+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T17:34:27+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T17:34:33+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-08T17:34:33+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-08T17:35:33+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. All conditions per SOP-002 Section 7.3 are satisfied: (1) All 6 EIs show Task Outcome of Pass with documented evidence in Execution Summary column; (2) No VARs attached; (3) All modified SOPs are EFFECTIVE: SOP-002 v6.0, SOP-003 v2.0, SOP-004 v3.0 (verified via qms status commands); (4) Execution Summary section provides comprehensive narrative. Frontmatter verified: title='SOP and Template Cross-Validation Alignment', revision_summary='Initial draft' (appropriate for v0.x). No placeholder content found. Document structure follows CR template. RECOMMEND for post-approval."}
+{"ts": "2026-01-08T17:35:33+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-08T17:35:43+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-08T17:35:43+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-08T17:35:47+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-08T17:35:47+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-08T17:36:10+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-08T17:36:10+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

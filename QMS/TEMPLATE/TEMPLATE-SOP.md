@@ -1,6 +1,6 @@
 ---
 title: 'Standard Operating Procedure Template'
-revision_summary: 'Initial creation with simplified frontmatter per SOP-001'
+revision_summary: 'CR-017: Initial migration to QMS control'
 ---
 
 <!--
@@ -33,10 +33,10 @@ SOPs are NON-EXECUTABLE documents. They define procedures but do not authorize
 implementation activities.
 
 WORKFLOW:
-  DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE
+  DRAFT -> IN_REVIEW -> REVIEWED -> IN_APPROVAL -> APPROVED -> EFFECTIVE
 
 PLACEHOLDER TYPES:
-1. {{DOUBLE_CURLY}} — Replace when drafting the SOP
+1. {{DOUBLE_CURLY}} - Replace when drafting the SOP
 
 After authoring:
 - NO {{...}} placeholders should remain
@@ -60,13 +60,13 @@ Delete this comment block after reading.
 
 ## 1. Purpose
 
-{{PURPOSE — What does this procedure establish? What problem does it solve?}}
+{{PURPOSE - What does this procedure establish? What problem does it solve?}}
 
 ---
 
 ## 2. Scope
 
-This SOP applies to {{SCOPE — Who/what is governed by this procedure}}:
+This SOP applies to {{SCOPE - Who/what is governed by this procedure}}:
 
 - {{Item 1}}
 - {{Item 2}}
@@ -91,7 +91,7 @@ This SOP applies to {{SCOPE — Who/what is governed by this procedure}}:
 
 ## 4. {{FIRST_CONTENT_SECTION_TITLE}}
 
-{{CONTENT — Begin the actual procedure here. Number sections sequentially.}}
+{{CONTENT - Begin the actual procedure here. Number sections sequentially.}}
 
 ### 4.1 {{Subsection Title}}
 
@@ -109,36 +109,9 @@ This SOP applies to {{SCOPE — Who/what is governed by this procedure}}:
 
 ---
 
-<!--
-================================================================================
-CONTENT SECTION GUIDANCE
-================================================================================
-
-Add as many content sections as needed (4, 5, 6, ...). Common patterns:
-
-PROCESS-ORIENTED SOPs:
-- Section 4: When to Initiate
-- Section 5: Procedure Steps
-- Section 6: Completion Criteria
-
-GOVERNANCE SOPs:
-- Section 4: Roles and Responsibilities
-- Section 5: Requirements
-- Section 6: Workflows
-- Section 7: Compliance
-
-TECHNICAL SOPs:
-- Section 4: Architecture/Design
-- Section 5: Implementation Details
-- Section 6: Maintenance
-
-The structure should serve the content, not the other way around.
-================================================================================
--->
-
 ## N. References
 
-{{REFERENCES — List related documents}}
+{{REFERENCES - List related documents}}
 
 | Document | Relationship |
 |----------|--------------|

@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-01-08
+
+### Restrict Claude from prescribing review requirements in agent messages
+
+When spawning QA or reviewer agents, Claude (the orchestrator) should not dictate specific review criteria or acceptance requirements in the task prompt. This undermines the independence of the review function.
+
+**Problem:** Prompts like "verify the CR has X, Y, Z" or "if conditions A and B are met, approve" effectively pre-determine the review outcome. The reviewer becomes a rubber stamp executing Claude's checklist rather than applying independent judgment.
+
+**Principle:** Reviewers should derive review criteria from:
+1. The governing SOPs (SOP-001, SOP-002, etc.)
+2. Their domain expertise (for TUs)
+3. Their independent assessment of the document
+
+**Current violation pattern:**
+```
+Task(subagent_type="qa", prompt="Review CR-017. Verify it includes EI-1, EI-2, EI-3...")
+```
+
+**Preferred pattern:**
+```
+Task(subagent_type="qa", prompt="Review CR-017 for pre-approval per SOP-002.")
+```
+
+**Considerations:**
+- Context is fine (what the CR is about, why it was returned previously)
+- Prescriptive criteria are not (what must be present for approval)
+- May need to formalize this in CLAUDE.md or a future SOP-007
+
+---
+
 ## 2026-01-06
 
 ### Visual distinction for executed content in closed documents

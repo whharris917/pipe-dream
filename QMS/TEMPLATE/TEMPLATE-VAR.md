@@ -1,6 +1,6 @@
 ---
 title: 'Variance Report Template'
-revision_summary: 'Simplified frontmatter per SOP-001 three-tier architecture'
+revision_summary: 'CR-017: Initial migration to QMS control'
 ---
 
 <!--

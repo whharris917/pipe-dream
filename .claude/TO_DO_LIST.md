@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-01-08
+
+- [ ] Proceduralize how to add new documents to the QMS
+  - Problem: Can't check out a document that doesn't exist yet
+  - v1.0 of documents have dubious QA oversight (created directly, not through checkout/checkin cycle)
+  - Consider: CR-driven document creation workflow, or initial review gate before v1.0 becomes EFFECTIVE
+
+---
+
 ## 2026-01-07
 
 - [x] ~~Create an SOP template~~ ✓ DONE

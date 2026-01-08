@@ -5,3 +5,15 @@
 {"ts": "2026-01-05T00:02:06+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
 {"ts": "2026-01-05T00:02:19+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
 {"ts": "2026-01-05T00:02:19+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}
+{"ts": "2026-01-08T17:25:24+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1", "from_version": "1.0"}
+{"ts": "2026-01-08T17:26:32+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-01-08T17:30:15+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-08T17:30:15+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-08T17:31:49+00:00", "event": "REVIEW", "user": "qa", "version": "1.1", "outcome": "RECOMMEND", "comment": "Review of SOP-003-draft.md v1.1. FRONTMATTER: title='Deviation Management' (present, non-empty); revision_summary='CR-016: Restructure INV content requirements (Section 5)' (present, begins with CR ID). STRUCTURE: All 9 sections present (Purpose, Scope, Definitions, When to Create an Investigation, Investigation Content Requirements, CAPAs as Execution Items, Investigation Workflow, Closure Criteria, References). CR-016 CHANGES VERIFIED: Section 5 restructured to define 10-section INV structure (Purpose, Scope, Background, Description of Deviation(s), Impact Assessment, Root Cause Analysis, Remediation Plan, Execution Comments, Execution Summary, References). PLACEHOLDERS: None found. FORMATTING: Consistent. VERDICT: COMPLIANT. Recommend approval."}
+{"ts": "2026-01-08T17:31:49+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-08T17:32:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-08T17:32:00+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "1.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-08T17:32:10+00:00", "event": "APPROVE", "user": "qa", "version": "1.1"}
+{"ts": "2026-01-08T17:32:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-08T17:32:10+00:00", "event": "EFFECTIVE", "user": "qa", "version": "2.0", "from_version": "1.1"}
+{"ts": "2026-01-08T17:32:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
