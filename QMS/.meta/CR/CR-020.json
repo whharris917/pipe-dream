@@ -1,0 +1,14 @@
+{
+  "doc_id": "CR-020",
+  "doc_type": "CR",
+  "version": "0.1",
+  "status": "DRAFT",
+  "executable": true,
+  "execution_phase": "pre_release",
+  "responsible_user": "lead",
+  "checked_out": true,
+  "checked_out_date": "2026-01-08",
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}

@@ -1,0 +1,24 @@
+{"ts": "2026-01-08T21:15:54+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Use QMS TEMPLATE Documents for Document Creation"}
+{"ts": "2026-01-08T21:17:14+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-08T21:19:32+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-08T21:19:32+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-08T21:21:20+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW COMPLETE. COMPLIANT. Verified: (1) Frontmatter present - title: 'Use QMS TEMPLATE Documents for Document Creation', revision_summary: 'Initial draft'; (2) All 12 CR sections present per SOP-002 Section 6; (3) Scope includes Context (CR-017 parent), Changes Summary (4 items), Files Affected (.claude/qms.py); (4) No inappropriate placeholder content in prose; (5) Referenced documents valid - SOP-001 EFFECTIVE, SOP-002 EFFECTIVE, CR-017 CLOSED; (6) Document structure and formatting consistent; (7) No typos or errors. Recommend approval."}
+{"ts": "2026-01-08T21:21:20+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-08T21:22:16+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-08T21:22:16+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-08T21:24:30+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-08T21:24:30+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-08T21:24:59+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T21:24:59+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-08T21:55:20+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T21:56:47+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-08T21:56:54+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-08T21:56:54+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-08T21:59:05+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "QA REVIEW COMPLETE - RECOMMEND APPROVAL. Verified: (1) Frontmatter: title='Use QMS TEMPLATE Documents for Document Creation', revision_summary='CR-019: Hook QMS TEMPLATE documents to qms create command' - begins with CR ID per SOP-002 Section 8; (2) All 12 CR sections per SOP-002 Section 6 present; (3) No placeholder content (TBD/TODO/FIXME/XXX); (4) Implementation verified: helper functions at qms.py lines 738-827, cmd_create integration at line 879; (5) Test evidence: CR-020 and SOP-007 exist with correct title/doc_id substitution; (6) Fallback mechanism verified via code review. All EIs Pass. Document compliant."}
+{"ts": "2026-01-08T21:59:05+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-08T21:59:30+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-08T21:59:30+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-08T22:01:03+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-08T22:01:03+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-08T22:01:17+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-08T22:01:17+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

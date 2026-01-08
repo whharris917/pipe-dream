@@ -21,7 +21,7 @@ import shutil
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 import yaml
 
@@ -732,6 +732,100 @@ Before approving, you MUST confirm:
 
 
 # =============================================================================
+# Template Loading (CR-019)
+# =============================================================================
+
+def strip_template_comments(body: str) -> str:
+    """Remove TEMPLATE DOCUMENT NOTICE comment block (template metadata only).
+
+    Note: TEMPLATE USAGE GUIDE is intentionally preserved - it provides guidance
+    for document authors and should be manually deleted after reading.
+    """
+    # Pattern matches the TEMPLATE DOCUMENT NOTICE block only
+    # Uses flexible matching for equals signs (70-82 characters) and whitespace
+    pattern = r'<!--\s*={70,82}\s*TEMPLATE DOCUMENT NOTICE\s*={70,82}\s*.*?={70,82}\s*-->\s*'
+    return re.sub(pattern, '', body, flags=re.DOTALL)
+
+
+def create_minimal_template(doc_id: str, title: str) -> Tuple[Dict[str, Any], str]:
+    """Create minimal fallback template when no TEMPLATE document exists."""
+    frontmatter = {"title": title}
+    body = f"""# {doc_id}: {title}
+
+## 1. Purpose
+
+[Describe the purpose of this document]
+
+---
+
+## 2. Scope
+
+[Define what this document covers]
+
+---
+
+## 3. Content
+
+[Main content here]
+
+---
+
+**END OF DOCUMENT**
+"""
+    return frontmatter, body
+
+
+def load_template_for_type(doc_type: str, doc_id: str, title: str) -> Tuple[Dict[str, Any], str]:
+    """
+    Load template for document type and substitute placeholders.
+
+    Returns (frontmatter, body) tuple ready for new document creation.
+    Falls back to minimal template if TEMPLATE-{type} doesn't exist.
+    """
+    template_id = f"TEMPLATE-{doc_type}"
+    template_path = QMS_ROOT / "TEMPLATE" / f"{template_id}.md"
+
+    if not template_path.exists():
+        return create_minimal_template(doc_id, title)
+
+    # Read raw template file
+    content = template_path.read_text(encoding="utf-8")
+
+    # Find the "example frontmatter" - the second --- block
+    # Template structure: [template frontmatter] [notice] [example frontmatter] [guide] [body]
+    parts = content.split("---")
+    if len(parts) < 5:
+        # Malformed template, fall back
+        return create_minimal_template(doc_id, title)
+
+    # Reconstruct from example frontmatter onward (parts[3] is example FM, parts[4+] is body)
+    example_fm_raw = parts[3].strip()
+    body_parts = "---".join(parts[4:])
+
+    # Parse example frontmatter
+    import yaml
+    try:
+        example_fm = yaml.safe_load(example_fm_raw) or {}
+    except yaml.YAMLError:
+        example_fm = {}
+
+    # Strip template comment blocks from body
+    body = strip_template_comments(body_parts)
+
+    # Replace placeholders
+    body = body.replace("{{TITLE}}", title)
+    body = body.replace(f"{doc_type}-XXX", doc_id)
+
+    # Update frontmatter with actual title and default revision_summary
+    frontmatter = {
+        "title": title,
+        "revision_summary": "Initial draft",
+    }
+
+    return frontmatter, body.strip() + "\n"
+
+
+# =============================================================================
 # Commands
 # =============================================================================
 
@@ -777,36 +871,10 @@ def cmd_create(args):
         folder_path = QMS_ROOT / config["path"] / doc_id
         folder_path.mkdir(parents=True, exist_ok=True)
 
-    # Create minimal frontmatter (author-maintained fields only)
-    # All workflow state is managed in .meta files
-    frontmatter = {
-        "title": args.title or f"{doc_type} - [Title]",
-        # revision_summary added when document is revised
-    }
-
-    # Create body template (no manual metadata per SOP-001 Section 5.4)
-    body = f"""# {doc_id}: {args.title or '[Title]'}
-
-## 1. Purpose
-
-[Describe the purpose of this document]
-
----
-
-## 2. Scope
-
-[Define what this document covers]
-
----
-
-## 3. Content
-
-[Main content here]
-
----
-
-**END OF DOCUMENT**
-"""
+    # Load template for document type (CR-019)
+    # Falls back to minimal template if TEMPLATE-{type} doesn't exist
+    title = args.title or f"{doc_type} - [Title]"
+    frontmatter, body = load_template_for_type(doc_type, doc_id, title)
 
     # Write to draft path (minimal frontmatter only)
     write_document_minimal(draft_path, frontmatter, body)

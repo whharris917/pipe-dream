@@ -6,6 +6,10 @@
 
 ## 2026-01-08
 
+- [ ] Figure out a way to remind Claude to spawn and reuse/resume agents
+  - Currently spinning up completely new agents each time instead of resuming existing ones
+  - Consider: CLAUDE.md instruction, hook reminder, or agent ID tracking mechanism
+
 - [ ] Proceduralize how to add new documents to the QMS
   - Problem: Can't check out a document that doesn't exist yet
   - v1.0 of documents have dubious QA oversight (created directly, not through checkout/checkin cycle)

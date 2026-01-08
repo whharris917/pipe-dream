@@ -71,3 +71,4 @@ All session chronicles, in chronological order.
 ## 2026-01-08
 
 - [Session-2026-01-08-001](Session-2026-01-08-001.md)
+- [Session-2026-01-08-001](Session-2026-01-08-001.md)
