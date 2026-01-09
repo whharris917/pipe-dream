@@ -1,5 +1,5 @@
 {
-  "doc_id": "CR-018",
+  "doc_id": "CR-022",
   "doc_type": "CR",
   "version": "2.0",
   "status": "CLOSED",
@@ -11,8 +11,5 @@
   "effective_version": null,
   "supersedes": null,
   "pending_assignees": [],
-  "pending_reviewers": [],
-  "completed_reviewers": [],
-  "review_outcomes": {},
   "approval_date": "2026-01-08"
 }

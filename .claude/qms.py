@@ -967,7 +967,11 @@ def cmd_checkout(args):
                 print(f"Error: {doc_id} is checked out by {current_owner}")
             return 1
 
-        # Check out existing draft - only update .meta, no document write needed
+        # Read content for workspace
+        content = draft_path.read_text(encoding="utf-8")
+        frontmatter, body = parse_frontmatter(content)
+
+        # Check out existing draft - update .meta
         version = meta.get("version", "0.1")
         meta = update_meta_checkout(meta, user)
         write_meta(doc_id, doc_type, meta)
@@ -975,11 +979,16 @@ def cmd_checkout(args):
         # Log CHECKOUT event
         log_checkout(doc_id, doc_type, user, version)
 
-        source_path = draft_path
+        # Write content to workspace
+        workspace_path = get_workspace_path(user, doc_id)
+        workspace_path.parent.mkdir(parents=True, exist_ok=True)
+        write_document_minimal(workspace_path, frontmatter, body)
 
     elif effective_path.exists():
         # Create new draft from effective
-        frontmatter, body = read_document(effective_path)
+        content = effective_path.read_text(encoding="utf-8")
+        frontmatter, body = parse_frontmatter(content)
+
         current_version = meta.get("version", "1.0")
         major = int(str(current_version).split(".")[0])
         new_version = f"{major}.1"
@@ -990,10 +999,6 @@ def cmd_checkout(args):
         shutil.copy(effective_path, archive_path)
         print(f"Archived: v{current_version}")
 
-        # Write draft with minimal frontmatter
-        write_document_minimal(draft_path, frontmatter, body)
-        source_path = draft_path
-
         # Update .meta file for new draft
         meta = update_meta_checkout(meta, user, new_version=new_version)
         meta["status"] = "DRAFT"
@@ -1003,15 +1008,19 @@ def cmd_checkout(args):
         # Log CHECKOUT event
         log_checkout(doc_id, doc_type, user, new_version, from_version=current_version)
 
+        # Create draft from effective
+        draft_path.parent.mkdir(parents=True, exist_ok=True)
+        write_document_minimal(draft_path, frontmatter, body)
+
+        # Write content to workspace
+        workspace_path = get_workspace_path(user, doc_id)
+        workspace_path.parent.mkdir(parents=True, exist_ok=True)
+        write_document_minimal(workspace_path, frontmatter, body)
+
         print(f"Created draft v{new_version} from effective v{current_version}")
     else:
         print(f"Error: Document not found: {doc_id}")
         return 1
-
-    # Copy to workspace
-    workspace_path = get_workspace_path(user, doc_id)
-    workspace_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy(source_path, workspace_path)
 
     print(f"Checked out: {doc_id}")
     print(f"Workspace: {workspace_path.relative_to(PROJECT_ROOT)}")
@@ -1045,36 +1054,23 @@ To see your workspace: qms --user {user} workspace
         return 1
 
     draft_path = get_doc_path(doc_id, draft=True)
+    doc_type = get_doc_type(doc_id)
+    meta = read_meta(doc_id, doc_type) or {}
 
-    # Verify user has it checked out (ownership check)
-    if draft_path.exists():
-        frontmatter, _ = read_document(draft_path)
-        doc_owner = frontmatter.get("responsible_user")
-        allowed, error = check_permission(user, "checkin", doc_owner=doc_owner)
-        if not allowed:
-            print(error)
-            return 1
+    # Verify user has it checked out (ownership check via .meta)
+    doc_owner = meta.get("responsible_user")
+    allowed, error = check_permission(user, "checkin", doc_owner=doc_owner)
+    if not allowed:
+        print(error)
+        return 1
 
     # Read workspace version
     frontmatter, body = read_document(workspace_path)
 
-    # Archive previous draft if exists and version differs
-    if draft_path.exists():
-        old_fm, old_body = read_document(draft_path)
-        old_version = str(old_fm.get("version", "0.1"))
-        new_version = str(frontmatter.get("version", "0.1"))
-        if old_version != new_version:
-            archive_path = get_archive_path(doc_id, old_version)
-            archive_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(draft_path, archive_path)
-            print(f"Archived: v{old_version}")
-
     # Get version from .meta (authoritative source)
-    doc_type = get_doc_type(doc_id)
-    meta = read_meta(doc_id, doc_type) or {}
     version = meta.get("version", frontmatter.get("version", "0.1"))
 
-    # Write to QMS with minimal frontmatter (workflow state is in .meta)
+    # Write content to QMS draft with minimal frontmatter
     write_document_minimal(draft_path, frontmatter, body)
 
     # Update .meta file
@@ -1664,10 +1660,12 @@ Check your inbox for assigned tasks: qms --user {user} inbox
                 # Update meta - set RETIRED status, clear owner
                 meta = update_meta_approval(meta, new_status=Status.RETIRED.value, new_version=new_version, clear_owner=True)
                 meta.pop("retiring", None)  # Clear the retiring flag
+                write_meta(doc_id, doc_type, meta)
                 log_retire(doc_id, doc_type, user, current_version, new_version)
                 # Log additional status change to RETIRED (CAPA-3)
                 log_status_change(doc_id, doc_type, user, new_version, new_status.value, Status.RETIRED.value)
                 print(f"Document is now RETIRED")
+                # No metadata injection for RETIRED docs (files are deleted)
 
             elif new_status == Status.APPROVED:
                 # Non-executable normal workflow: transition to EFFECTIVE
@@ -1682,14 +1680,16 @@ Check your inbox for assigned tasks: qms --user {user} inbox
                 log_effective(doc_id, doc_type, user, current_version, new_version)
                 # Log additional status change to EFFECTIVE (CAPA-3)
                 log_status_change(doc_id, doc_type, user, new_version, new_status.value, Status.EFFECTIVE.value)
+
+                write_meta(doc_id, doc_type, meta)
             else:
                 # Executable document - stays as draft until closed
                 meta = update_meta_approval(meta, new_status=new_status.value, new_version=new_version, clear_owner=False)
+                write_meta(doc_id, doc_type, meta)
     else:
         # Still waiting for more approvals
         meta["pending_assignees"] = remaining_assignees
-
-    write_meta(doc_id, doc_type, meta)
+        write_meta(doc_id, doc_type, meta)
 
     # Remove task from inbox
     inbox_path = get_inbox_path(user)

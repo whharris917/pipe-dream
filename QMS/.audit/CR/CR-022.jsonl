@@ -1,0 +1,26 @@
+{"ts": "2026-01-09T02:15:02+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Revert CR-018 metadata injection"}
+{"ts": "2026-01-09T02:22:28+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-09T02:22:44+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-09T02:22:44+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-09T02:23:45+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "QA REVIEW COMPLETE - COMPLIANT. Verified frontmatter: title='Revert CR-018 metadata injection', revision_summary='Initial draft' (CR ID not required for v0.1). All 12 required sections per SOP-002 Section 6 present and complete. No placeholder content (TBD/TODO/FIXME) in pre-approved Sections 1-9. Execution items EI-1 through EI-5 properly defined with clear task descriptions mapping to implementation plan. References cite SOP-001, SOP-002, and CR-018 (document being reverted). Technical content adequately describes the architectural flaw (source/rendition conflation), lists specific code elements for removal, and includes SOP-001 cleanup. Formatting consistent throughout. No deficiencies identified. Recommend approval."}
+{"ts": "2026-01-09T02:23:45+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-09T02:23:52+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-09T02:23:52+00:00", "event": "ROUTE_APPROVAL", "user": "qa", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-09T02:23:56+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-09T02:23:56+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-09T02:24:19+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T02:24:19+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-09T02:35:23+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T02:35:31+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T02:38:08+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T02:42:41+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T02:42:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-09T02:42:46+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-09T02:44:15+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Execution verified. All EIs passed: (1) injection code removed from qms.py - grep confirms no matches, (2) approval_date removed from qms_meta.py - grep confirms no matches, (3) checkout/checkin verified, (4) SOP-001 cleaned - grep confirms no injected content, (5) SOP-001 EFFECTIVE at v15.0 with revision_summary referencing CR-022. Document complies with SOP-002 content requirements."}
+{"ts": "2026-01-09T02:44:15+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-09T02:44:30+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-09T02:44:30+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-09T02:44:35+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-09T02:44:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-09T02:44:41+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-09T02:44:41+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

@@ -104,3 +104,27 @@
 {"ts": "2026-01-08T18:24:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "13.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-08T18:24:35+00:00", "event": "EFFECTIVE", "user": "qa", "version": "13.0", "from_version": "12.1"}
 {"ts": "2026-01-08T18:24:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "13.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-09T01:34:12+00:00", "event": "CHECKOUT", "user": "claude", "version": "13.1", "from_version": "13.0"}
+{"ts": "2026-01-09T01:34:31+00:00", "event": "CHECKIN", "user": "claude", "version": "13.1"}
+{"ts": "2026-01-09T01:35:10+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "13.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-09T01:35:10+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "13.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-09T01:38:06+00:00", "event": "REVIEW", "user": "qa", "version": "13.1", "outcome": "RECOMMEND", "comment": "REVIEW COMPLETE. Verified: (1) Frontmatter title present: 'Quality Management System - Document Control'; (2) revision_summary present and begins with CR ID: 'CR-017: Add TEMPLATE document type'; (3) Document structure compliant with 14 sections; (4) No placeholder content (TBD/TODO/FIXME/XXX); (5) No typos or formatting errors; (6) Compared v13.1 draft against archived v13.0 - documents are identical. This is administrative cleanup from CR-018 testing with no content changes. Document is COMPLIANT."}
+{"ts": "2026-01-09T01:38:06+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "13.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-09T01:38:17+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "13.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-09T01:38:17+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "13.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-09T01:38:33+00:00", "event": "APPROVE", "user": "qa", "version": "13.1"}
+{"ts": "2026-01-09T01:38:33+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "14.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-09T01:38:33+00:00", "event": "EFFECTIVE", "user": "qa", "version": "14.0", "from_version": "13.1"}
+{"ts": "2026-01-09T01:38:33+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "14.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-09T02:35:43+00:00", "event": "CHECKOUT", "user": "claude", "version": "14.1", "from_version": "14.0"}
+{"ts": "2026-01-09T02:36:21+00:00", "event": "CHECKIN", "user": "claude", "version": "14.1"}
+{"ts": "2026-01-09T02:36:38+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "14.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-09T02:36:38+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "14.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-09T02:37:25+00:00", "event": "REVIEW", "user": "qa", "version": "14.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Verified: (1) Frontmatter title='Quality Management System - Document Control' present and non-empty; (2) revision_summary='CR-022: Remove injected metadata (revert CR-018)' present and begins with CR ID; (3) All 14 required sections present; (4) No placeholder content (TBD/TODO/FIXME) found; (5) Change correctly removes injected QMS DOCUMENT STATUS HTML comment block and Revision History table that CR-018 introduced. Document structure and formatting consistent throughout."}
+{"ts": "2026-01-09T02:37:25+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "14.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-09T02:37:44+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "14.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-09T02:37:44+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "14.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-09T02:37:55+00:00", "event": "APPROVE", "user": "qa", "version": "14.1"}
+{"ts": "2026-01-09T02:37:55+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "15.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-09T02:37:55+00:00", "event": "EFFECTIVE", "user": "qa", "version": "15.0", "from_version": "14.1"}
+{"ts": "2026-01-09T02:37:55+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "15.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
