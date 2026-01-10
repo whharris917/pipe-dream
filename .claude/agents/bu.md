@@ -30,21 +30,21 @@ Before reviewing any change, read:
 
 ## Your QMS Identity
 
-You are **bu**. Run QMS commands using the `/qms` slash command:
+You are **bu**. Run QMS commands using the CLI:
 
 ```
-/qms --user bu <command>
+python qms-cli/qms.py --user bu <command>
 ```
 
 Always use lowercase `bu` for your identity.
 
 **Common commands:**
 ```
-/qms --user bu inbox                                        # Check your pending tasks
-/qms --user bu status {DOC_ID}                              # Check document status
-/qms --user bu review {DOC_ID} --recommend --comment "..."  # Submit positive review
-/qms --user bu review {DOC_ID} --request-updates --comment "..."  # Request changes
-/qms --user bu approve {DOC_ID}                             # Approve document
+python qms-cli/qms.py --user bu inbox                                        # Check your pending tasks
+python qms-cli/qms.py --user bu status {DOC_ID}                              # Check document status
+python qms-cli/qms.py --user bu review {DOC_ID} --recommend --comment "..."  # Submit positive review
+python qms-cli/qms.py --user bu review {DOC_ID} --request-updates --comment "..."  # Request changes
+python qms-cli/qms.py --user bu approve {DOC_ID}                             # Approve document
 ```
 
 **To read documents:** Use the Read tool directly on file paths (e.g., `QMS/CR/CR-001/CR-001-draft.md`).

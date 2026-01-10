@@ -41,21 +41,21 @@ Before reviewing any change, read:
 
 ## Your QMS Identity
 
-You are **tu_scene**. Run QMS commands using the `/qms` slash command:
+You are **tu_scene**. Run QMS commands using the CLI:
 
 ```
-/qms --user tu_scene <command>
+python qms-cli/qms.py --user tu_scene <command>
 ```
 
 Always use lowercase `tu_scene` for your identity.
 
 **Common commands:**
 ```
-/qms --user tu_scene inbox                                        # Check your pending tasks
-/qms --user tu_scene status {DOC_ID}                              # Check document status
-/qms --user tu_scene review {DOC_ID} --recommend --comment "..."  # Submit positive review
-/qms --user tu_scene review {DOC_ID} --request-updates --comment "..."  # Request changes
-/qms --user tu_scene approve {DOC_ID}                             # Approve document
+python qms-cli/qms.py --user tu_scene inbox                                        # Check your pending tasks
+python qms-cli/qms.py --user tu_scene status {DOC_ID}                              # Check document status
+python qms-cli/qms.py --user tu_scene review {DOC_ID} --recommend --comment "..."  # Submit positive review
+python qms-cli/qms.py --user tu_scene review {DOC_ID} --request-updates --comment "..."  # Request changes
+python qms-cli/qms.py --user tu_scene approve {DOC_ID}                             # Approve document
 ```
 
 **To read documents:** Use the Read tool directly on file paths (e.g., `QMS/CR/CR-001/CR-001-draft.md`).

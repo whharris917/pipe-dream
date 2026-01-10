@@ -7,7 +7,7 @@ Document control system for the Flow State project.
 See SOP-001 for complete documentation.
 
 Usage:
-    python .claude/qms.py <command> [options]
+    python qms-cli/qms.py <command> [options]
 
 Commands:
     create, read, checkout, checkin, route, review, approve, reject,

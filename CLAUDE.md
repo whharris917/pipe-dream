@@ -57,23 +57,23 @@ Read all Standard Operating Procedures in `QMS/SOP/`. These define the rules you
 
 ## Your QMS Identity
 
-You are **claude**, an Initiator in the QMS. Run QMS commands using the `/qms` slash command:
+You are **claude**, an Initiator in the QMS. Run QMS commands using the CLI:
 
 ```
-/qms --user claude <command>
+python qms-cli/qms.py --user claude <command>
 ```
 
 Always use lowercase `claude` for your identity.
 
 **Common commands:**
 ```
-/qms --user claude inbox                              # Check your pending tasks
-/qms --user claude status {DOC_ID}                    # Check document status
-/qms --user claude create {TYPE} --title "Title"      # Create new document
-/qms --user claude checkout {DOC_ID}                  # Check out for editing
-/qms --user claude checkin {DOC_ID}                   # Check in from workspace
-/qms --user claude route {DOC_ID} --review            # Route for review
-/qms --user claude route {DOC_ID} --approval          # Route for approval
+python qms-cli/qms.py --user claude inbox                              # Check your pending tasks
+python qms-cli/qms.py --user claude status {DOC_ID}                    # Check document status
+python qms-cli/qms.py --user claude create {TYPE} --title "Title"      # Create new document
+python qms-cli/qms.py --user claude checkout {DOC_ID}                  # Check out for editing
+python qms-cli/qms.py --user claude checkin {DOC_ID}                   # Check in from workspace
+python qms-cli/qms.py --user claude route {DOC_ID} --review            # Route for review
+python qms-cli/qms.py --user claude route {DOC_ID} --approval          # Route for approval
 ```
 
 **Your permissions (per SOP-001 Section 4.2):**

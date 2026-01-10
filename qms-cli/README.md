@@ -7,13 +7,13 @@ Document control system for the Flow State project. See **SOP-001** for complete
 All commands require the `--user` (or `-u`) flag to identify yourself:
 
 ```bash
-python .claude/qms.py --user <username> <command> [options]
+python qms-cli/qms.py --user <username> <command> [options]
 ```
 
 Or with an alias:
 
 ```bash
-alias qms='python .claude/qms.py'
+alias qms='python qms-cli/qms.py'
 qms --user claude <command> [options]
 ```
 
