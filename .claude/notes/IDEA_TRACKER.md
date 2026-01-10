@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-01-09
+
+### SOP approval requires executable infrastructure (refined)
+
+An SOP must not be approved until the procedures it enforces are able to be executed/followed. **However**, the applicability of this rule depends on how the SOP is written.
+
+#### Two types of SOPs:
+
+**1. Behavioral SOPs** — Define what agents *must do* or *must not do*
+- Example: "The orchestrator shall not prescribe specific review criteria when spawning reviewer agents"
+- Followable immediately through behavioral discipline
+- No tooling required; compliance is a choice
+- Can be approved without any infrastructure changes
+
+**2. Tooling-dependent SOPs** — Mandate use of specific infrastructure
+- Example: "Documents shall be created using `qms create` with official templates"
+- Requires the referenced tooling to exist
+- Cannot be followed until infrastructure is in place
+- Must wait for infrastructure CR to close before SOP approval
+
+#### The key insight:
+
+SOPs set **behavioral baselines**. Tooling (CLI, templates, etc.) can *exceed* SOP requirements by adding reminders, guardrails, and conveniences—but the SOP itself need not mandate these enhancements.
+
+**Example for SOP-007 (Agent Orchestration):**
+- SOP says: "The orchestrator shall not prescribe review criteria" → behavioral, followable today
+- RS/CLI *may later* add: "Inject reminder about review criteria rules" → enhancement, not requirement
+- The RS can be stricter than the SOP; the SOP sets the floor, not the ceiling
+
+#### When the infrastructure rule applies:
+
+| SOP Type | Infrastructure Required? | Example |
+|----------|-------------------------|---------|
+| Behavioral | No | "Agents shall not impersonate other agents" |
+| Tooling-dependent | Yes | "All documents shall use official templates from `QMS/TEMPLATE/`" |
+| Hybrid | Partial | Behavioral rules can be approved; tooling-dependent sections wait |
+
+**Considerations:**
+- Write SOPs in behavioral terms where possible to avoid chicken-and-egg
+- Reserve tooling mandates for cases where behavioral compliance is insufficient
+- RS can always exceed SOP requirements; there's no GMP rule against *additional* strictness
+
+---
+
 ## 2026-01-08
 
 ### Restrict Claude from prescribing review requirements in agent messages

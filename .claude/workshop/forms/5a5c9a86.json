@@ -1,0 +1,19 @@
+{
+  "session_id": "5a5c9a86",
+  "form_type": "qms_action",
+  "title": "QMS Action Form",
+  "identity": "claude",
+  "created_at": "2026-01-10T11:57:44.524659",
+  "responses": {
+    "identity_confirm": true,
+    "action_type": "route",
+    "doc_id": "CR-024",
+    "route_type": "review",
+    "final_confirm": true
+  },
+  "form_complete": true,
+  "command_executed": false,
+  "generated_command": "qms --user claude route CR-024 --review",
+  "updated_at": "2026-01-10T11:58:13.622825",
+  "completed_at": "2026-01-10T11:58:13.622825"
+}

@@ -1,0 +1,18 @@
+{
+  "session_id": "ac652237",
+  "form_type": "simple_test",
+  "title": "Simple Test Form",
+  "identity": "claude",
+  "created_at": "2026-01-10T11:48:21.744426",
+  "responses": {
+    "name": "Claude",
+    "color": "green",
+    "confirm": true
+  },
+  "form_complete": true,
+  "command_executed": true,
+  "generated_command": "echo 'Hello, Claude! Your color is green.'",
+  "updated_at": "2026-01-10T11:48:39.303185",
+  "completed_at": "2026-01-10T11:48:39.303185",
+  "executed_at": "2026-01-10T11:48:44.816995"
+}

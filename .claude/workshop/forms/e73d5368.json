@@ -1,0 +1,11 @@
+{
+  "form_id": "e73d5368",
+  "form_type": "simple_test",
+  "title": "Simple Test Form",
+  "identity": "lead",
+  "created_at": "2026-01-10T12:08:12.830627",
+  "responses": {},
+  "form_complete": false,
+  "command_executed": false,
+  "generated_command": null
+}

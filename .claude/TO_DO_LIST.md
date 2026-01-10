@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-01-09
+
+- [ ] Simplify existing SOPs to behavioral baselines
+  - Review SOP-001 through SOP-006 for tooling-dependent language
+  - Rewrite requirements in behavioral terms where possible ("agents shall..." not "CLI shall...")
+  - Offload specific implementation details to RSs (Requirements Specifications) and/or WIs (Work Instructions)
+  - Enables SOP approval without infrastructure prerequisites
+  - See: Session-2026-01-09-001 notes on behavioral vs. tooling-dependent SOPs
+
+---
+
 ## 2026-01-08
 
 - [ ] Figure out a way to remind Claude to spawn and reuse/resume agents

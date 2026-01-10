@@ -8,7 +8,8 @@
       "Bash(python .claude/qms.py:*)",
       "Bash(dir:*)",
       "Bash(ls:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Update(**)"
     ],
     "deny": [
       "Edit(QMS/**)",

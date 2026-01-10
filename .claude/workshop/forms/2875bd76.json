@@ -1,0 +1,19 @@
+{
+  "session_id": "2875bd76",
+  "form_type": "qms_action",
+  "title": "QMS Action Form",
+  "identity": "claude",
+  "created_at": "2026-01-10T11:48:57.004959",
+  "responses": {
+    "identity_confirm": true,
+    "action_type": "create",
+    "doc_type": "CR",
+    "title": "Test Multi-Step Prompt Integration",
+    "final_confirm": true
+  },
+  "form_complete": true,
+  "command_executed": false,
+  "generated_command": "qms --user claude create CR --title \"Test Multi-Step Prompt Integration\"",
+  "updated_at": "2026-01-10T11:49:26.167518",
+  "completed_at": "2026-01-10T11:49:26.167518"
+}

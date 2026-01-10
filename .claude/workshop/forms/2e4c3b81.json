@@ -1,0 +1,17 @@
+{
+  "form_id": "2e4c3b81",
+  "form_type": "simple_test",
+  "title": "Simple Test Form",
+  "identity": "claude",
+  "created_at": "2026-01-10T12:04:16.675977",
+  "responses": {
+    "name": "Alice",
+    "color": "blue",
+    "confirm": true
+  },
+  "form_complete": true,
+  "command_executed": false,
+  "generated_command": "echo 'Hello, Alice! Your color is blue.'",
+  "updated_at": "2026-01-10T12:04:29.104484",
+  "completed_at": "2026-01-10T12:04:29.104484"
+}

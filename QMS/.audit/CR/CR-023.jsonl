@@ -1,0 +1,30 @@
+{"ts": "2026-01-09T21:49:24+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Create SOP-007: Agent Orchestration"}
+{"ts": "2026-01-09T21:56:29+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-09T21:56:36+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-09T21:56:36+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-09T21:58:30+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "CR-023 pre-review COMPLIANT. Frontmatter verified: title='Create SOP-007: Agent Orchestration', revision_summary='Initial draft' (acceptable for v0.1 per SOP-002 Section 8). All 12 required sections present per SOP-002 Section 6. No prohibited {{...}} placeholders found. Execution-phase [...] placeholders correctly present. No TBD/TODO/FIXME/XXX content. Section numbering sequential and correct. Tables and formatting consistent. Referenced session notes (SOP-007-draft.md) exist and content aligns with CR description. Impact assessment complete. Testing summary provides appropriate verification items for SOP creation. Implementation plan adequate. Ready for pre-approval."}
+{"ts": "2026-01-09T21:58:30+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-09T21:59:50+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-09T21:59:50+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-09T22:01:01+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-09T22:01:01+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-09T22:01:19+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T22:01:19+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-09T22:07:34+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T22:08:32+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T22:08:41+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-09T22:08:41+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-09T22:10:51+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "UPDATES_REQUIRED", "comment": "NON-COMPLIANT. Deficiency: CR-023 frontmatter revision_summary field contains 'Initial draft'. Per SOP-001 Section 5.1, v1.0+ documents must have revision_summary beginning with the authorizing CR ID. For CRs, established practice (CR-017, CR-022) is self-reference. CR-023 revision_summary should be 'CR-023: Create SOP-007: Agent Orchestration' or similar. All other post-review requirements per SOP-002 Section 7.3 are met: execution complete (all EIs Pass), no VARs required, SOP-007 is EFFECTIVE with correct CR-023 traceability, evidence documented. Correct the revision_summary and re-route for post-review."}
+{"ts": "2026-01-09T22:10:51+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-09T22:11:07+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T22:11:35+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-09T22:11:36+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "DRAFT", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-09T22:11:36+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-09T22:13:13+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. Verified: (1) Frontmatter title='Create SOP-007: Agent Orchestration', revision_summary='CR-023: Create SOP-007: Agent Orchestration'. (2) EI-1 and EI-2 both show Task Outcome=Pass with execution summaries. (3) SOP-007 confirmed EFFECTIVE at v1.0 via qms status. (4) SOP-007 frontmatter verified: title='Agent Orchestration', revision_summary='CR-023: Initial creation' - traceability established per SOP-002 Section 8. (5) SOP-007 contains all 8 sections with complete content, no placeholder text. (6) Execution Summary documents successful completion with no deviations. All SOP-002 Section 7.3 post-review requirements verified and met."}
+{"ts": "2026-01-09T22:13:13+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-09T22:13:31+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-09T22:13:31+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-09T22:14:59+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-09T22:14:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-09T22:15:13+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-09T22:15:13+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

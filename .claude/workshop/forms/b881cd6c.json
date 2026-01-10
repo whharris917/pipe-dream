@@ -1,0 +1,18 @@
+{
+  "session_id": "b881cd6c",
+  "form_type": "simple_test",
+  "title": "Simple Test Form",
+  "identity": "claude",
+  "created_at": "2026-01-10T11:53:46.580523",
+  "responses": {
+    "name": "Wil",
+    "color": "blue",
+    "confirm": true
+  },
+  "form_complete": true,
+  "command_executed": true,
+  "generated_command": "echo 'Hello, Wil! Your color is blue.'",
+  "updated_at": "2026-01-10T11:55:38.830682",
+  "completed_at": "2026-01-10T11:55:38.830682",
+  "executed_at": "2026-01-10T11:55:53.942598"
+}

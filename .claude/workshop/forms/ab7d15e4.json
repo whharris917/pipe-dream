@@ -1,0 +1,19 @@
+{
+  "form_id": "ab7d15e4",
+  "form_type": "simple_test",
+  "title": "Simple Test Form",
+  "identity": "lead",
+  "created_at": "2026-01-10T12:08:36.896349",
+  "responses": {
+    "identity_confirm": true,
+    "name": "Wil",
+    "color": "green",
+    "confirm": true
+  },
+  "form_complete": true,
+  "command_executed": true,
+  "generated_command": "echo 'Hello, Wil! Your color is green.'",
+  "updated_at": "2026-01-10T12:09:02.337132",
+  "completed_at": "2026-01-10T12:09:02.337132",
+  "executed_at": "2026-01-10T12:09:07.419840"
+}
