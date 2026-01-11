@@ -1,0 +1,30 @@
+{"ts": "2026-01-11T21:46:52+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Extract Prompts to External YAML Files"}
+{"ts": "2026-01-11T21:51:16+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-11T21:51:22+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-11T21:51:22+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-11T21:52:21+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Frontmatter verified: title='Extract Prompts to External YAML Files', revision_summary='Initial draft' (acceptable for v0.1). All 12 required CR sections present per SOP-002. No prohibited placeholder content (TBD/TODO/FIXME/XXX) found. Execution-phase template fields in Section 10 are acceptable. Review Team: QA only - no TUs required as this is QMS CLI infrastructure not affecting Flow State application domains."}
+{"ts": "2026-01-11T21:52:21+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-11T21:52:39+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-11T21:52:39+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-11T21:53:46+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-11T21:53:46+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-11T21:53:58+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T21:53:58+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-11T22:03:12+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T22:05:18+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T22:05:26+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-11T22:05:26+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-11T22:07:10+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "UPDATES_REQUIRED", "comment": "QA Post-Review: CR-027. DEFICIENCY FOUND: The revision_summary frontmatter field is 'Initial draft' which does NOT begin with a CR ID. Per SOP-001 Section 5.1 and SOP-002 Section 8, revision_summary must begin with the authorizing CR ID. Required correction: Change 'Initial draft' to 'CR-027: Extract prompts to external YAML files'. All other items verified: title present, execution items all Pass with summaries and signatures, no placeholder text, no typos, references valid. REQUEST UPDATES due to frontmatter deficiency."}
+{"ts": "2026-01-11T22:07:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-11T22:07:27+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T22:10:29+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T22:10:29+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "DRAFT", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-11T22:10:29+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-11T22:12:24+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. COMPLIANT. Frontmatter verified: title='Extract Prompts to External YAML Files', revision_summary='CR-027: Extract prompts to external YAML files' (CR ID prefix present per SOP-002 Section 8). All 12 required CR sections present. No placeholder content. Physical verification confirms execution claims: 10 YAML files created (confirmed via glob), 43 tests pass (confirmed via pytest), doc_type bug fix present in route.py and assign.py (confirmed via grep), YAML loading functions present in prompts.py (confirmed via grep). All 5 EIs show Pass outcome. No VARs required. No QMS documents modified. Recommend approval."}
+{"ts": "2026-01-11T22:12:24+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-11T22:12:50+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-11T22:12:50+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-11T22:14:33+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-11T22:14:33+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-11T22:14:46+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-11T22:14:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}
