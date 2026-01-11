@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-01-11
+
+- [ ] Remove in-memory fallback for inbox prompts in qms-cli
+  - CR-027 added YAML file-based prompts; legacy hard-coded fallback is no longer needed
+  - Remove: DEFAULT_FRONTMATTER_CHECKS, DEFAULT_STRUCTURE_CHECKS, DEFAULT_CONTENT_CHECKS, etc.
+  - Remove: DEFAULT_REVIEW_CONFIG, DEFAULT_APPROVAL_CONFIG, CR_POST_REVIEW_CONFIG, SOP_REVIEW_CONFIG
+  - Remove: _register_defaults() method in PromptRegistry
+  - Update: get_config() to only use file-based loading
+  - Update: Tests that rely on in-memory configs
+
+---
+
 ## 2026-01-10
 
 - [ ] Remove CR ID requirement from revision_summary frontmatter field
