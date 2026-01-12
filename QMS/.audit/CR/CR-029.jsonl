@@ -1,0 +1,24 @@
+{"ts": "2026-01-11T22:54:47+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "QMS CLI: Add VAR Type and SDLC-QMS Document Family Support"}
+{"ts": "2026-01-11T22:59:19+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-11T22:59:24+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-11T22:59:24+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-11T23:00:17+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW COMPLETE. Verified: (1) Frontmatter - title: 'QMS CLI: Add VAR Document Type', revision_summary: 'Initial draft' (v0.1, CR ID not required). (2) All 12 sections per SOP-002 Section 6 present and complete. (3) Pre-approved content (Sections 1-9) contains no prohibited placeholders. (4) Execution section placeholders are appropriate for pre-approval phase. (5) Technical approach is sound - VAR config matches existing document type patterns. (6) No TUs required for this CLI-only change. Document is COMPLIANT. Recommend approval."}
+{"ts": "2026-01-11T23:00:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-11T23:00:33+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-11T23:00:33+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-11T23:01:37+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-11T23:01:37+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-11T23:01:49+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T23:01:49+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-11T23:04:35+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T23:17:51+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-11T23:17:57+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-11T23:17:57+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-11T23:19:38+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. All 8 execution items have Pass outcome with documented evidence. No VARs attached (no failures). Scope expansion (EI-4 through EI-8 for parent-child nesting) is documented in Execution Comments with valid justification. Code changes verified in qms_config.py, qms_schema.py, qms_paths.py, and commands/create.py. 197 tests pass. CR-028-VAR-001 successfully created at QMS/CR/CR-028/ confirming implementation works. No placeholder content found. Document is compliant with SOP-002 Section 7.3 post-review requirements."}
+{"ts": "2026-01-11T23:19:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-11T23:19:55+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-11T23:19:55+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-11T23:20:16+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-11T23:20:16+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-11T23:20:25+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-11T23:20:25+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

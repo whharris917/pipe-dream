@@ -1,0 +1,14 @@
+{
+  "doc_id": "SDLC-QMS-RS",
+  "doc_type": "QMS-RS",
+  "version": "0.1",
+  "status": "DRAFT",
+  "executable": false,
+  "execution_phase": null,
+  "responsible_user": "claude",
+  "checked_out": true,
+  "checked_out_date": "2026-01-11",
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}
