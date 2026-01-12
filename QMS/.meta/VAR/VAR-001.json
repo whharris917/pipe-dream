@@ -1,0 +1,14 @@
+{
+  "doc_id": "VAR-001",
+  "doc_type": "VAR",
+  "version": "0.1",
+  "status": "DRAFT",
+  "executable": true,
+  "execution_phase": "pre_release",
+  "responsible_user": "claude",
+  "checked_out": true,
+  "checked_out_date": "2026-01-11",
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": []
+}
