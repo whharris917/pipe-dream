@@ -193,7 +193,7 @@ Add rows as needed. When adding rows, fill columns 3-5 during execution.
 
 | Comment | Performed By - Date |
 |---------|---------------------|
-| [COMMENT] | [PERFORMER] - [DATE] |
+| **CR-028-VAR-001 (Type 1, CLOSED):** During EI-1, discovered that `qms_config.py` only supported SDLC-FLOW document types; SDLC-QMS types (QMS-RS, QMS-RTM) were not anticipated. VAR created to address config limitation. Resolution: Added QMS-RS and QMS-RTM to DOCUMENT_TYPES in `qms_config.py` and updated schema patterns in `qms_schema.py`. VAR closed; EI-1 unblocked. | claude - 2026-01-11 |
 
 <!--
 NOTE: Do NOT delete this comment. It provides guidance during document execution.

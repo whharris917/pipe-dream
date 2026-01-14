@@ -1,1 +1,28 @@
 {"ts": "2026-01-11T23:27:15+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "QMS CLI Requirements Specification"}
+{"ts": "2026-01-14T02:18:27+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:18:34+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-14T02:18:34+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-14T02:20:10+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Frontmatter verified: title='QMS CLI Requirements Specification', revision_summary='Initial draft' (acceptable for v0.1 per SOP-001 Section 5.1). Document contains 35 requirements across 6 categories (REQ-PERM, REQ-DOC, REQ-WF, REQ-META, REQ-AUDIT, REQ-TASK), all with proper SOP traceability references. No placeholder content found. No typos or formatting issues identified. Structure follows RS template with Purpose, Scope, Requirements, and References sections."}
+{"ts": "2026-01-14T02:20:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-14T02:24:07+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:25:09+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:25:09+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-14T02:25:09+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-14T02:26:08+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "UPDATES_REQUIRED", "comment": "REQ-DOC-006 specifies that checkin from REVIEWED/PRE_REVIEWED/POST_REVIEWED status reverts the document to DRAFT or pre-review state. This behavior is not defined in SOP-001 Section 11.2 (Check-In). The requirement either contradicts SOP-001 or introduces unauthorized functionality. Resolution: (1) Remove REQ-DOC-006 if this behavior is not intended, or (2) Reference the authorizing CR that modifies SOP-001 to define this status reversion behavior. All other requirements verified compliant. Frontmatter verified: title='QMS CLI Requirements Specification', revision_summary='Initial draft' (v0.1 exception applies). No placeholder content found. Formatting consistent throughout."}
+{"ts": "2026-01-14T02:26:08+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-14T02:27:37+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:27:43+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:27:43+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-14T02:27:43+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-14T02:28:32+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Document is COMPLIANT. Verified: title field present ('QMS CLI Requirements Specification'), revision_summary present ('Initial draft' - CR ID not required for v0.1 initial creation per SOP-001 Section 5.1). Document structure follows RS template with Purpose, Scope, and Requirements sections. All 35 requirements across 6 categories (PERM, DOC, WF, META, AUDIT, TASK) are clear, testable, and properly trace to SOP-001/SOP-002 where applicable. No placeholder content (TBD/TODO/FIXME), typos, or formatting inconsistencies found. REQ-DOC-006 specifies intentional CLI behavior for checkin status reversion - this RS serves as the authoritative specification for CLI behavior."}
+{"ts": "2026-01-14T02:28:32+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-14T02:31:05+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:31:27+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:32:53+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:33:16+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:36:41+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:38:18+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:39:41+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:42:30+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:44:37+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-14T02:46:10+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
