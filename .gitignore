@@ -6,6 +6,7 @@ __pycache__/
 # Environment folders
 env/
 venv/
+.venv/
 .conda/
 
 # OS Metadata
