@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-01-17
+
+- [ ] Correct SOP-001 Section 4.2 fix permission
+  - Current: Shows "fix (admin): lead only" for Initiators and "Yes" for QA
+  - Should be: fix is Initiators only (not QA)
+  - Update Permission Matrix in SOP-001 Section 4.2
+  - Note: Identified during SDLC-QMS-RS requirements review
+
+---
+
 ## 2026-01-11
 
 - [ ] Remove in-memory fallback for inbox prompts in qms-cli
