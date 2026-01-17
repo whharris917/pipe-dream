@@ -15,6 +15,44 @@ This recursive structure means that every process failure becomes an input to pr
 
 ---
 
+## Project Structure (Submodules)
+
+As of CR-030, the pipe-dream repository uses git submodules to separate concerns:
+
+```
+pipe-dream/                     # QMS Project root (this repo)
+├── .gitmodules                 # Submodule configuration
+├── qms-cli/                    # Submodule → github.com/whharris917/qms-cli
+├── flow-state/                 # Submodule → github.com/whharris917/flow-state
+├── QMS/                        # Controlled documents (SOPs, CRs, etc.)
+└── .claude/                    # Users, agents, session data
+```
+
+**Clone with submodules:**
+```bash
+git clone --recurse-submodules https://github.com/whharris917/pipe-dream.git
+```
+
+**If already cloned without submodules:**
+```bash
+git submodule update --init
+```
+
+**Working on Flow State code:**
+```bash
+cd flow-state
+git checkout -b my-feature      # Branch for testing
+# ... make changes ...
+git commit && git push
+cd ..
+git add flow-state              # Update submodule pointer
+git commit -m "Update flow-state submodule"
+```
+
+**Key benefit:** Agents can branch `flow-state` for code testing without affecting the QMS documents, SOPs, or inbox state in `pipe-dream`.
+
+---
+
 ## Session Start Checklist
 
 At the start of each session, complete the following:
@@ -141,15 +179,15 @@ The application is strictly divided into two distinct domains to maintain a Sepa
 
 The application follows a custom architectural pattern centered around the **Scene Orchestrator**.
 
-### 2.1 Entry Points (`main.py`)
+### 2.1 Entry Points (`flow-state/main.py`)
 
-The application is launched via `main.py`, which utilizes `argparse` to determine the execution mode. There are three distinct modes:
+The application is launched via `flow-state/main.py`, which utilizes `argparse` to determine the execution mode. There are three distinct modes:
 
 * **Dashboard:** The main menu/launcher GUI.
 * **Simulation (`--mode sim`):** The primary gameplay mode where physics runs.
 * **Builder (`--mode builder`):** A dedicated CAD editor mode for constructing geometry without active physics.
 
-### 2.2 The Scene Pattern (`core/scene.py`)
+### 2.2 The Scene Pattern (`flow-state/core/scene.py`)
 
 The `Scene` class is the root container for the document state. It serves as the **Single Source of Truth** for the user's project. The Scene owns and orchestrates the interaction between the subsystems:
 
@@ -159,7 +197,7 @@ The `Scene` class is the root container for the document state. It serves as the
 * **ProcessObjects:** Dynamic entities like Emitters (Sources) or Drains (Sinks).
 * **CommandQueue:** The exclusive gatekeeper for modifying the Sketch or Simulation.
 
-### 2.3 The Session (`core/session.py`)
+### 2.3 The Session (`flow-state/core/session.py`)
 
 While the `Scene` holds the persistent data (what is saved to disk), the `Session` holds the **transient application state**. This includes:
 
@@ -183,7 +221,7 @@ The UI (Tools, Widgets, Inputs) is **strictly forbidden** from modifying the Dat
 
 **Why:** If a state change does not happen via a Command, it is not recorded in history. If it isn't in history, the simulation state is corrupted upon replay or undo.
 
-### 3.2 The Command Pattern (`core/commands.py`)
+### 3.2 The Command Pattern (`flow-state/core/commands.py`)
 
 The `Command` class is the atomic unit of change in the application. It serves as the primary history chronicle for the project.
 * **Source of Truth:** The Command History is the ultimate authority.
@@ -223,16 +261,16 @@ Data that describes *how the user is looking at* the document.
 
 ## 5. Core Systems Detail
 
-### 5.1 The Sketch & Solver (`model/sketch.py`, `model/solver.py`)
+### 5.1 The Sketch & Solver (`flow-state/model/sketch.py`, `flow-state/model/solver.py`)
 
 The CAD engine uses a **Position-Based Dynamics (PBD)** solver to enforce geometric rules.
 
 * **Hybrid Architecture:** The solver has two backends:
     1.  **Legacy (Python):** OOP-based, easier to debug.
-    2.  **Numba (Compiled):** High-performance JIT kernels (`model/solver_kernels.py`) operating on flat Numpy arrays.
+    2.  **Numba (Compiled):** High-performance JIT kernels (`flow-state/model/solver_kernels.py`) operating on flat Numpy arrays.
 * **Runtime Toggle:** Users can switch backends live (F9) to benchmark performance.
 
-### 5.2 The Simulation (`engine/simulation.py`)
+### 5.2 The Simulation (`flow-state/engine/simulation.py`)
 
 The particle engine uses Data-Oriented Design (DOD) with flat arrays.
 * **Integration:** Verlet integration with spatial hashing.
@@ -247,7 +285,7 @@ We do not use "Forces" to move geometry with the mouse. We use **Interaction Con
 
 ### 5.4 The Compiler (The Bridge)
 
-The `Compiler` (`engine/compiler.py`) is responsible for the transition from CAD to Physics.
+The `Compiler` (`flow-state/engine/compiler.py`) is responsible for the transition from CAD to Physics.
 
 1.  **Input:** Reads vector data from the `Sketch`.
 2.  **Process:** Discretizes lines and curves into individual static particles ("atoms").
@@ -256,7 +294,7 @@ The `Compiler` (`engine/compiler.py`) is responsible for the transition from CAD
 
 ### 5.5 The ToolContext (Air Gap Enforcement)
 
-The `ToolContext` (`core/tool_context.py`) is a facade that enforces the Air Gap at the tool level:
+The `ToolContext` (`flow-state/core/tool_context.py`) is a facade that enforces the Air Gap at the tool level:
 
 * **Problem Solved:** Tools previously received the full `FlowStateApp` reference (a "God Object"), allowing direct access to any subsystem.
 * **Solution:** Tools now receive a `ToolContext` which exposes only authorized operations:
@@ -272,7 +310,7 @@ The `ToolContext` (`core/tool_context.py`) is a facade that enforces the Air Gap
 
 The project employs a custom UI framework with a focus on **Modularity** and **Generic Protocols**.
 
-### 6.1 Hierarchical UI Tree & Overlays (`ui/ui_manager.py`)
+### 6.1 Hierarchical UI Tree & Overlays (`flow-state/ui/ui_manager.py`)
 
 The UI is a retained object tree managed by `UIManager`.
 * **Main Tree:** Root -> Panels -> Widgets -> Elements.
@@ -280,7 +318,7 @@ The UI is a retained object tree managed by `UIManager`.
     * The `UIManager` automatically iterates registered providers and renders their overlays *after* the main tree to ensure correct Z-ordering.
     * **Rule:** Never hardcode widget-specific rendering calls in the UIManager (e.g., `if dropdown.is_open: draw()`). Rely on the protocol.
 
-### 6.2 Input Chain of Responsibility (`ui/input_handler.py`)
+### 6.2 Input Chain of Responsibility (`flow-state/ui/input_handler.py`)
 
 Input is handled via a strict 4-layer protocol to ensure events are consumed by the correct system.
 
@@ -326,15 +364,15 @@ The order of operations in `Scene.update` is critical:
 
 | Component | File Path | Responsibility |
 | --- | --- | --- |
-| **Command Factory** | `core/commands.py` | **CRITICAL:** The only conforming way to mutate the Model. |
-| **Orchestrator** | `core/scene.py` | Owns Sketch/Sim, manages updates & I/O. |
-| **Solver (Bridge)** | `model/solver.py` | Manages constraints & calls kernels. |
-| **Solver (Math)** | `model/solver_kernels.py` | Numba-optimized PBD math functions. |
-| **CAD Data** | `model/sketch.py` | Geometric entities & constraints. |
-| **Physics Data** | `engine/simulation.py` | Particle arrays & integration. |
-| **UI Builder** | `ui/ui_manager.py` | Layouts, panels, and widget tree. |
-| **Tools** | `ui/tools.py` | Mouse interaction logic (Select, Line, etc.). |
-| **Tool Context** | `core/tool_context.py` | Facade providing tools a controlled interface to the app. |
+| **Command Factory** | `flow-state/core/commands.py` | **CRITICAL:** The only conforming way to mutate the Model. |
+| **Orchestrator** | `flow-state/core/scene.py` | Owns Sketch/Sim, manages updates & I/O. |
+| **Solver (Bridge)** | `flow-state/model/solver.py` | Manages constraints & calls kernels. |
+| **Solver (Math)** | `flow-state/model/solver_kernels.py` | Numba-optimized PBD math functions. |
+| **CAD Data** | `flow-state/model/sketch.py` | Geometric entities & constraints. |
+| **Physics Data** | `flow-state/engine/simulation.py` | Particle arrays & integration. |
+| **UI Builder** | `flow-state/ui/ui_manager.py` | Layouts, panels, and widget tree. |
+| **Tools** | `flow-state/ui/tools.py` | Mouse interaction logic (Select, Line, etc.). |
+| **Tool Context** | `flow-state/core/tool_context.py` | Facade providing tools a controlled interface to the app. |
 
 ---
 
@@ -355,7 +393,7 @@ The order of operations in `Scene.update` is critical:
 
 ### Post-Flight (Verification)
 * [ ] **No Scar Tissue:** Did I remove all unused imports, debug prints, and commented-out blocks?
-* [ ] **Config Hygiene:** Did I extract new magic numbers/strings to `core/config.py`?
+* [ ] **Config Hygiene:** Did I extract new magic numbers/strings to `flow-state/core/config.py`?
 * [ ] **Undo Safety:** Did I implement `undo()` for any new Commands I created?
 * [ ] **Focus Hygiene:** If I added a new widget, did I implement `on_focus_lost()`?
 * [ ] **Potency Check:** Does this change enable future features "for free" (e.g., a new protocol that all future widgets can use)?
