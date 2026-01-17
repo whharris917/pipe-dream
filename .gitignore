@@ -16,11 +16,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-save_files/
-art/
-music/
-sounds/
-archive/
-ui_folly/
-
+# Temporary files
 prompt.txt
