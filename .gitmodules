@@ -1,0 +1,6 @@
+[submodule "qms-cli"]
+	path = qms-cli
+	url = https://github.com/whharris917/qms-cli.git
+[submodule "flow-state"]
+	path = flow-state
+	url = https://github.com/whharris917/flow-state.git
