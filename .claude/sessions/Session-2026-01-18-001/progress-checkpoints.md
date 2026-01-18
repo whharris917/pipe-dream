@@ -191,3 +191,94 @@ Continue qms-cli qualification work: develop RS, RTM, and qualification tests to
 | `QMS/CR/CR-031/` | Created | Bug fix CR (now CLOSED) |
 | `.claude/sessions/Session-2026-01-18-001/testing-strategy.md` | Created | Two-tier testing documentation |
 | `.claude/sessions/Session-2026-01-18-001/cr-031-cleanup.md` | Created | Post-closure cleanup documentation |
+
+---
+
+## Identified Gaps: RS vs Implementation
+
+The following gaps were discovered during qualification testing. Each represents a mismatch between what the Requirements Specification (RS) claims and what the code actually implements.
+
+### Gap 1: `fix` Command Reads Wrong Source
+
+**Test:** `test_fix_authorization`
+**Requirement:** REQ-SEC-002
+**Type:** CLI Bug
+
+**Problem:** The `fix` command reads document status from frontmatter (`frontmatter.get("status")`) instead of from `.meta` files, which are the authoritative source of workflow state.
+
+**Impact:** When a document becomes EFFECTIVE through the approval workflow, the `.meta` status is updated but frontmatter may not be. The `fix` command then fails with "Fix only applies to EFFECTIVE/CLOSED documents (current: )".
+
+**Location:** `qms-cli/commands/fix.py` lines 43-48
+
+---
+
+### Gap 2: Owner-Only Routing Not Enforced
+
+**Test:** `test_owner_only_route`
+**Requirement:** REQ-SEC-003
+**Type:** RS/Code Gap
+
+**Problem:** REQ-SEC-003 states "Checkin, Route, Cancel: Only document owner" but the `route` command only checks group-level permissions, not document ownership.
+
+**Impact:** Any user in the `initiators` or `qa` groups can route any document, not just documents they own. This violates the principle that only the responsible user should control their document's workflow progression.
+
+**Location:** `qms-cli/commands/route.py` - missing owner check after line 48
+
+**Config Reference:** `qms_config.py` line 119 shows `"route": {"groups": ["initiators", "qa"]}` without `"owner_only": True`
+
+---
+
+### Gap 3: TP Parent Enforcement Missing
+
+**Test:** `test_create_tp_under_cr`
+**Requirement:** REQ-DOC-002
+**Type:** Feature Missing
+
+**Problem:** The `create` command only enforces `--parent` for VAR document type. When creating a TP (Test Protocol), the `--parent` argument is ignored and the system generates a sequential ID like "TP-001" instead of the expected "CR-001-TP".
+
+**Impact:** Test Protocols cannot be properly associated with their parent Change Records. The ID format and folder structure are incorrect.
+
+**Location:** `qms-cli/commands/create.py` lines 56-73 only handle VAR type specially
+
+---
+
+### Gap 4: VAR Path Hardcoded to CR Directory
+
+**Test:** `test_create_var_under_inv`
+**Requirement:** REQ-DOC-002
+**Type:** CLI Bug
+
+**Problem:** The VAR document type config has `"path": "CR"` hardcoded. When creating a VAR under an INV parent, the file is created in `QMS/CR/INV-001/` instead of `QMS/INV/INV-001/`.
+
+**Impact:** Variance Reports under Investigations are stored in the wrong directory, breaking the expected folder structure.
+
+**Location:** `qms_config.py` line 85: `"VAR": {"path": "CR", ...}`
+**Location:** `qms_paths.py` lines 84-88 - path resolution doesn't adapt to parent type
+
+---
+
+### Gap 5: TEMPLATE `--name` Argument Missing
+
+**Test:** `test_template_name_based_id`
+**Requirement:** REQ-DOC-011
+**Type:** Feature Missing
+
+**Problem:** REQ-DOC-011 specifies that TEMPLATE documents use name-based IDs (e.g., "TEMPLATE-CR", "TEMPLATE-SOP") instead of sequential numbers. However, the `create` command doesn't support a `--name` argument for TEMPLATE type.
+
+**Impact:** Templates are created with sequential IDs like "TEMPLATE-001" instead of meaningful names like "TEMPLATE-CR". This makes it harder to identify which template is for which document type.
+
+**Location:** `qms-cli/commands/create.py` - no `--name` argument defined
+
+---
+
+## Recommended Actions
+
+| Gap | Priority | Recommended Action |
+|-----|----------|-------------------|
+| Gap 1 (fix reads frontmatter) | Medium | Create CR to update `fix` command to read from `.meta` |
+| Gap 2 (owner-only route) | High | Either update RS to remove owner-only requirement, or create CR to add enforcement |
+| Gap 3 (TP parent) | Low | Defer - TP type not actively used |
+| Gap 4 (VAR path) | Low | Defer - VAR under INV not actively used |
+| Gap 5 (TEMPLATE --name) | Low | Defer - Templates not actively used |
+
+**Decision Required:** Should the RS be updated to match current implementation (removing unimplemented features), or should CRs be created to implement the missing features?
