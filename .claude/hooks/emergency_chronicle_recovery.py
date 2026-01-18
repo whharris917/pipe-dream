@@ -115,15 +115,19 @@ def main():
 
     # Determine project directory (script is in .claude/hooks/)
     project_dir = str(Path(__file__).parent.parent.parent)
-    chronicles_dir = os.path.join(project_dir, '.claude', 'chronicles')
-    Path(chronicles_dir).mkdir(parents=True, exist_ok=True)
+    sessions_dir = os.path.join(project_dir, '.claude', 'sessions')
+    Path(sessions_dir).mkdir(parents=True, exist_ok=True)
 
-    chronicle_filename = f"{session_name}.md"
-    chronicle_path = os.path.join(chronicles_dir, chronicle_filename)
+    # Create session folder
+    session_folder = os.path.join(sessions_dir, session_name)
+    Path(session_folder).mkdir(parents=True, exist_ok=True)
+
+    transcript_filename = f"{session_name}-Transcript.md"
+    chronicle_path = os.path.join(session_folder, transcript_filename)
 
     # Check if chronicle already exists
     if os.path.exists(chronicle_path):
-        print(f"Warning: Chronicle already exists at {chronicle_path}", file=sys.stderr)
+        print(f"Warning: Transcript already exists at {chronicle_path}", file=sys.stderr)
         print("Aborting to prevent overwrite. Delete manually if you want to regenerate.", file=sys.stderr)
         sys.exit(1)
 
@@ -171,8 +175,8 @@ def main():
     print(f"Chronicle saved: {chronicle_path}")
 
     # Update the index
-    index_path = os.path.join(chronicles_dir, 'INDEX.md')
-    index_entry = f"- [{session_name}]({chronicle_filename}) *(recovered)*\n"
+    index_path = os.path.join(sessions_dir, 'INDEX.md')
+    index_entry = f"- [{session_name}]({session_name}/{transcript_filename}) *(recovered)*\n"
 
     if os.path.exists(index_path):
         with open(index_path, 'a', encoding='utf-8') as f:

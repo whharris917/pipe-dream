@@ -14,19 +14,19 @@ allowed-tools: Bash, Read, Glob, Write
 
 ### Step 1: Determine Session Numbers
 
-Read `.claude/chronicles/INDEX.md` to find the last recorded session. The crashed session is N (the one AFTER the last recorded), and you are currently in session N+1.
+Read `.claude/sessions/INDEX.md` to find the last recorded session. The crashed session is N (the one AFTER the last recorded), and you are currently in session N+1.
 
 **Example:** If INDEX.md shows the last entry is `Session-2026-01-05-001`, then:
 - Crashed session = `Session-2026-01-05-002`
 - Current session (you) = `Session-2026-01-05-003`
 
-**Important:** Check if a session notes folder exists for what would be the crashed session (`.claude/notes/Session-YYYY-MM-DD-NNN/`). If it exists but has no corresponding chronicle file, that confirms the crash scenario.
+**Important:** Check if a session folder exists for what would be the crashed session (`.claude/sessions/Session-YYYY-MM-DD-NNN/`). If it exists but has no transcript file (`*-Transcript.md`), that confirms the crash scenario.
 
-### Step 2: Create Current Session Notes Folder
+### Step 2: Create Current Session Folder
 
-Create the notes folder for your ACTUAL session (N+1):
+Create the session folder for your ACTUAL session (N+1):
 ```
-.claude/notes/Session-YYYY-MM-DD-NNN/
+.claude/sessions/Session-YYYY-MM-DD-NNN/
 ```
 
 ### Step 3: Find the Crashed Session's Transcript
@@ -55,15 +55,17 @@ Where:
 - `Session-YYYY-MM-DD-NNN` is the crashed session's name (N, not N+1)
 
 This script will:
-- Create the chronicle file in `.claude/chronicles/`
+- Create the session folder and transcript file in `.claude/sessions/{Session-ID}/`
 - Update INDEX.md with a `*(recovered)*` marker
 
 ### Step 5: Read Previous Session Notes
 
-Read all files in the crashed session's notes folder:
+Read all non-transcript files in the crashed session's folder:
 ```
-.claude/notes/{CRASHED_SESSION_ID}/
+.claude/sessions/{CRASHED_SESSION_ID}/
 ```
+
+(Skip the `*-Transcript.md` file you just created; read any other notes files that may exist.)
 
 ### Step 6: Read CLAUDE.md
 
@@ -80,9 +82,9 @@ Finish the remaining session start tasks:
 ## Summary
 
 After recovery, you should have:
-- [ ] Chronicle for crashed session N created and indexed
-- [ ] Notes folder for current session N+1 created
-- [ ] Previous session notes read
+- [ ] Transcript for crashed session N created and indexed
+- [ ] Session folder for current session N+1 created
+- [ ] Previous session notes read (if any)
 - [ ] SOPs read
 - [ ] Ready to proceed with current session
 

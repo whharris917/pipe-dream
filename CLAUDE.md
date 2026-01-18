@@ -57,9 +57,29 @@ git commit -m "Update flow-state submodule"
 
 At the start of each session, complete the following:
 
-### 1. Determine Session ID
+### 1. Initialize Sessions Directory (if needed)
 
-Check `.claude/chronicles/INDEX.md` for the last session entry. The current session ID follows the format:
+If `.claude/sessions/` does not exist, create it and initialize `INDEX.md`:
+
+```
+.claude/sessions/INDEX.md
+```
+
+With the following content:
+
+```markdown
+# Session Index
+
+All session transcripts, in chronological order.
+
+**Naming Convention:** `Session-YYYY-MM-DD-NNN` where NNN is a zero-padded sequence number for that date.
+
+---
+```
+
+### 2. Determine Session ID
+
+Check `.claude/sessions/INDEX.md` for the last session entry. The current session ID follows the format:
 
 ```
 Session-YYYY-MM-DD-NNN
@@ -67,27 +87,29 @@ Session-YYYY-MM-DD-NNN
 
 Where `NNN` is a zero-padded sequence number for that date. If today is a new date, start at `001`. Otherwise, increment from the last session number for today's date.
 
-### 2. Create Session Notes Folder
+### 3. Create Session Folder
 
-Create a folder for session notes:
-
-```
-.claude/notes/{SESSION_ID}/
-```
-
-This folder will hold any conceptual notes, architectural discussions, or other artifacts from this session that should persist for future reference.
-
-### 3. Read Previous Session Notes
-
-If a previous session notes folder exists, read all files in:
+Create a folder for the session:
 
 ```
-.claude/notes/{PREVIOUS_SESSION_ID}/
+.claude/sessions/{SESSION_ID}/
 ```
+
+This folder will hold both the session transcript (created automatically at session end) and any conceptual notes, architectural discussions, or other artifacts from this session.
+
+### 4. Read Previous Session Notes
+
+If a previous session folder exists, read all non-transcript files in:
+
+```
+.claude/sessions/{PREVIOUS_SESSION_ID}/
+```
+
+(Transcript files end with `-Transcript.md` and contain the full conversation log. Notes files are everything else.)
 
 This provides continuity from the last session's discussions, open items, and architectural decisions.
 
-### 4. Read All SOPs
+### 5. Read All SOPs
 
 Read all Standard Operating Procedures in `QMS/SOP/`. These define the rules you must follow when operating within the QMS.
 

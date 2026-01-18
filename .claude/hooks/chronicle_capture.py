@@ -26,21 +26,22 @@ SKIP_TYPES = {
 }
 
 
-def get_next_session_number(chronicles_dir: str, date_str: str) -> int:
+def get_next_session_number(sessions_dir: str, date_str: str) -> int:
     """
     Find the next available session number for the given date.
-    Scans existing Session-YYYY-MM-DD-NNN.md files and returns the next number.
+    Scans existing Session-YYYY-MM-DD-NNN/ directories and returns the next number.
     """
-    pattern = re.compile(rf'^Session-{re.escape(date_str)}-(\d{{3}})\.md$')
+    pattern = re.compile(rf'^Session-{re.escape(date_str)}-(\d{{3}})$')
     max_num = 0
 
-    if os.path.exists(chronicles_dir):
-        for filename in os.listdir(chronicles_dir):
-            match = pattern.match(filename)
-            if match:
-                num = int(match.group(1))
-                if num > max_num:
-                    max_num = num
+    if os.path.exists(sessions_dir):
+        for dirname in os.listdir(sessions_dir):
+            if os.path.isdir(os.path.join(sessions_dir, dirname)):
+                match = pattern.match(dirname)
+                if match:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
 
     return max_num + 1
 
@@ -141,16 +142,21 @@ def main():
         # Fallback: derive from script location
         project_dir = str(Path(__file__).parent.parent.parent)
 
-    # Create chronicles directory
-    chronicles_dir = os.path.join(project_dir, '.claude', 'chronicles')
-    Path(chronicles_dir).mkdir(parents=True, exist_ok=True)
+    # Create sessions directory
+    sessions_dir = os.path.join(project_dir, '.claude', 'sessions')
+    Path(sessions_dir).mkdir(parents=True, exist_ok=True)
 
-    # Generate chronicle filename using Session-YYYY-MM-DD-NNN format
+    # Generate session folder and transcript filename using Session-YYYY-MM-DD-NNN format
     date_str = datetime.now().strftime('%Y-%m-%d')
-    session_num = get_next_session_number(chronicles_dir, date_str)
+    session_num = get_next_session_number(sessions_dir, date_str)
     session_name = f"Session-{date_str}-{session_num:03d}"
-    chronicle_filename = f"{session_name}.md"
-    chronicle_path = os.path.join(chronicles_dir, chronicle_filename)
+
+    # Create session folder
+    session_folder = os.path.join(sessions_dir, session_name)
+    Path(session_folder).mkdir(parents=True, exist_ok=True)
+
+    transcript_filename = f"{session_name}-Transcript.md"
+    chronicle_path = os.path.join(session_folder, transcript_filename)
 
     # Read and parse transcript
     messages = []
@@ -197,8 +203,8 @@ def main():
     print(f"Chronicle saved: {chronicle_path}", file=sys.stderr)
 
     # Update the index - append new entry
-    index_path = os.path.join(chronicles_dir, 'INDEX.md')
-    index_entry = f"- [{session_name}]({chronicle_filename})\n"
+    index_path = os.path.join(sessions_dir, 'INDEX.md')
+    index_entry = f"- [{session_name}]({session_name}/{transcript_filename})\n"
 
     if os.path.exists(index_path):
         with open(index_path, 'a', encoding='utf-8') as f:
