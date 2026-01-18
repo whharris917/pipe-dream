@@ -86,3 +86,4 @@ All session chronicles, in chronological order.
 - [Session-2026-01-17-002](Session-2026-01-17-002/Session-2026-01-17-002-Transcript.md)
 - [Session-2026-01-17-003](Session-2026-01-17-003/Session-2026-01-17-003-Transcript.md)
 - [Session-2026-01-17-004](Session-2026-01-17-004/Session-2026-01-17-004-Transcript.md)
+- [Session-2026-01-17-005](Session-2026-01-17-005/Session-2026-01-17-005-Transcript.md)
