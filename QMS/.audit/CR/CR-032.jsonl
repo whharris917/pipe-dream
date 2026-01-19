@@ -1,0 +1,42 @@
+{"ts": "2026-01-18T21:52:43+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Fix qualification test gaps - RS/Implementation alignment"}
+{"ts": "2026-01-18T21:53:44+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-18T21:57:22+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-18T21:57:22+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-18T21:59:28+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "UPDATES_REQUIRED", "comment": "REJECT - Critical deficiency: Gap 2 misattributes owner-only routing to REQ-SEC-003. The RS states REQ-SEC-003 restricts 'checkin, release, revert, and close' to the owner. Route is NOT listed. Either: (1) update SDLC-QMS-RS to add route to REQ-SEC-003, (2) create a new requirement for owner-only routing, or (3) remove Gap 2 if route should not be owner-only. Cannot approve implementation that cites a non-existent requirement - this corrupts traceability."}
+{"ts": "2026-01-18T21:59:28+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-19T01:37:16+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T01:38:47+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T01:38:47+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-19T01:38:47+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-19T01:41:49+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "CR-032 v0.2 is COMPLIANT. Verified frontmatter: title='Fix qualification test gaps - RS/Implementation alignment', revision_summary='Address QA feedback - updated RS to include route in REQ-SEC-003'. All 12 required CR sections present per SOP-002 Section 6. Traceability verified: SDLC-QMS-RS REQ-SEC-003 now includes 'route' in owner-only restrictions (line 45), resolving previous Gap 2 concern. Technical approach for all five gaps is sound. Execution placeholders are appropriate for pre-execution phase. No placeholder content (TBD/TODO/FIXME), no typos, formatting consistent. Ready for pre-approval."}
+{"ts": "2026-01-19T01:41:49+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-19T01:43:01+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-19T01:43:01+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-19T01:45:17+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-19T01:45:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-19T01:46:00+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T01:46:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-19T02:01:48+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T02:03:21+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T02:03:21+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-19T02:03:21+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-19T02:05:16+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "UPDATES_REQUIRED", "comment": "POST-REVIEW FINDING: Section 10 Execution Comments table contains placeholder content: '[COMMENT] | [PERFORMER] - [DATE]'. Placeholder content (templates, TBD, TODO, FIXME) is non-conforming per document control requirements. ACTION REQUIRED: Either populate this row with actual execution comments, or remove the placeholder row entirely. All 8 execution items verified as Pass. No VARs required. Once placeholder is resolved, document is ready for post-approval."}
+{"ts": "2026-01-19T02:05:16+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-19T02:05:40+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T02:07:31+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T02:07:37+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "DRAFT", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-19T02:07:37+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-19T02:08:50+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "UPDATES_REQUIRED", "comment": "POST-REVIEW FINDING: NON-COMPLIANT. DEFICIENCY: The revision_summary frontmatter field does not begin with the authorizing CR ID as required by SOP-001 Section 5.1. OBSERVED: 'Address QA feedback - updated RS to include route in REQ-SEC-003'. REQUIRED FORMAT: Must begin with CR ID, e.g., 'CR-032: Address QA feedback - updated RS to include route in REQ-SEC-003'. All other aspects of the document are compliant: (1) All 8 execution items marked Pass with documented execution summaries, (2) No placeholder content found, (3) All required CR sections present per SOP-002 Section 6, (4) Execution Summary properly documents completion. RESOLUTION REQUIRED: Update revision_summary to include CR-032 prefix, then re-route for post-review."}
+{"ts": "2026-01-19T02:08:50+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-19T02:09:07+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T02:09:25+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T02:09:26+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "DRAFT", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-19T02:09:26+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-19T02:10:02+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete. Frontmatter compliant: title='Fix qualification test gaps - RS/Implementation alignment', revision_summary='CR-032: Address QA feedback - updated RS to include route in REQ-SEC-003'. Document structure complete with all 12 required sections. Execution table shows 8 EIs completed successfully with 54/54 qualification tests passing. No placeholder content, formatting errors, or typos identified. Document meets all SOP-001 and SOP-002 requirements. Recommend for approval."}
+{"ts": "2026-01-19T02:10:02+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-19T02:10:40+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-19T02:10:40+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-19T02:11:21+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-19T02:11:21+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-19T02:11:44+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-19T02:11:44+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}
