@@ -36,3 +36,5 @@
 {"ts": "2026-01-17T20:11:24+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
 {"ts": "2026-01-19T01:35:52+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
 {"ts": "2026-01-19T01:36:47+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T03:16:24+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T03:21:18+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
