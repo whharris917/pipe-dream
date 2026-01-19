@@ -83,7 +83,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-WF-004 | Review Completion Gate | test_sop_lifecycle | test_multi_reviewer_gate::295-326 |
 | REQ-WF-005 | Approval Gate | test_sop_lifecycle | test_approval_gate_blocking::328-350 |
 | REQ-WF-006 | Approval Version Bump | test_sop_lifecycle | test_sop_full_lifecycle::226-246 |
-| REQ-WF-007 | Rejection Handling | test_sop_lifecycle, test_cr_lifecycle | test_rejection::352-377, test_pre_approval_rejection::406-436, test_post_approval_rejection::438-470 |
+| REQ-WF-007 | Rejection Handling | test_sop_lifecycle<br>test_cr_lifecycle | test_rejection::352-377<br>test_pre_approval_rejection::406-436, test_post_approval_rejection::438-470 |
 | REQ-WF-008 | Release Transition | test_cr_lifecycle | test_cr_full_lifecycle::119-142, test_owner_only_release::325-360 |
 | REQ-WF-009 | Revert Transition | test_cr_lifecycle | test_revert::194-238 |
 | REQ-WF-010 | Close Transition | test_cr_lifecycle | test_cr_full_lifecycle::172-190, test_owner_only_close::362-404 |
@@ -92,10 +92,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-WF-013 | Retirement Transition | test_sop_lifecycle | test_retirement::409-428 |
 | REQ-META-001 | Three-Tier Separation | test_sop_lifecycle | test_sop_full_lifecycle::115-143 |
 | REQ-META-002 | CLI-Exclusive Metadata Management | test_sop_lifecycle | test_sop_full_lifecycle::115-128 |
-| REQ-META-003 | Required Metadata Fields | test_sop_lifecycle, test_cr_lifecycle | test_sop_full_lifecycle::115-143, test_cr_full_lifecycle::68-85 |
+| REQ-META-003 | Required Metadata Fields | test_sop_lifecycle<br>test_cr_lifecycle | test_sop_full_lifecycle::115-143<br>test_cr_full_lifecycle::68-85 |
 | REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle | test_cr_full_lifecycle::77-85,126-129, test_execution_phase_preserved::282-322 |
 | REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle | test_sop_full_lifecycle::167-171 |
-| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle, test_cr_lifecycle, test_queries | test_sop_full_lifecycle::128-143,246-250, test_cr_full_lifecycle::129-142,179-190, test_history_shows_all_event_types::219-245 |
+| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle<br>test_cr_lifecycle<br>test_queries | test_sop_full_lifecycle::128-143,246-250<br>test_cr_full_lifecycle::129-142,179-190<br>test_history_shows_all_event_types::219-245 |
 | REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle | test_sop_full_lifecycle::128-143 |
 | REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle | test_sop_full_lifecycle::197-212 |
 | REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle | test_sop_full_lifecycle::187-191 |
