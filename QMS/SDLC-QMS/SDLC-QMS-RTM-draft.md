@@ -729,7 +729,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|-------|
 | Repository | whharris917/qms-cli |
 | Commit | `9fd2d72` |
-| Date | 2026-01-19 |
 | CI Evidence | [GitHub Actions](https://github.com/whharris917/qms-cli/actions) |
 | Total Tests | 54 |
 | Passed | 54 |
