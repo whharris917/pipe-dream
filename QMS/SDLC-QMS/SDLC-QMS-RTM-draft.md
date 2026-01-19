@@ -126,9 +126,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall classify all users into exactly one of three groups: Initiators, QA, or Reviewers.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_user_group_classification | 44-67 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_user_group_classification | 44-67 | Verify users are classified into correct groups with appropriate permissions. |
 
 ---
 
@@ -136,11 +136,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall authorize actions based on user group membership: create, checkout, checkin, route, release, revert, close (Initiators); assign (QA); fix (QA, lead).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_unauthorized_create | 73-85 |
-| test_security.py | test_unauthorized_assign | 87-105 |
-| test_security.py | test_fix_authorization | 107-134 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_unauthorized_create | 73-85 | Non-initiators cannot create documents. |
+| test_security.py | test_unauthorized_assign | 87-105 | Non-QA users cannot assign reviewers. |
+| test_security.py | test_fix_authorization | 107-134 | Only QA and lead can use the fix command. |
 
 ---
 
@@ -148,10 +148,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall restrict checkin, route, release, revert, and close actions to the document's responsible_user (owner).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_owner_only_checkin | 140-161 |
-| test_security.py | test_owner_only_route | 163-180 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_owner_only_checkin | 140-161 | Only the document owner can checkin. |
+| test_security.py | test_owner_only_route | 163-180 | Only the document owner can route for review/approval. |
 
 ---
 
@@ -159,10 +159,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall permit review and approve actions only for users listed in the document's pending_assignees.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_unassigned_cannot_review | 186-209 |
-| test_security.py | test_unassigned_cannot_approve | 211-234 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_unassigned_cannot_review | 186-209 | Users not in pending_assignees cannot submit reviews. |
+| test_security.py | test_unassigned_cannot_approve | 211-234 | Users not in pending_assignees cannot approve. |
 
 ---
 
@@ -170,9 +170,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall permit reject actions using the same authorization rules as approve (pending_assignees).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_rejection_access | 240-265 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_rejection_access | 240-265 | Rejection follows same authorization rules as approve. |
 
 ---
 
@@ -180,9 +180,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall reject any command invoked with a user identifier not present in the user registry, returning an error without modifying any state.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_unknown_user_rejection | 271-288 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_unknown_user_rejection | 271-288 | Commands with unknown user identifiers are rejected. |
 
 ### 5.2 Document Management (REQ-DOC)
 
@@ -190,11 +190,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall support creation and management of the following document types: SOP, CR, INV, TP, ER, VAR, RS, RTM, and TEMPLATE.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_create_sop | 44-60 |
-| test_document_types.py | test_create_cr | 62-80 |
-| test_document_types.py | test_create_inv | 82-100 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_create_sop | 44-60 | Create SOP document type. |
+| test_document_types.py | test_create_cr | 62-80 | Create CR document type (executable, folder-per-doc). |
+| test_document_types.py | test_create_inv | 82-100 | Create INV document type (executable, folder-per-doc). |
 
 ---
 
@@ -202,11 +202,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall enforce parent-child relationships: TP is a child of CR; ER is a child of TP; VAR is a child of CR or INV. Child documents shall be stored within their parent's folder.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_create_tp_under_cr | 106-129 |
-| test_document_types.py | test_create_var_under_cr | 131-155 |
-| test_document_types.py | test_create_var_under_inv | 157-176 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_create_tp_under_cr | 106-129 | TP is created as a child of CR, stored within CR's folder. |
+| test_document_types.py | test_create_var_under_cr | 131-155 | VAR is created as a child of CR, stored within CR's folder. |
+| test_document_types.py | test_create_var_under_inv | 157-176 | VAR can also be created as a child of INV. |
 
 ---
 
@@ -214,9 +214,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall maintain the following folder structure: QMS/ for controlled documents organized by type; QMS/.meta/ for workflow state sidecar files; QMS/.audit/ for audit trail logs; QMS/.archive/ for superseded versions; and per-user workspace and inbox directories.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 105-110, 239-243 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 105-110, 239-243 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -224,9 +224,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall generate document IDs sequentially within each document type (e.g., CR-001, CR-002, SOP-001, SOP-002). The next available number shall be determined by scanning existing documents.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_sequential_id_generation | 182-209 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_sequential_id_generation | 182-209 | Document IDs are generated sequentially within each type. |
 
 ---
 
@@ -234,10 +234,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** For child document types, the CLI shall generate IDs in the format `{PARENT}-{TYPE}-NNN` where NNN is sequential within that parent (e.g., CR-005-VAR-001, CR-005-VAR-002).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_create_var_under_cr | 131-155 |
-| test_document_types.py | test_child_id_generation | 215-242 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_create_var_under_cr | 131-155 | VAR is created as a child of CR, stored within CR's folder. |
+| test_document_types.py | test_child_id_generation | 215-242 | Child document IDs follow format {PARENT}-{TYPE}-NNN. |
 
 ---
 
@@ -245,9 +245,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall enforce version numbers in the format `N.X` where N = approval number (major version) and X = revision number within approval cycle (minor version). Initial documents shall start at version 0.1.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 110-115, 233-236 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 110-115, 233-236 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -255,9 +255,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall permit checkout of any document not currently checked out by another user. On checkout, the CLI shall: (1) copy the document to the user's workspace, (2) set the user as responsible_user, (3) mark the document as checked_out, and (4) if the document is EFFECTIVE, create a new draft version at N.1.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 157-167 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 157-167 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -265,9 +265,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** When a user checks in a document, the CLI shall: (1) copy the document from workspace to QMS working directory, (2) archive any previous draft version, and (3) maintain the user as responsible_user.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 145-156, 171-180 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 145-156, 171-180 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -275,9 +275,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** When a document in REVIEWED, PRE_REVIEWED, or POST_REVIEWED status is checked in, the CLI shall revert the status to DRAFT (for non-executable) or the appropriate pre-review state (for executable) to require a new review cycle.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_checkin_reverts_reviewed | 271-295 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_checkin_reverts_reviewed | 271-295 | Checkin from REVIEWED status should revert to DRAFT. |
 
 ---
 
@@ -285,10 +285,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall only permit cancellation of documents with version < 1.0 (never approved). Cancellation shall permanently delete the document file, metadata, and audit trail.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_cancel_v0_document | 248-268 |
-| test_document_types.py | test_cancel_blocked_for_v1 | 270-294 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_cancel_v0_document | 248-268 | Documents with version < 1.0 can be cancelled. |
+| test_document_types.py | test_cancel_blocked_for_v1 | 270-294 | Documents with version >= 1.0 cannot be cancelled. |
 
 ---
 
@@ -296,9 +296,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Template documents shall use name-based identifiers in the format `TEMPLATE-{NAME}` rather than sequential numbering. The name shall be specified at creation time.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_template_name_based_id | 300-324 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_template_name_based_id | 300-324 | Template documents use name-based IDs instead of sequential numbers. |
 
 ---
 
@@ -306,9 +306,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall support RS and RTM documents for configured SDLC namespaces. Each namespace requires explicit configuration in DOCUMENT_TYPES specifying the document ID prefix (e.g., SDLC-FLOW-RS, SDLC-QMS-RTM) and storage path. Documents shall be stored in `QMS/SDLC-{NAMESPACE}/`.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_sdlc_document_types | 330-357 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_sdlc_document_types | 330-357 | RS and RTM documents for configured SDLC namespaces. |
 
 ### 5.3 Workflow State Machine (REQ-WF)
 
@@ -316,9 +316,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall reject any status transition not defined in the workflow state machine. Invalid transitions shall produce an error without modifying document state.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_invalid_transition | 252-269 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_invalid_transition | 252-269 | Attempt an invalid status transition. |
 
 ---
 
@@ -326,9 +326,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Non-executable documents shall follow this status progression: DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE. SUPERSEDED and RETIRED are terminal states.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 95-250 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 95-250 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -336,9 +336,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Executable documents (CR, INV, TP, ER, VAR) shall follow this status progression: DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL → POST_APPROVED → CLOSED. RETIRED is a terminal state.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_cr_lifecycle.py | test_cr_full_lifecycle | 62-190 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_cr_lifecycle.py | test_cr_full_lifecycle | 62-190 | Walk a CR through its complete lifecycle from DRAFT to CLOSED. |
 
 ---
 
@@ -346,9 +346,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall automatically transition a document from IN_REVIEW to REVIEWED (or equivalent pre/post states) only when all users in pending_assignees have submitted reviews.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_multi_reviewer_gate | 295-326 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_multi_reviewer_gate | 295-326 | Review completion gate with multiple reviewers. |
 
 ---
 
@@ -356,9 +356,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall block routing for approval if any reviewer submitted a review with `request-updates` outcome. All reviews must have `recommend` outcome before approval routing is permitted.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_approval_gate_blocking | 328-350 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_approval_gate_blocking | 328-350 | Approval routing blocked when review has request-updates outcome. |
 
 ---
 
@@ -366,9 +366,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Upon successful approval (all approvers complete), the CLI shall: (1) increment the major version (N.X → N+1.0), (2) archive the previous version, (3) transition to EFFECTIVE (non-executable) or PRE_APPROVED/POST_APPROVED (executable), and (4) clear the responsible_user.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 226-246 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 226-246 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -376,11 +376,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** When any approver rejects a document, the CLI shall transition the document back to the most recent REVIEWED state (REVIEWED, PRE_REVIEWED, or POST_REVIEWED) without incrementing the version.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_rejection | 352-377 |
-| test_cr_lifecycle.py | test_pre_approval_rejection | 406-436 |
-| test_cr_lifecycle.py | test_post_approval_rejection | 438-470 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_rejection | 352-377 | Rejection returns document to REVIEWED state. |
+| test_cr_lifecycle.py | test_pre_approval_rejection | 406-436 | Rejection in pre-approval returns to PRE_REVIEWED. |
+| test_cr_lifecycle.py | test_post_approval_rejection | 438-470 | Rejection in post-approval returns to POST_REVIEWED. |
 
 ---
 
@@ -388,10 +388,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall transition executable documents from PRE_APPROVED to IN_EXECUTION upon release command. Only the document owner may release.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_cr_lifecycle.py | test_cr_full_lifecycle | 119-142 |
-| test_cr_lifecycle.py | test_owner_only_release | 325-360 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_cr_lifecycle.py | test_cr_full_lifecycle | 119-142 | Walk a CR through its complete lifecycle from DRAFT to CLOSED. |
+| test_cr_lifecycle.py | test_owner_only_release | 325-360 | Only the document owner can release an executable document. |
 
 ---
 
@@ -399,9 +399,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall transition executable documents from POST_REVIEWED to IN_EXECUTION upon revert command, requiring a reason. Only the document owner may revert.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_cr_lifecycle.py | test_revert | 194-238 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_cr_lifecycle.py | test_revert | 194-238 | Revert from POST_REVIEWED back to IN_EXECUTION. |
 
 ---
 
@@ -409,10 +409,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall transition executable documents from POST_APPROVED to CLOSED upon close command. Only the document owner may close.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_cr_lifecycle.py | test_cr_full_lifecycle | 172-190 |
-| test_cr_lifecycle.py | test_owner_only_close | 362-404 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_cr_lifecycle.py | test_cr_full_lifecycle | 172-190 | Walk a CR through its complete lifecycle from DRAFT to CLOSED. |
+| test_cr_lifecycle.py | test_owner_only_close | 362-404 | Only the document owner can close an executable document. |
 
 ---
 
@@ -420,9 +420,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall reject all transitions from terminal states (SUPERSEDED, CLOSED, RETIRED).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_cr_lifecycle.py | test_terminal_state | 241-278 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_cr_lifecycle.py | test_terminal_state | 241-278 | CLOSED state rejects all routing commands. |
 
 ---
 
@@ -430,10 +430,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall support routing for retirement approval, which signals that approval leads to RETIRED status rather than EFFECTIVE or PRE_APPROVED. Retirement routing shall only be permitted for documents with version >= 1.0 (once-effective).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_retirement | 379-428 |
-| test_sop_lifecycle.py | test_retirement_rejected_for_v0 | 430-448 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_retirement | 379-428 | Retirement workflow for effective document. |
+| test_sop_lifecycle.py | test_retirement_rejected_for_v0 | 430-448 | Retirement routing rejected for never-effective documents. |
 
 ---
 
@@ -441,9 +441,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Upon approval of a retirement-routed document, the CLI shall: (1) archive the document to `.archive/`, (2) remove the working copy from the QMS directory, (3) transition status to RETIRED, and (4) log a RETIRE event to the audit trail.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_retirement | 409-428 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_retirement | 409-428 | Retirement workflow for effective document. |
 
 ### 5.4 Metadata Architecture (REQ-META)
 
@@ -451,9 +451,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall maintain strict separation between: Tier 1 (Frontmatter) for author-maintained fields only (title, revision_summary); Tier 2 (.meta/) for CLI-managed workflow state; and Tier 3 (.audit/) for immutable event history.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 115-143 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 115-143 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -461,9 +461,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall be the sole mechanism for modifying .meta/ sidecar files. Workflow state (version, status, responsible_user, pending_assignees) shall never be stored in document frontmatter.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 115-128 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 115-128 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -471,10 +471,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Each document's .meta/ file shall contain at minimum: doc_id, doc_type, version, status, executable (boolean), responsible_user (or null), checked_out (boolean), and pending_assignees (array).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 115-143 |
-| test_cr_lifecycle.py | test_cr_full_lifecycle | 68-85 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 115-143 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
+| test_cr_lifecycle.py | test_cr_full_lifecycle | 68-85 | Walk a CR through its complete lifecycle from DRAFT to CLOSED. |
 
 ---
 
@@ -482,10 +482,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** For executable documents, the CLI shall track the execution phase (pre_release or post_release) in metadata to correctly infer pre vs. post workflow stages.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_cr_lifecycle.py | test_cr_full_lifecycle | 77-85, 126-129 |
-| test_cr_lifecycle.py | test_execution_phase_preserved | 282-322 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_cr_lifecycle.py | test_cr_full_lifecycle | 77-85, 126-129 | Walk a CR through its complete lifecycle from DRAFT to CLOSED. |
+| test_cr_lifecycle.py | test_execution_phase_preserved | 282-322 | Execution phase (post_release) is preserved through checkout/checkin cycles. |
 
 ---
 
@@ -495,9 +495,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall never modify or delete existing audit trail entries. All audit operations shall append new entries to the .audit/ JSONL files.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 167-171 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 167-171 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -505,11 +505,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall log the following events to the audit trail: CREATE, CHECKOUT, CHECKIN, ROUTE_REVIEW, ROUTE_APPROVAL, REVIEW, APPROVE, REJECT, EFFECTIVE, RELEASE, REVERT, CLOSE, RETIRE, STATUS_CHANGE.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 128-143, 246-250 |
-| test_cr_lifecycle.py | test_cr_full_lifecycle | 129-142, 179-190 |
-| test_queries.py | test_history_shows_all_event_types | 219-245 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 128-143, 246-250 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
+| test_cr_lifecycle.py | test_cr_full_lifecycle | 129-142, 179-190 | Walk a CR through its complete lifecycle from DRAFT to CLOSED. |
+| test_queries.py | test_history_shows_all_event_types | 219-245 | History includes all event types from full lifecycle. |
 
 ---
 
@@ -517,9 +517,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Each audit event shall include: timestamp (ISO 8601 format), event type, user who performed the action, and document version at time of event.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 128-143 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 128-143 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -527,9 +527,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Review comments and rejection rationale shall be stored only in the audit trail, not in document content or metadata.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 197-212 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 197-212 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -539,9 +539,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** When a document is routed for review or approval, the CLI shall create task files in each assigned user's inbox directory.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 187-191 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 187-191 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -549,9 +549,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** Generated task files shall include: task_id (unique identifier), task_type (REVIEW or APPROVAL), workflow_type, doc_id, version, assigned_by, and assigned_date.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 191-196 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 191-196 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -559,9 +559,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** When routing for review, the CLI shall automatically add QA to the pending_assignees list regardless of explicit assignment.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 187-191 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 187-191 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -569,9 +569,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** When a user completes a review or approval action, the CLI shall remove their corresponding task file from their inbox.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 216-218 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 216-218 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -581,9 +581,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall discover the project root by searching for the QMS/ directory, starting from the current working directory and traversing upward.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| conftest.py | temp_project fixture | 15-90 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| conftest.py | temp_project fixture | 15-90 | Create a temporary project structure with QMS directories. |
 
 ---
 
@@ -591,9 +591,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall resolve the QMS document root as `{PROJECT_ROOT}/QMS/`. All controlled documents, metadata, and audit trails shall reside under this path.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 105-110 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 105-110 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -601,9 +601,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall resolve the users directory (containing workspaces and inboxes) as `{PROJECT_ROOT}/.claude/users/`.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_sop_lifecycle.py | test_sop_full_lifecycle | 157-167, 187-191 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_sop_lifecycle.py | test_sop_full_lifecycle | 157-167, 187-191 | Walk an SOP through its complete lifecycle from DRAFT to EFFECTIVE. |
 
 ---
 
@@ -611,9 +611,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall resolve the agents directory (containing agent definition files) as `{PROJECT_ROOT}/.claude/agents/`.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| conftest.py | temp_project fixture | 75-90 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| conftest.py | temp_project fixture | 75-90 | Create a temporary project structure with QMS directories. |
 
 ---
 
@@ -621,9 +621,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall maintain a registry of valid users, including: (1) the set of all valid user identifiers, and (2) group membership for each user (Initiators, QA, or Reviewers).
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_security.py | test_unknown_user_rejection | 271-288 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_security.py | test_unknown_user_rejection | 271-288 | Commands with unknown user identifiers are rejected. |
 
 ---
 
@@ -631,11 +631,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall maintain a registry of document types, including for each type: (1) storage path relative to QMS root, (2) executable flag, (3) ID prefix, (4) parent type (if child document), and (5) folder-per-document flag.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_document_types.py | test_create_sop | 44-60 |
-| test_document_types.py | test_create_cr | 62-80 |
-| test_document_types.py | test_create_inv | 82-100 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_document_types.py | test_create_sop | 44-60 | Create SOP document type. |
+| test_document_types.py | test_create_cr | 62-80 | Create CR document type (executable, folder-per-doc). |
+| test_document_types.py | test_create_inv | 82-100 | Create INV document type (executable, folder-per-doc). |
 
 ---
 
@@ -643,9 +643,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** For agent users (non-human), the CLI shall support loading agent definition files from the agents directory. Agent definitions provide behavioral context for spawned subagents.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| conftest.py | temp_project fixture | 75-90 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| conftest.py | temp_project fixture | 75-90 | Create a temporary project structure with QMS directories. |
 
 ---
 
@@ -655,12 +655,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall provide the ability to read any document's content. Reading shall support: (1) the current effective version, (2) the current draft version if one exists, and (3) any archived version by version number.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_queries.py | test_read_draft | 44-58 |
-| test_queries.py | test_read_effective | 60-81 |
-| test_queries.py | test_read_archived_version | 83-105 |
-| test_queries.py | test_read_draft_flag | 107-139 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_queries.py | test_read_draft | 44-58 | Read the current draft version of a document. |
+| test_queries.py | test_read_effective | 60-81 | Read the effective version of a document. |
+| test_queries.py | test_read_archived_version | 83-105 | Read an archived version of a document. |
+| test_queries.py | test_read_draft_flag | 107-139 | Read draft explicitly when both draft and effective exist. |
 
 ---
 
@@ -668,10 +668,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall provide the ability to query a document's current workflow state, including: doc_id, title, version, status, document type, executable flag, responsible_user, and checked_out status.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_queries.py | test_status_query | 142-164 |
-| test_queries.py | test_status_shows_checked_out | 166-189 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_queries.py | test_status_query | 142-164 | Query document status shows all required fields. |
+| test_queries.py | test_status_shows_checked_out | 166-189 | Status query correctly shows checked_out status. |
 
 ---
 
@@ -679,10 +679,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall provide the ability to retrieve the complete audit trail for a document, displaying all recorded events in chronological order.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_queries.py | test_history_query | 191-217 |
-| test_queries.py | test_history_shows_all_event_types | 219-245 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_queries.py | test_history_query | 191-217 | History query shows all recorded events in chronological order. |
+| test_queries.py | test_history_shows_all_event_types | 219-245 | History includes all event types from full lifecycle. |
 
 ---
 
@@ -690,10 +690,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall provide the ability to retrieve review comments for a document, filtered by version. Comments shall be extracted from REVIEW and REJECT events in the audit trail.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_queries.py | test_comments_query | 248-266 |
-| test_queries.py | test_comments_includes_rejection | 268-291 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_queries.py | test_comments_query | 248-266 | Comments query retrieves review comments from audit trail. |
+| test_queries.py | test_comments_includes_rejection | 268-291 | Comments query includes rejection comments. |
 
 ---
 
@@ -701,11 +701,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall provide the ability for a user to list all pending tasks in their inbox, showing task type, document ID, and assignment date.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_queries.py | test_inbox_query | 294-312 |
-| test_queries.py | test_inbox_multiple_tasks | 314-335 |
-| test_queries.py | test_inbox_empty_when_no_tasks | 337-352 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_queries.py | test_inbox_query | 294-312 | Inbox query lists pending tasks for a user. |
+| test_queries.py | test_inbox_multiple_tasks | 314-335 | Inbox shows multiple pending tasks. |
+| test_queries.py | test_inbox_empty_when_no_tasks | 337-352 | Inbox query works when user has no pending tasks. |
 
 ---
 
@@ -713,11 +713,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 **Requirement:** The CLI shall provide the ability for a user to list all documents currently checked out to their workspace.
 
-| Test File | Test Function | Lines |
-|-----------|---------------|-------|
-| test_queries.py | test_workspace_query | 355-369 |
-| test_queries.py | test_workspace_multiple_documents | 371-390 |
-| test_queries.py | test_workspace_empty_after_checkin | 392-410 |
+| Test File | Test Function | Lines | Description |
+|-----------|---------------|-------|-------------|
+| test_queries.py | test_workspace_query | 355-369 | Workspace query lists documents checked out to user. |
+| test_queries.py | test_workspace_multiple_documents | 371-390 | Workspace shows multiple checked out documents. |
+| test_queries.py | test_workspace_empty_after_checkin | 392-410 | Workspace is empty after checking in all documents. |
 
 ---
 
