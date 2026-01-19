@@ -140,3 +140,15 @@
 {"ts": "2026-01-10T22:03:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-10T22:03:17+00:00", "event": "EFFECTIVE", "user": "qa", "version": "16.0", "from_version": "15.1"}
 {"ts": "2026-01-10T22:03:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-19T21:45:43+00:00", "event": "CHECKOUT", "user": "claude", "version": "16.1", "from_version": "16.0"}
+{"ts": "2026-01-19T21:48:05+00:00", "event": "CHECKIN", "user": "claude", "version": "16.1"}
+{"ts": "2026-01-19T21:48:25+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "16.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-01-19T21:48:25+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "16.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-01-19T21:49:43+00:00", "event": "REVIEW", "user": "qa", "version": "16.1", "outcome": "RECOMMEND", "comment": "Review complete. Verified: (1) Frontmatter title: 'Quality Management System - Document Control'; (2) Frontmatter revision_summary: 'CR-033: Relax CR ID requirement in revision_summary'; (3) Section 5.1 updated per CR-033 specification - changed 'Must begin with' to 'Should reference', added 'This provides traceability' sentence, added three-item exception list (initial creation, executable documents, revisions not CR-driven); (4) No placeholder content found; (5) Consistent formatting throughout. Implementation matches CR-033 Section 5.1 specification exactly."}
+{"ts": "2026-01-19T21:49:43+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-01-19T21:49:58+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "16.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-01-19T21:49:58+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "16.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-01-19T21:51:30+00:00", "event": "APPROVE", "user": "qa", "version": "16.1"}
+{"ts": "2026-01-19T21:51:30+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-01-19T21:51:30+00:00", "event": "EFFECTIVE", "user": "qa", "version": "17.0", "from_version": "16.1"}
+{"ts": "2026-01-19T21:51:30+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

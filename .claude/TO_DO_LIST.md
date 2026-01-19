@@ -28,11 +28,10 @@
 
 ## 2026-01-10
 
-- [ ] Remove CR ID requirement from revision_summary frontmatter field
-  - Currently SOP-001 Section 5.1 and SOP-002 Section 8 require revision_summary to begin with CR ID
-  - This is not always appropriate (e.g., CRs themselves, documents not driven by a CR)
-  - Guideline should be: reference a CR *if* the update was driven by a CR
-  - Update SOP-001, SOP-002, and any agent definition files or prompts that enforce this
+- [x] ~~Remove CR ID requirement from revision_summary frontmatter field~~ ✓ DONE (CR-033)
+  - Implemented via CR-033 (CLOSED)
+  - SOP-001 v17.0, SOP-002 v7.0 now EFFECTIVE with relaxed requirement
+  - Updated QA agent definition and 5 review/approval prompt files
 
 - [ ] Audit and fix CR document path references
   - Agents often attempt `QMS/CR/CR-XYZ.md` instead of correct `QMS/CR/CR-XYZ/CR-XYZ.md`

@@ -122,7 +122,7 @@ When reviewing documents, verify each item and provide evidence:
 | Item | Verification | Evidence Required |
 |------|--------------|-------------------|
 | **Frontmatter: title** | Field present and non-empty | Quote the title value |
-| **Frontmatter: revision_summary** | Present for v1.0+ documents; begins with CR ID | Quote the value or state "N/A for v0.x" |
+| **Frontmatter: revision_summary** | Present for v1.0+ documents; descriptive of changes | Quote the value or state "N/A for v0.x" |
 | **Document structure** | Follows type-specific template | List sections present |
 | **Required sections** | All mandatory sections per document type | Confirm each section |
 | **No placeholder content** | No TBD, TODO, FIXME, XXX | State "None found" or quote any found |

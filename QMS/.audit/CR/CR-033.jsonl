@@ -1,0 +1,30 @@
+{"ts": "2026-01-19T21:38:00+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Relax CR ID requirement in revision_summary"}
+{"ts": "2026-01-19T21:38:56+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T21:40:13+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-19T21:40:13+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-19T21:41:23+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "UPDATES_REQUIRED", "comment": "Section 5.2 (SOP-002 Section 8 Update) is underspecified. It states 'Reframe the section as guidance rather than a hard requirement' but does not provide the exact replacement text. Section 5.1 correctly provides the complete 'Change from X to Y' specification for SOP-001. Section 5.2 must follow the same pattern: provide the full current text of SOP-002 Section 8 and the full proposed replacement text. Without this, the implementer must make design decisions during execution that should be reviewed and approved as part of the pre-approved content."}
+{"ts": "2026-01-19T21:41:23+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-19T21:41:43+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T21:42:59+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-19T21:43:07+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-19T21:43:07+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-19T21:44:04+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Re-review complete. Previous finding resolved: Section 5.2 now provides complete before/after text for SOP-002 Section 8, matching the specification pattern in Section 5.1. All review criteria verified: (1) Frontmatter title: 'Relax CR ID requirement in revision_summary'; (2) Frontmatter revision_summary: 'Initial draft' (acceptable for v0.x); (3) All 12 required CR sections present and complete; (4) No placeholder content in pre-approved sections 1-9; (5) Consistent formatting throughout; (6) Files Affected matches Impact Assessment (8 files); (7) EI table covers all implementation tasks. Document is ready for pre-approval."}
+{"ts": "2026-01-19T21:44:04+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-19T21:44:19+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-19T21:44:19+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-19T21:44:56+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-19T21:44:56+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-19T21:45:24+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T21:45:24+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-19T21:53:32+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T21:55:38+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-19T21:55:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-19T21:55:46+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-19T21:57:35+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review verification complete per SOP-002 Section 7.3. Verified: (1) All 7 EIs have Task Outcome of Pass - no failed items requiring VARs; (2) SOP-001 v17.0 EFFECTIVE, SOP-002 v7.0 EFFECTIVE - confirmed via qms status; (3) Evidence documented in all execution summaries with version numbers and completion details; (4) revision_summary in both SOPs references CR-033 per traceability requirements. All post-review conditions satisfied."}
+{"ts": "2026-01-19T21:57:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-19T21:57:51+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-19T21:57:51+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-19T21:59:32+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-19T21:59:32+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-19T21:59:46+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-19T21:59:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}
