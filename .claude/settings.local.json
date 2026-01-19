@@ -18,17 +18,5 @@
       "Write(**/QMS/**)"
     ],
     "defaultMode": "acceptEdits"
-  },
-  "hooks": {
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/chronicle_capture.py"
-          }
-        ]
-      }
-    ]
   }
 }

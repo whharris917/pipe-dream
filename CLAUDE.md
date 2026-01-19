@@ -53,65 +53,72 @@ git commit -m "Update flow-state submodule"
 
 ---
 
-## Session Start Checklist
+## Session Management
 
-At the start of each session, complete the following:
+### How Sessions Work
 
-### 1. Initialize Sessions Directory (if needed)
+- **Opening Claude Code** = New session starts
+- **Closing Claude Code** = Session ends
+- **Context consolidation** = Same session continues
+- **Multiple sessions per day** are normal (001, 002, etc.)
 
-If `.claude/sessions/` does not exist, create it and initialize `INDEX.md`:
+### CURRENT_SESSION File
 
-```
-.claude/sessions/INDEX.md
-```
+The file `.claude/sessions/CURRENT_SESSION` contains the active session ID.
 
-With the following content:
-
-```markdown
-# Session Index
-
-All session transcripts, in chronological order.
-
-**Naming Convention:** `Session-YYYY-MM-DD-NNN` where NNN is a zero-padded sequence number for that date.
+**Purpose:** Maintains session identity if context consolidation occurs mid-session.
 
 ---
+
+## Session Start Checklist
+
+### Step 0: Determine Session State
+
+Before proceeding, determine whether this is:
+
+- **New session**: You're starting fresh. Indicators: user greeting, "read CLAUDE.md",
+  a new task with no prior context, or other clear beginning-of-interaction signals.
+
+- **Continuation after consolidation**: Context was summarized mid-session. Indicators:
+  you received a system-generated summary of previous conversation, references to
+  ongoing work, or context that clearly came from a prior conversation in this session.
+
+**If new session:** Proceed with steps 1-4 below.
+**If continuation:** Read CURRENT_SESSION, confirm the session ID, and continue working.
+Do NOT create a new session or overwrite CURRENT_SESSION.
+
+### 1. Determine Session ID
+
+List existing session folders to find the last session:
+
+```bash
+dir /b /ad .claude\sessions | findstr "Session-" | sort
 ```
 
-### 2. Determine Session ID
+New session ID format: `Session-YYYY-MM-DD-NNN`
+- If today is a new date, start at `001`
+- Otherwise, increment from the last session number for today
 
-Check `.claude/sessions/INDEX.md` for the last session entry. The current session ID follows the format:
+### 2. Initialize Session
 
-```
-Session-YYYY-MM-DD-NNN
-```
-
-Where `NNN` is a zero-padded sequence number for that date. If today is a new date, start at `001`. Otherwise, increment from the last session number for today's date.
-
-### 3. Create Session Folder
-
-Create a folder for the session:
-
-```
-.claude/sessions/{SESSION_ID}/
+```bash
+echo Session-YYYY-MM-DD-NNN > .claude\sessions\CURRENT_SESSION
+mkdir .claude\sessions\Session-YYYY-MM-DD-NNN
 ```
 
-This folder will hold both the session transcript (created automatically at session end) and any conceptual notes, architectural discussions, or other artifacts from this session.
+### 3. Read Previous Session Notes
 
-### 4. Read Previous Session Notes
-
-If a previous session folder exists, read all non-transcript files in:
+If a previous session folder exists, read all files in:
 
 ```
 .claude/sessions/{PREVIOUS_SESSION_ID}/
 ```
 
-(Transcript files end with `-Transcript.md` and contain the full conversation log. Notes files are everything else.)
+This provides continuity from the last session's discussions and decisions.
 
-This provides continuity from the last session's discussions, open items, and architectural decisions.
+### 4. Read All SOPs
 
-### 5. Read All SOPs
-
-Read all Standard Operating Procedures in `QMS/SOP/`. These define the rules you must follow when operating within the QMS.
+Read all Standard Operating Procedures in `QMS/SOP/`.
 
 ---
 
