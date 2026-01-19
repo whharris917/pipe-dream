@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-01-19
+
+### Agent resume failures and wasteful fresh spawns
+
+Frequently observe agent resume attempts completing immediately with "0 tool uses · 0 tokens" followed by spawning an entirely new agent. This is wasteful since fresh agents must rebuild context from scratch.
+
+**Observed causes:**
+1. **API concurrency errors (400):** Conflict in underlying API calls, possibly from resuming too quickly after previous action
+2. **Context/state mismatches:** Agent's preserved context leads it to believe task is already complete
+3. **Insufficient resume prompts:** Prompt doesn't give agent actionable work in its current state
+
+**Current pattern:**
+```
+qa(QA post-review of CR-033) resuming a77b9a2
+  ⎿  Done (0 tool uses · 0 tokens · 1s)
+
+# Then immediately:
+qa(QA post-review of CR-033) spawning new agent...
+```
+
+**Potential improvements:**
+- Add delay/backoff before resume attempts
+- Provide more explicit context in resume prompts about what still needs to be done
+- Implement retry logic for resume failures instead of immediately spawning fresh
+- Investigate whether Claude Code infrastructure changes could improve resume reliability
+
+**Questions:**
+- Is this a Claude Code limitation or user error in resume prompts?
+- Would structured "agent handoff" context help (e.g., "previous action was X, next action should be Y")?
+- Can agent state be inspected before deciding to resume vs. spawn fresh?
+
+---
+
 ## 2026-01-09
 
 ### SOP approval requires executable infrastructure (refined)
