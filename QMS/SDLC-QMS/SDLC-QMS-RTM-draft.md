@@ -57,64 +57,64 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ## 4. Summary Matrix
 
-| REQ ID | Requirement | Test File | Function::Lines |
-|--------|-------------|-----------|-----------------|
-| REQ-SEC-001 | User Group Classification | test_security | test_user_group_classification::44-67 |
-| REQ-SEC-002 | Group-Based Action Authorization | test_security<br>test_security<br>test_security | test_unauthorized_create::73-85<br>test_unauthorized_assign::87-105<br>test_fix_authorization::107-134 |
-| REQ-SEC-003 | Owner-Only Restrictions | test_security<br>test_security | test_owner_only_checkin::140-161<br>test_owner_only_route::163-180 |
-| REQ-SEC-004 | Assignment-Based Review Access | test_security<br>test_security | test_unassigned_cannot_review::186-209<br>test_unassigned_cannot_approve::211-234 |
-| REQ-SEC-005 | Rejection Access | test_security | test_rejection_access::240-265 |
-| REQ-SEC-006 | Unknown User Rejection | test_security | test_unknown_user_rejection::271-288 |
-| REQ-DOC-001 | Supported Document Types | test_document_types<br>test_document_types<br>test_document_types | test_create_sop::44-60<br>test_create_cr::62-80<br>test_create_inv::82-100 |
-| REQ-DOC-002 | Child Document Relationships | test_document_types<br>test_document_types<br>test_document_types | test_create_tp_under_cr::106-129<br>test_create_var_under_cr::131-155<br>test_create_var_under_inv::157-176 |
-| REQ-DOC-003 | QMS Folder Structure | test_sop_lifecycle | test_sop_full_lifecycle::105-110,239-243 |
-| REQ-DOC-004 | Sequential ID Generation | test_document_types | test_sequential_id_generation::182-209 |
-| REQ-DOC-005 | Child Document ID Generation | test_document_types<br>test_document_types | test_create_var_under_cr::131-155<br>test_child_id_generation::215-242 |
-| REQ-DOC-006 | Version Format | test_sop_lifecycle | test_sop_full_lifecycle::110-115,233-236 |
-| REQ-DOC-007 | Checkout Behavior | test_sop_lifecycle | test_sop_full_lifecycle::157-167 |
-| REQ-DOC-008 | Checkin Updates QMS | test_sop_lifecycle | test_sop_full_lifecycle::145-156,171-180 |
-| REQ-DOC-009 | Checkin Reverts Reviewed Status | test_sop_lifecycle | test_checkin_reverts_reviewed::271-295 |
-| REQ-DOC-010 | Cancel Restrictions | test_document_types<br>test_document_types | test_cancel_v0_document::248-268<br>test_cancel_blocked_for_v1::270-294 |
-| REQ-DOC-011 | Template Name-Based ID | test_document_types | test_template_name_based_id::300-324 |
-| REQ-DOC-012 | SDLC Document Types | test_document_types | test_sdlc_document_types::330-357 |
-| REQ-WF-001 | Status Transition Validation | test_sop_lifecycle | test_invalid_transition::252-269 |
-| REQ-WF-002 | Non-Executable Document Lifecycle | test_sop_lifecycle | test_sop_full_lifecycle::95-250 |
-| REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle | test_cr_full_lifecycle::62-190 |
-| REQ-WF-004 | Review Completion Gate | test_sop_lifecycle | test_multi_reviewer_gate::295-326 |
-| REQ-WF-005 | Approval Gate | test_sop_lifecycle | test_approval_gate_blocking::328-350 |
-| REQ-WF-006 | Approval Version Bump | test_sop_lifecycle | test_sop_full_lifecycle::226-246 |
-| REQ-WF-007 | Rejection Handling | test_sop_lifecycle<br>test_cr_lifecycle<br>test_cr_lifecycle | test_rejection::352-377<br>test_pre_approval_rejection::406-436<br>test_post_approval_rejection::438-470 |
-| REQ-WF-008 | Release Transition | test_cr_lifecycle<br>test_cr_lifecycle | test_cr_full_lifecycle::119-142<br>test_owner_only_release::325-360 |
-| REQ-WF-009 | Revert Transition | test_cr_lifecycle | test_revert::194-238 |
-| REQ-WF-010 | Close Transition | test_cr_lifecycle<br>test_cr_lifecycle | test_cr_full_lifecycle::172-190<br>test_owner_only_close::362-404 |
-| REQ-WF-011 | Terminal State Enforcement | test_cr_lifecycle | test_terminal_state::241-278 |
-| REQ-WF-012 | Retirement Routing | test_sop_lifecycle<br>test_sop_lifecycle | test_retirement::379-428<br>test_retirement_rejected_for_v0::430-448 |
-| REQ-WF-013 | Retirement Transition | test_sop_lifecycle | test_retirement::409-428 |
-| REQ-META-001 | Three-Tier Separation | test_sop_lifecycle | test_sop_full_lifecycle::115-143 |
-| REQ-META-002 | CLI-Exclusive Metadata Management | test_sop_lifecycle | test_sop_full_lifecycle::115-128 |
-| REQ-META-003 | Required Metadata Fields | test_sop_lifecycle<br>test_cr_lifecycle | test_sop_full_lifecycle::115-143<br>test_cr_full_lifecycle::68-85 |
-| REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle<br>test_cr_lifecycle | test_cr_full_lifecycle::77-85,126-129<br>test_execution_phase_preserved::282-322 |
-| REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle | test_sop_full_lifecycle::167-171 |
-| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle<br>test_cr_lifecycle<br>test_queries | test_sop_full_lifecycle::128-143,246-250<br>test_cr_full_lifecycle::129-142,179-190<br>test_history_shows_all_event_types::219-245 |
-| REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle | test_sop_full_lifecycle::128-143 |
-| REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle | test_sop_full_lifecycle::197-212 |
-| REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle | test_sop_full_lifecycle::187-191 |
-| REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle | test_sop_full_lifecycle::191-196 |
-| REQ-TASK-003 | QA Auto-Assignment | test_sop_lifecycle | test_sop_full_lifecycle::187-191 |
-| REQ-TASK-004 | Task Removal on Completion | test_sop_lifecycle | test_sop_full_lifecycle::216-218 |
-| REQ-CFG-001 | Project Root Discovery | conftest | temp_project::15-90 |
-| REQ-CFG-002 | QMS Root Path | test_sop_lifecycle | test_sop_full_lifecycle::105-110 |
-| REQ-CFG-003 | Users Directory Path | test_sop_lifecycle | test_sop_full_lifecycle::157-167,187-191 |
-| REQ-CFG-004 | Agents Directory Path | conftest | temp_project::75-90 |
-| REQ-CFG-005 | User Registry | test_security | test_unknown_user_rejection::271-288 |
-| REQ-CFG-006 | Document Type Registry | test_document_types<br>test_document_types<br>test_document_types | test_create_sop::44-60<br>test_create_cr::62-80<br>test_create_inv::82-100 |
-| REQ-CFG-007 | Agent Definition Loading | conftest | temp_project::75-90 |
-| REQ-QRY-001 | Document Reading | test_queries<br>test_queries<br>test_queries<br>test_queries | test_read_draft::44-58<br>test_read_effective::60-81<br>test_read_archived_version::83-105<br>test_read_draft_flag::107-139 |
-| REQ-QRY-002 | Document Status Query | test_queries<br>test_queries | test_status_query::142-164<br>test_status_shows_checked_out::166-189 |
-| REQ-QRY-003 | Audit History Query | test_queries<br>test_queries | test_history_query::191-217<br>test_history_shows_all_event_types::219-245 |
-| REQ-QRY-004 | Review Comments Query | test_queries<br>test_queries | test_comments_query::248-266<br>test_comments_includes_rejection::268-291 |
-| REQ-QRY-005 | Inbox Query | test_queries<br>test_queries<br>test_queries | test_inbox_query::294-312<br>test_inbox_multiple_tasks::314-335<br>test_inbox_empty_when_no_tasks::337-352 |
-| REQ-QRY-006 | Workspace Query | test_queries<br>test_queries<br>test_queries | test_workspace_query::355-369<br>test_workspace_multiple_documents::371-390<br>test_workspace_empty_after_checkin::392-410 |
+| REQ ID | Requirement | Code Reference |
+|--------|-------------|----------------|
+| REQ-SEC-001 | User Group Classification | test_security::test_user_group_classification::44-67 |
+| REQ-SEC-002 | Group-Based Action Authorization | test_security::test_unauthorized_create::73-85<br>test_security::test_unauthorized_assign::87-105<br>test_security::test_fix_authorization::107-134 |
+| REQ-SEC-003 | Owner-Only Restrictions | test_security::test_owner_only_checkin::140-161<br>test_security::test_owner_only_route::163-180 |
+| REQ-SEC-004 | Assignment-Based Review Access | test_security::test_unassigned_cannot_review::186-209<br>test_security::test_unassigned_cannot_approve::211-234 |
+| REQ-SEC-005 | Rejection Access | test_security::test_rejection_access::240-265 |
+| REQ-SEC-006 | Unknown User Rejection | test_security::test_unknown_user_rejection::271-288 |
+| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop::44-60<br>test_document_types::test_create_cr::62-80<br>test_document_types::test_create_inv::82-100 |
+| REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr::106-129<br>test_document_types::test_create_var_under_cr::131-155<br>test_document_types::test_create_var_under_inv::157-176 |
+| REQ-DOC-003 | QMS Folder Structure | test_sop_lifecycle::test_sop_full_lifecycle::105-110,239-243 |
+| REQ-DOC-004 | Sequential ID Generation | test_document_types::test_sequential_id_generation::182-209 |
+| REQ-DOC-005 | Child Document ID Generation | test_document_types::test_create_var_under_cr::131-155<br>test_document_types::test_child_id_generation::215-242 |
+| REQ-DOC-006 | Version Format | test_sop_lifecycle::test_sop_full_lifecycle::110-115,233-236 |
+| REQ-DOC-007 | Checkout Behavior | test_sop_lifecycle::test_sop_full_lifecycle::157-167 |
+| REQ-DOC-008 | Checkin Updates QMS | test_sop_lifecycle::test_sop_full_lifecycle::145-156,171-180 |
+| REQ-DOC-009 | Checkin Reverts Reviewed Status | test_sop_lifecycle::test_checkin_reverts_reviewed::271-295 |
+| REQ-DOC-010 | Cancel Restrictions | test_document_types::test_cancel_v0_document::248-268<br>test_document_types::test_cancel_blocked_for_v1::270-294 |
+| REQ-DOC-011 | Template Name-Based ID | test_document_types::test_template_name_based_id::300-324 |
+| REQ-DOC-012 | SDLC Document Types | test_document_types::test_sdlc_document_types::330-357 |
+| REQ-WF-001 | Status Transition Validation | test_sop_lifecycle::test_invalid_transition::252-269 |
+| REQ-WF-002 | Non-Executable Document Lifecycle | test_sop_lifecycle::test_sop_full_lifecycle::95-250 |
+| REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle::test_cr_full_lifecycle::62-190 |
+| REQ-WF-004 | Review Completion Gate | test_sop_lifecycle::test_multi_reviewer_gate::295-326 |
+| REQ-WF-005 | Approval Gate | test_sop_lifecycle::test_approval_gate_blocking::328-350 |
+| REQ-WF-006 | Approval Version Bump | test_sop_lifecycle::test_sop_full_lifecycle::226-246 |
+| REQ-WF-007 | Rejection Handling | test_sop_lifecycle::test_rejection::352-377<br>test_cr_lifecycle::test_pre_approval_rejection::406-436<br>test_cr_lifecycle::test_post_approval_rejection::438-470 |
+| REQ-WF-008 | Release Transition | test_cr_lifecycle::test_cr_full_lifecycle::119-142<br>test_cr_lifecycle::test_owner_only_release::325-360 |
+| REQ-WF-009 | Revert Transition | test_cr_lifecycle::test_revert::194-238 |
+| REQ-WF-010 | Close Transition | test_cr_lifecycle::test_cr_full_lifecycle::172-190<br>test_cr_lifecycle::test_owner_only_close::362-404 |
+| REQ-WF-011 | Terminal State Enforcement | test_cr_lifecycle::test_terminal_state::241-278 |
+| REQ-WF-012 | Retirement Routing | test_sop_lifecycle::test_retirement::379-428<br>test_sop_lifecycle::test_retirement_rejected_for_v0::430-448 |
+| REQ-WF-013 | Retirement Transition | test_sop_lifecycle::test_retirement::409-428 |
+| REQ-META-001 | Three-Tier Separation | test_sop_lifecycle::test_sop_full_lifecycle::115-143 |
+| REQ-META-002 | CLI-Exclusive Metadata Management | test_sop_lifecycle::test_sop_full_lifecycle::115-128 |
+| REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle::115-143<br>test_cr_lifecycle::test_cr_full_lifecycle::68-85 |
+| REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle::77-85,126-129<br>test_cr_lifecycle::test_execution_phase_preserved::282-322 |
+| REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle::test_sop_full_lifecycle::167-171 |
+| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle::128-143,246-250<br>test_cr_lifecycle::test_cr_full_lifecycle::129-142,179-190<br>test_queries::test_history_shows_all_event_types::219-245 |
+| REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle::test_sop_full_lifecycle::128-143 |
+| REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle::test_sop_full_lifecycle::197-212 |
+| REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle::test_sop_full_lifecycle::187-191 |
+| REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle::test_sop_full_lifecycle::191-196 |
+| REQ-TASK-003 | QA Auto-Assignment | test_sop_lifecycle::test_sop_full_lifecycle::187-191 |
+| REQ-TASK-004 | Task Removal on Completion | test_sop_lifecycle::test_sop_full_lifecycle::216-218 |
+| REQ-CFG-001 | Project Root Discovery | conftest::temp_project::15-90 |
+| REQ-CFG-002 | QMS Root Path | test_sop_lifecycle::test_sop_full_lifecycle::105-110 |
+| REQ-CFG-003 | Users Directory Path | test_sop_lifecycle::test_sop_full_lifecycle::157-167,187-191 |
+| REQ-CFG-004 | Agents Directory Path | conftest::temp_project::75-90 |
+| REQ-CFG-005 | User Registry | test_security::test_unknown_user_rejection::271-288 |
+| REQ-CFG-006 | Document Type Registry | test_document_types::test_create_sop::44-60<br>test_document_types::test_create_cr::62-80<br>test_document_types::test_create_inv::82-100 |
+| REQ-CFG-007 | Agent Definition Loading | conftest::temp_project::75-90 |
+| REQ-QRY-001 | Document Reading | test_queries::test_read_draft::44-58<br>test_queries::test_read_effective::60-81<br>test_queries::test_read_archived_version::83-105<br>test_queries::test_read_draft_flag::107-139 |
+| REQ-QRY-002 | Document Status Query | test_queries::test_status_query::142-164<br>test_queries::test_status_shows_checked_out::166-189 |
+| REQ-QRY-003 | Audit History Query | test_queries::test_history_query::191-217<br>test_queries::test_history_shows_all_event_types::219-245 |
+| REQ-QRY-004 | Review Comments Query | test_queries::test_comments_query::248-266<br>test_queries::test_comments_includes_rejection::268-291 |
+| REQ-QRY-005 | Inbox Query | test_queries::test_inbox_query::294-312<br>test_queries::test_inbox_multiple_tasks::314-335<br>test_queries::test_inbox_empty_when_no_tasks::337-352 |
+| REQ-QRY-006 | Workspace Query | test_queries::test_workspace_query::355-369<br>test_queries::test_workspace_multiple_documents::371-390<br>test_queries::test_workspace_empty_after_checkin::392-410 |
 
 ---
 
