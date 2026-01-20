@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-01-19
+
+- [ ] Derive TRANSITIONS from WORKFLOW_TRANSITIONS in qms-cli
+  - Currently `qms_config.TRANSITIONS` and `workflow.WORKFLOW_TRANSITIONS` encode the same state machine edges
+  - Risk: If they diverge, transition validation bugs result
+  - Simplification: Generate `TRANSITIONS` dict from `WORKFLOW_TRANSITIONS` list at module load
+  - Location: `qms-cli/qms_config.py` imports from `workflow.py`, or refactor to single source of truth
+  - Priority: Low (code works, but worth doing if workflow engine is touched by future CR)
+  - Reference: Session-2026-01-19-004 formalization analysis
+
+---
+
 ## 2026-01-17
 
 - [ ] Correct SOP-001 Section 4.2 fix permission
