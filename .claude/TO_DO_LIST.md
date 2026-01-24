@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-01-24
+
+- [ ] Implement comments visibility restriction during active workflows
+  - Hide review comments when document is in IN_REVIEW or IN_APPROVAL status
+  - Prevents reviewers from being influenced by other reviewers' comments
+  - Was REQ-QRY-007; removed from RS to enable qualification
+  - If re-implemented: add requirement back to RS, update RTM, remove xfail from tests
+  - Reference: Session-2026-01-24 qualification work
+
+---
+
 ## 2026-01-19
 
 - [ ] Derive TRANSITIONS from WORKFLOW_TRANSITIONS in qms-cli

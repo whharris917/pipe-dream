@@ -1,7 +1,6 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: Updated for RS revision with new PROMPT/TEMPLATE domains, renumbered
-  CFG requirements, 86 tests (84 passed, 2 xfail for REQ-QRY-007)
+revision_summary: Remove REQ-QRY-007 to enable qualification - 84 tests, all passing
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -14,7 +13,7 @@ This document provides traceability between the requirements specified in SDLC-Q
 
 ## 2. Scope
 
-This RTM covers all 70 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 69 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 12 requirements
@@ -23,7 +22,7 @@ This RTM covers all 70 requirements defined in SDLC-QMS-RS across the following 
 - REQ-AUDIT (Audit Trail): 4 requirements
 - REQ-TASK (Task/Inbox): 4 requirements
 - REQ-CFG (Configuration): 5 requirements
-- REQ-QRY (Query Operations): 7 requirements
+- REQ-QRY (Query Operations): 6 requirements
 - REQ-PROMPT (Prompt Generation): 6 requirements
 - REQ-TEMPLATE (Document Templates): 5 requirements
 
@@ -123,7 +122,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-QRY-004 | Review Comments Query | test_queries::test_comments_query, test_comments_includes_rejection | PASS |
 | REQ-QRY-005 | Inbox Query | test_queries::test_inbox_query, test_inbox_multiple_tasks, test_inbox_empty_when_no_tasks | PASS |
 | REQ-QRY-006 | Workspace Query | test_queries::test_workspace_query, test_workspace_multiple_documents, test_workspace_empty_after_checkin | PASS |
-| REQ-QRY-007 | Comments Visibility Restriction | test_queries::test_comments_restricted_during_review, test_comments_restricted_during_approval | XFAIL |
 | REQ-PROMPT-001 | Task Prompt Generation | test_prompts::test_review_task_includes_prompt | PASS |
 | REQ-PROMPT-002 | YAML-Based Configuration | test_prompts::test_prompt_yaml_files_exist | PASS |
 | REQ-PROMPT-003 | Hierarchical Prompt Lookup | test_prompts::test_hierarchical_prompt_lookup | PASS |
@@ -796,19 +794,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-QRY-007: Comments Visibility Restriction
-
-**Requirement:** The CLI shall restrict visibility of document comments during IN_REVIEW or IN_APPROVAL status.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_queries.py | test_comments_restricted_during_review | Comments hidden during IN_REVIEW. (XFAIL) |
-| test_queries.py | test_comments_restricted_during_approval | Comments hidden during IN_APPROVAL. (XFAIL) |
-
-**Note:** REQ-QRY-007 is not yet implemented. Tests are marked xfail pending implementation.
-
----
-
 ### 5.9 Prompt Generation (REQ-PROMPT)
 
 #### REQ-PROMPT-001: Task Prompt Generation
@@ -934,42 +919,32 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Attribute | Value |
 |-----------|-------|
 | Repository | whharris917/qms-cli |
-| Commit | `016cb09` |
+| Commit | `3460613` |
 | CI Evidence | [GitHub Actions](https://github.com/whharris917/qms-cli/actions) |
-| Total Tests | 86 |
+| Total Tests | 84 |
 | Passed | 84 |
-| XFail | 2 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
 
-| Test Protocol | Tests | Passed | XFail | Failed |
-|---------------|-------|--------|-------|--------|
-| test_sop_lifecycle.py | 12 | 12 | 0 | 0 |
-| test_cr_lifecycle.py | 8 | 8 | 0 | 0 |
-| test_security.py | 14 | 14 | 0 | 0 |
-| test_document_types.py | 18 | 18 | 0 | 0 |
-| test_queries.py | 18 | 16 | 2 | 0 |
-| test_prompts.py | 7 | 7 | 0 | 0 |
-| test_templates.py | 9 | 9 | 0 | 0 |
-| **Total** | **86** | **84** | **2** | **0** |
+| Test Protocol | Tests | Passed | Failed |
+|---------------|-------|--------|--------|
+| test_sop_lifecycle.py | 12 | 12 | 0 |
+| test_cr_lifecycle.py | 8 | 8 | 0 |
+| test_security.py | 14 | 14 | 0 |
+| test_document_types.py | 18 | 18 | 0 |
+| test_queries.py | 16 | 16 | 0 |
+| test_prompts.py | 7 | 7 | 0 |
+| test_templates.py | 9 | 9 | 0 |
+| **Total** | **84** | **84** | **0** |
 
-### 6.3 XFail Tests
-
-The following tests are marked as expected failures pending implementation:
-
-| Test | Requirement | Reason |
-|------|-------------|--------|
-| test_comments_restricted_during_review | REQ-QRY-007 | Comments visibility restriction not yet implemented |
-| test_comments_restricted_during_approval | REQ-QRY-007 | Comments visibility restriction not yet implemented |
-
-### 6.4 Execution Notes
+### 6.3 Execution Notes
 
 - Tests executed via GitHub Actions CI on push to main branch
 - All tests run in isolated temporary environments (no production QMS impact)
 - CI provides independent, timestamped, immutable record of test results
-- RS revision added 14 new requirements (REQ-SEC-007/008, REQ-DOC-013/014/015, REQ-WF-014/015, REQ-TASK-005, REQ-PROMPT-001-006, REQ-TEMPLATE-001-005)
-- Removed requirements: REQ-DOC-012 (replaced by DOC-013/014/015), REQ-TASK-003 (folded into WF-005), old REQ-CFG-004/007 (agent-related, excluded from scope)
+- RS revision added 13 new requirements (REQ-SEC-007/008, REQ-DOC-013/014/015, REQ-WF-014/015, REQ-TASK-005, REQ-PROMPT-001-006, REQ-TEMPLATE-001-005)
+- Removed requirements: REQ-DOC-012 (replaced by DOC-013/014/015), REQ-TASK-003 (folded into WF-005), old REQ-CFG-004/007 (agent-related), REQ-QRY-007 (deferred to future CR)
 - REQ-CFG-004 and REQ-CFG-005 were renumbered (formerly REQ-CFG-005 and REQ-CFG-006)
 
 ---

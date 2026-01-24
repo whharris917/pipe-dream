@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: Comprehensive revision per validation review (SC-001 group restructuring,
-  SC-002 namespace architecture, strengthened constraint language, new requirements)
+revision_summary: Remove REQ-QRY-007 (comments visibility restriction) - deferred
+  to future CR
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -425,7 +425,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-QRY-004 | **Review Comments Query.** The CLI shall provide the ability to retrieve review comments for a document, filtered by version. Comments shall be extracted from REVIEW and REJECT events in the audit trail. |
 | REQ-QRY-005 | **Inbox Query.** The CLI shall provide the ability for a user to list all pending tasks in their inbox, showing task type, document ID, and assignment date. |
 | REQ-QRY-006 | **Workspace Query.** The CLI shall provide the ability for a user to list all documents currently checked out to their workspace. |
-| REQ-QRY-007 | **Comments Visibility Restriction.** The CLI shall restrict visibility of document comments during active workflow states. Comments shall not be displayed when a document is in IN_REVIEW or IN_APPROVAL status. |
 
 ---
 
