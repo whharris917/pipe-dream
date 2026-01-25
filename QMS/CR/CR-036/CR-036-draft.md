@@ -46,14 +46,14 @@ Independent improvement identified during evaluation of qms-cli usability for ex
 - `QMS/SDLC-QMS/SDLC-QMS-RTM.md` - Add verification evidence
 
 **pipe-dream agent files (backward compatibility migration):**
-- `.claude/agents/lead.md` - Create with `group: administrator`
-- `.claude/agents/claude.md` - Create with `group: administrator`
 - `.claude/agents/qa.md` - Add `group: quality` to frontmatter
 - `.claude/agents/bu.md` - Add `group: reviewer` to frontmatter
 - `.claude/agents/tu_ui.md` - Add `group: reviewer` to frontmatter
 - `.claude/agents/tu_scene.md` - Add `group: reviewer` to frontmatter
 - `.claude/agents/tu_sketch.md` - Add `group: reviewer` to frontmatter
 - `.claude/agents/tu_sim.md` - Add `group: reviewer` to frontmatter
+
+Note: `lead` and `claude` are hardcoded as administrators in qms_auth.py and do not require agent definition files.
 
 ---
 
@@ -135,7 +135,7 @@ python qms-cli/qms.py init --root /path/to/my-project
 All checks are performed against the target root directory (cwd or `--root` path):
 - No `QMS/` directory exists
 - No `.claude/users/` directory exists
-- No `.claude/agents/lead.md`, `.claude/agents/claude.md`, or `.claude/agents/qa.md` exists
+- No `.claude/agents/qa.md` exists
 - No `qms.config.json` exists
 
 If any check fails, abort with error message identifying the blocking item.
@@ -154,14 +154,18 @@ If any check fails, abort with error message identifying the blocking item.
    - `.claude/users/lead/workspace/` and `.claude/users/lead/inbox/`
    - `.claude/users/claude/workspace/` and `.claude/users/claude/inbox/`
    - `.claude/users/qa/workspace/` and `.claude/users/qa/inbox/`
-4. Create `.claude/agents/` with default agent files:
-   - `.claude/agents/lead.md` (group: administrator)
-   - `.claude/agents/claude.md` (group: administrator)
+4. Create `.claude/agents/` with default agent file:
    - `.claude/agents/qa.md` (group: quality)
 
-### 5.3 Agent-Based User Management
+### 5.3 User Management Model
 
-Agent definition files become the source of truth for user permissions:
+**Hardcoded Users:**
+
+The users `lead` and `claude` are hardcoded as administrators in `qms_auth.py`. They do not require agent definition files. This recognizes their special status as the human lead and the orchestrating AI agent.
+
+**Agent-Based Users:**
+
+All other users are defined via agent definition files in `.claude/agents/`. The agent file's frontmatter specifies group membership:
 
 ```yaml
 ---
@@ -178,9 +182,10 @@ description: Technical Unit for Sketch/Geometry domain
 **Group values:** `administrator`, `initiator`, `quality`, `reviewer`
 
 **qms_auth.py modifications:**
-1. On user lookup, check `.claude/agents/{user}.md` for group assignment
-2. If agent file exists with valid `group:` frontmatter, use that group
-3. If agent file missing, return error: "User {user} not found. Create .claude/agents/{user}.md or run qms user --add {user}"
+1. On user lookup, first check if user is `lead` or `claude` → return `administrator` (hardcoded)
+2. Otherwise, check `.claude/agents/{user}.md` for group assignment
+3. If agent file exists with valid `group:` frontmatter, use that group
+4. If agent file missing, return error: "User {user} not found. Create .claude/agents/{user}.md or run qms user --add {user}"
 
 ### 5.4 User Add Command
 
@@ -237,7 +242,7 @@ Anyone cloning qms-cli from GitHub always gets the qualified `main` branch. The 
 | `qms-cli/commands/__init__.py` | Modify | Register new commands |
 | `qms-cli/seed/sops/*.md` | Create | Sanitized SOP copies |
 | `qms-cli/seed/templates/*.md` | Create | Document templates |
-| `qms-cli/seed/agents/*.md` | Create | Default agent definitions |
+| `qms-cli/seed/agents/qa.md` | Create | Default qa agent definition |
 | `qms-cli/tests/qualification/test_init.py` | Create | Qualification tests |
 | `qms-cli/README.md` | Modify | Add init usage, project structure guidance |
 
@@ -252,8 +257,6 @@ Anyone cloning qms-cli from GitHub always gets the qualified `main` branch. The 
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `.claude/agents/lead.md` | Create | New file with `group: administrator` |
-| `.claude/agents/claude.md` | Create | New file with `group: administrator` |
 | `.claude/agents/qa.md` | Modify | Add `group: quality` to frontmatter |
 | `.claude/agents/bu.md` | Modify | Add `group: reviewer` to frontmatter |
 | `.claude/agents/tu_ui.md` | Modify | Add `group: reviewer` to frontmatter |
@@ -261,9 +264,11 @@ Anyone cloning qms-cli from GitHub always gets the qualified `main` branch. The 
 | `.claude/agents/tu_sketch.md` | Modify | Add `group: reviewer` to frontmatter |
 | `.claude/agents/tu_sim.md` | Modify | Add `group: reviewer` to frontmatter |
 
+Note: `lead` and `claude` are hardcoded as administrators and do not require agent files.
+
 ### 7.4 Other Impacts
 
-- Existing qms-cli installations require agent file migration (adding `group:` field)
+- Existing qms-cli installations require agent file migration (adding `group:` field to non-hardcoded users)
 - Projects with existing QMS/ directories continue to work (config file discovery falls back to QMS/ discovery)
 
 ---
@@ -324,7 +329,7 @@ Anyone cloning qms-cli from GitHub always gets the qualified `main` branch. The 
 
 1. Create `seed/sops/` directory with sanitized SOP copies
 2. Create `seed/templates/` directory with document templates
-3. Create `seed/agents/` directory with default agent definitions
+3. Create `seed/agents/qa.md` (the only agent file shipped by default)
 4. Implement seeding logic in init command
 5. Add qualification tests for seeded content
 
@@ -383,7 +388,7 @@ NOTE: Do NOT delete this comment block. It provides guidance for execution.
 | EI-14 | Route RS and RTM for review and approval | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 | EI-15 | Create PR and merge cr-036-init to main | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 | EI-16 | Update qms-cli submodule pointer in pipe-dream | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-17 | Update pipe-dream agent files with group assignments (create lead.md, claude.md; add group: to existing files) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-17 | Update pipe-dream agent files with group assignments (add group: to qa, bu, tu_* files) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 | EI-18 | Verify qms-cli works in pipe-dream with updated agent files | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 
 <!--
