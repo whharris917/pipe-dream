@@ -4,3 +4,27 @@
 {"ts": "2026-01-25T04:37:02+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
 {"ts": "2026-01-25T04:41:16+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
 {"ts": "2026-01-25T04:47:53+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T04:52:23+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T04:56:47+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T15:35:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-25T15:35:46+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-25T15:37:01+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review COMPLIANT. Frontmatter verified: title='Add qms-cli initialization and bootstrapping functionality', revision_summary='Initial draft' (appropriate for v0.1). All 12 required sections present per SOP-002 Section 6. Placeholders in Sections 10-11 are execution-phase fields - correctly blank at pre-approval. Testing strategy reviewed: feature branch isolation (cr-036-init) maintains continuous qualification on main during development, with atomic version transition upon merge. Backward compatibility addressed via config file discovery fallback. No TU assignment required - this CR affects qms-cli tooling and QMS documents, not Flow State application domains."}
+{"ts": "2026-01-25T15:37:01+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-25T15:40:41+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-25T15:40:41+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-25T15:41:23+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-25T15:41:23+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-25T15:41:57+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T15:41:57+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-25T15:46:57+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T15:47:52+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T15:48:47+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T15:49:24+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T15:52:56+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T15:53:38+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T16:02:37+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T16:34:25+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T16:39:34+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T16:40:21+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T16:48:06+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T16:49:03+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}

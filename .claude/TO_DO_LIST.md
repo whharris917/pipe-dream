@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-01-25
+
+- [ ] Code safety review: production/test environment isolation
+  - Review ways to programmatically enforce stricter separation between production (pipe-dream/qms-cli submodule) and test (.test-env/test-project/qms-cli) environments
+  - Consider: Git hooks/guards to prevent accidental commits to production during CR execution
+  - Consider: Path validation in scripts/tools to ensure operations target correct environment
+  - Consider: Environment variables or config flags to declare active environment
+  - Consider: Warnings or blocks when running commands from unexpected directories
+  - Context: CR-036 uses isolated test clone for development; need to ensure no cross-contamination
+  - Reference: Session-2026-01-25-001
+
+---
+
 ## 2026-01-24
 
 - [ ] Implement comments visibility restriction during active workflows
