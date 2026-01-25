@@ -19,3 +19,6 @@ Thumbs.db
 
 # Temporary files
 prompt.txt
+
+# QMS CLI test environment
+.test-env/

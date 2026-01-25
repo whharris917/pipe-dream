@@ -1,0 +1,6 @@
+{"ts": "2026-01-25T04:25:47+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Add qms-cli initialization and bootstrapping functionality"}
+{"ts": "2026-01-25T04:28:35+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T04:34:55+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T04:37:02+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T04:41:16+00:00", "event": "CHECKOUT", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T04:47:53+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
