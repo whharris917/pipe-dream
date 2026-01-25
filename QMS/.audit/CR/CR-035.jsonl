@@ -1,0 +1,24 @@
+{"ts": "2026-01-24T23:39:03+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "QMS CLI Qualification Test Coverage Gaps"}
+{"ts": "2026-01-24T23:40:08+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-24T23:40:18+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-24T23:40:18+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-24T23:41:47+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW COMPLETE. Document verified COMPLIANT with SOP-002 CR content requirements. Frontmatter verified: title='QMS CLI Qualification Test Coverage Gaps', revision_summary='Initial draft' (acceptable for v0.1 executable). All 12 required sections present and complete. Pre-approved content (Sections 1-9) is well-defined with clear scope, detailed change descriptions, and appropriate traceability to CR-028 and SDLC-QMS-RS. Execution sections (10-11) contain expected placeholder templates. No typos, no prohibited placeholder content in pre-approved sections, consistent formatting. Recommend proceeding to pre-approval."}
+{"ts": "2026-01-24T23:41:47+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-24T23:42:13+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-24T23:42:13+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-24T23:43:28+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-24T23:43:28+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-24T23:43:46+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-24T23:43:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-25T00:04:08+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T00:05:00+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T00:05:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-01-25T00:05:00+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-01-25T00:09:59+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "POST-REVIEW VERIFICATION COMPLETE. All 7 execution items have Pass outcomes with execution summaries and signatures. No VARs required. Test suite independently verified: 98/98 tests passing, confirming increase from 84 tests. Section 11 Execution Summary accurately documents scope, outcomes, and EI-4 deferral rationale. Document is compliant with SOP-002 Section 7.3 requirements."}
+{"ts": "2026-01-25T00:09:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-01-25T00:10:23+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-01-25T00:10:23+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-01-25T00:15:38+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-01-25T00:15:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-01-25T00:15:52+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-01-25T00:15:52+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

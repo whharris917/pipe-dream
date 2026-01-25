@@ -1,17 +1,19 @@
 {
   "doc_id": "SDLC-QMS-RS",
   "doc_type": "QMS-RS",
-  "version": "0.1",
-  "status": "DRAFT",
+  "version": "1.0",
+  "status": "EFFECTIVE",
   "executable": false,
   "execution_phase": null,
-  "responsible_user": "claude",
+  "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": null,
+  "effective_version": "1.0",
   "supersedes": null,
   "pending_assignees": [],
   "pending_reviewers": [],
   "completed_reviewers": [],
-  "review_outcomes": {}
+  "review_outcomes": {
+    "qa": "RECOMMEND"
+  }
 }

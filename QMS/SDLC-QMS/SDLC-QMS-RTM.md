@@ -1,6 +1,6 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: Remove REQ-QRY-007 to enable qualification - 84 tests, all passing
+revision_summary: 'CR-028: Initial creation'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -13,10 +13,10 @@ This document provides traceability between the requirements specified in SDLC-Q
 
 ## 2. Scope
 
-This RTM covers all 69 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 71 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
-- REQ-DOC (Document Management): 12 requirements
+- REQ-DOC (Document Management): 14 requirements
 - REQ-WF (Workflow): 15 requirements
 - REQ-META (Metadata): 4 requirements
 - REQ-AUDIT (Audit Trail): 4 requirements
@@ -63,8 +63,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ ID | Requirement | Code Reference | Status |
 |--------|-------------|----------------|--------|
 | REQ-SEC-001 | User Group Classification | test_security::test_user_group_classification | PASS |
-| REQ-SEC-002 | Group-Based Action Authorization | test_security::test_unauthorized_create, test_unauthorized_assign, test_fix_authorization | PASS |
-| REQ-SEC-003 | Owner-Only Restrictions | test_security::test_owner_only_checkin, test_owner_only_route | PASS |
+| REQ-SEC-002 | Group-Based Action Authorization | test_security::test_unauthorized_create, test_unauthorized_assign, test_fix_authorization, test_unauthorized_route, test_unauthorized_release, test_unauthorized_revert, test_unauthorized_close | PASS |
+| REQ-SEC-003 | Owner-Only Restrictions | test_security::test_owner_only_checkin, test_owner_only_route, test_owner_only_revert | PASS |
 | REQ-SEC-004 | Assignment-Based Review Access | test_security::test_unassigned_cannot_review, test_unassigned_cannot_approve | PASS |
 | REQ-SEC-005 | Rejection Access | test_security::test_rejection_access | PASS |
 | REQ-SEC-006 | Unknown User Rejection | test_security::test_unknown_user_rejection | PASS |
@@ -76,15 +76,15 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-DOC-004 | Sequential ID Generation | test_document_types::test_sequential_id_generation | PASS |
 | REQ-DOC-005 | Child Document ID Generation | test_document_types::test_create_var_under_cr, test_child_id_generation | PASS |
 | REQ-DOC-006 | Version Format | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-DOC-007 | Checkout Behavior | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
+| REQ-DOC-007 | Checkout Behavior | test_sop_lifecycle::test_sop_full_lifecycle, test_document_types::test_checkout_effective_creates_archive | PASS |
 | REQ-DOC-008 | Checkin Updates QMS | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-DOC-009 | Checkin Reverts Reviewed Status | test_sop_lifecycle::test_checkin_reverts_reviewed | PASS |
-| REQ-DOC-010 | Cancel Restrictions | test_document_types::test_cancel_v0_document, test_cancel_blocked_for_v1 | PASS |
+| REQ-DOC-009 | Checkin Reverts Reviewed Status | test_sop_lifecycle::test_checkin_reverts_reviewed, test_cr_lifecycle::test_checkin_reverts_pre_reviewed, test_cr_lifecycle::test_checkin_reverts_post_reviewed | PASS |
+| REQ-DOC-010 | Cancel Restrictions | test_document_types::test_cancel_v0_document, test_cancel_blocked_for_v1, test_cancel_blocked_while_checked_out, test_cancel_cleans_workspace_and_inbox | PASS |
 | REQ-DOC-011 | Template Name-Based ID | test_document_types::test_template_name_based_id | PASS |
-| REQ-DOC-013 | Folder-per-Document Storage | test_document_types::test_folder_per_document_cr, test_folder_per_document_inv, test_child_documents_in_parent_folder | PASS |
-| REQ-DOC-014 | SDLC Namespace Registration | test_document_types::test_sdlc_namespace_registration, test_sdlc_namespace_list | PASS |
-| REQ-DOC-015 | SDLC Document Identification | test_document_types::test_sdlc_document_identification | PASS |
-| REQ-WF-001 | Status Transition Validation | test_sop_lifecycle::test_invalid_transition | PASS |
+| REQ-DOC-012 | Folder-per-Document Storage | test_document_types::test_folder_per_document_cr, test_folder_per_document_inv, test_child_documents_in_parent_folder | PASS |
+| REQ-DOC-013 | SDLC Namespace Registration | test_document_types::test_sdlc_namespace_registration, test_sdlc_namespace_list | PASS |
+| REQ-DOC-014 | SDLC Document Identification | test_document_types::test_sdlc_document_identification | PASS |
+| REQ-WF-001 | Status Transition Validation | test_sop_lifecycle::test_invalid_transition, test_invalid_transitions_comprehensive | PASS |
 | REQ-WF-002 | Non-Executable Document Lifecycle | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle::test_cr_full_lifecycle | PASS |
 | REQ-WF-004 | Review Completion Gate | test_sop_lifecycle::test_multi_reviewer_gate | PASS |
@@ -94,23 +94,23 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-WF-008 | Release Transition | test_cr_lifecycle::test_cr_full_lifecycle, test_owner_only_release | PASS |
 | REQ-WF-009 | Revert Transition | test_cr_lifecycle::test_revert | PASS |
 | REQ-WF-010 | Close Transition | test_cr_lifecycle::test_cr_full_lifecycle, test_owner_only_close | PASS |
-| REQ-WF-011 | Terminal State Enforcement | test_cr_lifecycle::test_terminal_state | PASS |
+| REQ-WF-011 | Terminal State Enforcement | test_cr_lifecycle::test_terminal_state, test_terminal_state_retired | PASS |
 | REQ-WF-012 | Retirement Routing | test_sop_lifecycle::test_retirement, test_retirement_rejected_for_v0 | PASS |
 | REQ-WF-013 | Retirement Transition | test_sop_lifecycle::test_retirement | PASS |
 | REQ-WF-014 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
 | REQ-WF-015 | Checked-in Requirement for Routing | test_sop_lifecycle::test_routing_requires_checkin | PASS |
 | REQ-META-001 | Three-Tier Separation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-META-002 | CLI-Exclusive Metadata Management | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle | PASS |
+| REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_metadata_required_fields | PASS |
 | REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
-| REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
+| REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle::test_sop_full_lifecycle, test_audit_immutability | PASS |
 | REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types | PASS |
 | REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-TASK-004 | Task Removal on Completion | test_sop_lifecycle::test_sop_full_lifecycle, test_rejection_clears_approval_tasks | PASS |
-| REQ-TASK-005 | Assign Command | test_sop_lifecycle::test_assign_command | PASS |
+| REQ-TASK-003 | Task Removal on Completion | test_sop_lifecycle::test_sop_full_lifecycle, test_rejection_clears_approval_tasks | PASS |
+| REQ-TASK-004 | Assign Command | test_sop_lifecycle::test_assign_command | PASS |
 | REQ-CFG-001 | Project Root Discovery | conftest::temp_project fixture | PASS |
 | REQ-CFG-002 | QMS Root Path | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-CFG-003 | Users Directory Path | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
@@ -122,12 +122,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-QRY-004 | Review Comments Query | test_queries::test_comments_query, test_comments_includes_rejection | PASS |
 | REQ-QRY-005 | Inbox Query | test_queries::test_inbox_query, test_inbox_multiple_tasks, test_inbox_empty_when_no_tasks | PASS |
 | REQ-QRY-006 | Workspace Query | test_queries::test_workspace_query, test_workspace_multiple_documents, test_workspace_empty_after_checkin | PASS |
-| REQ-PROMPT-001 | Task Prompt Generation | test_prompts::test_review_task_includes_prompt | PASS |
-| REQ-PROMPT-002 | YAML-Based Configuration | test_prompts::test_prompt_yaml_files_exist | PASS |
-| REQ-PROMPT-003 | Hierarchical Prompt Lookup | test_prompts::test_hierarchical_prompt_lookup | PASS |
-| REQ-PROMPT-004 | Checklist Generation | test_prompts::test_checklist_generation | PASS |
-| REQ-PROMPT-005 | Prompt Content Structure | test_prompts::test_prompt_content_structure | PASS |
-| REQ-PROMPT-006 | Custom Sections | test_prompts::test_custom_sections | PASS |
+| REQ-PROMPT-001 | Task Prompt Generation | test_prompts::test_review_task_prompt_generated | PASS |
+| REQ-PROMPT-002 | YAML-Based Configuration | test_prompts::test_prompts_directory_exists | PASS |
+| REQ-PROMPT-003 | Hierarchical Prompt Lookup | test_prompts::test_prompts_have_workflow_phase_context | PASS |
+| REQ-PROMPT-004 | Checklist Generation | test_prompts::test_review_prompt_has_checklist | PASS |
+| REQ-PROMPT-005 | Prompt Content Structure | test_prompts::test_prompt_has_required_sections | PASS |
+| REQ-PROMPT-006 | Custom Sections | test_prompts::test_prompt_supports_custom_content | PASS |
 | REQ-TEMPLATE-001 | Template-Based Creation | test_templates::test_new_document_uses_template, test_cr_uses_cr_template | PASS |
 | REQ-TEMPLATE-002 | Template Location | test_templates::test_templates_in_qms_template_directory | PASS |
 | REQ-TEMPLATE-003 | Variable Substitution | test_templates::test_title_substitution, test_doc_id_substitution | PASS |
@@ -159,6 +159,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_security.py | test_unauthorized_create | Non-initiators cannot create documents. |
 | test_security.py | test_unauthorized_assign | Non-QA users cannot assign reviewers. |
 | test_security.py | test_fix_authorization | Only administrators can use the fix command. |
+| test_security.py | test_unauthorized_route | Non-initiators cannot route documents. |
+| test_security.py | test_unauthorized_release | Non-initiators cannot release executable documents. |
+| test_security.py | test_unauthorized_revert | Non-initiators cannot revert executable documents. |
+| test_security.py | test_unauthorized_close | Non-initiators cannot close executable documents. |
 
 ---
 
@@ -170,6 +174,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_security.py | test_owner_only_checkin | Only the document owner can checkin. |
 | test_security.py | test_owner_only_route | Only the document owner can route for review/approval. |
+| test_security.py | test_owner_only_revert | Only the document owner can revert executable documents. |
 
 ---
 
@@ -300,6 +305,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Verifies checkout copies to workspace and sets metadata. |
+| test_document_types.py | test_checkout_effective_creates_archive | Checkout of EFFECTIVE document creates archive and N.1 draft. |
 
 ---
 
@@ -320,6 +326,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_checkin_reverts_reviewed | Checkin from REVIEWED status reverts to DRAFT. |
+| test_cr_lifecycle.py | test_checkin_reverts_pre_reviewed | Checkin from PRE_REVIEWED status reverts to DRAFT. |
+| test_cr_lifecycle.py | test_checkin_reverts_post_reviewed | Checkin from POST_REVIEWED status reverts to DRAFT. |
 
 ---
 
@@ -331,6 +339,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_document_types.py | test_cancel_v0_document | Documents with version < 1.0 can be cancelled. |
 | test_document_types.py | test_cancel_blocked_for_v1 | Documents with version >= 1.0 cannot be cancelled. |
+| test_document_types.py | test_cancel_blocked_while_checked_out | Cancel blocked while document is checked out. |
+| test_document_types.py | test_cancel_cleans_workspace_and_inbox | Cancel removes workspace and inbox entries. |
 
 ---
 
@@ -344,7 +354,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-DOC-013: Folder-per-Document Storage
+#### REQ-DOC-012: Folder-per-Document Storage
 
 **Requirement:** CR and INV documents shall be stored in dedicated subdirectories.
 
@@ -356,7 +366,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-DOC-014: SDLC Namespace Registration
+#### REQ-DOC-013: SDLC Namespace Registration
 
 **Requirement:** The CLI shall support SDLC namespace registration via the `namespace add` command.
 
@@ -367,7 +377,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-DOC-015: SDLC Document Identification
+#### REQ-DOC-014: SDLC Document Identification
 
 **Requirement:** SDLC documents shall be identified by the pattern `SDLC-{NAMESPACE}-{TYPE}`.
 
@@ -386,6 +396,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_invalid_transition | Invalid status transitions are rejected. |
+| test_sop_lifecycle.py | test_invalid_transitions_comprehensive | Multiple invalid transition paths are rejected. |
 
 ---
 
@@ -491,6 +502,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_cr_lifecycle.py | test_terminal_state | CLOSED state rejects all routing. |
+| test_cr_lifecycle.py | test_terminal_state_retired | RETIRED state rejects all routing. |
 
 ---
 
@@ -566,6 +578,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Required metadata fields verified. |
 | test_cr_lifecycle.py | test_cr_full_lifecycle | Required metadata fields verified. |
+| test_sop_lifecycle.py | test_metadata_required_fields | All 8 required metadata fields explicitly verified. |
 
 ---
 
@@ -589,6 +602,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Audit entries are appended, not modified. |
+| test_sop_lifecycle.py | test_audit_immutability | Verifies audit trail is append-only and entries cannot be modified. |
 
 ---
 
@@ -646,7 +660,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-TASK-004: Task Removal on Completion
+#### REQ-TASK-003: Task Removal on Completion
 
 **Requirement:** When a user completes an action, the CLI shall remove their task. Rejection clears all pending approval tasks.
 
@@ -657,7 +671,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-TASK-005: Assign Command
+#### REQ-TASK-004: Assign Command
 
 **Requirement:** The CLI shall provide an `assign` command for quality group members.
 
@@ -802,7 +816,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_prompts.py | test_review_task_includes_prompt | Review tasks include prompt content. |
+| test_prompts.py | test_review_task_prompt_generated | Review tasks include prompt content. |
 
 ---
 
@@ -812,7 +826,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_prompts.py | test_prompt_yaml_files_exist | Prompt YAML files exist in prompts/ directory. |
+| test_prompts.py | test_prompts_directory_exists | Prompt YAML files exist in prompts/ directory. |
 
 ---
 
@@ -822,7 +836,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_prompts.py | test_hierarchical_prompt_lookup | Prompt lookup follows hierarchy. |
+| test_prompts.py | test_prompts_have_workflow_phase_context | Prompt lookup follows hierarchy. |
 
 ---
 
@@ -832,7 +846,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_prompts.py | test_checklist_generation | Prompts include verification checklist. |
+| test_prompts.py | test_review_prompt_has_checklist | Prompts include verification checklist. |
 
 ---
 
@@ -842,7 +856,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_prompts.py | test_prompt_content_structure | Prompts have required structure. |
+| test_prompts.py | test_prompt_has_required_sections | Prompts have required structure. |
 
 ---
 
@@ -852,7 +866,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_prompts.py | test_custom_sections | Custom sections included in prompts. |
+| test_prompts.py | test_prompt_supports_custom_content | Custom sections included in prompts. |
 
 ---
 
@@ -919,33 +933,30 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Attribute | Value |
 |-----------|-------|
 | Repository | whharris917/qms-cli |
-| Commit | `3460613` |
+| Commit | `eff3ab7` |
 | CI Evidence | [GitHub Actions](https://github.com/whharris917/qms-cli/actions) |
-| Total Tests | 84 |
-| Passed | 84 |
+| Total Tests | 98 |
+| Passed | 98 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
 
 | Test Protocol | Tests | Passed | Failed |
 |---------------|-------|--------|--------|
-| test_sop_lifecycle.py | 12 | 12 | 0 |
-| test_cr_lifecycle.py | 8 | 8 | 0 |
-| test_security.py | 14 | 14 | 0 |
-| test_document_types.py | 18 | 18 | 0 |
+| test_sop_lifecycle.py | 15 | 15 | 0 |
+| test_cr_lifecycle.py | 11 | 11 | 0 |
+| test_security.py | 19 | 19 | 0 |
+| test_document_types.py | 21 | 21 | 0 |
 | test_queries.py | 16 | 16 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
-| **Total** | **84** | **84** | **0** |
+| **Total** | **98** | **98** | **0** |
 
-### 6.3 Execution Notes
+### 6.3 Test Environment
 
 - Tests executed via GitHub Actions CI on push to main branch
 - All tests run in isolated temporary environments (no production QMS impact)
 - CI provides independent, timestamped, immutable record of test results
-- RS revision added 13 new requirements (REQ-SEC-007/008, REQ-DOC-013/014/015, REQ-WF-014/015, REQ-TASK-005, REQ-PROMPT-001-006, REQ-TEMPLATE-001-005)
-- Removed requirements: REQ-DOC-012 (replaced by DOC-013/014/015), REQ-TASK-003 (folded into WF-005), old REQ-CFG-004/007 (agent-related), REQ-QRY-007 (deferred to future CR)
-- REQ-CFG-004 and REQ-CFG-005 were renumbered (formerly REQ-CFG-005 and REQ-CFG-006)
 
 ---
 

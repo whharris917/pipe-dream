@@ -1,7 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: Remove REQ-QRY-007 (comments visibility restriction) - deferred
-  to future CR
+revision_summary: 'CR-028: Initial creation'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -342,9 +341,9 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-DOC-009 | **Checkin Reverts Reviewed Status.** When a document in REVIEWED, PRE_REVIEWED, or POST_REVIEWED status is checked in, the CLI shall revert the status to DRAFT and clear all review tracking fields (pending_assignees, review outcomes) to require a new review cycle. |
 | REQ-DOC-010 | **Cancel Restrictions.** The CLI shall only permit cancellation of documents with version < 1.0 (never approved) that are not currently checked out. Cancellation requires the --confirm flag and shall permanently delete the document file, metadata, audit trail, any workspace copies, and any related inbox tasks. |
 | REQ-DOC-011 | **Template Name-Based ID.** Template documents shall use name-based identifiers in the format `TEMPLATE-{NAME}` rather than sequential numbering. The --name argument shall be required at creation time. |
-| REQ-DOC-013 | **Folder-per-Document Storage.** CR and INV documents shall be stored in dedicated subdirectories using the pattern `QMS/{TYPE}/{DOC_ID}/`. Child documents (TP, VAR, ER) shall be stored within their parent document's directory. |
-| REQ-DOC-014 | **SDLC Namespace Registration.** The CLI shall support SDLC namespace registration via the `namespace add` command. Registration creates the `QMS/SDLC-{NAME}/` directory structure and enables RS and RTM document types for that namespace (e.g., SDLC-MYPROJ-RS, SDLC-MYPROJ-RTM). Registered namespaces shall be persisted in configuration. |
-| REQ-DOC-015 | **SDLC Document Identification.** SDLC documents shall be identified by the pattern `SDLC-{NAMESPACE}-{TYPE}` where NAMESPACE is a registered SDLC namespace and TYPE is RS or RTM. The CLI shall resolve document type and path dynamically from the namespace registry. |
+| REQ-DOC-012 | **Folder-per-Document Storage.** CR and INV documents shall be stored in dedicated subdirectories using the pattern `QMS/{TYPE}/{DOC_ID}/`. Child documents (TP, VAR, ER) shall be stored within their parent document's directory. |
+| REQ-DOC-013 | **SDLC Namespace Registration.** The CLI shall support SDLC namespace registration via the `namespace add` command. Registration creates the `QMS/SDLC-{NAME}/` directory structure and enables RS and RTM document types for that namespace (e.g., SDLC-MYPROJ-RS, SDLC-MYPROJ-RTM). Registered namespaces shall be persisted in configuration. |
+| REQ-DOC-014 | **SDLC Document Identification.** SDLC documents shall be identified by the pattern `SDLC-{NAMESPACE}-{TYPE}` where NAMESPACE is a registered SDLC namespace and TYPE is RS or RTM. The CLI shall resolve document type and path dynamically from the namespace registry. |
 
 ---
 
@@ -398,8 +397,8 @@ This returns a chronological record of every action taken on the document, by wh
 |--------|-------------|
 | REQ-TASK-001 | **Task Generation on Routing.** When a document is routed for review or approval, the CLI shall create task files in each assigned user's inbox directory. |
 | REQ-TASK-002 | **Task Content Requirements.** Generated task files shall include: task_id (unique identifier), task_type (REVIEW or APPROVAL), workflow_type, doc_id, version, assigned_by, and assigned_date. |
-| REQ-TASK-004 | **Task Removal on Completion.** When a user completes a review or approval action, the CLI shall remove their corresponding task file from their inbox. Additionally, when a document is rejected during approval, the CLI shall remove ALL pending approval tasks for that document from ALL user inboxes. |
-| REQ-TASK-005 | **Assign Command.** The CLI shall provide an `assign` command allowing quality group members to add reviewers or approvers to a document after initial routing. Assignment shall validate that assignees are authorized for the workflow type per REQ-SEC-007. |
+| REQ-TASK-003 | **Task Removal on Completion.** When a user completes a review or approval action, the CLI shall remove their corresponding task file from their inbox. Additionally, when a document is rejected during approval, the CLI shall remove ALL pending approval tasks for that document from ALL user inboxes. |
+| REQ-TASK-004 | **Assign Command.** The CLI shall provide an `assign` command allowing quality group members to add reviewers or approvers to a document after initial routing. Assignment shall validate that assignees are authorized for the workflow type per REQ-SEC-007. |
 
 ---
 
