@@ -1,0 +1,14 @@
+{"ts": "2026-01-25T22:43:57+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Locked Section Edit During Execution"}
+{"ts": "2026-01-25T22:44:45+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T22:44:45+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-25T22:44:45+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-25T22:46:10+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Compliance review complete. Verified: (1) Frontmatter: title='Locked Section Edit During Execution', revision_summary='Initial draft' (acceptable for v0.1). (2) All 10 required sections per SOP-003 Section 5 are present. (3) Sections 1-6 (pre-approved content) contain no placeholder content and no typos. (4) Placeholder content in Sections 7-9 is appropriate for execution phase. (5) Root cause analysis identifies CLI gap and operator oversight. (6) CAPAs are defined: INV-005-CAPA-001 (corrective - revert), INV-005-CAPA-002 (preventive - investigate CLI enforcement). Document is procedurally compliant and ready for pre-approval."}
+{"ts": "2026-01-25T22:46:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-25T22:46:49+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-25T22:46:49+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-25T22:47:55+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-25T22:47:55+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-25T22:48:00+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T22:48:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-25T22:49:02+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T22:54:00+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}

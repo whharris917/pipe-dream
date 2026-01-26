@@ -1,0 +1,17 @@
+{
+  "doc_id": "CR-036-VAR-003",
+  "doc_type": "VAR",
+  "version": "1.0",
+  "status": "IN_EXECUTION",
+  "executable": true,
+  "execution_phase": "post_release",
+  "responsible_user": "claude",
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "supersedes": null,
+  "pending_assignees": [],
+  "review_outcomes": {
+    "qa": "RECOMMEND"
+  }
+}

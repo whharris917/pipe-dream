@@ -1,0 +1,14 @@
+{"ts": "2026-01-26T00:26:10+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Resolve qualification test failures and remove SUPERSEDED status"}
+{"ts": "2026-01-26T00:27:17+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-26T00:27:29+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-26T00:27:29+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-26T00:28:37+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review complete. Document is COMPLIANT with SOP-004 Section 9A.3 VAR content requirements. Verified: (1) Frontmatter - title: 'Resolve qualification test failures and remove SUPERSEDED status', revision_summary: 'Initial draft' (appropriate for v0.1); (2) All required sections present: Variance Identification (Section 1), Detailed Description (Section 2), Root Cause (Section 3), Variance Type (Section 4), Impact Assessment (Section 5), Proposed Resolution (Section 6), Resolution Work (Section 7), VAR Closure (Section 8), References (Section 9); (3) EI table contains 18 execution items covering all proposed resolution work - Parts A (SUPERSEDED removal), B (4 bug fixes), and C (test verification); (4) Type 1 designation appropriate - resolution is critical to CR-036 qualification; (5) No prohibited placeholder content in prose; (6) Proper traceability to CR-036 and CR-036-VAR-003. RECOMMEND for pre-approval."}
+{"ts": "2026-01-26T00:28:37+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-26T00:28:57+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-26T00:28:57+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-26T00:29:58+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-26T00:29:58+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-26T00:30:15+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-26T00:30:15+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-26T00:30:26+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-26T02:45:35+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}

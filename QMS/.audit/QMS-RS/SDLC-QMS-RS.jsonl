@@ -90,3 +90,6 @@
 {"ts": "2026-01-24T23:20:55+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-24T23:20:55+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}
 {"ts": "2026-01-24T23:20:55+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-01-25T19:56:45+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1", "from_version": "1.0"}
+{"ts": "2026-01-25T20:26:37+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-01-26T01:38:37+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1"}

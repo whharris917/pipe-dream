@@ -1,0 +1,14 @@
+{"ts": "2026-01-25T22:18:25+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Address Qualification Readiness Report Gaps"}
+{"ts": "2026-01-25T22:21:06+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T22:57:39+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-25T22:57:39+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-25T22:58:33+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Type 1 VAR appropriately scoped. 10 EIs cover all identified gaps from qualification readiness audit. Test additions will complete qualification evidence."}
+{"ts": "2026-01-25T22:58:33+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-25T22:59:56+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-25T22:59:56+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-25T23:01:08+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-25T23:01:08+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-25T23:02:09+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T23:02:09+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-25T23:02:21+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T23:25:25+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}

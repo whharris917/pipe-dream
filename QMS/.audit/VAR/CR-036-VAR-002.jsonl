@@ -1,0 +1,16 @@
+{"ts": "2026-01-25T19:09:13+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Corrective Action: Documentation drift and qualification gap"}
+{"ts": "2026-01-25T19:18:28+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T19:19:42+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-25T19:19:42+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-25T19:22:38+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Verified: (1) Frontmatter present - title: 'Corrective Action: Documentation drift and qualification gap', revision_summary: 'Initial draft'; (2) All required VAR sections per SOP-004 Section 9A.3 present: Variance Identification, Detailed Description (two issue categories with tables), Root Cause (both drift and gap explained), Variance Type (Other with rationale), Impact Assessment, Proposed Resolution (two corrective actions), Resolution Work (EI table with 2 items), VAR Closure; (3) No placeholder content in static fields (TBD/TODO/FIXME: None found); (4) Type 2 designation appropriate - parent CR-036 core objectives unaffected, follow-up work formally tracked; (5) Resolution Comments contains actual entry with signature; (6) Formatting consistent throughout; (7) Section numbering correct (1-9). Document ready for pre-approval."}
+{"ts": "2026-01-25T19:22:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-25T19:23:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-25T19:23:00+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-25T19:25:24+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-25T19:25:24+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-25T19:25:55+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T19:25:55+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-25T22:18:34+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T22:21:02+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T22:49:06+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T22:50:00+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}

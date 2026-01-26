@@ -1,0 +1,16 @@
+{"ts": "2026-01-25T19:09:07+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Scope Expansion: Fix command permission alignment with REQ-SEC-002"}
+{"ts": "2026-01-25T19:18:27+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-25T19:19:42+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-25T19:19:42+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-25T19:22:36+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Verified: (1) Frontmatter present - title: 'Scope Expansion: Fix command permission alignment with REQ-SEC-002', revision_summary: 'Initial draft'; (2) All required VAR sections per SOP-004 Section 9A.3 present: Variance Identification, Detailed Description, Root Cause, Variance Type, Impact Assessment, Proposed Resolution, Resolution Work (EI table with 4 items), VAR Closure; (3) No placeholder content in static fields (TBD/TODO/FIXME: None found); (4) Type 1 designation appropriate - full closure required to verify REQ-SEC-002 is correctly implemented; (5) Formatting consistent throughout; (6) Section numbering correct (1-9). Document ready for pre-approval."}
+{"ts": "2026-01-25T19:22:36+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-25T19:23:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-25T19:23:00+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-25T19:25:21+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-25T19:25:21+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-25T19:25:55+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T19:25:55+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-25T19:31:26+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T19:46:42+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T20:38:04+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-25T20:39:01+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
