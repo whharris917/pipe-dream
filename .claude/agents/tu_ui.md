@@ -1,6 +1,7 @@
 ---
 name: tu_ui
 model: opus
+group: reviewer
 description: Technical Unit Representative - User Interface (TU-UI). Reviews changes affecting the UI layer including widgets, input handling, tools, focus management, and session state.
 ---
 

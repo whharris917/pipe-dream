@@ -1,19 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-028: Initial creation'
+revision_summary: 'CR-036: Add traceability for REQ-INIT (8) and REQ-USER (5) requirements;
+  update REQ-CFG-001/004 for config file and agent-based user discovery'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS and the qualification tests that verify them. Each requirement is mapped to specific test protocols, functions, and line numbers where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v2.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 71 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 84 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 14 requirements
@@ -25,6 +26,8 @@ This RTM covers all 71 requirements defined in SDLC-QMS-RS across the following 
 - REQ-QRY (Query Operations): 6 requirements
 - REQ-PROMPT (Prompt Generation): 6 requirements
 - REQ-TEMPLATE (Document Templates): 5 requirements
+- REQ-INIT (Project Initialization): 8 requirements
+- REQ-USER (User Management): 5 requirements
 
 ---
 
@@ -51,6 +54,7 @@ Tests are organized by workflow scenario rather than individual requirement. Eac
 | Queries | `qualification/test_queries.py` | Read, status, history, inbox, workspace |
 | Prompts | `qualification/test_prompts.py` | Prompt generation and configuration |
 | Templates | `qualification/test_templates.py` | Template-based document creation |
+| Init | `qualification/test_init.py` | Project initialization and user management |
 
 ### 3.4 Traceability Convention
 
@@ -70,7 +74,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-SEC-006 | Unknown User Rejection | test_security::test_unknown_user_rejection | PASS |
 | REQ-SEC-007 | Assignment Validation | test_security::test_assignment_validation_review, test_assignment_validation_approval | PASS |
 | REQ-SEC-008 | Workspace/Inbox Isolation | test_security::test_workspace_isolation, test_inbox_isolation | PASS |
-| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv | PASS |
+| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp | PASS |
 | REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr, test_create_var_under_cr, test_create_var_under_inv | PASS |
 | REQ-DOC-003 | QMS Folder Structure | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-004 | Sequential ID Generation | test_document_types::test_sequential_id_generation | PASS |
@@ -104,20 +108,20 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_metadata_required_fields | PASS |
 | REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
 | REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle::test_sop_full_lifecycle, test_audit_immutability | PASS |
-| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types | PASS |
+| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types, test_cr_lifecycle::test_all_audit_event_types | PASS |
 | REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
+| REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle::test_sop_full_lifecycle, test_sop_lifecycle::test_task_content_all_fields | PASS |
 | REQ-TASK-003 | Task Removal on Completion | test_sop_lifecycle::test_sop_full_lifecycle, test_rejection_clears_approval_tasks | PASS |
 | REQ-TASK-004 | Assign Command | test_sop_lifecycle::test_assign_command | PASS |
-| REQ-CFG-001 | Project Root Discovery | conftest::temp_project fixture | PASS |
+| REQ-CFG-001 | Project Root Discovery | conftest::temp_project fixture, test_init::test_init_creates_complete_structure, test_init::test_project_root_discovery_via_config, test_init::test_project_root_discovery_via_qms_fallback | PASS |
 | REQ-CFG-002 | QMS Root Path | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-CFG-003 | Users Directory Path | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-CFG-004 | User Registry | test_security::test_unknown_user_rejection, test_user_group_classification | PASS |
-| REQ-CFG-005 | Document Type Registry | test_document_types::test_create_sop, test_create_cr, test_create_inv | PASS |
+| REQ-CFG-005 | Document Type Registry | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_document_type_registry | PASS |
 | REQ-QRY-001 | Document Reading | test_queries::test_read_draft, test_read_effective, test_read_archived_version, test_read_draft_flag | PASS |
-| REQ-QRY-002 | Document Status Query | test_queries::test_status_query, test_status_shows_checked_out | PASS |
+| REQ-QRY-002 | Document Status Query | test_queries::test_status_query, test_status_shows_checked_out, test_status_shows_executable_field | PASS |
 | REQ-QRY-003 | Audit History Query | test_queries::test_history_query, test_history_shows_all_event_types | PASS |
 | REQ-QRY-004 | Review Comments Query | test_queries::test_comments_query, test_comments_includes_rejection | PASS |
 | REQ-QRY-005 | Inbox Query | test_queries::test_inbox_query, test_inbox_multiple_tasks, test_inbox_empty_when_no_tasks | PASS |
@@ -133,6 +137,19 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-TEMPLATE-003 | Variable Substitution | test_templates::test_title_substitution, test_doc_id_substitution | PASS |
 | REQ-TEMPLATE-004 | Frontmatter Initialization | test_templates::test_frontmatter_title_initialized, test_frontmatter_revision_summary_initialized | PASS |
 | REQ-TEMPLATE-005 | Fallback Template Generation | test_templates::test_document_created_without_template_file, test_fallback_includes_document_heading | PASS |
+| REQ-INIT-001 | Config File Creation | test_init::test_init_creates_complete_structure | PASS |
+| REQ-INIT-002 | QMS Directory Structure | test_init::test_init_creates_complete_structure | PASS |
+| REQ-INIT-003 | User Directory Structure | test_init::test_init_creates_complete_structure | PASS |
+| REQ-INIT-004 | Default Agent Creation | test_init::test_init_seeds_qa_agent | PASS |
+| REQ-INIT-005 | SOP Seeding | test_init::test_init_seeds_sops | PASS |
+| REQ-INIT-006 | Template Seeding | test_init::test_init_seeds_templates | PASS |
+| REQ-INIT-007 | Safety Checks | test_init::test_init_blocked_by_existing_qms, test_init_blocked_by_existing_users, test_init_blocked_by_existing_qa_agent, test_init_blocked_by_existing_config | PASS |
+| REQ-INIT-008 | Root Flag Support | test_init::test_init_with_root_flag | PASS |
+| REQ-USER-001 | Hardcoded Administrators | test_init::test_hardcoded_admins_work | PASS |
+| REQ-USER-002 | Agent File-Based Group Assignment | test_init::test_agent_group_assignment | PASS |
+| REQ-USER-003 | User Add Command | test_init::test_user_add_creates_structure, test_user_add_requires_admin | PASS |
+| REQ-USER-004 | Unknown User Handling | test_init::test_unknown_user_error | PASS |
+| REQ-USER-005 | User List Command | test_init::test_user_add_creates_structure, test_user_list_command, test_user_list_shows_groups | PASS |
 
 ---
 
@@ -158,7 +175,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_security.py | test_unauthorized_create | Non-initiators cannot create documents. |
 | test_security.py | test_unauthorized_assign | Non-QA users cannot assign reviewers. |
-| test_security.py | test_fix_authorization | Only administrators can use the fix command. |
+| test_security.py | test_fix_authorization | Administrators can use the fix command; non-administrators cannot. |
 | test_security.py | test_unauthorized_route | Non-initiators cannot route documents. |
 | test_security.py | test_unauthorized_release | Non-initiators cannot release executable documents. |
 | test_security.py | test_unauthorized_revert | Non-initiators cannot revert executable documents. |
@@ -242,6 +259,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_sop | Create SOP document type. |
 | test_document_types.py | test_create_cr | Create CR document type (executable, folder-per-doc). |
 | test_document_types.py | test_create_inv | Create INV document type (executable, folder-per-doc). |
+| test_document_types.py | test_create_er_under_tp | Create ER document type as child of TP. |
 
 ---
 
@@ -615,6 +633,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Event types logged during lifecycle. |
 | test_cr_lifecycle.py | test_cr_full_lifecycle | Event types logged during lifecycle. |
 | test_queries.py | test_history_shows_all_event_types | All event types visible in history. |
+| test_cr_lifecycle.py | test_all_audit_event_types | Verifies all 14 required audit event types are logged. |
 
 ---
 
@@ -657,6 +676,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Task content includes required fields. |
+| test_sop_lifecycle.py | test_task_content_all_fields | Verifies all 7 required task fields: task_id, task_type, workflow_type, doc_id, version, assigned_by, assigned_date. |
 
 ---
 
@@ -685,11 +705,14 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-CFG-001: Project Root Discovery
 
-**Requirement:** The CLI shall discover the project root by searching for the QMS/ directory.
+**Requirement:** The CLI shall discover the project root by searching for qms.config.json (preferred) or QMS/ directory (fallback).
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| conftest.py | temp_project fixture | Project root discovery via QMS/ directory. |
+| conftest.py | temp_project fixture | Project root discovery via QMS/ directory (backward compatibility). |
+| test_init.py | test_init_creates_complete_structure | Project root discovery via qms.config.json after init. |
+| test_init.py | test_project_root_discovery_via_config | Verifies project root found via qms.config.json from subdirectory. |
+| test_init.py | test_project_root_discovery_via_qms_fallback | Verifies fallback to QMS/ directory when no config file exists. |
 
 ---
 
@@ -733,6 +756,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_sop | Document type registry for SOP. |
 | test_document_types.py | test_create_cr | Document type registry for CR. |
 | test_document_types.py | test_create_inv | Document type registry for INV. |
+| test_document_types.py | test_document_type_registry | Verifies document type registry includes executable flag and parent type. |
 
 ---
 
@@ -759,6 +783,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_queries.py | test_status_query | Status query shows all required fields. |
 | test_queries.py | test_status_shows_checked_out | Status shows checked_out status. |
+| test_queries.py | test_status_shows_executable_field | Status query includes executable flag. |
 
 ---
 
@@ -926,31 +951,173 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
+### 5.11 Project Initialization (REQ-INIT)
+
+#### REQ-INIT-001: Config File Creation
+
+**Requirement:** The `init` command shall create a `qms.config.json` file at the project root.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_creates_complete_structure | Verifies qms.config.json is created with required fields. |
+
+---
+
+#### REQ-INIT-002: QMS Directory Structure
+
+**Requirement:** The `init` command shall create the complete QMS directory structure.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_creates_complete_structure | Verifies QMS/, SOP/, CR/, INV/, TEMPLATE/, .meta/, .audit/, .archive/ are created. |
+
+---
+
+#### REQ-INIT-003: User Directory Structure
+
+**Requirement:** The `init` command shall create user directories for hardcoded administrators and default QA user.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_creates_complete_structure | Verifies workspace and inbox directories for administrators and QA. |
+
+---
+
+#### REQ-INIT-004: Default Agent Creation
+
+**Requirement:** The `init` command shall create a default QA agent file.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_seeds_qa_agent | Verifies qa.md agent file is created with quality group. |
+
+---
+
+#### REQ-INIT-005: SOP Seeding
+
+**Requirement:** The `init` command shall seed the QMS/SOP/ directory with sanitized SOPs.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_seeds_sops | Verifies SOPs are seeded with EFFECTIVE status and v1.0. |
+
+---
+
+#### REQ-INIT-006: Template Seeding
+
+**Requirement:** The `init` command shall seed the QMS/TEMPLATE/ directory with document templates.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_seeds_templates | Verifies templates are seeded with EFFECTIVE status and v1.0. |
+
+---
+
+#### REQ-INIT-007: Safety Checks
+
+**Requirement:** The `init` command shall abort if any target infrastructure already exists.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_blocked_by_existing_qms | Init blocked if QMS/ exists. |
+| test_init.py | test_init_blocked_by_existing_users | Init blocked if .claude/users/ exists. |
+| test_init.py | test_init_blocked_by_existing_qa_agent | Init blocked if qa.md exists. |
+| test_init.py | test_init_blocked_by_existing_config | Init blocked if qms.config.json exists. |
+
+---
+
+#### REQ-INIT-008: Root Flag Support
+
+**Requirement:** The `init` command shall accept an optional `--root` flag.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_init_with_root_flag | Init creates structure at specified root directory. |
+
+---
+
+### 5.12 User Management (REQ-USER)
+
+#### REQ-USER-001: Hardcoded Administrators
+
+**Requirement:** The users `lead` and `claude` shall be recognized as administrators without agent files.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_hardcoded_admins_work | Hardcoded administrators can execute commands without agent files. |
+
+---
+
+#### REQ-USER-002: Agent File-Based Group Assignment
+
+**Requirement:** For non-hardcoded users, the CLI shall determine group from agent definition files.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_agent_group_assignment | Users with agent files are assigned correct groups. |
+
+---
+
+#### REQ-USER-003: User Add Command
+
+**Requirement:** The CLI shall provide a `user --add` command that creates agent file and directories.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_user_add_creates_structure | User add creates agent file, workspace, and inbox. |
+| test_init.py | test_user_add_requires_admin | User add requires administrator privileges. |
+
+---
+
+#### REQ-USER-004: Unknown User Handling
+
+**Requirement:** Commands with unknown users shall be rejected with informative error messages.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_unknown_user_error | Unknown users receive helpful error guidance. |
+
+---
+
+#### REQ-USER-005: User List Command
+
+**Requirement:** The CLI shall provide a `user --list` command.
+
+| Test File | Test Function | Description |
+|-----------|---------------|-------------|
+| test_init.py | test_user_add_creates_structure | User list shows all recognized users. |
+| test_init.py | test_user_list_command | Verifies user --list command displays users. |
+| test_init.py | test_user_list_shows_groups | Verifies user list includes group assignments. |
+
+---
+
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
+| Requirements Spec | SDLC-QMS-RS v2.0 |
 | Repository | whharris917/qms-cli |
-| Commit | `eff3ab7` |
-| CI Evidence | [GitHub Actions](https://github.com/whharris917/qms-cli/actions) |
-| Total Tests | 98 |
-| Passed | 98 |
+| Branch | cr-036-init |
+| Commit | cd4d456 |
+| Total Tests | 113 |
+| Passed | 113 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
 
 | Test Protocol | Tests | Passed | Failed |
 |---------------|-------|--------|--------|
-| test_sop_lifecycle.py | 15 | 15 | 0 |
-| test_cr_lifecycle.py | 11 | 11 | 0 |
+| test_sop_lifecycle.py | 16 | 16 | 0 |
+| test_cr_lifecycle.py | 12 | 12 | 0 |
 | test_security.py | 19 | 19 | 0 |
-| test_document_types.py | 21 | 21 | 0 |
-| test_queries.py | 16 | 16 | 0 |
+| test_document_types.py | 22 | 22 | 0 |
+| test_queries.py | 18 | 18 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
-| **Total** | **98** | **98** | **0** |
+| test_init.py | 10 | 10 | 0 |
+| **Total** | **113** | **113** | **0** |
 
 ### 6.3 Test Environment
 

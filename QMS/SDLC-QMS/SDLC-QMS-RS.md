@@ -1,6 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-028: Initial creation'
+revision_summary: 'CR-036: Add project initialization and user management requirements'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -17,6 +17,8 @@ These requirements serve as the authoritative specification for QMS CLI behavior
 
 This specification covers:
 
+- Project initialization and bootstrapping
+- User identity and group management
 - Security and access control
 - Document lifecycle management (creation, checkout, checkin)
 - Workflow state machine and status transitions
@@ -64,6 +66,8 @@ The QMS CLI is a command-line tool that enforces document control procedures. It
 - **Initiator** (empty, reserved for future non-admin initiators): Create documents, initiate workflows
 - **Quality** (qa): Assign reviewers, review, approve
 - **Reviewer** (tu_ui, tu_scene, etc.): Review and approve when assigned
+
+User identity is determined by: (1) hardcoded administrators (`lead` and `claude`), or (2) agent definition files in `.claude/agents/{user}.md` with `group:` frontmatter specifying group membership.
 
 **Workflows** are state machines that documents traverse:
 - **Non-executable** (SOP, RS, RTM): DRAFT → review → approval → EFFECTIVE
@@ -332,7 +336,7 @@ This returns a chronological record of every action taken on the document, by wh
 |--------|-------------|
 | REQ-DOC-001 | **Supported Document Types.** The CLI shall only support creation and management of the following document types: Core types (SOP, CR, INV, TP, ER, VAR, TEMPLATE) and SDLC types (RS, RTM, available per registered SDLC namespace). The CLI shall reject create commands for undefined document types. |
 | REQ-DOC-002 | **Child Document Relationships.** The CLI shall enforce parent-child relationships: TP is a child of CR; ER is a child of TP; VAR is a child of CR or INV. Child documents shall be stored within their parent's folder. |
-| REQ-DOC-003 | **QMS Folder Structure.** The CLI shall maintain the following folder structure: QMS/ for controlled documents organized by type; QMS/.meta/ for workflow state sidecar files; QMS/.audit/ for audit trail logs; QMS/.archive/ for superseded versions; and per-user workspace and inbox directories. The CLI shall reject operations that would store controlled documents outside this structure. |
+| REQ-DOC-003 | **QMS Folder Structure.** The CLI shall maintain the following folder structure: QMS/ for controlled documents organized by type; QMS/.meta/ for workflow state sidecar files; QMS/.audit/ for audit trail logs; QMS/.archive/ for archived versions; and per-user workspace and inbox directories. The CLI shall reject operations that would store controlled documents outside this structure. |
 | REQ-DOC-004 | **Sequential ID Generation.** The CLI shall generate document IDs sequentially within each document type (e.g., CR-001, CR-002, SOP-001, SOP-002). The next available number shall be determined by scanning existing documents. |
 | REQ-DOC-005 | **Child Document ID Generation.** For child document types, the CLI shall generate IDs in the format `{PARENT}-{TYPE}-NNN` where NNN is sequential within that parent (e.g., CR-005-TP-001, CR-005-VAR-001, CR-005-VAR-002). |
 | REQ-DOC-006 | **Version Format.** The CLI shall enforce version numbers in the format `N.X` where N = approval number (major version) and X = revision number within approval cycle (minor version). Initial documents shall start at version 0.1. |
@@ -352,7 +356,7 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ ID | Requirement |
 |--------|-------------|
 | REQ-WF-001 | **Status Transition Validation.** The CLI shall reject any status transition not defined in the workflow state machine. Invalid transitions shall produce an error without modifying document state. |
-| REQ-WF-002 | **Non-Executable Document Lifecycle.** Non-executable documents shall follow this status progression: DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE. SUPERSEDED and RETIRED are terminal states. |
+| REQ-WF-002 | **Non-Executable Document Lifecycle.** Non-executable documents shall follow this status progression: DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE. RETIRED is a terminal state. |
 | REQ-WF-003 | **Executable Document Lifecycle.** Executable documents (CR, INV, TP, ER, VAR) shall follow this status progression: DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL → POST_APPROVED → CLOSED. RETIRED is a terminal state. |
 | REQ-WF-004 | **Review Completion Gate.** The CLI shall automatically transition a document from IN_REVIEW to REVIEWED (or equivalent pre/post states) only when all users in pending_assignees have submitted reviews. |
 | REQ-WF-005 | **Approval Gate.** The CLI shall block routing for approval unless: (1) all submitted reviews have `recommend` outcome (no `request-updates`), AND (2) at least one review was submitted by a quality group member. This ensures both unanimous recommendation and mandatory quality oversight before approval. |
@@ -361,7 +365,7 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-WF-008 | **Release Transition.** The CLI shall transition executable documents from PRE_APPROVED to IN_EXECUTION upon release command. Only the document owner may release. |
 | REQ-WF-009 | **Revert Transition.** The CLI shall transition executable documents from POST_REVIEWED to IN_EXECUTION upon revert command, requiring a reason. Only the document owner may revert. |
 | REQ-WF-010 | **Close Transition.** The CLI shall transition executable documents from POST_APPROVED to CLOSED upon close command. Only the document owner may close. |
-| REQ-WF-011 | **Terminal State Enforcement.** The CLI shall reject all transitions from terminal states (SUPERSEDED, CLOSED, RETIRED). |
+| REQ-WF-011 | **Terminal State Enforcement.** The CLI shall reject all transitions from terminal states (CLOSED, RETIRED). |
 | REQ-WF-012 | **Retirement Routing.** The CLI shall support routing for retirement approval, which signals that approval leads to RETIRED status rather than EFFECTIVE or PRE_APPROVED. Retirement routing shall only be permitted for documents with version >= 1.0 (once-effective). |
 | REQ-WF-013 | **Retirement Transition.** Upon approval of a retirement-routed document, the CLI shall: (1) archive the document to `.archive/`, (2) remove the working copy from the QMS directory, (3) transition status to RETIRED, and (4) log a RETIRE event to the audit trail. |
 | REQ-WF-014 | **Execution Phase Tracking.** For executable document types (CR, INV), the CLI shall track execution phase in metadata: pre_release (document approved but not yet released, PRE_APPROVED state) or post_release (document released and execution complete, POST_APPROVED state). The execution phase determines the correct workflow path. |
@@ -406,10 +410,10 @@ This returns a chronological record of every action taken on the document, by wh
 
 | REQ ID | Requirement |
 |--------|-------------|
-| REQ-CFG-001 | **Project Root Discovery.** The CLI shall discover the project root by searching for the QMS/ directory, starting from the current working directory and traversing upward. |
+| REQ-CFG-001 | **Project Root Discovery.** The CLI shall discover the project root by searching upward from the current working directory for: (1) `qms.config.json` file (preferred), or (2) `QMS/` directory (fallback for backward compatibility). The first match determines the project root. |
 | REQ-CFG-002 | **QMS Root Path.** The CLI shall resolve the QMS document root as `{PROJECT_ROOT}/QMS/`. All controlled documents, metadata, and audit trails shall reside under this path. |
 | REQ-CFG-003 | **Users Directory Path.** The CLI shall resolve the users directory (containing workspaces and inboxes) as `{PROJECT_ROOT}/.claude/users/`. |
-| REQ-CFG-004 | **User Registry.** The CLI shall maintain a registry of valid users, including: (1) the set of all valid user identifiers, and (2) group membership for each user (administrator, initiator, quality, or reviewer). The CLI shall also maintain a permission registry mapping commands to: (1) authorized groups, (2) owner_only modifier (restricts to document owner), and (3) assigned_only modifier (restricts to assigned users). |
+| REQ-CFG-004 | **User Registry.** The CLI shall determine valid users from: (1) hardcoded administrators (`lead`, `claude`), and (2) agent definition files in `.claude/agents/`. Group membership is determined per REQ-USER-001 and REQ-USER-002. The CLI shall also maintain a permission registry mapping commands to: (1) authorized groups, (2) owner_only modifier (restricts to document owner), and (3) assigned_only modifier (restricts to assigned users). |
 | REQ-CFG-005 | **Document Type Registry.** The CLI shall maintain a registry of document types, including for each type: (1) storage path relative to QMS root, (2) executable flag, (3) ID prefix, (4) parent type (if child document), and (5) folder-per-document flag. The CLI shall also maintain an SDLC namespace registry enabling dynamic RS and RTM document types per registered namespace. |
 
 ---
@@ -452,6 +456,33 @@ This returns a chronological record of every action taken on the document, by wh
 
 ---
 
+### 4.11 Project Initialization (REQ-INIT)
+
+| REQ ID | Requirement |
+|--------|-------------|
+| REQ-INIT-001 | **Config File Creation.** The `init` command shall create a `qms.config.json` file at the project root containing: version identifier, creation timestamp, and empty SDLC namespaces array. |
+| REQ-INIT-002 | **QMS Directory Structure.** The `init` command shall create the complete QMS directory structure including: `QMS/SOP/`, `QMS/CR/`, `QMS/INV/`, `QMS/TEMPLATE/`, `QMS/.meta/`, `QMS/.audit/`, and `QMS/.archive/`. |
+| REQ-INIT-003 | **User Directory Structure.** The `init` command shall create user directories for hardcoded administrators: `.claude/users/lead/workspace/`, `.claude/users/lead/inbox/`, `.claude/users/claude/workspace/`, `.claude/users/claude/inbox/`, and for the default QA user. |
+| REQ-INIT-004 | **Default Agent Creation.** The `init` command shall create a default QA agent file at `.claude/agents/qa.md` with `group: quality` in frontmatter. |
+| REQ-INIT-005 | **SOP Seeding.** The `init` command shall seed the `QMS/SOP/` directory with sanitized SOP documents from `qms-cli/seed/sops/`, creating corresponding `.meta/` and `.audit/` files with EFFECTIVE status at version 1.0. |
+| REQ-INIT-006 | **Template Seeding.** The `init` command shall seed the `QMS/TEMPLATE/` directory with document templates from `qms-cli/seed/templates/`, creating corresponding `.meta/` and `.audit/` files with EFFECTIVE status at version 1.0. |
+| REQ-INIT-007 | **Safety Checks.** The `init` command shall abort with an error if any of the following already exist at the target location: `QMS/` directory, `.claude/users/` directory, `.claude/agents/qa.md` file, or `qms.config.json` file. All checks shall be performed before any changes are made. |
+| REQ-INIT-008 | **Root Flag Support.** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. If not provided, the current working directory shall be used. |
+
+---
+
+### 4.12 User Management (REQ-USER)
+
+| REQ ID | Requirement |
+|--------|-------------|
+| REQ-USER-001 | **Hardcoded Administrators.** The users `lead` and `claude` shall be recognized as administrators without requiring agent definition files. These identities are hardcoded in the CLI. |
+| REQ-USER-002 | **Agent File-Based Group Assignment.** For non-hardcoded users, the CLI shall determine group membership by reading the `group:` field from the user's agent definition file at `.claude/agents/{user}.md`. Valid group values are: administrator, initiator, quality, reviewer. |
+| REQ-USER-003 | **User Add Command.** The CLI shall provide a `user --add` command that creates: (1) an agent definition file at `.claude/agents/{user}.md` with specified group, (2) workspace directory at `.claude/users/{user}/workspace/`, and (3) inbox directory at `.claude/users/{user}/inbox/`. The command shall require administrator privileges and a `--group` argument. |
+| REQ-USER-004 | **Unknown User Handling.** When a command is invoked with a user identifier that is neither a hardcoded administrator nor has an agent definition file, the CLI shall reject the command with an informative error message that guides the user to create an agent file or use the `user --add` command. |
+| REQ-USER-005 | **User List Command.** The CLI shall provide a `user --list` command that displays all recognized users (hardcoded administrators and users with agent definition files) along with their group assignments. |
+
+---
+
 ## 5. Environmental Assumptions, Limitations, and Exclusions
 
 This section clarifies the boundary of the QMS CLI's responsibilities and its dependencies on external infrastructure.
@@ -462,7 +493,7 @@ The CLI assumes the following environment exists before invocation:
 
 | Assumption | Description |
 |------------|-------------|
-| **QMS/ directory exists** | The CLI discovers the project root by searching for `QMS/`. If not found, the CLI fails with an error. The CLI does not create the initial `QMS/` directory. |
+| **Project root identifiable** | The CLI discovers the project root by searching for `qms.config.json` or `QMS/` directory. For most commands, one of these must exist. The `init` command is the exception—it creates these artifacts. |
 | **Prompt YAML files exist** | The `qms-cli/prompts/` directory must contain valid YAML configuration files for prompt generation. Missing files result in fallback behavior or errors. |
 | **Python environment** | Python 3.x with PyYAML installed. The CLI does not manage its own dependencies. |
 
@@ -494,10 +525,9 @@ The following are explicitly outside the CLI's scope:
 
 | Exclusion | Rationale |
 |-----------|-----------|
-| **Agent definition files** | Files in `.claude/agents/` are read by Claude Code when spawning subagents, not by the QMS CLI. The CLI has no knowledge of agent definitions. |
+| **Agent behavioral directives** | While the CLI reads agent definition files for group membership (per REQ-USER-002), the behavioral directives within those files are consumed by Claude Code when spawning subagents, not by the QMS CLI. |
 | **Git operations** | Version control is managed separately. The CLI does not commit, push, or interact with git repositories. |
 | **User authentication** | The CLI trusts the `--user` flag. It does not authenticate users or verify identity. |
-| **Project initialization** | Creating a new QMS project (initial `QMS/` directory, user directories, templates) is outside CLI scope. This is a one-time setup activity. |
 | **Migration tooling** | The `migrate` and `verify-migration` commands are administrative utilities for schema evolution, not core QMS functionality. They are not covered by requirements in this specification. |
 
 ---

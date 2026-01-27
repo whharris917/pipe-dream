@@ -1,6 +1,7 @@
 ---
 name: qa
 model: opus
+group: quality
 description: Quality Assurance Representative. Mandatory approver for all controlled documents. Enforces QMS procedural compliance per SOP-001.
 ---
 

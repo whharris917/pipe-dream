@@ -1,14 +1,14 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-036: Add verification evidence for initialization and user management
-  requirements'
+revision_summary: 'CR-036: Add traceability for REQ-INIT (8) and REQ-USER (5) requirements;
+  update REQ-CFG-001/004 for config file and agent-based user discovery'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS and the qualification tests that verify them. Each requirement is mapped to specific test protocols, functions, and line numbers where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v2.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
@@ -74,7 +74,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-SEC-006 | Unknown User Rejection | test_security::test_unknown_user_rejection | PASS |
 | REQ-SEC-007 | Assignment Validation | test_security::test_assignment_validation_review, test_assignment_validation_approval | PASS |
 | REQ-SEC-008 | Workspace/Inbox Isolation | test_security::test_workspace_isolation, test_inbox_isolation | PASS |
-| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp (xfail) | PASS |
+| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp | PASS |
 | REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr, test_create_var_under_cr, test_create_var_under_inv | PASS |
 | REQ-DOC-003 | QMS Folder Structure | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-004 | Sequential ID Generation | test_document_types::test_sequential_id_generation | PASS |
@@ -98,7 +98,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-WF-008 | Release Transition | test_cr_lifecycle::test_cr_full_lifecycle, test_owner_only_release | PASS |
 | REQ-WF-009 | Revert Transition | test_cr_lifecycle::test_revert | PASS |
 | REQ-WF-010 | Close Transition | test_cr_lifecycle::test_cr_full_lifecycle, test_owner_only_close | PASS |
-| REQ-WF-011 | Terminal State Enforcement | test_cr_lifecycle::test_terminal_state, test_terminal_state_retired; test_sop_lifecycle::test_terminal_state_superseded (xfail) | PASS |
+| REQ-WF-011 | Terminal State Enforcement | test_cr_lifecycle::test_terminal_state, test_terminal_state_retired | PASS |
 | REQ-WF-012 | Retirement Routing | test_sop_lifecycle::test_retirement, test_retirement_rejected_for_v0 | PASS |
 | REQ-WF-013 | Retirement Transition | test_sop_lifecycle::test_retirement | PASS |
 | REQ-WF-014 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
@@ -108,18 +108,18 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_metadata_required_fields | PASS |
 | REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
 | REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle::test_sop_full_lifecycle, test_audit_immutability | PASS |
-| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types, test_cr_lifecycle::test_all_audit_event_types (xfail) | PASS |
+| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types, test_cr_lifecycle::test_all_audit_event_types | PASS |
 | REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle::test_sop_full_lifecycle, test_task_content_all_fields (xfail) | PASS |
+| REQ-TASK-002 | Task Content Requirements | test_sop_lifecycle::test_sop_full_lifecycle, test_sop_lifecycle::test_task_content_all_fields | PASS |
 | REQ-TASK-003 | Task Removal on Completion | test_sop_lifecycle::test_sop_full_lifecycle, test_rejection_clears_approval_tasks | PASS |
 | REQ-TASK-004 | Assign Command | test_sop_lifecycle::test_assign_command | PASS |
-| REQ-CFG-001 | Project Root Discovery | conftest::temp_project fixture, test_init::test_init_creates_complete_structure, test_project_root_discovery_via_config (xfail), test_project_root_discovery_via_qms_fallback | PASS |
+| REQ-CFG-001 | Project Root Discovery | conftest::temp_project fixture, test_init::test_init_creates_complete_structure, test_init::test_project_root_discovery_via_config, test_init::test_project_root_discovery_via_qms_fallback | PASS |
 | REQ-CFG-002 | QMS Root Path | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-CFG-003 | Users Directory Path | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-CFG-004 | User Registry | test_security::test_unknown_user_rejection, test_user_group_classification | PASS |
-| REQ-CFG-005 | Document Type Registry | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_document_type_registry (xfail) | PASS |
+| REQ-CFG-005 | Document Type Registry | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_document_type_registry | PASS |
 | REQ-QRY-001 | Document Reading | test_queries::test_read_draft, test_read_effective, test_read_archived_version, test_read_draft_flag | PASS |
 | REQ-QRY-002 | Document Status Query | test_queries::test_status_query, test_status_shows_checked_out, test_status_shows_executable_field | PASS |
 | REQ-QRY-003 | Audit History Query | test_queries::test_history_query, test_history_shows_all_event_types | PASS |
@@ -259,6 +259,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_sop | Create SOP document type. |
 | test_document_types.py | test_create_cr | Create CR document type (executable, folder-per-doc). |
 | test_document_types.py | test_create_inv | Create INV document type (executable, folder-per-doc). |
+| test_document_types.py | test_create_er_under_tp | Create ER document type as child of TP. |
 
 ---
 
@@ -632,6 +633,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Event types logged during lifecycle. |
 | test_cr_lifecycle.py | test_cr_full_lifecycle | Event types logged during lifecycle. |
 | test_queries.py | test_history_shows_all_event_types | All event types visible in history. |
+| test_cr_lifecycle.py | test_all_audit_event_types | Verifies all 14 required audit event types are logged. |
 
 ---
 
@@ -674,6 +676,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Task content includes required fields. |
+| test_sop_lifecycle.py | test_task_content_all_fields | Verifies all 7 required task fields: task_id, task_type, workflow_type, doc_id, version, assigned_by, assigned_date. |
 
 ---
 
@@ -708,6 +711,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | conftest.py | temp_project fixture | Project root discovery via QMS/ directory (backward compatibility). |
 | test_init.py | test_init_creates_complete_structure | Project root discovery via qms.config.json after init. |
+| test_init.py | test_project_root_discovery_via_config | Verifies project root found via qms.config.json from subdirectory. |
+| test_init.py | test_project_root_discovery_via_qms_fallback | Verifies fallback to QMS/ directory when no config file exists. |
 
 ---
 
@@ -751,6 +756,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_sop | Document type registry for SOP. |
 | test_document_types.py | test_create_cr | Document type registry for CR. |
 | test_document_types.py | test_create_inv | Document type registry for INV. |
+| test_document_types.py | test_document_type_registry | Verifies document type registry includes executable flag and parent type. |
 
 ---
 
@@ -777,6 +783,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_queries.py | test_status_query | Status query shows all required fields. |
 | test_queries.py | test_status_shows_checked_out | Status shows checked_out status. |
+| test_queries.py | test_status_shows_executable_field | Status query includes executable flag. |
 
 ---
 
@@ -1079,6 +1086,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_init.py | test_user_add_creates_structure | User list shows all recognized users. |
+| test_init.py | test_user_list_command | Verifies user --list command displays users. |
+| test_init.py | test_user_list_shows_groups | Verifies user list includes group assignments. |
 
 ---
 
@@ -1088,27 +1097,27 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
+| Requirements Spec | SDLC-QMS-RS v2.0 |
 | Repository | whharris917/qms-cli |
 | Branch | cr-036-init |
-| Commit | (pending merge to main) |
-| Total Tests | 123 |
-| Passed | 117 |
-| XFailed | 6 |
+| Commit | cd4d456 |
+| Total Tests | 113 |
+| Passed | 113 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
 
-| Test Protocol | Tests | Passed | XFailed | Failed |
-|---------------|-------|--------|---------|--------|
-| test_sop_lifecycle.py | 17 | 15 | 2 | 0 |
-| test_cr_lifecycle.py | 12 | 11 | 1 | 0 |
-| test_security.py | 19 | 19 | 0 | 0 |
-| test_document_types.py | 23 | 21 | 2 | 0 |
-| test_queries.py | 18 | 18 | 0 | 0 |
-| test_prompts.py | 7 | 7 | 0 | 0 |
-| test_templates.py | 9 | 9 | 0 | 0 |
-| test_init.py | 18 | 17 | 1 | 0 |
-| **Total** | **123** | **117** | **6** | **0** |
+| Test Protocol | Tests | Passed | Failed |
+|---------------|-------|--------|--------|
+| test_sop_lifecycle.py | 16 | 16 | 0 |
+| test_cr_lifecycle.py | 12 | 12 | 0 |
+| test_security.py | 19 | 19 | 0 |
+| test_document_types.py | 22 | 22 | 0 |
+| test_queries.py | 18 | 18 | 0 |
+| test_prompts.py | 7 | 7 | 0 |
+| test_templates.py | 9 | 9 | 0 |
+| test_init.py | 10 | 10 | 0 |
+| **Total** | **113** | **113** | **0** |
 
 ### 6.3 Test Environment
 

@@ -1,6 +1,7 @@
 ---
 name: tu_sketch
 model: opus
+group: reviewer
 description: Technical Unit Representative - CAD/Geometry (TU-SKETCH). Provides technical review for the Sketch subsystem, geometric entities, constraints, and solver logic on the Change Review Board.
 ---
 

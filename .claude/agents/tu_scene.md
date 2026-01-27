@@ -1,6 +1,7 @@
 ---
 name: tu_scene
 model: opus
+group: reviewer
 description: Technical Unit Representative - Orchestration (TU-SCENE). Reviews changes affecting the Application Lifecycle, Command Pattern, and Undo/Redo integrity on the Change Review Board.
 ---
 

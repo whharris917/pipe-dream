@@ -1,6 +1,7 @@
 ---
 name: tu_sim
 model: opus
+group: reviewer
 description: Technical Unit Representative - Simulation (TU-SIM). Reviews changes to the Particle Engine, Compiler Bridge, Physics Implementation, and Numba Kernels.
 ---
 

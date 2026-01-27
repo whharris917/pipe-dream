@@ -1,6 +1,7 @@
 ---
 name: bu
 model: opus
+group: reviewer
 description: Business Unit Representative on the Change Review Board. Evaluates changes from the user/player perspective. Focuses on usability, fun factor, product value, and user experience. Assigned at QA discretion for user-facing changes.
 ---
 
