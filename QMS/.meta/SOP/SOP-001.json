@@ -1,17 +1,19 @@
 {
   "doc_id": "SOP-001",
   "doc_type": "SOP",
-  "version": "17.0",
+  "version": "19.0",
   "status": "EFFECTIVE",
   "executable": false,
   "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": "17.0",
+  "effective_version": "19.0",
   "supersedes": null,
   "pending_assignees": [],
   "pending_reviewers": [],
   "completed_reviewers": [],
-  "review_outcomes": {},
+  "review_outcomes": {
+    "qa": "RECOMMEND"
+  },
   "approval_date": "2026-01-08"
 }
