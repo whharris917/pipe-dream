@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "qms": {
+      "command": "python",
+      "args": ["-m", "qms_mcp"],
+      "cwd": "qms-cli"
+    }
+  }
+}

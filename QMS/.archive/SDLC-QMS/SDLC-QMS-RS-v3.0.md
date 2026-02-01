@@ -1,7 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'Administrative: Document checked out in error during CR-041 execution;
-  no content changes from v3.0'
+revision_summary: 'CR-041: Add MCP server requirements'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification

@@ -1,3 +1,8 @@
+## Terminal & Environment
+- **Shell:** Git Bash (Windows).
+- **Commands:** Always use Bash commands (e.g., `ls -la`, `cat`, `grep`, `rm`) instead of Windows CMD commands (e.g., `dir`, `type`, `findstr`, `del`).
+- **Paths:** Always use forward slashes (`/`) for file paths, never backslashes (`\`).
+
 # Pipe Dream: Technical Architecture Guide
 
 Welcome to **Pipe Dream**, a project with two intertwined objectives:
@@ -124,13 +129,15 @@ Read all Standard Operating Procedures in `QMS/SOP/`.
 
 ## Your QMS Identity
 
-You are **claude**, an Initiator in the QMS. Run QMS commands using the CLI:
+You are **claude**, an Initiator in the QMS. Always use lowercase `claude` for your identity.
+
+### QMS Operations via CLI
+
+Run QMS commands using the CLI:
 
 ```
 python qms-cli/qms.py --user claude <command>
 ```
-
-Always use lowercase `claude` for your identity.
 
 **Common commands:**
 ```
@@ -142,6 +149,24 @@ python qms-cli/qms.py --user claude checkin {DOC_ID}                   # Check i
 python qms-cli/qms.py --user claude route {DOC_ID} --review            # Route for review
 python qms-cli/qms.py --user claude route {DOC_ID} --approval          # Route for approval
 ```
+
+### QMS Operations via MCP Tools (when available)
+
+When the QMS MCP server is running, you can use native MCP tools instead of CLI commands:
+
+| MCP Tool | Equivalent CLI | Description |
+|----------|----------------|-------------|
+| `qms_inbox()` | `inbox` | Check pending tasks |
+| `qms_status(doc_id)` | `status {DOC_ID}` | Check document status |
+| `qms_create(doc_type, title)` | `create {TYPE} --title` | Create new document |
+| `qms_checkout(doc_id)` | `checkout {DOC_ID}` | Check out for editing |
+| `qms_checkin(doc_id)` | `checkin {DOC_ID}` | Check in from workspace |
+| `qms_route(doc_id, "review")` | `route {DOC_ID} --review` | Route for review |
+| `qms_route(doc_id, "approval")` | `route {DOC_ID} --approval` | Route for approval |
+
+MCP tools return structured responses and are preferred when available.
+
+### Permissions
 
 **Your permissions (per SOP-001 Section 4.2):**
 - Create, checkout, checkin documents

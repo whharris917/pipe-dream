@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-01-31
+
+- [ ] Fix unit test assertion in test_qms_auth.py for improved error message
+  - Test `test_invalid_user` expects `"not a valid QMS user"` in error output
+  - CLI now provides more helpful error message with instructions for adding users
+  - Update assertion to match new error format: `"User 'unknown_user' not found"`
+  - Location: `qms-cli/tests/test_qms_auth.py`
+  - Reference: CR-041 execution, test run showing 1 failed / 338 passed
+
+---
+
+## 2026-01-26
+
+- [ ] Create CR to add ASSIGN to REQ-AUDIT-002 required event types
+  - RS REQ-AUDIT-002 lists 14 required audit events but does not include ASSIGN
+  - Code now logs ASSIGN event (added by CR-036-VAR-005)
+  - RS should be updated to include ASSIGN as a 15th required event type
+  - Reference: Session-2026-01-26-001 RTM sanity check
+
+- [ ] Add owner-initiated withdrawal command for documents in review
+  - Currently no way for document owner to recall a document from IN_REVIEW back to DRAFT
+  - Workaround: Have QA reject, then owner checkouts to revert REVIEWED → DRAFT
+  - Proposed: `qms withdraw <DOC_ID>` command for owner to pull back routed document
+  - Would need: New RS requirement, workflow transition, CLI command implementation
+  - Reference: Session-2026-01-26-001 RTM routing discussion
+
+- [ ] Update SOP-005 (Code Governance) to thoroughly explain qualification process
+  - CI verification in GitHub: dev branch must have passing CI before RTM approval
+  - Development workflow: all code changes in dev branch, not main
+  - Document approval order: RS approved first, then RTM (RTM references RS version)
+  - RTM must reference a specific commit hash in dev branch with all tests passing (CI-verified)
+  - PR to merge dev → main happens AFTER RS and RTM are approved
+  - Merge to main is an execution item in the CR, performed after RS/RTM approval
+  - Rollback procedures: established rollback plan required for all code changes
+  - Covers both dev branch rollback and main branch rollback scenarios
+  - Reference: Session-2026-01-26-001 CR-036 qualification workflow discussion
+
+---
+
 ## 2026-01-25
 
 - [ ] Code safety review: production/test environment isolation

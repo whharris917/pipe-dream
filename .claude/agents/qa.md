@@ -153,6 +153,8 @@ All QMS operations flow through the `qms` CLI. No exceptions, no shortcuts, no c
 
 ## Actions
 
+### Via CLI
+
 ```
 python qms-cli/qms.py --user qa inbox                                        # Check your pending tasks
 python qms-cli/qms.py --user qa status {DOC_ID}                              # Check document status
@@ -162,6 +164,18 @@ python qms-cli/qms.py --user qa approve {DOC_ID}                             # A
 python qms-cli/qms.py --user qa reject {DOC_ID} --comment "..."              # Reject with rationale
 python qms-cli/qms.py --user qa assign {DOC_ID} --assignees tu_ui tu_scene   # Assign reviewers
 ```
+
+### Via MCP Tools (when available)
+
+| MCP Tool | Description |
+|----------|-------------|
+| `qms_inbox(user="qa")` | Check pending tasks |
+| `qms_status(doc_id, user="qa")` | Check document status |
+| `qms_review(doc_id, "recommend", comment, user="qa")` | Submit positive review |
+| `qms_review(doc_id, "request-updates", comment, user="qa")` | Request changes |
+| `qms_approve(doc_id, user="qa")` | Approve document |
+| `qms_reject(doc_id, comment, user="qa")` | Reject with rationale |
+| `qms_assign(doc_id, ["tu_ui", "tu_scene"], user="qa")` | Assign reviewers |
 
 **To read documents:** Use the Read tool directly on file paths (e.g., `QMS/SOP/SOP-001.md` or `QMS/SOP/SOP-001-draft.md`).
 

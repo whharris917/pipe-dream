@@ -50,7 +50,7 @@ python qms-cli/qms.py --user tu_sketch <command>
 
 Always use lowercase `tu_sketch` for your identity.
 
-**Common commands:**
+**Via CLI:**
 ```
 python qms-cli/qms.py --user tu_sketch inbox                                        # Check your pending tasks
 python qms-cli/qms.py --user tu_sketch status {DOC_ID}                              # Check document status
@@ -58,6 +58,16 @@ python qms-cli/qms.py --user tu_sketch review {DOC_ID} --recommend --comment "..
 python qms-cli/qms.py --user tu_sketch review {DOC_ID} --request-updates --comment "..."  # Request changes
 python qms-cli/qms.py --user tu_sketch approve {DOC_ID}                             # Approve document
 ```
+
+**Via MCP Tools (when available):**
+
+| MCP Tool | Description |
+|----------|-------------|
+| `qms_inbox(user="tu_sketch")` | Check pending tasks |
+| `qms_status(doc_id, user="tu_sketch")` | Check document status |
+| `qms_review(doc_id, "recommend", comment, user="tu_sketch")` | Submit positive review |
+| `qms_review(doc_id, "request-updates", comment, user="tu_sketch")` | Request changes |
+| `qms_approve(doc_id, user="tu_sketch")` | Approve document |
 
 **To read documents:** Use the Read tool directly on file paths (e.g., `QMS/CR/CR-001/CR-001-draft.md`).
 

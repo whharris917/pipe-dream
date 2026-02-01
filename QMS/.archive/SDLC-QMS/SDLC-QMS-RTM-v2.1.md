@@ -1,14 +1,14 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'Administrative: Update RS reference from v3.0 to v4.0 (RS re-approved
-  after accidental checkout)'
+revision_summary: 'CR-041: Add traceability for REQ-MCP (10 requirements) for MCP
+  server tools'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v4.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v3.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
@@ -1262,7 +1262,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v4.0 |
+| Requirements Spec | SDLC-QMS-RS v3.0 |
 | Repository | whharris917/qms-cli |
 | Branch | cr-041-mcp |
 | Commit | 46e3c91 |

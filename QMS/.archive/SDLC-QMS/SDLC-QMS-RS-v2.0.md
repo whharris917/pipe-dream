@@ -1,7 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'Administrative: Document checked out in error during CR-041 execution;
-  no content changes from v3.0'
+revision_summary: 'CR-036: Add project initialization and user management requirements'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -30,7 +29,6 @@ This specification covers:
 - Query operations (reading, status, history, comments)
 - Prompt generation for review and approval tasks
 - Document template scaffolding
-- MCP server for programmatic tool access
 
 This specification does not cover:
 
@@ -482,23 +480,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-USER-003 | **User Add Command.** The CLI shall provide a `user --add` command that creates: (1) an agent definition file at `.claude/agents/{user}.md` with specified group, (2) workspace directory at `.claude/users/{user}/workspace/`, and (3) inbox directory at `.claude/users/{user}/inbox/`. The command shall require administrator privileges and a `--group` argument. |
 | REQ-USER-004 | **Unknown User Handling.** When a command is invoked with a user identifier that is neither a hardcoded administrator nor has an agent definition file, the CLI shall reject the command with an informative error message that guides the user to create an agent file or use the `user --add` command. |
 | REQ-USER-005 | **User List Command.** The CLI shall provide a `user --list` command that displays all recognized users (hardcoded administrators and users with agent definition files) along with their group assignments. |
-
----
-
-### 4.13 MCP Server (REQ-MCP)
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-MCP-001 | **MCP Protocol Implementation.** The CLI shall provide an MCP (Model Context Protocol) server that exposes QMS operations as native tools for AI agents. The server shall implement the MCP specification for tool registration and invocation. |
-| REQ-MCP-002 | **User Command Tools.** The MCP server shall expose the following user query tools: `qms_inbox` (list pending tasks), `qms_workspace` (list checked-out documents), `qms_status` (get document status), `qms_read` (read document content with version/draft options), `qms_history` (view audit trail), and `qms_comments` (view review comments). |
-| REQ-MCP-003 | **Document Lifecycle Tools.** The MCP server shall expose the following document lifecycle tools: `qms_create` (create new document), `qms_checkout` (check out document), `qms_checkin` (check in document with content), and `qms_cancel` (cancel never-effective document). |
-| REQ-MCP-004 | **Workflow Tools.** The MCP server shall expose the following workflow tools: `qms_route` (route for review/approval with optional retire flag), `qms_assign` (add reviewers), `qms_review` (submit review with outcome and comment), `qms_approve` (approve document), and `qms_reject` (reject document with comment). |
-| REQ-MCP-005 | **Execution Tools.** The MCP server shall expose the following execution tools for executable documents: `qms_release` (release for execution), `qms_revert` (revert to execution with reason), and `qms_close` (close document). |
-| REQ-MCP-006 | **Administrative Tools.** The MCP server shall expose the `qms_fix` tool for administrative fixes on EFFECTIVE documents. This tool shall enforce administrator-only access. |
-| REQ-MCP-007 | **Functional Equivalence.** Each MCP tool shall produce functionally equivalent results to the corresponding CLI command. The MCP interface shall delegate to the same internal functions as the CLI to ensure consistency. |
-| REQ-MCP-008 | **Structured Responses.** MCP tools shall return structured responses containing: (1) success/failure status, (2) result data appropriate to the operation, and (3) error details when failures occur. Text output shall not require parsing. |
-| REQ-MCP-009 | **Permission Enforcement.** MCP tools shall enforce the same permission model as the CLI (per REQ-SEC-001 through REQ-SEC-008). The `user` parameter shall identify the calling user for authorization. |
-| REQ-MCP-010 | **Setup Command Exclusion.** Administrative setup commands (`init`, `namespace`, `user`, `migrate`) shall not be exposed as MCP tools. These commands require direct CLI access. |
 
 ---
 

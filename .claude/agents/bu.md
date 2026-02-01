@@ -39,7 +39,7 @@ python qms-cli/qms.py --user bu <command>
 
 Always use lowercase `bu` for your identity.
 
-**Common commands:**
+**Via CLI:**
 ```
 python qms-cli/qms.py --user bu inbox                                        # Check your pending tasks
 python qms-cli/qms.py --user bu status {DOC_ID}                              # Check document status
@@ -47,6 +47,16 @@ python qms-cli/qms.py --user bu review {DOC_ID} --recommend --comment "..."  # S
 python qms-cli/qms.py --user bu review {DOC_ID} --request-updates --comment "..."  # Request changes
 python qms-cli/qms.py --user bu approve {DOC_ID}                             # Approve document
 ```
+
+**Via MCP Tools (when available):**
+
+| MCP Tool | Description |
+|----------|-------------|
+| `qms_inbox(user="bu")` | Check pending tasks |
+| `qms_status(doc_id, user="bu")` | Check document status |
+| `qms_review(doc_id, "recommend", comment, user="bu")` | Submit positive review |
+| `qms_review(doc_id, "request-updates", comment, user="bu")` | Request changes |
+| `qms_approve(doc_id, user="bu")` | Approve document |
 
 **To read documents:** Use the Read tool directly on file paths (e.g., `QMS/CR/CR-001/CR-001-draft.md`).
 

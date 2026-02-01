@@ -1,0 +1,38 @@
+{"ts": "2026-01-31T20:00:02+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Implement QMS MCP Server"}
+{"ts": "2026-01-31T21:58:53+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-01-31T22:06:31+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-01-31T22:06:31+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-01-31T22:07:26+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review complete. Document is COMPLIANT with SOP-001 and SOP-002 requirements. Verified: (1) Frontmatter: title='Implement QMS MCP Server', revision_summary='Initial draft' (appropriate for v0.1). (2) All required CR sections present per SOP-002 Section 6 (Purpose, Scope, Current State, Proposed State, Change Description, Justification, Impact Assessment, Testing Summary, Implementation Plan, Execution, Execution Summary, References). (3) No placeholder content in pre-approved sections 1-9. (4) Development controls appropriately defined in Section 7.4. (5) Consistent formatting throughout. No deficiencies identified. Document may proceed to pre-approval."}
+{"ts": "2026-01-31T22:07:26+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-01-31T22:11:01+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-01-31T22:11:01+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-01-31T22:11:34+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-01-31T22:11:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-01-31T22:13:01+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T22:13:01+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-01-31T22:19:42+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T22:43:33+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T22:51:56+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T22:53:04+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T22:56:50+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T22:57:18+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T23:05:36+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T23:05:57+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T23:19:07+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-01-31T23:19:42+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:29:41+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:29:56+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:53:04+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:53:19+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:56:57+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:57:51+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T00:57:58+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-01T00:57:58+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.0", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-01T01:08:11+00:00", "event": "REVIEW", "user": "qa", "version": "1.0", "outcome": "RECOMMEND", "comment": "Post-review COMPLIANT. Verified: (1) All 23 execution items have Pass outcome; (2) SDLC-QMS-RS v4.0 and SDLC-QMS-RTM v4.0 are EFFECTIVE; (3) 142/142 qualification tests passing (verified independently); (4) All implementation artifacts present (qms_mcp package, .mcp.json, agent updates); (5) Frontmatter correct: title='Implement QMS MCP Server', revision_summary='Initial draft'; (6) No placeholder content; (7) All 12 required CR sections present. Deviations properly documented (package rename, RS/RTM re-approval). Ready for post-approval."}
+{"ts": "2026-02-01T01:08:11+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-01T01:08:25+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-02-01T01:08:25+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.0", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-02-01T01:08:44+00:00", "event": "APPROVE", "user": "qa", "version": "1.0"}
+{"ts": "2026-02-01T01:08:44+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-02-01T01:08:54+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-02-01T01:08:54+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

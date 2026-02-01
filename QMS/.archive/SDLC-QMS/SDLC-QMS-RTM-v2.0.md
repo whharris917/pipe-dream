@@ -1,20 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'Administrative: Update RS reference from v3.0 to v4.0 (RS re-approved
-  after accidental checkout)'
+revision_summary: 'CR-036: Add traceability for REQ-INIT (8) and REQ-USER (5) requirements;
+  update REQ-CFG-001/004 for config file and agent-based user discovery'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v4.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v2.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 94 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 84 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 14 requirements
@@ -28,7 +28,6 @@ This RTM covers all 94 requirements defined in SDLC-QMS-RS across the following 
 - REQ-TEMPLATE (Document Templates): 5 requirements
 - REQ-INIT (Project Initialization): 8 requirements
 - REQ-USER (User Management): 5 requirements
-- REQ-MCP (MCP Server): 10 requirements
 
 ---
 
@@ -56,7 +55,6 @@ Tests are organized by workflow scenario rather than individual requirement. Eac
 | Prompts | `qualification/test_prompts.py` | Prompt generation and configuration |
 | Templates | `qualification/test_templates.py` | Template-based document creation |
 | Init | `qualification/test_init.py` | Project initialization and user management |
-| MCP | `qualification/test_mcp.py` | MCP server tools and functional equivalence |
 
 ### 3.4 Traceability Convention
 
@@ -152,16 +150,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-USER-003 | User Add Command | test_init::test_user_add_creates_structure, test_user_add_requires_admin | PASS |
 | REQ-USER-004 | Unknown User Handling | test_init::test_unknown_user_error | PASS |
 | REQ-USER-005 | User List Command | test_init::test_user_add_creates_structure, test_user_list_command, test_user_list_shows_groups | PASS |
-| REQ-MCP-001 | MCP Protocol Implementation | test_mcp::test_mcp_server_imports, test_register_tools_creates_all_tools | PASS |
-| REQ-MCP-002 | User Command Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_inbox_equivalence, test_qms_workspace_equivalence, test_qms_status_equivalence, test_qms_read_equivalence, test_qms_history_equivalence, test_qms_comments_equivalence, test_full_sop_lifecycle_via_cli | PASS |
-| REQ-MCP-003 | Document Lifecycle Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_create_equivalence, test_qms_checkout_equivalence, test_qms_checkin_equivalence, test_qms_cancel_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
-| REQ-MCP-004 | Workflow Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_route_review_equivalence, test_qms_route_approval_equivalence, test_qms_assign_equivalence, test_qms_review_equivalence, test_qms_approve_equivalence, test_qms_reject_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
-| REQ-MCP-005 | Execution Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_release_equivalence, test_qms_revert_equivalence, test_qms_close_equivalence, test_full_cr_lifecycle_via_cli | PASS |
-| REQ-MCP-006 | Administrative Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_fix_equivalence, test_qms_fix_requires_administrator | PASS |
-| REQ-MCP-007 | Functional Equivalence | test_mcp::test_qms_inbox_equivalence, test_qms_workspace_equivalence, test_qms_status_equivalence, test_qms_read_equivalence, test_qms_history_equivalence, test_qms_comments_equivalence, test_qms_create_equivalence, test_qms_checkout_equivalence, test_qms_checkin_equivalence, test_qms_cancel_equivalence, test_qms_route_review_equivalence, test_qms_route_approval_equivalence, test_qms_assign_equivalence, test_qms_review_equivalence, test_qms_approve_equivalence, test_qms_reject_equivalence, test_qms_release_equivalence, test_qms_revert_equivalence, test_qms_close_equivalence, test_qms_fix_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
-| REQ-MCP-008 | Structured Responses | test_mcp::test_mcp_tool_returns_string | PASS |
-| REQ-MCP-009 | Permission Enforcement | test_mcp::test_qms_fix_requires_administrator, test_mcp_permission_enforcement, test_mcp_assign_requires_quality_group | PASS |
-| REQ-MCP-010 | Setup Command Exclusion | test_mcp::test_mcp_excludes_setup_commands | PASS |
 
 ---
 
@@ -1103,171 +1091,18 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-### 5.13 MCP Server (REQ-MCP)
-
-#### REQ-MCP-001: MCP Protocol Implementation
-
-**Requirement:** The CLI shall provide an MCP (Model Context Protocol) server that exposes QMS operations as native tools for AI agents.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_server_imports | Verifies MCP server module imports correctly. |
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all 19 MCP tools are registered. |
-
----
-
-#### REQ-MCP-002: User Command Tools
-
-**Requirement:** The MCP server shall expose user query tools: qms_inbox, qms_workspace, qms_status, qms_read, qms_history, and qms_comments.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all user command tools are registered. |
-| test_mcp.py | test_qms_inbox_equivalence | Verifies qms_inbox produces equivalent output to CLI. |
-| test_mcp.py | test_qms_workspace_equivalence | Verifies qms_workspace produces equivalent output to CLI. |
-| test_mcp.py | test_qms_status_equivalence | Verifies qms_status produces equivalent output to CLI. |
-| test_mcp.py | test_qms_read_equivalence | Verifies qms_read produces equivalent output to CLI. |
-| test_mcp.py | test_qms_history_equivalence | Verifies qms_history produces equivalent output to CLI. |
-| test_mcp.py | test_qms_comments_equivalence | Verifies qms_comments produces equivalent output to CLI. |
-| test_mcp.py | test_full_sop_lifecycle_via_cli | Integration test exercising read and history tools. |
-
----
-
-#### REQ-MCP-003: Document Lifecycle Tools
-
-**Requirement:** The MCP server shall expose document lifecycle tools: qms_create, qms_checkout, qms_checkin, and qms_cancel.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all lifecycle tools are registered. |
-| test_mcp.py | test_qms_create_equivalence | Verifies qms_create produces equivalent results to CLI. |
-| test_mcp.py | test_qms_checkout_equivalence | Verifies qms_checkout produces equivalent results to CLI. |
-| test_mcp.py | test_qms_checkin_equivalence | Verifies qms_checkin produces equivalent results to CLI. |
-| test_mcp.py | test_qms_cancel_equivalence | Verifies qms_cancel produces equivalent results to CLI. |
-| test_mcp.py | test_full_sop_lifecycle_via_cli | Integration test exercising create and checkin. |
-| test_mcp.py | test_full_cr_lifecycle_via_cli | Integration test for executable document lifecycle. |
-
----
-
-#### REQ-MCP-004: Workflow Tools
-
-**Requirement:** The MCP server shall expose workflow tools: qms_route, qms_assign, qms_review, qms_approve, and qms_reject.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all workflow tools are registered. |
-| test_mcp.py | test_qms_route_review_equivalence | Verifies qms_route for review produces equivalent results. |
-| test_mcp.py | test_qms_route_approval_equivalence | Verifies qms_route for approval produces equivalent results. |
-| test_mcp.py | test_qms_assign_equivalence | Verifies qms_assign produces equivalent results to CLI. |
-| test_mcp.py | test_qms_review_equivalence | Verifies qms_review produces equivalent results to CLI. |
-| test_mcp.py | test_qms_approve_equivalence | Verifies qms_approve produces equivalent results to CLI. |
-| test_mcp.py | test_qms_reject_equivalence | Verifies qms_reject produces equivalent results to CLI. |
-| test_mcp.py | test_full_sop_lifecycle_via_cli | Integration test exercising route, review, approve. |
-| test_mcp.py | test_full_cr_lifecycle_via_cli | Integration test for executable workflow. |
-
----
-
-#### REQ-MCP-005: Execution Tools
-
-**Requirement:** The MCP server shall expose execution tools for executable documents: qms_release, qms_revert, and qms_close.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all execution tools are registered. |
-| test_mcp.py | test_qms_release_equivalence | Verifies qms_release produces equivalent results to CLI. |
-| test_mcp.py | test_qms_revert_equivalence | Verifies qms_revert produces equivalent results to CLI. |
-| test_mcp.py | test_qms_close_equivalence | Verifies qms_close produces equivalent results to CLI. |
-| test_mcp.py | test_full_cr_lifecycle_via_cli | Integration test exercising release and close. |
-
----
-
-#### REQ-MCP-006: Administrative Tools
-
-**Requirement:** The MCP server shall expose the qms_fix tool for administrative fixes on EFFECTIVE documents, with administrator-only access.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies qms_fix tool is registered. |
-| test_mcp.py | test_qms_fix_equivalence | Verifies qms_fix produces equivalent results to CLI. |
-| test_mcp.py | test_qms_fix_requires_administrator | Verifies qms_fix enforces administrator-only access. |
-
----
-
-#### REQ-MCP-007: Functional Equivalence
-
-**Requirement:** Each MCP tool shall produce functionally equivalent results to the corresponding CLI command.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_qms_inbox_equivalence | CLI/MCP equivalence for inbox. |
-| test_mcp.py | test_qms_workspace_equivalence | CLI/MCP equivalence for workspace. |
-| test_mcp.py | test_qms_status_equivalence | CLI/MCP equivalence for status. |
-| test_mcp.py | test_qms_read_equivalence | CLI/MCP equivalence for read. |
-| test_mcp.py | test_qms_history_equivalence | CLI/MCP equivalence for history. |
-| test_mcp.py | test_qms_comments_equivalence | CLI/MCP equivalence for comments. |
-| test_mcp.py | test_qms_create_equivalence | CLI/MCP equivalence for create. |
-| test_mcp.py | test_qms_checkout_equivalence | CLI/MCP equivalence for checkout. |
-| test_mcp.py | test_qms_checkin_equivalence | CLI/MCP equivalence for checkin. |
-| test_mcp.py | test_qms_cancel_equivalence | CLI/MCP equivalence for cancel. |
-| test_mcp.py | test_qms_route_review_equivalence | CLI/MCP equivalence for route review. |
-| test_mcp.py | test_qms_route_approval_equivalence | CLI/MCP equivalence for route approval. |
-| test_mcp.py | test_qms_assign_equivalence | CLI/MCP equivalence for assign. |
-| test_mcp.py | test_qms_review_equivalence | CLI/MCP equivalence for review. |
-| test_mcp.py | test_qms_approve_equivalence | CLI/MCP equivalence for approve. |
-| test_mcp.py | test_qms_reject_equivalence | CLI/MCP equivalence for reject. |
-| test_mcp.py | test_qms_release_equivalence | CLI/MCP equivalence for release. |
-| test_mcp.py | test_qms_revert_equivalence | CLI/MCP equivalence for revert. |
-| test_mcp.py | test_qms_close_equivalence | CLI/MCP equivalence for close. |
-| test_mcp.py | test_qms_fix_equivalence | CLI/MCP equivalence for fix. |
-| test_mcp.py | test_full_sop_lifecycle_via_cli | Complete SOP lifecycle integration test. |
-| test_mcp.py | test_full_cr_lifecycle_via_cli | Complete CR lifecycle integration test. |
-
----
-
-#### REQ-MCP-008: Structured Responses
-
-**Requirement:** MCP tools shall return structured responses containing success/failure status and result data.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_tool_returns_string | Verifies MCP tools return string responses. |
-
----
-
-#### REQ-MCP-009: Permission Enforcement
-
-**Requirement:** MCP tools shall enforce the same permission model as the CLI.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_qms_fix_requires_administrator | Verifies fix command requires administrator. |
-| test_mcp.py | test_mcp_permission_enforcement | Verifies owner-only restrictions are enforced. |
-| test_mcp.py | test_mcp_assign_requires_quality_group | Verifies assign requires quality group. |
-
----
-
-#### REQ-MCP-010: Setup Command Exclusion
-
-**Requirement:** Administrative setup commands (init, namespace, user, migrate) shall not be exposed as MCP tools.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_excludes_setup_commands | Verifies init, namespace, user, migrate are not exposed. |
-
----
-
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v4.0 |
+| Requirements Spec | SDLC-QMS-RS v2.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-041-mcp |
-| Commit | 46e3c91 |
-| Total Tests | 142 |
-| Passed | 142 |
+| Branch | cr-036-init |
+| Commit | cd4d456 |
+| Total Tests | 113 |
+| Passed | 113 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1282,8 +1117,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 10 | 10 | 0 |
-| test_mcp.py | 29 | 29 | 0 |
-| **Total** | **142** | **142** | **0** |
+| **Total** | **113** | **113** | **0** |
 
 ### 6.3 Test Environment
 

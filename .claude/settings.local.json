@@ -1,4 +1,5 @@
 {
+  "enabledMcpjsonServers": ["qms"],
   "permissions": {
     "allow": [
       "Skill(qms)",
@@ -9,13 +10,21 @@
       "Bash(dir:*)",
       "Bash(ls:*)",
       "Bash(python:*)",
-      "Update(**)"
+      "Update(**)",
+      "Bash(findstr:*)",
+      "Bash(git clone:*)",
+      "Write(.test-env/**)",
+      "Edit(.test-env/**)",
+      "WebSearch",
+      "Bash(pip show:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
       "Write(QMS/**)",
       "Edit(**/QMS/**)",
-      "Write(**/QMS/**)"
+      "Write(**/QMS/**)",
+      "Edit(pipe-dream/qms-cli/**)",
+      "Write(pipe-dream/qms-cli/**)"
     ],
     "defaultMode": "acceptEdits"
   }
