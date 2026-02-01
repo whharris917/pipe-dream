@@ -127,6 +127,24 @@ During EI-6/EI-7 testing, discovered that CR-042's SSE transport implementation 
    - Document verification guidelines
 3. Release CR-043-VAR-002 for execution after INV-008 is pre-approved
 
+## Git Operations
+
+### qms-cli Submodule
+```
+Commit: 703efdb
+Message: Fix SSE transport startup and add container host support
+Files: 1 file changed (qms_mcp/server.py)
+Pushed: origin/main
+```
+
+### pipe-dream Repository
+```
+Commit: 589787b
+Message: CR-043 complete: Add containerized Claude agent infrastructure
+Files: 30 files changed, 2712 insertions(+), 10 deletions(-)
+Pushed: origin/main
+```
+
 ## Key Lessons
 
 1. **Integration testing is critical:** Unit tests passed for CR-042 but the actual SSE startup path was never exercised
