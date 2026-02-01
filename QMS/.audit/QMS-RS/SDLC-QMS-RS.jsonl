@@ -130,3 +130,15 @@
 {"ts": "2026-02-01T00:37:32+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "4.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-01T00:37:32+00:00", "event": "EFFECTIVE", "user": "qa", "version": "4.0", "from_version": "3.1"}
 {"ts": "2026-02-01T00:37:32+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "4.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-01T17:28:24+00:00", "event": "CHECKOUT", "user": "claude", "version": "4.1", "from_version": "4.0"}
+{"ts": "2026-02-01T17:28:58+00:00", "event": "CHECKIN", "user": "claude", "version": "4.1"}
+{"ts": "2026-02-01T17:29:14+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "4.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-01T17:29:14+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "4.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-01T17:30:11+00:00", "event": "REVIEW", "user": "qa", "version": "4.1", "outcome": "RECOMMEND", "comment": "Review complete. Document is COMPLIANT.\n\nFRONTMATTER VERIFICATION:\n- title: QMS CLI Requirements Specification - PRESENT\n- revision_summary: CR-042: Add remote transport requirements for MCP server (REQ-MCP-011 through REQ-MCP-013) - PRESENT, correctly references authorizing CR\n\nCHANGE SCOPE VERIFICATION:\nThree new requirements added to Section 4.13 MCP Server:\n- REQ-MCP-011: Remote Transport Support - aligns with CR-042 Section 5.2\n- REQ-MCP-012: Transport CLI Configuration - aligns with CR-042 Section 5.1\n- REQ-MCP-013: Project Root Configuration - aligns with CR-042 Section 5.3\n\nSTRUCTURE VERIFICATION:\n- All 5 required sections present (Purpose, Scope, System Overview, Requirements, Environmental Assumptions)\n- Requirements sequentially numbered REQ-MCP-010 through REQ-MCP-013 with no gaps\n\nPLACEHOLDER CHECK: No TBD, TODO, FIXME, XXX found.\n\nTRACEABILITY: CR-042 is PRE_APPROVED and authorized to add these requirements.\n\nRECOMMENDATION: Approve for approval routing."}
+{"ts": "2026-02-01T17:30:11+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "4.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-01T17:30:26+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "4.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-01T17:30:26+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "4.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-01T17:30:53+00:00", "event": "APPROVE", "user": "qa", "version": "4.1"}
+{"ts": "2026-02-01T17:30:53+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-01T17:30:53+00:00", "event": "EFFECTIVE", "user": "qa", "version": "5.0", "from_version": "4.1"}
+{"ts": "2026-02-01T17:30:53+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

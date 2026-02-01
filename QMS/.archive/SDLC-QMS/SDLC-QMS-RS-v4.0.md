@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-042: Add remote transport requirements for MCP server (REQ-MCP-011
-  through REQ-MCP-013)'
+revision_summary: 'Administrative: Document checked out in error during CR-041 execution;
+  no content changes from v3.0'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -499,9 +499,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-MCP-008 | **Structured Responses.** MCP tools shall return structured responses containing: (1) success/failure status, (2) result data appropriate to the operation, and (3) error details when failures occur. Text output shall not require parsing. |
 | REQ-MCP-009 | **Permission Enforcement.** MCP tools shall enforce the same permission model as the CLI (per REQ-SEC-001 through REQ-SEC-008). The `user` parameter shall identify the calling user for authorization. |
 | REQ-MCP-010 | **Setup Command Exclusion.** Administrative setup commands (`init`, `namespace`, `user`, `migrate`) shall not be exposed as MCP tools. These commands require direct CLI access. |
-| REQ-MCP-011 | **Remote Transport Support.** The MCP server shall support both stdio transport (default, for subprocess communication) and SSE transport (for remote HTTP connections). The transport mode shall be selectable at server startup. |
-| REQ-MCP-012 | **Transport CLI Configuration.** The MCP server shall accept command-line arguments for transport configuration: `--transport` (stdio or sse, default: stdio), `--host` (bind address, default: 127.0.0.1), and `--port` (bind port, default: 8000). These arguments shall only affect SSE transport. |
-| REQ-MCP-013 | **Project Root Configuration.** The MCP server shall support explicit project root configuration via: (1) `--project-root` command-line argument, or (2) `QMS_PROJECT_ROOT` environment variable. When specified, the server shall use the configured path instead of auto-discovery. The CLI argument shall take precedence over the environment variable. |
 
 ---
 

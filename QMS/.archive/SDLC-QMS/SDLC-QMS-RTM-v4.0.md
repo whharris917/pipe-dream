@@ -1,20 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: Add verification evidence for REQ-MCP-011 through REQ-MCP-013 (remote
-  transport support per CR-042)
+revision_summary: 'Administrative: Update RS reference from v3.0 to v4.0 (RS re-approved
+  after accidental checkout)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v5.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v4.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 97 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 94 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 14 requirements
@@ -28,7 +28,7 @@ This RTM covers all 97 requirements defined in SDLC-QMS-RS across the following 
 - REQ-TEMPLATE (Document Templates): 5 requirements
 - REQ-INIT (Project Initialization): 8 requirements
 - REQ-USER (User Management): 5 requirements
-- REQ-MCP (MCP Server): 13 requirements
+- REQ-MCP (MCP Server): 10 requirements
 
 ---
 
@@ -162,9 +162,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-008 | Structured Responses | test_mcp::test_mcp_tool_returns_string | PASS |
 | REQ-MCP-009 | Permission Enforcement | test_mcp::test_qms_fix_requires_administrator, test_mcp_permission_enforcement, test_mcp_assign_requires_quality_group | PASS |
 | REQ-MCP-010 | Setup Command Exclusion | test_mcp::test_mcp_excludes_setup_commands | PASS |
-| REQ-MCP-011 | Remote Transport Support | test_mcp::test_mcp_cli_args_sse_transport, test_mcp_transport_choices | PASS |
-| REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices | PASS |
-| REQ-MCP-013 | Project Root Configuration | test_mcp::test_mcp_cli_args_project_root, test_mcp_project_root_env_var, test_mcp_project_root_env_var_invalid | PASS |
 
 ---
 
@@ -1259,56 +1256,18 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-### 5.14 Remote Transport (REQ-MCP-011 through REQ-MCP-013)
-
-#### REQ-MCP-011: Remote Transport Support
-
-**Requirement:** The MCP server shall support SSE (Server-Sent Events) transport in addition to stdio, enabling remote connections from containerized Claude agents.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_cli_args_sse_transport | Verifies --transport sse is accepted and parsed correctly. |
-| test_mcp.py | test_mcp_transport_choices | Verifies transport argument accepts only valid choices (stdio, sse). |
-
----
-
-#### REQ-MCP-012: Transport CLI Configuration
-
-**Requirement:** The MCP server shall accept CLI arguments --transport (stdio|sse), --host, and --port for configuring transport mode and binding address.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_cli_args_default | Verifies default transport is stdio, host is 127.0.0.1, port is 8000. |
-| test_mcp.py | test_mcp_cli_args_sse_transport | Verifies --transport sse argument is parsed correctly. |
-| test_mcp.py | test_mcp_cli_args_host_port | Verifies --host and --port arguments are parsed correctly. |
-| test_mcp.py | test_mcp_transport_choices | Verifies transport argument validates choices. |
-
----
-
-#### REQ-MCP-013: Project Root Configuration
-
-**Requirement:** The MCP server shall support project root configuration via --project-root CLI argument or QMS_PROJECT_ROOT environment variable, falling back to directory walking.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_cli_args_project_root | Verifies --project-root argument is parsed correctly. |
-| test_mcp.py | test_mcp_project_root_env_var | Verifies QMS_PROJECT_ROOT env var is respected when valid. |
-| test_mcp.py | test_mcp_project_root_env_var_invalid | Verifies invalid env var falls back to directory walking. |
-
----
-
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v5.0 |
+| Requirements Spec | SDLC-QMS-RS v4.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-042-remote-mcp |
-| Commit | 369b726 |
-| Total Tests | 149 |
-| Passed | 149 |
+| Branch | cr-041-mcp |
+| Commit | 46e3c91 |
+| Total Tests | 142 |
+| Passed | 142 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1323,8 +1282,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 10 | 10 | 0 |
-| test_mcp.py | 36 | 36 | 0 |
-| **Total** | **149** | **149** | **0** |
+| test_mcp.py | 29 | 29 | 0 |
+| **Total** | **142** | **142** | **0** |
 
 ### 6.3 Test Environment
 

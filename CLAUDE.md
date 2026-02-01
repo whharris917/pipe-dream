@@ -166,6 +166,35 @@ When the QMS MCP server is running, you can use native MCP tools instead of CLI 
 
 MCP tools return structured responses and are preferred when available.
 
+### Running MCP Server with Remote Transport (for Containers)
+
+When Claude runs inside a Docker container, the MCP server must run on the host with HTTP transport so the container can connect remotely:
+
+**Start MCP server on host:**
+```bash
+python -m qms_mcp --transport sse --port 8000 --project-root /path/to/pipe-dream
+```
+
+**Container `.mcp.json` configuration:**
+```json
+{
+  "mcpServers": {
+    "qms": {
+      "type": "sse",
+      "url": "http://host.docker.internal:8000/sse"
+    }
+  }
+}
+```
+
+**CLI Options:**
+- `--transport`: `stdio` (default, for subprocess) or `sse` (for remote HTTP)
+- `--host`: Host address to bind (default: `127.0.0.1`)
+- `--port`: Port to bind (default: `8000`)
+- `--project-root`: Project root directory (default: auto-discover)
+
+The environment variable `QMS_PROJECT_ROOT` can also be used to specify the project root.
+
 ### Permissions
 
 **Your permissions (per SOP-001 Section 4.2):**
