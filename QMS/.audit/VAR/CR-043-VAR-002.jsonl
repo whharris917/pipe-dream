@@ -8,3 +8,5 @@
 {"ts": "2026-02-01T20:03:15+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
 {"ts": "2026-02-01T20:03:23+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
 {"ts": "2026-02-01T20:03:23+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-01T20:46:31+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-01T20:46:31+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
