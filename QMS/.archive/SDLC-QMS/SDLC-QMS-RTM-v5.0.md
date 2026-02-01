@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-045: Add SSE transport integration tests for REQ-MCP-011/012/013
-  requalification (CLI-5.0)'
+revision_summary: Add verification evidence for REQ-MCP-011 through REQ-MCP-013 (remote
+  transport support per CR-042)
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -162,8 +162,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-008 | Structured Responses | test_mcp::test_mcp_tool_returns_string | PASS |
 | REQ-MCP-009 | Permission Enforcement | test_mcp::test_qms_fix_requires_administrator, test_mcp_permission_enforcement, test_mcp_assign_requires_quality_group | PASS |
 | REQ-MCP-010 | Setup Command Exclusion | test_mcp::test_mcp_excludes_setup_commands | PASS |
-| REQ-MCP-011 | Remote Transport Support | test_mcp::test_mcp_cli_args_sse_transport, test_mcp_transport_choices, test_mcp_sse_transport_configuration, test_mcp_sse_transport_security_allows_docker | PASS |
-| REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices, test_mcp_sse_transport_configuration | PASS |
+| REQ-MCP-011 | Remote Transport Support | test_mcp::test_mcp_cli_args_sse_transport, test_mcp_transport_choices | PASS |
+| REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices | PASS |
 | REQ-MCP-013 | Project Root Configuration | test_mcp::test_mcp_cli_args_project_root, test_mcp_project_root_env_var, test_mcp_project_root_env_var_invalid | PASS |
 
 ---
@@ -1269,8 +1269,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_mcp.py | test_mcp_cli_args_sse_transport | Verifies --transport sse is accepted and parsed correctly. |
 | test_mcp.py | test_mcp_transport_choices | Verifies transport argument accepts only valid choices (stdio, sse). |
-| test_mcp.py | test_mcp_sse_transport_configuration | Verifies mcp.settings.host/port can be configured for SSE transport. |
-| test_mcp.py | test_mcp_sse_transport_security_allows_docker | Verifies transport security settings allow container connections. |
 
 ---
 
@@ -1284,7 +1282,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_mcp.py | test_mcp_cli_args_sse_transport | Verifies --transport sse argument is parsed correctly. |
 | test_mcp.py | test_mcp_cli_args_host_port | Verifies --host and --port arguments are parsed correctly. |
 | test_mcp.py | test_mcp_transport_choices | Verifies transport argument validates choices. |
-| test_mcp.py | test_mcp_sse_transport_configuration | Verifies SSE settings (host/port) are applied to mcp.settings before run(). |
 
 ---
 
@@ -1308,10 +1305,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|-------|
 | Requirements Spec | SDLC-QMS-RS v5.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-045-sse-requalification |
-| Commit | 6212cc1 |
-| Total Tests | 151 |
-| Passed | 151 |
+| Branch | cr-042-remote-mcp |
+| Commit | 369b726 |
+| Total Tests | 149 |
+| Passed | 149 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1326,8 +1323,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 10 | 10 | 0 |
-| test_mcp.py | 38 | 38 | 0 |
-| **Total** | **151** | **151** | **0** |
+| test_mcp.py | 36 | 36 | 0 |
+| **Total** | **149** | **149** | **0** |
 
 ### 6.3 Test Environment
 

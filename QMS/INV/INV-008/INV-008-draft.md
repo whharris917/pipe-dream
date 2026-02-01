@@ -1,7 +1,7 @@
 ---
 title: CR-042 SSE Transport Qualification Gap and CR-043 Unauthorized Modification
-revision_summary: Frame CAPA-001 as requalification CR producing CLI-5.0; CAPA-002
-  gates on containerization
+revision_summary: CAPA-001 complete (CR-045 closed, CLI-5.0 qualified); CAPA-002 pending
+  containerization verification
 ---
 
 # INV-008: CR-042 SSE Transport Qualification Gap and CR-043 Unauthorized Modification
@@ -177,7 +177,7 @@ CAPA-001 addresses the qualification gap via a **requalification effort** for th
 
 | CAPA | Type | Description | Implementation | Outcome | Verified By - Date |
 |------|------|-------------|----------------|---------|---------------------|
-| INV-008-CAPA-001 | Corrective | CR to requalify SSE transport: add integration tests and update RTM for REQ-MCP-011/012/013; produce CLI-5.0 | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-008-CAPA-001 | Corrective | CR to requalify SSE transport: add integration tests and update RTM for REQ-MCP-011/012/013; produce CLI-5.0 | CR-045 executed and CLOSED v2.0. Added two SSE transport integration tests (`test_mcp_sse_transport_configuration`, `test_mcp_sse_transport_security_allows_docker`). CI verified at commit 6212cc1. RTM updated to EFFECTIVE v6.0. Qualified release CLI-5.0 achieved. | Pass | qa - 2026-02-01 |
 | INV-008-CAPA-002 | Preventive | Containerization initiative operational: agents execute from containers with read-only access to production code | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
 
 ---
@@ -186,7 +186,8 @@ CAPA-001 addresses the qualification gap via a **requalification effort** for th
 
 | Comment | Performed By - Date |
 |---------|---------------------|
-| [COMMENT] | [PERFORMER] - [DATE] |
+| CAPA-001 complete: CR-045 closed. SSE transport requalified with integration tests at commit 6212cc1. RTM EFFECTIVE v6.0. CLI-5.0 qualified. | claude - 2026-02-01 |
+| CAPA-002 pending: Containerization infrastructure is in place (CR-043 closed) but operational use not yet verified. | claude - 2026-02-01 |
 
 ---
 
@@ -204,6 +205,7 @@ CAPA-001 addresses the qualification gap via a **requalification effort** for th
 - **CR-042:** Add Remote Transport Support to QMS MCP Server
 - **CR-043:** Implement Containerized Claude Agent Infrastructure
 - **CR-043-VAR-002:** Unauthorized qms-cli Modification During Container Testing
+- **CR-045:** Requalify SSE Transport (REQ-MCP-011/012/013)
 - **SDLC-QMS-RTM:** Requirements Traceability Matrix for QMS CLI
 
 ---
