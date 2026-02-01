@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  claude-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Production QMS (read-only)
+      - ../:/pipe-dream:ro
+      # Workspace (read-write overlay)
+      - ../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace:rw
+      # SSH keys (read-only)
+      - ~/.ssh:/.ssh:ro
+      # Claude Code credentials (read-only) - added per CR-043-VAR-001
+      - ~/.claude/.credentials.json:/.claude/.credentials.json:ro
+    environment:
+      - HOME=/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Linux compatibility
+    stdin_open: true
+    tty: true

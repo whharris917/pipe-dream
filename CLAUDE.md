@@ -195,6 +195,40 @@ python -m qms_mcp --transport sse --port 8000 --project-root /path/to/pipe-dream
 
 The environment variable `QMS_PROJECT_ROOT` can also be used to specify the project root.
 
+### Container Infrastructure
+
+The `docker/` directory contains infrastructure for running Claude agents in isolated containers:
+
+```
+docker/
+├── Dockerfile              # Container image definition
+├── docker-compose.yml      # Orchestration configuration
+├── .mcp.json               # MCP config (baked into image)
+├── README.md               # Detailed usage documentation
+└── scripts/
+    ├── start-mcp-server.sh # Start MCP server on host
+    └── start-container.sh  # Start container with checks
+```
+
+**Quick Start:**
+```bash
+# Terminal 1: Start MCP server on host
+cd docker/scripts && ./start-mcp-server.sh
+
+# Terminal 2: Start container
+cd docker && docker-compose up -d && docker-compose exec claude-agent bash
+```
+
+**Container Filesystem:**
+- `/pipe-dream/` - Read-only mount of production QMS
+- `/pipe-dream/.claude/users/claude/workspace/` - Read-write for QMS checkout
+- `/projects/` - Read-write for code development
+- `/.claude/.credentials.json` - Mounted credentials for Claude Code auth
+
+**Key Principle:** All QMS writes flow through the MCP server on the host. The container cannot directly modify production QMS files.
+
+See `docker/README.md` for detailed documentation.
+
 ### Permissions
 
 **Your permissions (per SOP-001 Section 4.2):**

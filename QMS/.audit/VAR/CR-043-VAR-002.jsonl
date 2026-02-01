@@ -1,0 +1,10 @@
+{"ts": "2026-02-01T19:53:14+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Unauthorized qms-cli Modification During Container Testing"}
+{"ts": "2026-02-01T19:58:09+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-01T20:01:48+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-01T20:01:48+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-01T20:03:07+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW VERIFICATION COMPLETE. Frontmatter verified: title='Unauthorized qms-cli Modification During Container Testing', revision_summary='Initial draft'. All required VAR sections present per SOP-004 Section 9A.3. Pre-approved content (Sections 1-6) is complete. Variance Identification correctly identifies parent (CR-043), failed items (EI-6/EI-7), and Type (2). Root cause analysis identifies three contributing factors. Proposed resolution to create INV is appropriate. Type 2 classification is justified - CR-043 objectives met, investigation work should not block closure. Executable block appropriately contains template placeholders for execution phase. No deficiencies in pre-approved content. Recommend approval."}
+{"ts": "2026-02-01T20:03:07+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-01T20:03:15+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-01T20:03:15+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-01T20:03:23+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-01T20:03:23+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
