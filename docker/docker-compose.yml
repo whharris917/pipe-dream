@@ -10,6 +10,10 @@ services:
       - ../:/pipe-dream:ro
       # Workspace (read-write overlay)
       - ../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace:rw
+      # Sessions (read-write overlay) - added per CR-046
+      - ../.claude/sessions:/pipe-dream/.claude/sessions:rw
+      # MCP config overlay - container SSE config over local stdio config - added per CR-046
+      - ./.mcp.json:/pipe-dream/.mcp.json:ro
       # SSH keys (read-only)
       - ~/.ssh:/.ssh:ro
       # Claude Code credentials (read-only) - added per CR-043-VAR-001

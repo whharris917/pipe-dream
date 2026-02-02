@@ -21,7 +21,7 @@ cd docker/scripts
 
 Or manually:
 ```bash
-python -m qms_mcp --transport sse --port 8000 --project-root /path/to/pipe-dream
+python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root /path/to/pipe-dream
 ```
 
 ### 2. Start the Container
@@ -115,7 +115,7 @@ QMS operations flow through the MCP server:
 
 1. Verify MCP server is running on host:
    ```bash
-   curl http://localhost:8000/sse
+   curl http://localhost:8000/mcp
    ```
 
 2. On Linux, ensure `host.docker.internal` is configured:

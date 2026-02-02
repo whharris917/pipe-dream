@@ -172,28 +172,23 @@ When Claude runs inside a Docker container, the MCP server must run on the host 
 
 **Start MCP server on host:**
 ```bash
-python -m qms_mcp --transport sse --port 8000 --project-root /path/to/pipe-dream
+python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root /path/to/pipe-dream
 ```
 
-**Container `.mcp.json` configuration:**
-```json
-{
-  "mcpServers": {
-    "qms": {
-      "type": "sse",
-      "url": "http://host.docker.internal:8000/sse"
-    }
-  }
-}
+**Configure Claude Code in container:**
+```bash
+claude mcp add --transport http qms http://host.docker.internal:8000/mcp
 ```
 
 **CLI Options:**
-- `--transport`: `stdio` (default, for subprocess) or `sse` (for remote HTTP)
-- `--host`: Host address to bind (default: `127.0.0.1`)
+- `--transport`: `stdio` (default), `sse` (deprecated), or `streamable-http` (recommended for remote)
+- `--host`: Host address to bind (default: `127.0.0.1`, use `0.0.0.0` for container access)
 - `--port`: Port to bind (default: `8000`)
 - `--project-root`: Project root directory (default: auto-discover)
 
 The environment variable `QMS_PROJECT_ROOT` can also be used to specify the project root.
+
+**Note:** SSE transport is deprecated. Use `streamable-http` for all new remote connections.
 
 ### Container Infrastructure
 

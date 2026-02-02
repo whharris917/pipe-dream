@@ -1,20 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-047: Add streamable-http transport verification (REQ-MCP-014),
-  update REQ-MCP-011/012 tests (CLI-6.0)'
+revision_summary: 'CR-045: Add SSE transport integration tests for REQ-MCP-011/012/013
+  requalification (CLI-5.0)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v6.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v5.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 98 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 97 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 14 requirements
@@ -28,7 +28,7 @@ This RTM covers all 98 requirements defined in SDLC-QMS-RS across the following 
 - REQ-TEMPLATE (Document Templates): 5 requirements
 - REQ-INIT (Project Initialization): 8 requirements
 - REQ-USER (User Management): 5 requirements
-- REQ-MCP (MCP Server): 14 requirements
+- REQ-MCP (MCP Server): 13 requirements
 
 ---
 
@@ -162,10 +162,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-008 | Structured Responses | test_mcp::test_mcp_tool_returns_string | PASS |
 | REQ-MCP-009 | Permission Enforcement | test_mcp::test_qms_fix_requires_administrator, test_mcp_permission_enforcement, test_mcp_assign_requires_quality_group | PASS |
 | REQ-MCP-010 | Setup Command Exclusion | test_mcp::test_mcp_excludes_setup_commands | PASS |
-| REQ-MCP-011 | Remote Transport Support | test_mcp::test_mcp_cli_args_sse_transport, test_mcp_transport_choices, test_mcp_sse_transport_configuration, test_mcp_sse_transport_security_allows_docker, test_mcp_streamable_http_transport_configuration, test_mcp_streamable_http_transport_security_allows_docker | PASS |
-| REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices, test_mcp_sse_transport_configuration, test_mcp_streamable_http_cli_args | PASS |
+| REQ-MCP-011 | Remote Transport Support | test_mcp::test_mcp_cli_args_sse_transport, test_mcp_transport_choices, test_mcp_sse_transport_configuration, test_mcp_sse_transport_security_allows_docker | PASS |
+| REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices, test_mcp_sse_transport_configuration | PASS |
 | REQ-MCP-013 | Project Root Configuration | test_mcp::test_mcp_cli_args_project_root, test_mcp_project_root_env_var, test_mcp_project_root_env_var_invalid | PASS |
-| REQ-MCP-014 | Streamable-HTTP Transport | test_mcp::test_mcp_streamable_http_transport_configuration, test_mcp_streamable_http_transport_security_allows_docker, test_mcp_streamable_http_cli_args, test_mcp_streamable_http_is_recommended_over_sse | PASS |
 
 ---
 
@@ -1301,31 +1300,18 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-MCP-014: Streamable-HTTP Transport
-
-**Requirement:** When configured for streamable-http transport, the MCP server shall: (1) bind to the specified host and port, (2) expose the MCP endpoint at /mcp, (3) allow connections from host.docker.internal for Docker container access, and (4) support the standard MCP streamable-http protocol as the recommended transport for remote connections.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_mcp_streamable_http_transport_configuration | Verifies host/port settings can be configured for streamable-http transport. |
-| test_mcp.py | test_mcp_streamable_http_transport_security_allows_docker | Verifies host.docker.internal can be added to allowed hosts/origins. |
-| test_mcp.py | test_mcp_streamable_http_cli_args | Verifies full Docker access CLI configuration (--transport streamable-http --host 0.0.0.0 --port 8000). |
-| test_mcp.py | test_mcp_streamable_http_is_recommended_over_sse | Verifies help text indicates SSE is deprecated and streamable-http is recommended. |
-
----
-
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v6.0 |
+| Requirements Spec | SDLC-QMS-RS v5.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-047-streamable-http |
-| Commit | 36d2b3e |
-| Total Tests | 155 |
-| Passed | 155 |
+| Branch | cr-045-sse-requalification |
+| Commit | 6212cc1 |
+| Total Tests | 151 |
+| Passed | 151 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1340,8 +1326,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 10 | 10 | 0 |
-| test_mcp.py | 42 | 42 | 0 |
-| **Total** | **155** | **155** | **0** |
+| test_mcp.py | 38 | 38 | 0 |
+| **Total** | **151** | **151** | **0** |
 
 ### 6.3 Test Environment
 

@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "qms": {
-      "type": "sse",
-      "url": "http://host.docker.internal:8000/sse"
+      "type": "http",
+      "url": "http://host.docker.internal:8000/mcp"
     }
   }
 }
