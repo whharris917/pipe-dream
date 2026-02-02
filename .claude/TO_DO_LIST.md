@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-02-02
+
+- [ ] Investigate why checking out an INV in IN_PRE_REVIEW didn't cancel ongoing workflows and transition back to DRAFT
+  - Expected: Checkout from review status should withdraw/cancel the review workflow
+  - Actual: INV-009 was checked out while IN_PRE_REVIEW, but remained in review status after checkin
+  - May need new requirement or fix to checkout behavior for documents in review states
+  - Reference: INV-009 CAPA editing during Session-2026-02-02-003
+
+---
+
 ## 2026-01-31
 
 - [ ] Fix unit test assertion in test_qms_auth.py for improved error message

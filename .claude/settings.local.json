@@ -1,5 +1,4 @@
 {
-  "enabledMcpjsonServers": ["qms"],
   "permissions": {
     "allow": [
       "Skill(qms)",
@@ -16,7 +15,27 @@
       "Write(.test-env/**)",
       "Edit(.test-env/**)",
       "WebSearch",
-      "Bash(pip show:*)"
+      "Bash(pip show:*)",
+      "mcp__qms__qms_inbox",
+      "mcp__qms__qms_checkin",
+      "mcp__qms__qms_status",
+      "mcp__qms__qms_route",
+      "mcp__qms__qms_read",
+      "mcp__qms__qms_review",
+      "mcp__qms__qms_history",
+      "mcp__qms__qms_release",
+      "mcp__qms__qms_checkout",
+      "mcp__qms__qms_approve",
+      "mcp__qms__qms_close",
+      "mcp__qms__qms_create",
+      "mcp__qms__qms_workspace",
+      "Bash(gh run list:*)",
+      "Bash(gh run watch:*)",
+      "mcp__qms__qms_comments",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(grep:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
@@ -27,5 +46,8 @@
       "Write(pipe-dream/qms-cli/**)"
     ],
     "defaultMode": "acceptEdits"
-  }
+  },
+  "enabledMcpjsonServers": [
+    "qms"
+  ]
 }
