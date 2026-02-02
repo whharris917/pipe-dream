@@ -1,0 +1,338 @@
+---
+title: 'Workflow Improvements: Checkout Behavior, Withdraw Command, and Versioning'
+revision_summary: Added explicit archival timing principle; added checkin.py to files
+  affected
+---
+
+# CR-048: Workflow Improvements: Checkout Behavior, Withdraw Command, and Versioning
+
+## 1. Purpose
+
+Implement GMP-aligned workflow improvements to the qms-cli, including status-aware checkout behavior, a new withdraw command, and refined versioning/archival semantics. This CR addresses INV-007 CAPA-001 and includes related independent improvements.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+INV-007 identified workflow gaps where checkout from PRE_APPROVED and POST_REVIEWED states does not provide intuitive state transitions. This CR implements the corrective action and bundles related workflow improvements for efficiency.
+
+- **Parent Document:** INV-007 (CAPA-001)
+
+### 2.2 Changes Summary
+
+1. **PRE_APPROVED checkout** - Transitions to DRAFT for scope re-review
+2. **POST_REVIEWED checkout** - Transitions to IN_EXECUTION for continued execution work
+3. **Withdraw command** - New command to abort in-progress review/approval workflows
+4. **Revert deprecation** - Deprecate redundant revert command
+5. **Effective version preservation** - Keep effective version until approval (non-executable)
+6. **Execution versioning** - N.0 → N.1 → ... → (N+1).0 closure pattern
+
+### 2.3 Files Affected
+
+- `qms-cli/commands/checkout.py` - Status-aware transitions, **remove** archival on checkout
+- `qms-cli/commands/checkin.py` - **Add** archival on checkin (for draft/execution transitions)
+- `qms-cli/commands/withdraw.py` - New command (create)
+- `qms-cli/commands/approve.py` - Archive effective on approval (verify/enhance)
+- `qms-cli/commands/revert.py` - Deprecation warning
+- `qms-cli/qms_meta.py` - Remove POST_REVIEWED from checkin reversion
+- `qms-cli/tests/test_workflow.py` - Qualification tests
+- `QMS/SDLC-QMS/SDLC-QMS-RS.md` - Add REQ-WF-016 through REQ-WF-021
+- `QMS/SDLC-QMS/SDLC-QMS-RTM.md` - Verification evidence
+
+---
+
+## 3. Current State
+
+1. Checkout from PRE_APPROVED copies to workspace without status change; no path to DRAFT for re-review
+2. Checkout from POST_REVIEWED copies to workspace; checkin reverts to DRAFT (unnecessary intermediate state)
+3. No mechanism to abort an in-progress review/approval workflow without rejection
+4. The `revert` command provides POST_REVIEWED → IN_EXECUTION transition as a separate command
+5. Checkout from EFFECTIVE archives the effective version immediately
+6. No defined versioning pattern for execution iterations
+
+---
+
+## 4. Proposed State
+
+1. Checkout from PRE_APPROVED transitions to DRAFT, enabling scope re-review before execution
+2. Checkout from POST_REVIEWED transitions directly to IN_EXECUTION at current minor version
+3. The `withdraw` command allows document owners to abort review/approval workflows
+4. The `revert` command is deprecated; functionality subsumed by checkout
+5. Checkout from EFFECTIVE keeps the effective version in place; archival occurs on approval
+6. Execution versioning follows N.0 → N.1 → N.2 → ... → (N+1).0 closure pattern
+
+### 4.1 Archival Timing Principle
+
+**Archive when committing, not when editing.**
+
+Archival of a previous version occurs when the new version is committed (checkin or approval), not when editing begins (checkout). This ensures:
+- There is always a version "in force" or "in execution" until superseded
+- No document gaps exist during the editing period
+- Consistent behavior across all document types and workflow states
+
+| Scenario | Checkout | Commit (Checkin/Approval) |
+|----------|----------|---------------------------|
+| EFFECTIVE N.0 → N.1 | Create N.1 draft; N.0 stays | Approve N.1 → archive N.0 |
+| DRAFT N.1 → N.2 | Create N.2 in workspace | Checkin N.2 → archive N.1 |
+| IN_EXECUTION N.0 → N.1 | Create N.1 in workspace | Checkin N.1 → archive N.0 |
+| IN_EXECUTION N.1 → N.2 | Create N.2 in workspace | Checkin N.2 → archive N.1 |
+
+---
+
+## 5. Change Description
+
+### 5.1 REQ-WF-016: Pre-Release Revision
+
+When a document in PRE_APPROVED status is checked out, the CLI shall:
+- Transition status to DRAFT
+- Clear all pre-review/pre-approval tracking fields (pending_assignees, completed_reviewers, review_outcomes)
+- Copy document to user workspace
+
+This allows scope revision through re-review before execution begins.
+
+### 5.2 REQ-WF-017: Post-Review Continuation
+
+When a document in POST_REVIEWED status is checked out, the CLI shall:
+- Transition status to IN_EXECUTION
+- Clear all post-review tracking fields
+- Copy document to user workspace
+
+This allows continued execution work without an intermediate DRAFT state.
+
+### 5.3 REQ-WF-018: Withdraw Command
+
+The CLI shall provide a `withdraw` command that allows the responsible user to abort an in-progress review or approval workflow:
+
+| From Status | Withdraw To |
+|-------------|-------------|
+| IN_REVIEW | DRAFT |
+| IN_APPROVAL | REVIEWED |
+| IN_PRE_REVIEW | DRAFT |
+| IN_PRE_APPROVAL | PRE_REVIEWED |
+| IN_POST_REVIEW | IN_EXECUTION |
+| IN_POST_APPROVAL | POST_REVIEWED |
+
+Constraints:
+- Only the responsible_user may withdraw
+- Clears pending_assignees and removes inbox tasks
+- Logs WITHDRAW event to audit trail
+
+### 5.4 REQ-WF-019: Revert Command Deprecation
+
+The `revert` command is deprecated. A deprecation warning shall be printed when the command is used. Functionality is subsumed by checkout from POST_REVIEWED (REQ-WF-017).
+
+### 5.5 REQ-WF-020: Effective Version Preservation
+
+When a non-executable document in EFFECTIVE status is checked out, the CLI shall:
+1. Keep the effective version (N.0) in the QMS directory (still "in force")
+2. Create a new draft version (N.1) in the QMS directory
+3. Copy N.1 to user workspace
+4. **Do NOT archive N.0 on checkout** (current behavior must be removed)
+
+When a non-executable document is approved, the CLI shall:
+1. Archive the previous effective version (N.0) before making N.1 effective
+2. Transition N.1 to (N+1).0 EFFECTIVE
+
+**Principle:** Archive on commit (approval), not on checkout. This ensures there is always a version "in force" until superseded by approval.
+
+### 5.6 REQ-WF-021: Execution Version Tracking
+
+During execution of an executable document:
+
+1. **Release:** Creates version N.0 in IN_EXECUTION status
+2. **First checkout:** Creates N.1 in workspace; N.0 remains current in QMS (not archived yet)
+3. **First checkin:** Archives N.0, commits N.1 as current IN_EXECUTION version
+4. **Subsequent checkout:** Creates N.2 in workspace; N.1 remains current in QMS
+5. **Subsequent checkin:** Archives N.1, commits N.2 as current IN_EXECUTION version
+6. **Closure:** Transitions to (N+1).0 POST_APPROVED, then CLOSED (terminal state)
+
+**Principle:** Archive on commit (checkin), not on checkout. This ensures there is always a version in execution until superseded by checkin.
+
+---
+
+## 6. Justification
+
+- **INV-007 CAPA:** Addresses identified workflow gaps in checkout behavior
+- **GMP alignment:** Checkout behavior now matches pharmaceutical industry standard patterns
+- **Simplification:** Reduces command proliferation by making checkout status-aware
+- **User experience:** Intuitive state transitions based on document's workflow position
+- **Effective version integrity:** Ensures non-executable documents always have a version "in force"
+
+Impact of not making this change:
+- Workarounds required for pre-release scope changes (cancel/recreate, VAR)
+- Inconsistent behavior across workflow states
+- Effective documents archived before replacement is approved
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `qms-cli/commands/checkout.py` | Modify | Status-aware transitions, remove archival |
+| `qms-cli/commands/checkin.py` | Modify | Add archival on commit |
+| `qms-cli/commands/withdraw.py` | Create | New command |
+| `qms-cli/commands/approve.py` | Modify | Archive effective on approval (verify/enhance) |
+| `qms-cli/commands/revert.py` | Modify | Add deprecation warning |
+| `qms-cli/qms_meta.py` | Modify | Remove POST_REVIEWED from checkin reversion |
+| `qms-cli/tests/test_workflow.py` | Modify | Add qualification tests |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| SDLC-QMS-RS | Modify | Add REQ-WF-016 through REQ-WF-021 |
+| SDLC-QMS-RTM | Modify | Add verification evidence |
+
+### 7.3 Other Impacts
+
+- Existing documents in PRE_APPROVED or POST_REVIEWED states will experience new checkout behavior
+- Users of the `revert` command will see deprecation warning
+
+### 7.4 Development Controls
+
+This CR implements changes to qms-cli, a controlled submodule. Development follows established controls:
+
+1. **Test environment isolation:** Development in `.test-env/` or `/projects/` (containerized)
+2. **Branch isolation:** All development on branch `cr-048-workflow-improvements`
+3. **Write protection:** `.claude/settings.local.json` blocks direct writes to `qms-cli/`
+4. **Qualification required:** All new/modified requirements must have passing tests before merge
+5. **CI verification:** Tests must pass on GitHub Actions for dev branch
+6. **PR gate:** Changes merge to main only via PR after RS/RTM approval
+7. **Submodule update:** Parent repo updates pointer only after PR merge
+
+### 7.5 Qualified State Continuity
+
+| Phase | main branch | RS/RTM Status | Qualified Release |
+|-------|-------------|---------------|-------------------|
+| Before CR | d071077 | EFFECTIVE v6.0/v7.0 | CLI-6.0 |
+| During execution | Unchanged | DRAFT (checked out) | CLI-6.0 (unchanged) |
+| Post-approval | Merged from cr-048 | EFFECTIVE v7.0/v8.0 | CLI-7.0 |
+
+---
+
+## 8. Testing Summary
+
+Qualification tests will verify:
+
+1. `test_checkout_from_pre_approved_reverts_to_draft` - REQ-WF-016
+2. `test_checkout_from_post_reviewed_returns_to_execution` - REQ-WF-017
+3. `test_withdraw_from_in_review_returns_to_draft` - REQ-WF-018
+4. `test_withdraw_from_in_pre_review_returns_to_draft` - REQ-WF-018
+5. `test_withdraw_from_in_post_review_returns_to_execution` - REQ-WF-018
+6. `test_withdraw_only_allowed_for_responsible_user` - REQ-WF-018
+7. `test_withdraw_clears_assignees_and_inbox` - REQ-WF-018
+8. `test_revert_shows_deprecation_warning` - REQ-WF-019
+9. `test_checkout_effective_preserves_effective_version` - REQ-WF-020
+10. `test_approval_archives_effective_version` - REQ-WF-020
+11. `test_execution_checkout_creates_minor_version` - REQ-WF-021
+12. `test_execution_checkin_archives_previous` - REQ-WF-021
+13. `test_closure_increments_major_version` - REQ-WF-021
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: Test Environment Setup
+
+1. Verify/create `.test-env/` working directory
+2. Clone qms-cli from GitHub
+3. Create and checkout branch `cr-048-workflow-improvements`
+4. Verify clean test environment (existing tests pass)
+
+### 9.2 Phase 2: Requirements (RS Update)
+
+1. Checkout SDLC-QMS-RS in production QMS
+2. Add REQ-WF-016 through REQ-WF-021
+3. Checkin RS, route for review and approval
+
+### 9.3 Phase 3: Implementation
+
+1. Implement checkout.py changes (PRE_APPROVED, POST_REVIEWED transitions)
+2. Implement checkout.py changes (remove archival, effective version preservation)
+3. Implement checkin.py changes (add archival on commit)
+4. Create withdraw.py command
+5. Implement approve.py changes (archive effective on approval)
+6. Add deprecation warning to revert.py
+7. Update qms_meta.py (remove POST_REVIEWED from checkin reversion)
+8. Test locally
+
+### 9.4 Phase 4: Qualification
+
+1. Add qualification tests to test_workflow.py
+2. Run full test suite, verify all tests pass
+3. Push to dev branch
+4. Verify GitHub Actions CI passes
+5. Document qualified commit hash
+
+### 9.5 Phase 5: RTM Update
+
+1. Checkout SDLC-QMS-RTM in production QMS
+2. Add verification evidence referencing CI-verified commit
+3. Checkin RTM, route for review and approval
+
+### 9.6 Phase 6: Merge and Submodule Update
+
+1. Once RS and RTM are EFFECTIVE, create PR to merge dev branch to main
+2. Merge PR
+3. Update submodule pointer in parent repo
+4. Verify functionality in production context
+
+### 9.7 Phase 7: Documentation
+
+1. Update CLAUDE.md if needed (workflow documentation)
+
+---
+
+## 10. Execution
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Test environment setup | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | RS update (add REQ-WF-016 through REQ-WF-021) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Implement checkout.py status-aware transitions | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Implement checkout.py: remove archival, effective version preservation | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Implement checkin.py: add archival on commit | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Create withdraw.py command | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Implement approve.py archive on approval | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-8 | Add revert.py deprecation warning | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-9 | Update qms_meta.py checkin reversion | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-10 | Add qualification tests | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-11 | CI verification | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-12 | RTM update | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-13 | PR merge and submodule update | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-14 | Documentation update (if needed) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+---
+
+## 11. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-005:** Code Governance
+- **SOP-006:** SDLC Governance
+- **INV-007:** Executable Document Checkout Workflow Gaps (parent investigation)
+- **SDLC-QMS-RS:** QMS CLI Requirements Specification
+- **SDLC-QMS-RTM:** QMS CLI Requirements Traceability Matrix
+
+---
+
+**END OF DOCUMENT**

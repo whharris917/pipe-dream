@@ -2,11 +2,12 @@
 
 ## Session Overview
 
-This session focused on two main activities:
+This session focused on three main activities:
 1. Completing CR-042 (Add Remote Transport Support to QMS MCP Server)
 2. Architectural discussion for containerizing Claude agents
+3. Drafting CR-043 (Container Infrastructure) with VAR and related INV
 
-## CR-042 Execution
+## CR-042 Execution (Completed)
 
 ### Completed Execution Items
 
@@ -34,7 +35,7 @@ This session focused on two main activities:
 - **Environment variable**: `QMS_PROJECT_ROOT`
 - **SDLC-QMS-RS v5.0**: REQ-MCP-011, REQ-MCP-012, REQ-MCP-013
 - **SDLC-QMS-RTM v5.0**: Verification evidence for new requirements
-- **pipe-dream commit**: 76dcb55 (pushed to origin/main)
+- **pipe-dream commits**: 76dcb55, 7f443c1 (pushed to origin/main)
 
 ### Usage
 
@@ -63,9 +64,11 @@ Run Claude agents in Docker containers with:
 ├── .gitconfig
 ├── .ssh/
 ├── .claude/
+│   └── .credentials.json              # Auth credentials (mounted)
 │
 ├── projects/                          # [R/W] Dev workspace
-│   └── flow-state/                    # Cloned repos
+│   └── {repo}/
+│       └── .venv/                     # Virtual environments
 │
 └── pipe-dream/                        # Production mount
     ├── QMS/                           # [READ-ONLY]
@@ -83,31 +86,77 @@ Run Claude agents in Docker containers with:
 2. **Workspace separation**: `/projects/` for code dev, `workspace/` for QMS docs only
 3. **MCP config baked in**: `.mcp.json` built into container image
 4. **Minimal write access**: Only `/projects/`, `/pipe-dream/.claude/users/claude/workspace/`, and root dotfiles
+5. **Docker at project root**: `docker/` instead of `.claude/docker/` (decoupled from Claude-specific concerns)
+6. **Credentials mount**: `~/.claude/.credentials.json` for Claude Code authentication
+7. **Python venv support**: `python3-venv` package for development environments
 
-### Deferred Items
+## CR-043: Container Infrastructure (IN_EXECUTION)
 
-- Branch protection to prevent pushing to main (future CR)
-- Container identity management
-- MCP server authentication beyond localhost binding
+### Status
 
-## Documents Modified
+- **CR-043**: IN_EXECUTION (v1.0) - 12 EIs
+- **CR-043-VAR-001**: IN_EXECUTION (v1.0) - 7 VAR-EIs (scope expansion for auth/venv)
 
-| Document | Change |
-|----------|--------|
-| SDLC-QMS-RS | v4.0 → v5.0 (added REQ-MCP-011 through REQ-MCP-013) |
-| SDLC-QMS-RTM | v4.0 → v5.0 (added verification evidence, 149 tests) |
-| CR-042 | Created, executed, closed (v2.0) |
-| CLAUDE.md | Added "Running MCP Server with Remote Transport" section |
-| qms-cli submodule | Updated to 57451cd |
+### Files to Create
+
+```
+docker/
+├── Dockerfile
+├── docker-compose.yml
+├── .mcp.json
+├── README.md
+└── scripts/
+    ├── start-mcp-server.sh
+    └── start-container.sh
+```
+
+### VAR-001 Scope Additions
+
+The VAR adds critical functionality discovered after pre-approval:
+- Credentials mount for Claude Code authentication
+- `python3-venv` package for Python development
+- Additional tests for auth and venv verification
+
+## INV-007: Workflow Gap Investigation (DRAFT)
+
+### Discovery
+
+While attempting to revise CR-043 after pre-approval, discovered that:
+- REQ-DOC-009 only reverts REVIEWED, PRE_REVIEWED, POST_REVIEWED states on checkin
+- PRE_APPROVED documents cannot revert to DRAFT for re-review
+- No backward transition defined from PRE_APPROVED
+
+### Proposed CAPA
+
+**REQ-WF-016 (proposed):** When a document in PRE_APPROVED status is checked in, the CLI shall revert the status to DRAFT and clear all review tracking fields, provided the document has not been released.
+
+### Status
+
+- INV-007: DRAFT (v0.1) - not yet routed
+- CAPA-001: Add REQ-WF-016 to RS
+- CAPA-002: Implement in qms-cli
+
+## Documents Created/Modified
+
+| Document | Status | Description |
+|----------|--------|-------------|
+| CR-042 | CLOSED (v2.0) | Remote transport support - completed |
+| CR-043 | IN_EXECUTION (v1.0) | Container infrastructure |
+| CR-043-VAR-001 | IN_EXECUTION (v1.0) | Scope expansion for auth/venv |
+| INV-007 | DRAFT (v0.1) | Workflow gap investigation |
+| SDLC-QMS-RS | EFFECTIVE (v5.0) | Added REQ-MCP-011 through REQ-MCP-013 |
+| SDLC-QMS-RTM | EFFECTIVE (v5.0) | Added verification evidence |
+| CLAUDE.md | Modified | Container MCP configuration section |
 
 ## Git Activity
 
-- **qms-cli**: PR #3 merged (cr-042-remote-mcp → main)
-- **pipe-dream**: Commit 76dcb55 pushed to origin/main
+- **qms-cli**: PR #3 merged (cr-042-remote-mcp → main), commit 57451cd
+- **pipe-dream**: Commits 76dcb55, 7f443c1 pushed to origin/main
 
 ## Next Steps
 
-1. Draft CR for container infrastructure implementation
-2. Create Dockerfile with finalized structure
-3. Set up GitHub branch protection for flow-state/qms-cli
-4. Test container with MCP server connection
+1. Execute CR-043 EIs (create docker/ infrastructure)
+2. Execute CR-043-VAR-001 VAR-EIs (add auth/venv support)
+3. Test container with MCP server connection
+4. Route INV-007 for review when ready to address workflow gap
+5. Set up GitHub branch protection for flow-state/qms-cli (deferred)
