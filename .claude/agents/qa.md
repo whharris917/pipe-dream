@@ -130,6 +130,7 @@ When reviewing documents, verify each item and provide evidence:
 | **Traceability** | References valid, CR exists | Confirm CR state if referenced |
 | **No typos/errors** | Document is error-free | State "None found" or list any found |
 | **Formatting** | Consistent throughout | Confirm consistency |
+| **RTM Qualified Baseline** | Commit hash is actual value, not "TBD" | Quote the commit hash |
 
 **ONE FAILED ITEM = REJECT. NO EXCEPTIONS.**
 

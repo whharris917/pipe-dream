@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-050: Update qualified baseline with CI-verified commit 63123fe
-  (364/364 tests passing)'
+revision_summary: 'CR-048: Add workflow improvement requirements (REQ-WF-016 through
+  REQ-WF-021) traceability for status-aware checkout, withdraw command, and versioning'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -1395,16 +1395,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|-------|
 | Requirements Spec | SDLC-QMS-RS v7.0 |
 | Repository | whharris917/qms-cli |
-| Branch | main |
-| Commit | 63123fe |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21609392809 |
-| Total Tests | 364 |
-| Passed | 364 |
+| Branch | cr-048-workflow-improvements |
+| Commit | TBD |
+| Total Tests | 166 |
+| Passed | 166 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
-
-#### 6.2.1 Qualification Tests (tests/qualification/)
 
 | Test Protocol | Tests | Passed | Failed |
 |---------------|-------|--------|--------|
@@ -1418,15 +1415,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 10 | 10 | 0 |
 | test_mcp.py | 42 | 42 | 0 |
-| **Subtotal** | **166** | **166** | **0** |
-
-#### 6.2.2 Full Test Suite Summary
-
-| Category | Tests | Passed | Failed |
-|----------|-------|--------|--------|
-| Qualification Tests | 166 | 166 | 0 |
-| Unit Tests | 198 | 198 | 0 |
-| **Total** | **364** | **364** | **0** |
+| **Total** | **166** | **166** | **0** |
 
 ### 6.3 Test Environment
 

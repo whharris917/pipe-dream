@@ -509,5 +509,6 @@ The order of operations in `Scene.update` is critical:
 * [ ] **Undo Safety:** Did I implement `undo()` for any new Commands I created?
 * [ ] **Focus Hygiene:** If I added a new widget, did I implement `on_focus_lost()`?
 * [ ] **Potency Check:** Does this change enable future features "for free" (e.g., a new protocol that all future widgets can use)?
+* [ ] **RTM Review:** When reviewing an RTM, verify that the Qualified Baseline section contains an actual CI-verified commit hash, not "TBD" or any placeholder value.
 
 Remember: Reusability first. Generalization second. New code last.
