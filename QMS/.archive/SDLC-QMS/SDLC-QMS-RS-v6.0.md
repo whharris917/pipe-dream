@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-048: Add workflow improvement requirements (REQ-WF-016 through
-  REQ-WF-021) for status-aware checkout, withdraw command, and versioning'
+revision_summary: 'CR-047: Add streamable-http transport requirement (REQ-MCP-014),
+  update REQ-MCP-011/012 to include streamable-http'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -372,12 +372,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-WF-013 | **Retirement Transition.** Upon approval of a retirement-routed document, the CLI shall: (1) archive the document to `.archive/`, (2) remove the working copy from the QMS directory, (3) transition status to RETIRED, and (4) log a RETIRE event to the audit trail. |
 | REQ-WF-014 | **Execution Phase Tracking.** For executable document types (CR, INV), the CLI shall track execution phase in metadata: pre_release (document approved but not yet released, PRE_APPROVED state) or post_release (document released and execution complete, POST_APPROVED state). The execution phase determines the correct workflow path. |
 | REQ-WF-015 | **Checked-in Requirement for Routing.** The CLI shall require documents to be checked in before routing for review or approval. Routing shall be rejected with an error if the document is currently checked out. |
-| REQ-WF-016 | **Pre-Release Revision.** When a document in PRE_APPROVED status is checked out, the CLI shall: (1) transition status to DRAFT, (2) clear all pre-review/pre-approval tracking fields (pending_assignees, completed_reviewers, review_outcomes), and (3) copy the document to the user workspace. This allows scope revision through re-review before execution begins. |
-| REQ-WF-017 | **Post-Review Continuation.** When a document in POST_REVIEWED status is checked out, the CLI shall: (1) transition status to IN_EXECUTION, (2) clear all post-review tracking fields, and (3) copy the document to the user workspace. This allows continued execution work without an intermediate DRAFT state. |
-| REQ-WF-018 | **Withdraw Command.** The CLI shall provide a `withdraw` command that allows the responsible user to abort an in-progress review or approval workflow. Withdraw shall: (1) transition from IN_REVIEW to DRAFT, IN_APPROVAL to REVIEWED, IN_PRE_REVIEW to DRAFT, IN_PRE_APPROVAL to PRE_REVIEWED, IN_POST_REVIEW to IN_EXECUTION, IN_POST_APPROVAL to POST_REVIEWED; (2) clear pending_assignees and remove related inbox tasks; and (3) log a WITHDRAW event to the audit trail. Only the responsible_user may withdraw. |
-| REQ-WF-019 | **Revert Command Deprecation.** The `revert` command is deprecated. When invoked, the CLI shall print a deprecation warning recommending checkout from POST_REVIEWED as the preferred alternative. The command shall remain functional for backward compatibility. |
-| REQ-WF-020 | **Effective Version Preservation.** When a non-executable document in EFFECTIVE status is checked out, the CLI shall: (1) keep the effective version (N.0) in the QMS directory (still "in force"), (2) create a new draft version (N.1) in the QMS directory, and (3) copy N.1 to user workspace. The effective version shall NOT be archived on checkout; archival occurs on approval per REQ-WF-006. |
-| REQ-WF-021 | **Execution Version Tracking.** During execution of an executable document: (1) release creates version N.0 in IN_EXECUTION status; (2) first checkout creates N.1 in workspace while N.0 remains current in QMS; (3) first checkin archives N.0 and commits N.1 as current IN_EXECUTION version; (4) subsequent checkout creates N.(X+1) in workspace while N.X remains current; (5) subsequent checkin archives N.X and commits N.(X+1); (6) closure transitions to (N+1).0 POST_APPROVED then CLOSED. Archive on commit (checkin), not on checkout. |
 
 ---
 

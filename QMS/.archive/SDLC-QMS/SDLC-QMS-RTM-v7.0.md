@@ -1,24 +1,24 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-048: Add workflow improvement requirements (REQ-WF-016 through
-  REQ-WF-021) traceability for status-aware checkout, withdraw command, and versioning'
+revision_summary: 'CR-047: Add streamable-http transport verification (REQ-MCP-014),
+  update REQ-MCP-011/012 tests (CLI-6.0)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v7.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v6.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 104 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 98 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 14 requirements
-- REQ-WF (Workflow): 21 requirements
+- REQ-WF (Workflow): 15 requirements
 - REQ-META (Metadata): 4 requirements
 - REQ-AUDIT (Audit Trail): 4 requirements
 - REQ-TASK (Task/Inbox): 4 requirements
@@ -50,7 +50,6 @@ Tests are organized by workflow scenario rather than individual requirement. Eac
 |---------------|------|-------------|
 | SOP Lifecycle | `qualification/test_sop_lifecycle.py` | Non-executable document workflow |
 | CR Lifecycle | `qualification/test_cr_lifecycle.py` | Executable document workflow |
-| CR-048 Workflow | `qualification/test_cr048_workflow.py` | Status-aware checkout, withdraw, execution versioning |
 | Security | `qualification/test_security.py` | Access control and authorization |
 | Document Types | `qualification/test_document_types.py` | Creation, child documents, SDLC namespaces |
 | Queries | `qualification/test_queries.py` | Read, status, history, inbox, workspace |
@@ -106,12 +105,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-WF-013 | Retirement Transition | test_sop_lifecycle::test_retirement | PASS |
 | REQ-WF-014 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
 | REQ-WF-015 | Checked-in Requirement for Routing | test_sop_lifecycle::test_routing_requires_checkin | PASS |
-| REQ-WF-016 | Pre-Release Revision | test_cr048_workflow::test_checkout_from_pre_approved_reverts_to_draft | PASS |
-| REQ-WF-017 | Post-Review Continuation | test_cr048_workflow::test_checkout_from_post_reviewed_returns_to_execution | PASS |
-| REQ-WF-018 | Withdraw Command | test_cr048_workflow::test_withdraw_from_in_review_returns_to_draft, test_withdraw_from_in_pre_review_returns_to_draft, test_withdraw_from_in_post_review_returns_to_execution, test_withdraw_only_allowed_for_responsible_user, test_withdraw_clears_assignees_and_inbox | PASS |
-| REQ-WF-019 | Revert Command Deprecation | test_cr048_workflow::test_revert_shows_deprecation_warning | PASS |
-| REQ-WF-020 | Effective Version Preservation | test_document_types::test_checkout_effective_creates_archive | PASS |
-| REQ-WF-021 | Execution Version Tracking | test_cr048_workflow::test_execution_checkout_creates_minor_version, test_execution_checkin_archives_previous, test_closure_increments_major_version | PASS |
 | REQ-META-001 | Three-Tier Separation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-META-002 | CLI-Exclusive Metadata Management | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_metadata_required_fields | PASS |
@@ -586,72 +579,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_routing_requires_checkin | Routing rejected for checked-out documents. |
-
----
-
-#### REQ-WF-016: Pre-Release Revision
-
-**Requirement:** When a document in PRE_APPROVED status is checked out, the CLI shall: (1) transition status to DRAFT, (2) clear all pre-review/pre-approval tracking fields (pending_assignees, completed_reviewers, review_outcomes), and (3) copy the document to the user workspace. This allows scope revision through re-review before execution begins.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr048_workflow.py | test_checkout_from_pre_approved_reverts_to_draft | Verifies PRE_APPROVED checkout transitions to DRAFT and clears tracking fields. |
-
----
-
-#### REQ-WF-017: Post-Review Continuation
-
-**Requirement:** When a document in POST_REVIEWED status is checked out, the CLI shall: (1) transition status to IN_EXECUTION, (2) clear all post-review tracking fields, and (3) copy the document to the user workspace. This allows continued execution work without an intermediate DRAFT state.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr048_workflow.py | test_checkout_from_post_reviewed_returns_to_execution | Verifies POST_REVIEWED checkout transitions to IN_EXECUTION. |
-
----
-
-#### REQ-WF-018: Withdraw Command
-
-**Requirement:** The CLI shall provide a `withdraw` command that allows the responsible user to abort an in-progress review or approval workflow. Withdraw shall: (1) transition from IN_REVIEW to DRAFT, IN_APPROVAL to REVIEWED, IN_PRE_REVIEW to DRAFT, IN_PRE_APPROVAL to PRE_REVIEWED, IN_POST_REVIEW to IN_EXECUTION, IN_POST_APPROVAL to POST_REVIEWED; (2) clear pending_assignees and remove related inbox tasks; and (3) log a WITHDRAW event to the audit trail. Only the responsible_user may withdraw.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr048_workflow.py | test_withdraw_from_in_review_returns_to_draft | Verifies IN_REVIEW withdraw transitions to DRAFT. |
-| test_cr048_workflow.py | test_withdraw_from_in_pre_review_returns_to_draft | Verifies IN_PRE_REVIEW withdraw transitions to DRAFT. |
-| test_cr048_workflow.py | test_withdraw_from_in_post_review_returns_to_execution | Verifies IN_POST_REVIEW withdraw transitions to IN_EXECUTION. |
-| test_cr048_workflow.py | test_withdraw_only_allowed_for_responsible_user | Verifies only document owner can withdraw. |
-| test_cr048_workflow.py | test_withdraw_clears_assignees_and_inbox | Verifies withdraw clears pending_assignees and removes inbox tasks. |
-
----
-
-#### REQ-WF-019: Revert Command Deprecation
-
-**Requirement:** The `revert` command is deprecated. When invoked, the CLI shall print a deprecation warning recommending checkout from POST_REVIEWED as the preferred alternative. The command shall remain functional for backward compatibility.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr048_workflow.py | test_revert_shows_deprecation_warning | Verifies revert command shows deprecation warning. |
-
----
-
-#### REQ-WF-020: Effective Version Preservation
-
-**Requirement:** When a non-executable document in EFFECTIVE status is checked out, the CLI shall: (1) keep the effective version (N.0) in the QMS directory (still "in force"), (2) create a new draft version (N.1) in the QMS directory, and (3) copy N.1 to user workspace. The effective version shall NOT be archived on checkout; archival occurs on approval per REQ-WF-006.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_document_types.py | test_checkout_effective_creates_archive | Verifies checkout of EFFECTIVE creates N.1 draft without archiving N.0. |
-
----
-
-#### REQ-WF-021: Execution Version Tracking
-
-**Requirement:** During execution of an executable document: (1) release creates version N.0 in IN_EXECUTION status; (2) first checkout creates N.1 in workspace while N.0 remains current in QMS; (3) first checkin archives N.0 and commits N.1 as current IN_EXECUTION version; (4) subsequent checkout creates N.(X+1) in workspace while N.X remains current; (5) subsequent checkin archives N.X and commits N.(X+1); (6) closure transitions to (N+1).0 POST_APPROVED then CLOSED. Archive on commit (checkin), not on checkout.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr048_workflow.py | test_execution_checkout_creates_minor_version | Verifies checkout during IN_EXECUTION increments minor version. |
-| test_cr048_workflow.py | test_execution_checkin_archives_previous | Verifies checkin during IN_EXECUTION archives previous version. |
-| test_cr048_workflow.py | test_closure_increments_major_version | Verifies closure transitions to (N+1).0 POST_APPROVED then CLOSED. |
 
 ---
 
@@ -1393,12 +1320,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v7.0 |
+| Requirements Spec | SDLC-QMS-RS v6.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-048-workflow-improvements |
-| Commit | TBD |
-| Total Tests | 166 |
-| Passed | 166 |
+| Branch | cr-047-streamable-http |
+| Commit | 36d2b3e |
+| Total Tests | 155 |
+| Passed | 155 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1407,7 +1334,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |---------------|-------|--------|--------|
 | test_sop_lifecycle.py | 16 | 16 | 0 |
 | test_cr_lifecycle.py | 12 | 12 | 0 |
-| test_cr048_workflow.py | 11 | 11 | 0 |
 | test_security.py | 19 | 19 | 0 |
 | test_document_types.py | 22 | 22 | 0 |
 | test_queries.py | 18 | 18 | 0 |
@@ -1415,7 +1341,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 10 | 10 | 0 |
 | test_mcp.py | 42 | 42 | 0 |
-| **Total** | **166** | **166** | **0** |
+| **Total** | **155** | **155** | **0** |
 
 ### 6.3 Test Environment
 

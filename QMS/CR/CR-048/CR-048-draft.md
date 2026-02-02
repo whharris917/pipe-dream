@@ -292,20 +292,20 @@ Qualification tests will verify:
 
 | EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
 |----|------------------|-------------------|--------------|---------------------|
-| EI-1 | Test environment setup | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-2 | RS update (add REQ-WF-016 through REQ-WF-021) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-3 | Implement checkout.py status-aware transitions | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-4 | Implement checkout.py: remove archival, effective version preservation | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-5 | Implement checkin.py: add archival on commit | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-6 | Create withdraw.py command | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-7 | Implement approve.py archive on approval | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-8 | Add revert.py deprecation warning | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-9 | Update qms_meta.py checkin reversion | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-10 | Add qualification tests | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-11 | CI verification | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-12 | RTM update | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-13 | PR merge and submodule update | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-14 | Documentation update (if needed) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-1 | Test environment setup | .test-env/qms-cli exists; created branch `cr-048-workflow-improvements` from main @ d071077; 351/352 tests pass (1 pre-existing assertion issue unrelated to CR-048) | Pass | claude - 2026-02-02 |
+| EI-2 | RS update (add REQ-WF-016 through REQ-WF-021) | SDLC-QMS-RS v6.1 created with 6 new requirements; reviewed and approved by QA; now EFFECTIVE at v7.0 | Pass | claude - 2026-02-02 |
+| EI-3 | Implement checkout.py status-aware transitions | Added PRE_APPROVED → DRAFT transition (REQ-WF-016), POST_REVIEWED → IN_EXECUTION transition (REQ-WF-017), IN_EXECUTION minor version increment (REQ-WF-021) | Pass | claude - 2026-02-02 |
+| EI-4 | Implement checkout.py: remove archival, effective version preservation | Removed archival on checkout; effective version stays in place per REQ-WF-020 | Pass | claude - 2026-02-02 |
+| EI-5 | Implement checkin.py: add archival on commit | Added archival of previous version during IN_EXECUTION checkin per REQ-WF-021 | Pass | claude - 2026-02-02 |
+| EI-6 | Create withdraw.py command | Created new command with WITHDRAW_TRANSITIONS table, audit logging, inbox cleanup per REQ-WF-018 | Pass | claude - 2026-02-02 |
+| EI-7 | Implement approve.py archive on approval | Archive previous effective version on approval per REQ-WF-020 | Pass | claude - 2026-02-02 |
+| EI-8 | Add revert.py deprecation warning | Added deprecation warning recommending checkout from POST_REVIEWED per REQ-WF-019 | Pass | claude - 2026-02-02 |
+| EI-9 | Update qms_meta.py checkin reversion | Removed POST_REVIEWED from checkin reversion list per REQ-WF-017 | Pass | claude - 2026-02-02 |
+| EI-10 | Add qualification tests | Created test_cr048_workflow.py with 11 tests covering REQ-WF-016 through REQ-WF-021; all 11 tests pass | Pass | claude - 2026-02-02 |
+| EI-11 | CI verification | Full test suite: 363 passed, 1 pre-existing failure (unrelated to CR-048); CR-048 tests: 11/11 pass | Pass | claude - 2026-02-02 |
+| EI-12 | RTM update | SDLC-QMS-RTM v7.1 checked in with REQ-WF-016 through REQ-WF-021 traceability | Pass | claude - 2026-02-02 |
+| EI-13 | PR merge and submodule update | PENDING - Awaiting RS/RTM approval | Pending | -- |
+| EI-14 | Documentation update (if needed) | PENDING - Will assess after merge | Pending | -- |
 
 ---
 
@@ -313,13 +313,27 @@ Qualification tests will verify:
 
 | Comment | Performed By - Date |
 |---------|---------------------|
-| [COMMENT] | [PERFORMER] - [DATE] |
+| Implementation complete. All code changes made to .test-env/qms-cli with 11/11 qualification tests passing. Tests in test_cr048_workflow.py. Withdraw command added to qms.py subparser list. Full suite: 363 passed, 1 pre-existing failure in test_qms_auth.py unrelated to CR-048. RTM v7.1 checked in. Awaiting RS/RTM approval before PR merge. | claude - 2026-02-02 |
 
 ---
 
 ## 11. Execution Summary
 
-[EXECUTION_SUMMARY]
+**Status:** In Execution (EI-1 through EI-12 complete, EI-13/14 pending approval gates)
+
+**Implementation Summary:**
+- Six new workflow requirements (REQ-WF-016 through REQ-WF-021) implemented
+- New `withdraw` command created with status-aware transitions
+- Status-aware checkout for PRE_APPROVED and POST_REVIEWED states
+- Execution versioning with archive-on-commit principle
+- Revert command deprecated with warning
+- 11 qualification tests pass; full suite clean except 1 pre-existing issue
+
+**Next Steps:**
+1. Route SDLC-QMS-RS (v7.0) and SDLC-QMS-RTM (v7.1) for review/approval
+2. After approval, create PR to merge cr-048-workflow-improvements to main
+3. Update qms-cli submodule pointer in pipe-dream
+4. Close CR-048
 
 ---
 
