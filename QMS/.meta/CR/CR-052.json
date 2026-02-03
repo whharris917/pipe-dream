@@ -1,7 +1,7 @@
 {
   "doc_id": "CR-052",
   "doc_type": "CR",
-  "version": "1.4",
+  "version": "1.5",
   "status": "IN_EXECUTION",
   "executable": true,
   "execution_phase": "post_release",
