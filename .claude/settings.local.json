@@ -35,7 +35,10 @@
       "Bash(git fetch:*)",
       "Bash(git checkout:*)",
       "Bash(git pull:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(docker-compose exec:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [
       "Edit(QMS/**)",

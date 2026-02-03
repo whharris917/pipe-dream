@@ -105,9 +105,34 @@ If you see a response like `{"result": "Inbox is empty"}`, the setup is complete
 | `../:/pipe-dream` | ro | Production QMS (read-only) |
 | `../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace` | rw | QMS document checkout |
 | `../.claude/sessions:/pipe-dream/.claude/sessions` | rw | Session persistence |
-| `./.mcp.json:/pipe-dream/.mcp.json` | ro | Container MCP config |
+| `./.mcp.json:/pipe-dream/.mcp.json` | ro | Container MCP config (HTTP transport with dual headers) |
+| `./.claude-settings.json:/pipe-dream/.claude/settings.local.json` | ro | MCP server enablement |
 | `~/.ssh:/.ssh` | ro | SSH keys for git |
-| `~/.claude/.credentials.json:/.claude/.credentials.json` | ro | Claude credentials |
+| `claude-config:/claude-config` | rw | Named volume for auth persistence (see below) |
+
+### Authentication Persistence
+
+Auth credentials persist across container restarts via the `CLAUDE_CONFIG_DIR` environment variable pointing to a named Docker volume ([GitHub #1736](https://github.com/anthropics/claude-code/issues/1736)):
+
+- **First run:** Browser OAuth required, credentials stored in volume
+- **Subsequent runs:** No authentication required
+
+To reset authentication: `docker volume rm docker_claude-config`
+
+### MCP Auto-Connect
+
+MCP auto-connects via dual headers that bypass Claude Code's OAuth discovery ([GitHub #7290](https://github.com/anthropics/claude-code/issues/7290)):
+
+```json
+{
+  "headers": {
+    "X-API-Key": "qms-internal",
+    "Authorization": "Bearer internal-trusted"
+  }
+}
+```
+
+Both headers must be present to trigger the OAuth bypass.
 
 ### MCP Server Options
 
@@ -227,4 +252,7 @@ The container can:
 - **CR-043:** Original containerization infrastructure
 - **CR-046:** Operational verification
 - **CR-047:** Streamable-HTTP transport support
+- **CR-052:** Zero-friction container startup (auth persistence, MCP auto-connect)
 - **REQ-MCP-014:** Streamable-HTTP transport requirement
+- **GitHub #1736:** CLAUDE_CONFIG_DIR for container auth persistence
+- **GitHub #7290:** Multiple headers bypass for MCP auto-connect

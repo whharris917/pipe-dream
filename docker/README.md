@@ -12,52 +12,59 @@ The container provides:
 
 ## Quick Start
 
-### 1. Start the MCP Server (on host)
+From the repository root, run:
 
 ```bash
-cd docker/scripts
-./start-mcp-server.sh
+./claude-session.sh
 ```
 
-Or manually:
+This single command:
+1. Starts the MCP server in background (if not running)
+2. Starts the Docker container
+3. Launches Claude Code with MCP auto-configured
+
+**First run:** Browser OAuth required (credentials persist for future runs)
+**Subsequent runs:** No authentication, MCP auto-connects
+
+### Manual Setup (if needed)
+
+If you prefer manual control:
+
+**Terminal 1 - MCP Server:**
 ```bash
-python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root /path/to/pipe-dream
+cd qms-cli
+python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root ..
 ```
 
-### 2. Start the Container
-
+**Terminal 2 - Container:**
 ```bash
 cd docker
 docker-compose up -d
-docker-compose exec claude-agent bash
-```
-
-Or use the convenience script:
-```bash
-./scripts/start-container.sh
+docker-compose exec claude-agent claude
 ```
 
 ## Filesystem Structure
 
 ```
 /                                      # Container root (HOME=/)
-├── .mcp.json                          # MCP connection config (baked in)
-├── .claude/
-│   └── .credentials.json              # Auth credentials (mounted from host)
 ├── .ssh/                              # Deploy keys (mounted from host)
+├── claude-config/                     # [NAMED VOLUME] Auth + MCP config persistence
+│   ├── .claude.json                   # User-scoped MCP config
+│   └── .credentials.json              # OAuth credentials
 │
-├── projects/                          # [READ-WRITE] Development workspace
-│   └── {repo}/                        # Cloned repositories
-│       └── .venv/                     # Python virtual environments
+├── pipe-dream/                        # Production QMS mount (working_dir)
+│   ├── CLAUDE.md                      # [READ-ONLY]
+│   ├── .mcp.json                      # [OVERLAY] HTTP MCP config with dual headers
+│   ├── QMS/                           # [READ-ONLY]
+│   ├── flow-state/                    # [READ-ONLY]
+│   ├── qms-cli/                       # [READ-ONLY]
+│   └── .claude/
+│       ├── settings.local.json        # [OVERLAY] MCP enablement
+│       ├── sessions/                  # [READ-WRITE] Session persistence
+│       └── users/claude/workspace/    # [READ-WRITE] QMS document checkout
 │
-└── pipe-dream/                        # Production QMS mount
-    ├── CLAUDE.md                      # [READ-ONLY]
-    ├── QMS/                           # [READ-ONLY]
-    ├── flow-state/                    # [READ-ONLY]
-    ├── qms-cli/                       # [READ-ONLY]
-    └── .claude/users/claude/
-        ├── inbox/                     # [READ-ONLY]
-        └── workspace/                 # [READ-WRITE] QMS document checkout
+└── projects/                          # [READ-WRITE] Development workspace
+    └── {repo}/                        # Cloned repositories
 ```
 
 ## Access Control
@@ -134,12 +141,12 @@ mkdir -p .claude/users/claude/workspace
 
 ### Claude Code authentication fails
 
-Verify credentials are mounted:
+Auth is stored in the `claude-config` named volume. To reset:
 ```bash
-ls -la /.claude/.credentials.json
+docker volume rm docker_claude-config
 ```
 
-If missing, ensure `~/.claude/.credentials.json` exists on host.
+Then run `./claude-session.sh` again to re-authenticate.
 
 ## Building the Image
 
@@ -157,3 +164,6 @@ docker build -t claude-agent .
 
 - CR-042: Add Remote Transport Support to QMS MCP Server
 - CR-043: Implement Containerized Claude Agent Infrastructure
+- CR-052: Zero-friction container startup (auth persistence, MCP auto-connect)
+- [GitHub #1736](https://github.com/anthropics/claude-code/issues/1736): CLAUDE_CONFIG_DIR for auth persistence
+- [GitHub #7290](https://github.com/anthropics/claude-code/issues/7290): Multiple headers bypass for MCP auto-connect

@@ -22,3 +22,23 @@
 {"ts": "2026-02-03T21:01:12+00:00", "event": "CHECKIN", "user": "claude", "version": "1.4"}
 {"ts": "2026-02-03T21:33:27+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.4"}
 {"ts": "2026-02-03T21:34:10+00:00", "event": "CHECKIN", "user": "claude", "version": "1.5"}
+{"ts": "2026-02-03T22:10:10+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.5"}
+{"ts": "2026-02-03T22:10:53+00:00", "event": "CHECKIN", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:11:02+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.6", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-03T22:11:02+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.6", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-03T22:24:11+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:24:40+00:00", "event": "CHECKIN", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:25:38+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:25:54+00:00", "event": "CHECKIN", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:27:18+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:27:35+00:00", "event": "CHECKIN", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:32:42+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:33:07+00:00", "event": "CHECKIN", "user": "claude", "version": "1.6"}
+{"ts": "2026-02-03T22:35:48+00:00", "event": "REVIEW", "user": "qa", "version": "1.6", "outcome": "RECOMMEND", "comment": "Post-execution review complete. COMPLIANT.\n\n**Frontmatter Verified:**\n- title: Streamline Container Session Startup\n- revision_summary: Session 2026-02-03: BOTH ISSUES RESOLVED\n\n**Document Structure:** All 12 required sections per SOP-002 present.\n\n**Placeholder Content:** None found.\n\n**Execution Items:** 21 EIs documented. Final verification (EI-19) passed with evidence.\n\n**Verification Evidence (Section 10.1):** Clean slate test demonstrates auth persistence and MCP auto-connect working.\n\n**Post-Review Requirements (SOP-002 Section 7.3):** All satisfied.\n\nRecommend approval."}
+{"ts": "2026-02-03T22:35:48+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.6", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-03T22:36:09+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.6", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-02-03T22:36:09+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.6", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-02-03T22:36:23+00:00", "event": "APPROVE", "user": "qa", "version": "1.6"}
+{"ts": "2026-02-03T22:36:23+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-02-03T22:36:31+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-02-03T22:36:31+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

@@ -11,8 +11,11 @@ services:
       - ../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace:rw
       # Sessions (read-write overlay) - added per CR-046
       - ../.claude/sessions:/pipe-dream/.claude/sessions:rw
-      # MCP config overlay - container SSE config over local stdio config - added per CR-046
+      # MCP config overlay - MUST overlay host's stdio config with container HTTP config
+      # (host's .mcp.json has Windows paths that don't work in container)
       - ./.mcp.json:/pipe-dream/.mcp.json:ro
+      # Settings overlay - enable the MCP server
+      - ./.claude-settings.json:/pipe-dream/.claude/settings.local.json:ro
       # SSH keys (read-only)
       - ~/.ssh:/.ssh:ro
       # Claude Code config (persistent via named volume) - per CR-052/issue #1736
@@ -22,6 +25,8 @@ services:
       - HOME=/
       # Point Claude Code to persistent config directory - per GitHub issue #1736
       - CLAUDE_CONFIG_DIR=/claude-config
+      # Increase MCP startup timeout (default 30000ms) - per CR-052 investigation
+      - MCP_TIMEOUT=60000
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux compatibility
     stdin_open: true
