@@ -1,7 +1,7 @@
 ---
 title: Change Record Template
-revision_summary: 'CR-051: Add explicit RTM approval verification in Phases 9.5 and
-  9.6 per SOP-006 Section 7.4'
+revision_summary: 'CR-044: Add code development best practices (Development Controls,
+  Qualified State Continuity, standardized phases)'
 ---
 
 <!--
@@ -264,7 +264,7 @@ Include for code CRs. Delete for document-only CRs.
 4. Verify GitHub Actions CI passes
 5. Document qualified commit hash
 
-### 9.5 Phase 5: RTM Update and Approval
+### 9.5 Phase 5: RTM Update
 
 <!--
 Include for code CRs that add/modify requirements. Delete if not applicable.
@@ -273,7 +273,6 @@ Include for code CRs that add/modify requirements. Delete if not applicable.
 1. Checkout SDLC-{{NS}}-RTM in production QMS
 2. Add verification evidence referencing CI-verified commit
 3. Checkin RTM, route for review and approval
-4. **Verify RTM reaches EFFECTIVE status before proceeding to Phase 6**
 
 ### 9.6 Phase 6: Merge and Submodule Update
 
@@ -281,14 +280,10 @@ Include for code CRs that add/modify requirements. Delete if not applicable.
 Include for code CRs. Delete for document-only CRs.
 -->
 
-**Prerequisite:** RS and RTM must both be EFFECTIVE before proceeding (per SOP-006 Section 7.4).
-
-1. Verify RS is EFFECTIVE (document status check)
-2. Verify RTM is EFFECTIVE (document status check)
-3. Create PR to merge dev branch to main
-4. Merge PR
-5. Update submodule pointer in parent repo
-6. Verify functionality in production context
+1. Once RS and RTM are EFFECTIVE, create PR to merge dev branch to main
+2. Merge PR
+3. Update submodule pointer in parent repo
+4. Verify functionality in production context
 
 ### 9.7 Phase 7: Documentation (if applicable)
 

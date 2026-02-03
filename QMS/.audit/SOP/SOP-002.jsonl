@@ -73,3 +73,15 @@
 {"ts": "2026-01-28T00:02:09+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "8.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-01-28T00:02:09+00:00", "event": "EFFECTIVE", "user": "qa", "version": "8.0", "from_version": "7.1"}
 {"ts": "2026-01-28T00:02:09+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "8.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-02T23:59:31+00:00", "event": "CHECKOUT", "user": "claude", "version": "8.1", "from_version": "8.0"}
+{"ts": "2026-02-03T00:01:02+00:00", "event": "CHECKIN", "user": "claude", "version": "8.1"}
+{"ts": "2026-02-03T00:01:09+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "8.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-03T00:01:09+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "8.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-03T00:02:53+00:00", "event": "REVIEW", "user": "qa", "version": "8.1", "outcome": "RECOMMEND", "comment": "REVIEW COMPLETE - RECOMMEND FOR APPROVAL\n\n**Frontmatter Verification:**\n- title: 'Change Control' - VERIFIED\n- revision_summary: 'CR-051: Add SDLC prerequisite to post-review requirements per SOP-006 Section 7.4' - VERIFIED (references authorizing CR)\n\n**CR-051 Section 5.2 Implementation Verification:**\n\n**Change 1: Section 7.3 Post-Review Requirements - Item 5 Added**\n\nPrevious items 1-4 unchanged. New item 5:\n'SDLC Prerequisites Met: For CRs affecting SDLC-governed systems per SOP-006, the system RS and RTM must be EFFECTIVE (see SOP-006 Section 7.4)' - VERIFIED\n\n**Change 2: QA Post-Review Verification List Updated**\n\nNew bullet added:\n'For code CRs: RS and RTM for affected systems are EFFECTIVE per SOP-006 Section 7.4' - VERIFIED\n\n**Cross-Reference Verification:**\n- References SOP-006 Section 7.4 - VERIFIED (SOP-006 v2.1 contains this section)\n\n**Content Match:** Both changes match CR-051 Section 5.2 exactly.\n\n**Placeholder Check:** No TBD/TODO/FIXME/XXX found.\n**Typos/Errors:** None found.\n**Formatting:** Consistent throughout.\n\nRECOMMENDATION: Approve. SOP-002 correctly implements INV-010 CAPA-003."}
+{"ts": "2026-02-03T00:02:53+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "8.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-03T00:03:23+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "8.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-03T00:03:23+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "8.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-03T00:04:00+00:00", "event": "APPROVE", "user": "qa", "version": "8.1"}
+{"ts": "2026-02-03T00:04:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-03T00:04:00+00:00", "event": "EFFECTIVE", "user": "qa", "version": "9.0", "from_version": "8.1"}
+{"ts": "2026-02-03T00:04:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
