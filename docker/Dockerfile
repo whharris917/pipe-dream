@@ -20,8 +20,12 @@ RUN npm install -g @anthropic-ai/claude-code
 # Create directory structure
 RUN mkdir -p /projects /pipe-dream /.claude /.ssh
 
-# Copy baked-in MCP configuration
+# Copy baked-in MCP configuration (project-scoped, kept for reference)
 COPY .mcp.json /.mcp.json
+
+# Copy user-scoped MCP configuration (auto-connects without approval prompt)
+# User-scoped servers bypass the project trust dialog per CR-052
+COPY .claude-container.json /.claude.json
 
 # Default git config (can be overridden by mount)
 RUN git config --global init.defaultBranch main

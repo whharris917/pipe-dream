@@ -6,7 +6,8 @@
 # This script:
 # 1. Starts the MCP server on the host (if not running)
 # 2. Starts the Claude agent container
-# 3. Launches Claude Code inside the container with MCP auto-configured
+# 3. Verifies MCP connectivity from inside the container
+# 4. Launches Claude Code inside the container with MCP auto-configured
 #
 # The MCP server runs in the background. To stop it: kill $(cat .mcp-server.pid)
 
@@ -27,10 +28,10 @@ echo -e "${GREEN}═════════════════════
 echo ""
 
 # --- Step 1: Ensure MCP server is running ---
-echo -e "${YELLOW}[1/3]${NC} Checking MCP server..."
+echo -e "${YELLOW}[1/4]${NC} Checking MCP server..."
 
 MCP_RUNNING=false
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/mcp 2>/dev/null | grep -qE "200|404|405"; then
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/mcp 2>/dev/null | grep -qE "200|40[0-9]"; then
     MCP_RUNNING=true
     echo -e "      ${GREEN}✓${NC} MCP server already running on port 8000"
 fi
@@ -38,13 +39,13 @@ fi
 if [ "$MCP_RUNNING" = false ]; then
     echo -e "      Starting MCP server in background..."
 
-    # Activate venv and start MCP server
-    if [ -f ".venv/Scripts/activate" ]; then
-        # Windows Git Bash
-        source .venv/Scripts/activate
-    elif [ -f ".venv/bin/activate" ]; then
+    # Find Python executable (don't activate venv - it breaks Git Bash PATH)
+    if [ -f ".venv/Scripts/python.exe" ]; then
+        # Windows
+        PYTHON_EXE="$SCRIPT_DIR/.venv/Scripts/python.exe"
+    elif [ -f ".venv/bin/python" ]; then
         # Linux/Mac
-        source .venv/bin/activate
+        PYTHON_EXE="$SCRIPT_DIR/.venv/bin/python"
     else
         echo -e "      ${RED}✗${NC} No Python venv found at .venv/"
         echo -e "      Please create a venv and install requirements first."
@@ -52,7 +53,7 @@ if [ "$MCP_RUNNING" = false ]; then
     fi
 
     cd qms-cli
-    python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 \
+    "$PYTHON_EXE" -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 \
         --project-root "$SCRIPT_DIR" > "$SCRIPT_DIR/.mcp-server.log" 2>&1 &
     MCP_PID=$!
     echo $MCP_PID > "$SCRIPT_DIR/.mcp-server.pid"
@@ -61,7 +62,7 @@ if [ "$MCP_RUNNING" = false ]; then
     # Wait for server to start
     echo -e "      Waiting for MCP server to initialize..."
     for i in {1..10}; do
-        if curl -s -o /dev/null http://localhost:8000/mcp 2>/dev/null; then
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/mcp 2>/dev/null | grep -qE "200|40[0-9]"; then
             echo -e "      ${GREEN}✓${NC} MCP server started (PID: $MCP_PID)"
             break
         fi
@@ -75,7 +76,7 @@ if [ "$MCP_RUNNING" = false ]; then
 fi
 
 # --- Step 2: Start container ---
-echo -e "${YELLOW}[2/3]${NC} Starting container..."
+echo -e "${YELLOW}[2/4]${NC} Starting container..."
 
 cd docker
 
@@ -89,8 +90,28 @@ fi
 
 cd "$SCRIPT_DIR"
 
-# --- Step 3: Launch Claude ---
-echo -e "${YELLOW}[3/3]${NC} Launching Claude Code..."
+# --- Step 3: Verify MCP connectivity from container ---
+echo -e "${YELLOW}[3/4]${NC} Verifying MCP connectivity from container..."
+
+cd docker
+for i in {1..5}; do
+    # Check if container can reach MCP server (any HTTP response = success)
+    HTTP_CODE=$(docker-compose exec -T claude-agent curl -s -o /dev/null --max-time 3 -w "%{http_code}" http://host.docker.internal:8000/mcp 2>/dev/null | tail -1)
+    if echo "$HTTP_CODE" | grep -qE "^[0-9]+$" && [ "$HTTP_CODE" -gt 0 ]; then
+        echo -e "      ${GREEN}✓${NC} Container can reach MCP server (HTTP $HTTP_CODE)"
+        break
+    fi
+    if [ $i -eq 5 ]; then
+        echo -e "      ${RED}✗${NC} Container cannot reach MCP server at host.docker.internal:8000"
+        echo -e "      Check that the MCP server is running and accessible"
+        exit 1
+    fi
+    sleep 1
+done
+cd "$SCRIPT_DIR"
+
+# --- Step 4: Launch Claude ---
+echo -e "${YELLOW}[4/4]${NC} Launching Claude Code..."
 echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"
 echo -e "  You are now in a containerized Claude session."

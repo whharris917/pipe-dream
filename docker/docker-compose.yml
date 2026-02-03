@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   claude-agent:
     build:
@@ -17,8 +15,8 @@ services:
       - ./.mcp.json:/pipe-dream/.mcp.json:ro
       # SSH keys (read-only)
       - ~/.ssh:/.ssh:ro
-      # Claude Code credentials (read-only) - added per CR-043-VAR-001
-      - ~/.claude/.credentials.json:/.claude/.credentials.json:ro
+      # Claude Code credentials (read-write for token refresh) - updated per CR-052
+      - ~/.claude/.credentials.json:/.claude/.credentials.json:rw
     environment:
       - HOME=/
     extra_hosts:
