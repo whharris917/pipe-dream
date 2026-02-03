@@ -43,69 +43,55 @@ The containerized architecture provides:
 
 ## Quick Start
 
-### Step 1: Start MCP Server (Terminal 1 - Host)
-
-Open a terminal on your host machine:
+From the repository root, run:
 
 ```bash
-cd C:/Users/wilha/projects/pipe-dream/qms-cli
-python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root "C:/Users/wilha/projects/pipe-dream"
+./claude-session.sh
 ```
 
-You should see:
-```
-INFO: Started server process [...]
-INFO: Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-```
+This single command:
+1. Starts the MCP server in background (if not already running)
+2. Starts the Docker container
+3. Launches Claude Code with MCP auto-configured
 
-**Keep this terminal open.** The MCP server must be running for container QMS access.
+You'll be in a Claude session with full QMS access. Verify by asking Claude to check your inbox.
 
-### Step 2: Start Container (Terminal 2 - Host)
+### Stopping the Session
 
-Open another terminal:
+- Type `exit` or press Ctrl+D to leave the Claude session
+- The MCP server continues running in background
+- To stop the MCP server: `kill $(cat .mcp-server.pid)`
+
+---
+
+## Manual Setup (Reference)
+
+If you prefer manual control or need to troubleshoot, here are the individual steps:
+
+### Step 1: Start MCP Server (Terminal 1)
 
 ```bash
-cd C:/Users/wilha/projects/pipe-dream/docker
+cd /path/to/pipe-dream/qms-cli
+python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root "/path/to/pipe-dream"
+```
+
+Keep this terminal open.
+
+### Step 2: Start Container (Terminal 2)
+
+```bash
+cd /path/to/pipe-dream/docker
 docker-compose up -d
-docker-compose exec claude-agent bash
+docker-compose exec claude-agent claude
 ```
 
-You are now inside the container as root.
+MCP is auto-configured via `working_dir: /pipe-dream` in docker-compose.yml, so Claude finds the `.mcp.json` automatically.
 
-### Step 3: Configure MCP (Inside Container)
-
-```bash
-claude mcp add --transport http qms http://host.docker.internal:8000/mcp
-```
-
-Verify connection:
-```bash
-claude mcp list
-```
-
-Expected output:
-```
-qms: http://host.docker.internal:8000/mcp (HTTP) - ✓ Connected
-```
-
-### Step 4: Start Claude (Inside Container)
-
-```bash
-claude
-```
-
-On first run, you'll need to authenticate. Follow the prompts.
-
-### Step 5: Verify MCP Tools Work
+### Step 3: Verify MCP Works
 
 Inside Claude, try:
 ```
 Check my QMS inbox
-```
-
-Or:
-```
-Use the qms_inbox tool to check for pending tasks
 ```
 
 If you see a response like `{"result": "Inbox is empty"}`, the setup is complete.

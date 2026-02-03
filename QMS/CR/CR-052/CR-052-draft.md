@@ -1,0 +1,246 @@
+---
+title: Streamline Container Session Startup
+revision_summary: Updated with research findings - Option A (working_dir) is the solution
+---
+
+# CR-052: Streamline Container Session Startup
+
+## 1. Purpose
+
+Reduce the friction of starting a Claude session in a container from a multi-step, multi-terminal process to a single command.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+The containerization infrastructure (CR-042 through CR-048) is complete and operational, but starting a container session requires multiple manual steps across two terminals. This CR streamlines the startup process to make containerized sessions the default, low-friction way to interact with Claude.
+
+- **Parent Document:** None (usability improvement)
+
+### 2.2 Changes Summary
+
+1. Add `working_dir: /pipe-dream` to docker-compose.yml so Claude finds MCP config automatically
+2. Create a unified startup script that handles MCP server and container lifecycle
+3. Update documentation to reflect the simplified process
+
+### 2.3 Files Affected
+
+- `claude-session.sh` (new) - Single entry point script at repo root
+- `docker/docker-compose.yml` - Add `working_dir: /pipe-dream`
+- `docker/CONTAINER-GUIDE.md` - Update to reflect simplified startup
+- `.gitignore` - Add transient files created by the script
+
+---
+
+## 3. Current State
+
+Starting a containerized Claude session requires:
+
+1. **Terminal 1:** Start MCP server manually and keep terminal open
+   ```bash
+   cd qms-cli
+   python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --project-root "..."
+   ```
+
+2. **Terminal 2:** Start container and enter bash
+   ```bash
+   cd docker
+   docker-compose up -d
+   docker-compose exec claude-agent bash
+   ```
+
+3. **Inside container:** Configure MCP connection
+   ```bash
+   claude mcp add --transport http qms http://host.docker.internal:8000/mcp
+   ```
+
+4. **Inside container:** Start Claude
+   ```bash
+   claude
+   ```
+
+This process:
+- Requires two terminals (MCP server must remain running in foreground)
+- Requires remembering multiple commands
+- Requires manual MCP configuration inside the container each session
+- Creates friction that discourages container use
+
+---
+
+## 4. Proposed State
+
+Starting a containerized Claude session requires one command:
+
+```bash
+./claude-session.sh
+```
+
+This command:
+- Starts the MCP server in background (if not already running)
+- Starts the container (if not already running)
+- Launches Claude Code with MCP automatically configured
+
+The user is immediately in a Claude session with full QMS MCP access.
+
+---
+
+## 5. Change Description
+
+### 5.1 How Claude Code Discovers MCP Configuration
+
+Research based on [official documentation](https://code.claude.com/docs/en/settings) and [GitHub issue #4976](https://github.com/anthropics/claude-code/issues/4976) revealed:
+
+| File | Scope | Discovery |
+|------|-------|-----------|
+| `.mcp.json` | Project | Discovered in **project root** (working directory) |
+| `.claude/settings.local.json` | Project | Discovered in project root, contains `enabledMcpjsonServers` |
+
+**Root cause of current friction:** The container starts Claude at `/` (per Dockerfile WORKDIR), but the MCP config is mounted at `/pipe-dream/.mcp.json`. Claude doesn't find it because `/` is not the project root.
+
+**Solution:** Add `working_dir: /pipe-dream` to docker-compose.yml. This makes Claude start in `/pipe-dream/`, where it will find:
+- `/pipe-dream/.mcp.json` (HTTP transport config for container)
+- `/pipe-dream/.claude/settings.local.json` (with `enabledMcpjsonServers: ["qms"]`)
+
+This eliminates the need for manual `claude mcp add` entirely.
+
+### 5.2 Docker Compose Change
+
+Add one line to `docker/docker-compose.yml`:
+
+```yaml
+services:
+  claude-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /pipe-dream          # <-- ADD THIS LINE
+    volumes:
+      # ... existing mounts unchanged ...
+```
+
+### 5.3 Unified Startup Script
+
+Create `claude-session.sh` at the repository root:
+
+1. Check if MCP server is running on port 8000
+2. If not, start it in background (with PID file and log file)
+3. Ensure container is running (`docker-compose up -d`)
+4. Exec into container and run `claude`
+
+The script will be idempotent - safe to run whether services are already running or not.
+
+---
+
+## 6. Justification
+
+- **Friction reduction:** Current process discourages container use; streamlining makes it the natural default
+- **Error reduction:** Manual steps are error-prone; automation ensures consistent setup
+- **Onboarding:** New users (or returning after absence) can start immediately without remembering the process
+
+Impact of not making this change:
+- Container sessions remain underused due to friction
+- Users default to local Claude, missing isolation benefits
+- Multi-step process continues to waste time each session
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `claude-session.sh` | Create | Unified startup script |
+| `docker/docker-compose.yml` | Modify | Add `working_dir: /pipe-dream` |
+| `docker/CONTAINER-GUIDE.md` | Modify | Update Quick Start section |
+| `.gitignore` | Modify | Add `.mcp-server.pid`, `.mcp-server.log` |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| None | - | No controlled documents affected |
+
+### 7.3 Other Impacts
+
+None - this CR modifies docker infrastructure only, not controlled code.
+
+---
+
+## 8. Testing Summary
+
+Verification will be manual:
+
+1. **Fresh start test:** Run `./claude-session.sh` with no MCP server or container running
+2. **MCP verification:** Inside Claude, verify `qms_inbox` tool works
+3. **Idempotency test:** Exit and re-run `./claude-session.sh` - should handle already-running services
+4. **Platform test:** Verify script works in Windows Git Bash environment
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: Docker Configuration
+
+1. Add `working_dir: /pipe-dream` to `docker/docker-compose.yml`
+2. Verify manually that Claude finds MCP config without `claude mcp add`
+
+### 9.2 Phase 2: Create Startup Script
+
+1. Create `claude-session.sh` with MCP server startup logic
+2. Add container startup logic
+3. Add Claude exec logic
+4. Test end-to-end
+
+### 9.3 Phase 3: Documentation and Cleanup
+
+1. Update `docker/CONTAINER-GUIDE.md` with new Quick Start
+2. Add transient files to `.gitignore`
+3. Final verification
+
+---
+
+## 10. Execution
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Add working_dir to docker-compose.yml | Added `working_dir: /pipe-dream` after `dockerfile: Dockerfile` line | Pass | claude - 2026-02-02 |
+| EI-2 | Verify MCP auto-discovery works | [PENDING USER VERIFICATION] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Create claude-session.sh | Created script with MCP server startup, container startup, and claude exec logic | Pass | claude - 2026-02-02 |
+| EI-4 | End-to-end testing | [PENDING USER VERIFICATION] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Update CONTAINER-GUIDE.md | Updated Quick Start to single-command approach, moved manual steps to reference section | Pass | claude - 2026-02-02 |
+| EI-6 | Update .gitignore | Added `.mcp-server.pid` and `.mcp-server.log` | Pass | claude - 2026-02-02 |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| EI-2 and EI-4 require user to test the container startup. User should run `./claude-session.sh` and verify MCP tools work. | claude - 2026-02-02 |
+
+---
+
+## 11. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **CR-042:** Add Remote Transport Support to QMS MCP Server
+- **CR-043:** Implement Containerized Claude Agent Infrastructure
+- **CR-046:** Containerization Infrastructure Operational Verification
+- **CR-047:** MCP Server Streamable-HTTP Transport Support
+- **docker/CONTAINER-GUIDE.md:** Current manual process documentation
+- **Claude Code Settings Documentation:** https://code.claude.com/docs/en/settings
+- **GitHub Issue #4976:** MCP configuration file location
+
+---
+
+**END OF DOCUMENT**

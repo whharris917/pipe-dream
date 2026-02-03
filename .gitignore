@@ -22,3 +22,7 @@ prompt.txt
 
 # QMS CLI test environment
 .test-env/
+
+# Container session files
+.mcp-server.pid
+.mcp-server.log

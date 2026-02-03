@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    working_dir: /pipe-dream
     volumes:
       # Production QMS (read-only)
       - ../:/pipe-dream:ro
