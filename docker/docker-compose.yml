@@ -15,11 +15,18 @@ services:
       - ./.mcp.json:/pipe-dream/.mcp.json:ro
       # SSH keys (read-only)
       - ~/.ssh:/.ssh:ro
-      # Claude Code credentials (read-write for token refresh) - updated per CR-052
-      - ~/.claude/.credentials.json:/.claude/.credentials.json:rw
+      # Claude Code config (persistent via named volume) - per CR-052/issue #1736
+      # Auth persists: first run requires login, subsequent runs don't
+      - claude-config:/claude-config
     environment:
       - HOME=/
+      # Point Claude Code to persistent config directory - per GitHub issue #1736
+      - CLAUDE_CONFIG_DIR=/claude-config
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux compatibility
     stdin_open: true
     tty: true
+
+# Named volumes for persistent data
+volumes:
+  claude-config:

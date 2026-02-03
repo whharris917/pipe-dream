@@ -18,17 +18,22 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g @anthropic-ai/claude-code
 
 # Create directory structure
-RUN mkdir -p /projects /pipe-dream /.claude /.ssh
+RUN mkdir -p /projects /pipe-dream /.claude /.ssh /init-config /claude-config
 
 # Copy baked-in MCP configuration (project-scoped, kept for reference)
 COPY .mcp.json /.mcp.json
 
-# Copy user-scoped MCP configuration (auto-connects without approval prompt)
-# User-scoped servers bypass the project trust dialog per CR-052
-COPY .claude-container.json /.claude.json
+# Copy initial config with user-scoped MCP server (for first-run initialization)
+# The entrypoint script copies this to CLAUDE_CONFIG_DIR on first run
+COPY .claude-container.json /init-config/.claude.json
+
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Default git config (can be overridden by mount)
 RUN git config --global init.defaultBranch main
 
-# Entry point - start Claude Code
-CMD ["claude"]
+# Entry point - initialize config and start Claude Code
+ENTRYPOINT ["/entrypoint.sh"]
+CMD []
