@@ -110,11 +110,55 @@ QMS operations flow through the MCP server:
 3. Edit in workspace: `/pipe-dream/.claude/users/claude/workspace/`
 4. Check in: Use `qms_checkin("CR-XXX")` MCP tool
 
+## GitHub Authentication (Required for git push)
+
+Git operations in the container are authenticated via GitHub CLI using a Personal Access Token (PAT).
+
+### Setup
+
+1. **Create a GitHub PAT** at https://github.com/settings/tokens
+   - Click "Generate new token" → "Generate new token (classic)"
+   - Required scope: `repo` (full control of private repositories)
+   - Recommended expiration: 90 days (rotate periodically)
+
+2. **Create `.env` file** in the `docker/` directory:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your token
+   ```
+
+   Or create manually:
+   ```
+   GH_TOKEN=ghp_your_token_here
+   ```
+
+3. **Rebuild and restart** the container:
+   ```bash
+   docker-compose build
+   docker-compose up -d
+   ```
+
+### Security Considerations
+
+- **Never commit `.env`** - it's gitignored for a reason
+- **Use scoped tokens** - only grant `repo` permission, not full account access
+- **Rotate tokens** - set expiration and regenerate periodically
+- **Revoke if compromised** - if the container is ever compromised, immediately revoke the token at github.com/settings/tokens
+
+This approach follows [Anthropic's security guidance](https://www.anthropic.com/engineering/claude-code-sandboxing) for keeping credentials minimal, external, and easily revocable.
+
+### Verification
+
+After setup, verify authentication in the container:
+```bash
+docker-compose exec claude-agent gh auth status
+```
+
 ## Prerequisites
 
 - Docker Desktop (Mac/Windows) or Docker Engine (Linux)
 - Claude Code credentials (`~/.claude/.credentials.json` on host)
-- SSH keys for GitHub (`~/.ssh/` on host)
+- GitHub Personal Access Token (see GitHub Authentication above)
 
 ## Troubleshooting
 
@@ -165,5 +209,7 @@ docker build -t claude-agent .
 - CR-042: Add Remote Transport Support to QMS MCP Server
 - CR-043: Implement Containerized Claude Agent Infrastructure
 - CR-052: Zero-friction container startup (auth persistence, MCP auto-connect)
+- CR-053: Container git authentication via GitHub CLI
 - [GitHub #1736](https://github.com/anthropics/claude-code/issues/1736): CLAUDE_CONFIG_DIR for auth persistence
 - [GitHub #7290](https://github.com/anthropics/claude-code/issues/7290): Multiple headers bypass for MCP auto-connect
+- [Anthropic - Claude Code Sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing): Security best practices

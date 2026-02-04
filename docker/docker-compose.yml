@@ -27,6 +27,8 @@ services:
       - CLAUDE_CONFIG_DIR=/claude-config
       # Increase MCP startup timeout (default 30000ms) - per CR-052 investigation
       - MCP_TIMEOUT=60000
+      # GitHub token for git operations (per CR-053) - reads from .env file
+      - GH_TOKEN=${GH_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux compatibility
     stdin_open: true

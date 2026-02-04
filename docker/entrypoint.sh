@@ -35,5 +35,23 @@ if [ ! -f "$MCP_MARKER" ]; then
     echo "MCP server configured"
 fi
 
+# Configure GitHub CLI if token provided (per CR-053)
+if [ -n "$GH_TOKEN" ]; then
+    echo "Configuring GitHub CLI..."
+    echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null
+    gh auth setup-git 2>/dev/null
+    # Configure git user for commits (use GitHub-provided values or defaults)
+    GH_USER=$(gh api user --jq '.login' 2>/dev/null || echo "claude-agent")
+    GH_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null)
+    if [ -z "$GH_EMAIL" ]; then
+        GH_EMAIL="${GH_USER}@users.noreply.github.com"
+    fi
+    git config --global user.name "$GH_USER"
+    git config --global user.email "$GH_EMAIL"
+    echo "GitHub CLI configured (user: $GH_USER)"
+else
+    echo "Note: GH_TOKEN not set - git push will not work"
+fi
+
 # Start Claude Code
 exec claude "$@"

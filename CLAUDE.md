@@ -220,6 +220,11 @@ cd docker && docker-compose up -d && docker-compose exec claude-agent bash
 - `/projects/` - Read-write for code development
 - `/.claude/.credentials.json` - Mounted credentials for Claude Code auth
 
+**Git Authentication:**
+Git operations in the container use GitHub CLI (`gh`) with a Personal Access Token. The token is passed via the `GH_TOKEN` environment variable from `docker/.env`. This approach follows Anthropic's security guidance for keeping credentials minimal, external, and easily revocable.
+
+Setup: Create a PAT at github.com/settings/tokens with `repo` scope, then add it to `docker/.env`. See `docker/README.md` for detailed instructions.
+
 **Key Principle:** All QMS writes flow through the MCP server on the host. The container cannot directly modify production QMS files.
 
 See `docker/README.md` for detailed documentation.
