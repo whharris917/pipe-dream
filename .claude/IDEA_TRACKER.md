@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-02-04
+
+### Formalize UATs as Stage Gates
+
+During CR-055 execution, the Lead performed User Acceptance Testing (UAT) before the CR was routed for post-review. This pattern—having the user verify functionality before closing execution—proved valuable for ensuring actual user-facing validation occurs.
+
+**Current state:**
+- UAT is ad-hoc, requested informally during execution
+- No formal EI template language for UAT steps
+- No distinction between "developer testing" and "user acceptance testing"
+
+**Potential formalization:**
+- Add UAT as a named stage gate in executable document workflows
+- CR execution tables could have explicit UAT rows: `| EI-N | User Acceptance Testing | [Protocol] | [Pass/Fail] | lead - DATE |`
+- Define what qualifies as UAT vs. regular testing (user performs vs. developer performs)
+- Consider whether UAT should be mandatory for user-facing changes or optional
+
+**Questions:**
+- Should UAT be a distinct EI or a suffix on the final implementation EI?
+- Who can perform UAT? Only `lead`, or any human user?
+- Should UAT protocols be formal documents or inline in execution comments?
+- Does this overlap with any GMP testing concepts (IQ/OQ/PQ)?
+
+---
+
 ## 2026-01-19
 
 ### Agent resume failures and wasteful fresh spawns

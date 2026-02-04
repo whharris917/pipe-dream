@@ -1,8 +1,8 @@
-# Session 2026-02-04-001: Git MCP Server Implementation
+# Session 2026-02-04-001: Git MCP Server Implementation & Integration
 
 ## Objective
 
-Implement a Git MCP server to enable agents in Docker containers to execute git commands on the host repository, with protection against submodule modifications and destructive operations.
+Implement a Git MCP server for container git operations (CR-054), then integrate it into the unified session startup script (CR-055).
 
 ## Background
 
@@ -85,10 +85,47 @@ See: `introspection-deferral-decision.md`
 - `docker/entrypoint.sh`
 - `docker/README.md`
 - `CLAUDE.md`
+- `claude-session.sh` (CR-055)
+- `.claude/IDEA_TRACKER.md`
+
+## CR-055: Add Git MCP Server to claude-session.sh
+
+**Status:** CLOSED
+
+### Implementation
+
+Updated `claude-session.sh` to provide zero-friction container sessions with both MCP servers:
+
+| Step | Description |
+|------|-------------|
+| 1/5 | Check/start QMS MCP server (port 8000) |
+| 2/5 | Check/start Git MCP server (port 8001) |
+| 3/5 | Start container |
+| 4/5 | Verify MCP connectivity (both servers) |
+| 5/5 | Launch Claude Code |
+
+### Changes
+
+- Refactored Python executable detection (shared by both servers)
+- Added Git MCP server startup with PID file tracking
+- Added dual connectivity verification from container
+- Updated post-session message to show both PID files
+
+### UAT Results
+
+User Acceptance Testing performed by Lead (3 runs):
+- **Run 1:** All steps passed; Claude exited due to auto-update (not script issue)
+- **Run 2:** Full pass — all functionality verified
+- **Run 3:** Full pass — confirmation run
+
+## Ideas Captured
+
+- **Formalize UATs as Stage Gates** — The UAT pattern used in CR-055 (user verifies before post-review) could be formalized in the CR workflow. Added to IDEA_TRACKER.md.
 
 ## Next Steps
 
-The Git MCP server is operational. Future enhancements could include:
-- User permission checking (currently any container user can execute)
+Both MCP servers are now fully integrated. Future enhancements could include:
+- User permission checking for git operations
 - More granular path restrictions beyond submodules
 - Audit logging of git operations
+- Formalizing UAT as a stage gate in SOP-002
