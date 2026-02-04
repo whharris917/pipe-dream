@@ -1,5 +1,6 @@
 {
   "enabledMcpjsonServers": [
-    "qms"
+    "qms",
+    "git"
   ]
 }

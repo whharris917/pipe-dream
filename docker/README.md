@@ -110,6 +110,37 @@ QMS operations flow through the MCP server:
 3. Edit in workspace: `/pipe-dream/.claude/users/claude/workspace/`
 4. Check in: Use `qms_checkin("CR-XXX")` MCP tool
 
+### Git Operations from Containers
+
+Since `/pipe-dream/` is mounted read-only (including `.git/`), git operations cannot execute directly in the container. The Git MCP server provides a controlled proxy for git commands.
+
+**Starting the Git MCP Server (on host):**
+
+```bash
+cd docker/scripts
+./start-git-mcp.sh            # Foreground
+./start-git-mcp.sh --background  # Background
+```
+
+**Using git from container:**
+
+```python
+# Single commands
+git_exec("status")
+git_exec("log --oneline -10")
+
+# Chained commands
+git_exec("git add .claude/sessions/ && git commit -m 'Session notes' && git push")
+```
+
+**Protected Operations:**
+
+The Git MCP server blocks:
+- References to submodules: `flow-state`, `qms-cli`
+- Destructive commands: `push --force`, `reset --hard`, `clean -f`, `checkout .`, `restore .`
+
+All other git operations pass through normally.
+
 ## GitHub Authentication (Required for git push)
 
 Git operations in the container are authenticated via GitHub CLI using a Personal Access Token (PAT).
@@ -210,6 +241,7 @@ docker build -t claude-agent .
 - CR-043: Implement Containerized Claude Agent Infrastructure
 - CR-052: Zero-friction container startup (auth persistence, MCP auto-connect)
 - CR-053: Container git authentication via GitHub CLI
+- CR-054: Git MCP Server for Container Operations
 - [GitHub #1736](https://github.com/anthropics/claude-code/issues/1736): CLAUDE_CONFIG_DIR for auth persistence
 - [GitHub #7290](https://github.com/anthropics/claude-code/issues/7290): Multiple headers bypass for MCP auto-connect
 - [Anthropic - Claude Code Sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing): Security best practices

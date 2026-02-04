@@ -7,6 +7,10 @@
         "X-API-Key": "qms-internal",
         "Authorization": "Bearer internal-trusted"
       }
+    },
+    "git": {
+      "type": "http",
+      "url": "http://host.docker.internal:8001/mcp"
     }
   }
 }

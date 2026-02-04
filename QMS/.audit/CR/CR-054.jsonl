@@ -1,0 +1,30 @@
+{"ts": "2026-02-04T14:50:42+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Git MCP Server for Container Operations"}
+{"ts": "2026-02-04T14:57:29+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-04T14:58:32+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-04T14:58:32+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-04T14:59:56+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review compliance assessment COMPLIANT. Verified: (1) Frontmatter title=\"Git MCP Server for Container Operations\", revision_summary=\"Initial draft\" (acceptable per SOP-001 Section 5.1 exception for v0.1); (2) All 12 sections required by SOP-002 Section 6 are present and complete; (3) No prohibited placeholder content (TBD/TODO/FIXME/XXX) in pre-approved sections; (4) Technical content is well-structured with clear architecture, validation rules, and implementation details; (5) Testing summary covers allowed operations, chained commands, submodule blocking, destructive blocking, and error handling; (6) No typos or formatting errors detected. Recommend proceeding to pre-approval."}
+{"ts": "2026-02-04T14:59:56+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-04T15:00:16+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-04T15:00:16+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-04T15:00:32+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-04T15:00:32+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-04T15:00:44+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-04T15:00:44+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-04T15:19:14+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-04T15:20:26+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-04T15:20:33+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-04T15:20:33+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.1", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-04T15:22:01+00:00", "event": "REVIEW", "user": "qa", "version": "1.1", "outcome": "UPDATES_REQUIRED", "comment": "Post-review finding: EI-7 uses outcome 'Deferred' which is not a valid Task Outcome per SOP-002 Section 7.3. Valid outcomes are Pass or Fail only. Options to resolve: (1) Lead executes EI-7 container testing per the provided Test Protocol and updates outcome to Pass; OR (2) Mark EI-7 as Fail and attach a VAR documenting the deferral with remediation plan. All other execution items verified - files exist and content matches documented work. Deviation (git_mcp vs git-mcp directory name) is properly documented and acceptable."}
+{"ts": "2026-02-04T15:22:01+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-04T16:09:55+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-04T16:13:47+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-04T16:13:55+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-04T16:13:55+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.1", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-04T16:14:44+00:00", "event": "REVIEW", "user": "qa", "version": "1.1", "outcome": "RECOMMEND", "comment": "Post-review compliance assessment COMPLIANT. Previous finding resolved: EI-7 now has valid Pass outcome with documented test results (4 tests: git status, git log, submodule blocking, destructive blocking - all passed, performed by lead 2026-02-04). All 9 execution items have Pass outcomes. Execution Summary documents results and two deviations: (1) directory naming git_mcp/ vs git-mcp/, (2) additional container integration work. No VARs required. No QMS documents affected. Recommend proceeding to post-approval."}
+{"ts": "2026-02-04T16:14:44+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-04T16:15:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-02-04T16:15:00+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.1", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-02-04T16:15:17+00:00", "event": "APPROVE", "user": "qa", "version": "1.1"}
+{"ts": "2026-02-04T16:15:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-02-04T16:15:28+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-02-04T16:15:28+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

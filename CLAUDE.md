@@ -190,6 +190,31 @@ The environment variable `QMS_PROJECT_ROOT` can also be used to specify the proj
 
 **Note:** SSE transport is deprecated. Use `streamable-http` for all new remote connections.
 
+### Git MCP Server (for Container Git Operations)
+
+Since containers mount pipe-dream as read-only (including `.git/`), git operations cannot run directly. The Git MCP server provides a controlled proxy:
+
+**Start Git MCP server on host:**
+```bash
+cd docker/scripts && ./start-git_mcp.sh
+```
+
+**Available tool:**
+| MCP Tool | Description |
+|----------|-------------|
+| `git_exec(command)` | Execute git command(s) on host repository |
+
+**Usage examples:**
+```python
+git_exec("status")
+git_exec("log --oneline -10")
+git_exec("git add .claude/sessions/ && git commit -m 'Session notes' && git push")
+```
+
+**Protected operations (blocked):**
+- Submodule references: `flow-state`, `qms-cli`
+- Destructive commands: `push --force`, `reset --hard`, `clean -f`, `checkout .`, `restore .`
+
 ### Container Infrastructure
 
 The `docker/` directory contains infrastructure for running Claude agents in isolated containers:
@@ -201,7 +226,8 @@ docker/
 ├── .mcp.json               # MCP config (baked into image)
 ├── README.md               # Detailed usage documentation
 └── scripts/
-    ├── start-mcp-server.sh # Start MCP server on host
+    ├── start-mcp-server.sh # Start QMS MCP server on host
+    ├── start-git_mcp.sh    # Start Git MCP server on host
     └── start-container.sh  # Start container with checks
 ```
 
