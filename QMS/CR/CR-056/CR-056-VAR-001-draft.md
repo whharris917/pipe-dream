@@ -1,0 +1,177 @@
+---
+title: MCP Auto-Connect Reliability Blocks Multi-Agent Testing
+revision_summary: Initial draft
+---
+
+# CR-056-VAR-001: MCP Auto-Connect Reliability Blocks Multi-Agent Testing
+
+## 1. Variance Identification
+
+| Parent Document | Affected Item | VAR Type |
+|-----------------|---------------|----------|
+| CR-056 | EI-6 (end-to-end test repeatability) | Type 1 |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+VAR TYPE:
+- Type 1: Full closure required to clear block on parent
+- Type 2: Pre-approval sufficient to clear block on parent
+-->
+
+---
+
+## 2. Detailed Description
+
+CR-056 implements multi-agent container session infrastructure. All seven execution items were implemented and tested in Session 2026-02-04-003. The multi-agent system was demonstrated end-to-end: claude and qa launched in separate terminal windows, both connected to MCP servers, QA correctly self-identified (after fixing a volume mount bug), and a QMS workflow test passed with inbox watcher notifications.
+
+However, the Lead observed that on subsequent container launches, MCP auto-connect is intermittently unreliable. The end-to-end test (EI-6) passed on its initial run but is not repeatable — the multi-agent workflow cannot be relied upon for production use.
+
+**Expected:** Claude Code auto-connects to MCP servers via HTTP transport on every container startup, making the multi-agent workflow repeatable.
+
+**Actual:** MCP servers fail to auto-connect approximately 10% of the time. Failures are per-server and independent. In some cases, Claude Code does not even attempt an HTTP connection to the server (no requests observed in server logs). Manual `/mcp` reconnect always works, but no programmatic reconnection mechanism exists. The Lead correctly halted CR-056 closure rather than accept a non-repeatable result.
+
+---
+
+## 3. Root Cause
+
+Five root causes were identified during a 17-phase debugging effort (Session-2026-02-05-001):
+
+1. **Stale MCP Session ID Reuse** (server-side) — Claude Code caches `Mcp-Session-Id` headers; server evicts the session; client doesn't recover. **Fixed** with `stateless_http=True` on both MCP servers.
+
+2. **406 Accept Header Rejection** (protocol mismatch) — Claude Code sends HTTP requests without proper `Accept: application/json, text/event-stream` header. MCP SDK rejects with 406. **Partially mitigated** by `stateless_http=True`; ASGI middleware attempts to fix headers made things worse.
+
+3. **Accumulated Client State** (client-side) — MCP-related fields in `.claude.json` accumulate across container runs, causing stale state. **Fixed** with surgical `jq` cleaning in entrypoint.
+
+4. **IPv6/IPv4 Dual-Stack** (network) — Node.js resolves `host.docker.internal` to IPv6 first, which is unreachable in Docker. **Fixed** with `NODE_OPTIONS="--dns-result-order=ipv4first"`.
+
+5. **Claude Code HTTP MCP Client Intermittent Failure** (client-side, **UNFIXABLE from server side**) — Claude Code sometimes does not attempt to connect at all. No server-side logs, no requests, no errors. This is an internal timeout or race condition in Claude Code's MCP client initialization. No programmatic `/mcp reconnect` exists. Confirmed by multiple open GitHub issues (#15232, #1026, #10129, #10071) with no timeline for resolution.
+
+Root causes 1-4 were resolved, bringing reliability from near-0% to 90% (27/30 in best trial). Root cause 5 accounts for the remaining ~10% and cannot be fixed from the server side.
+
+---
+
+## 4. Variance Type
+
+External Factor — The root cause is an intermittent failure in Claude Code's HTTP MCP client when running inside Docker containers. This is a limitation of the external tool (Claude Code) that cannot be resolved through server-side changes or configuration. The execution plan assumed HTTP MCP connections would work reliably, which proved false under repeated testing.
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Select one:
+- Execution Error: Executor made a mistake or didn't follow instructions
+- Scope Error: Plan/scope was written or designed incorrectly
+- System Error: The system behaved unexpectedly
+- Documentation Error: Error in a document other than the parent
+- External Factor: Environmental or external issue
+- Other: See Detailed Description
+-->
+
+---
+
+## 5. Impact Assessment
+
+**Effect on parent objectives:** CR-056's core goal — multi-agent container sessions with inbox notifications — has been fully implemented and demonstrated. All seven EIs pass. However, the system depends on MCP auto-connect, which is unreliable. The multi-agent workflow works when MCP connects but cannot be relied upon for repeatable production use.
+
+**What was accomplished in the parent:**
+- All 7 EIs implemented and tested (Session 2026-02-04-003)
+- Multi-agent launch demonstrated (claude + qa in separate terminals)
+- QA identity bug found and fixed (docker-compose run `-v` issue)
+- QMS workflow test passed (document routed, inbox watcher notified)
+- Significant unplanned hardening during debugging: entrypoint rewrite, Dockerfile improvements, MCP server `stateless_http=True`, auth header fixes
+
+**What this VAR absorbs:**
+- The gap between "works" and "works reliably every time"
+- Specifically: MCP auto-connect must be made near-100% reliable before the CR can close
+
+**No scope items are lost.** All EIs are complete. The VAR addresses the underlying reliability of the infrastructure they depend on.
+
+---
+
+## 6. Proposed Resolution
+
+### Corrective Action: Stdio Proxy CR
+
+Create a new Change Record to implement a **stdio-to-HTTP proxy** inside the container, eliminating HTTP transport from Claude Code's perspective entirely.
+
+**Architecture:**
+```
+Claude Code <--stdio--> mcp_proxy.py <--HTTP--> Host MCP Server
+```
+
+- **Claude Code to Proxy:** stdio transport (local subprocess, near-100% reliable)
+- **Proxy to Host Server:** HTTP with retry logic (proxy handles failures transparently)
+- Claude Code never sees HTTP. It only sees a local stdio MCP server that always responds.
+
+**Why this resolves the variance:**
+- Stdio MCP connections are local subprocess spawns — no network, no Docker virtual networking, no HTTP client issues
+- The proxy handles HTTP connection management with configurable retry logic
+- If the HTTP connection to the host fails, the proxy retries before returning an error
+- Claude Code sees a clean MCP error (not a connection failure) if all retries are exhausted
+
+**Implementation plan:** Documented in `Session-2026-02-05-001/stdio-proxy-plan.md`.
+
+**After the stdio proxy CR is closed:**
+- MCP auto-connect reliability validated at 30/30 (target: 100%)
+- CR-056 EI-6 end-to-end test re-run to confirm repeatable multi-agent workflow
+
+---
+
+## 7. Resolution Work
+
+<!--
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+If the resolution work encounters issues, create a nested VAR.
+-->
+
+### Resolution: CR-056
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Create and execute CR for stdio proxy implementation | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Validate MCP auto-connect reliability with stdio proxy (target: 30/30) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Re-run CR-056 EI-6 end-to-end test with reliable MCP connections | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+---
+
+### Resolution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during resolution.
+Add rows as needed.
+
+This section is the appropriate place to attach nested VARs that do not
+apply to any individual resolution item, but apply to the resolution as a whole.
+-->
+
+---
+
+## 8. VAR Closure
+
+| Details of Resolution | Outcome | Performed By - Date |
+|-----------------------|---------|---------------------|
+| [RESOLUTION_DETAILS] | [OUTCOME] | [PERFORMER] - [DATE] |
+
+---
+
+## 9. References
+
+- **SOP-004:** Document Execution
+- **CR-056:** Multi-Agent Container Session Infrastructure (parent)
+- **Session-2026-02-05-001:** MCP auto-connect debugging and fixes (17-phase investigation)
+- **stdio-proxy-plan.md:** Detailed implementation plan for the corrective action
+- **GitHub #9608:** Stale MCP Session ID Reuse
+- **GitHub #15232, #1026, #10129, #10071:** Programmatic MCP reconnection (no resolution)
+- **GitHub #7404:** Bad MCP health check
+- **GitHub #15523:** Missing Accept header in Claude Code MCP client
+
+---
+
+**END OF VARIANCE REPORT**

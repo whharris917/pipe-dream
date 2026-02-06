@@ -1,6 +1,6 @@
-# Session 2026-02-05-001: MCP Auto-Connect Debugging
+# Session 2026-02-05-001: MCP Auto-Connect Debugging + CR-056 Regrouping
 
-## Status: ARCHITECTURAL PIVOT - Stdio proxy approach planned
+## Status: REGROUPED — CR-056 narrative corrected, VAR filed, ready for stdio proxy tomorrow
 
 ---
 
@@ -176,3 +176,46 @@ See `stdio-proxy-plan.md` for full implementation plan.
 6. **No programmatic `/mcp reconnect`** - confirmed limitation, multiple open feature requests
 7. **SSE was deprecated, not stdio** - stdio is tier-1 recommended transport
 8. **HTTP transport in Docker is inherently unreliable** - architectural solution (stdio proxy) needed
+
+---
+
+## Session Continuation: CR-056 Regrouping
+
+After context consolidation, the session continued with a focus on wrapping up CR-056 documentation.
+
+### Narrative Correction
+
+Transcript review (Session 2026-02-04-003, transcript `64c322d7`) revealed that **all 7 EIs of CR-056 were implemented and tested before the MCP instability was noticed.** The earlier session summaries had underrepresented this — they focused on the debugging and gave the impression that EI-3, EI-4, and EI-6 were never completed. In fact:
+
+- Multi-agent launch worked (claude + qa in separate terminals)
+- Both MCP servers connected on first attempt
+- QA identity bug found and fixed (docker-compose run ignores `-v`)
+- QMS workflow test passed (document routed, inbox watcher notified)
+- MCP instability appeared on subsequent launches
+- Lead correctly halted CR closure
+
+### Documents Updated
+
+- **CR-056 (v1.2):** All EIs marked Pass. Execution summary rewritten to reflect the accurate sequence.
+- **CR-056-VAR-001 (v0.1):** Reframed from "three items failed" to "system works but MCP reliability makes it non-repeatable." Resolution work simplified to: implement stdio proxy, validate 30/30, re-run end-to-end test.
+- **CR-056-retrospective.md:** Comprehensive 5-act narrative with transcript evidence, timeline, file inventory, corrected EI assessment, and lessons learned.
+
+### QMS State at Session End
+
+| Document | Version | Status |
+|----------|---------|--------|
+| CR-056 | v1.2 | IN_EXECUTION |
+| CR-056-VAR-001 | v0.1 | IN_PRE_REVIEW (awaiting QA) |
+
+### Tomorrow's Plan
+
+Implement the stdio proxy (`mcp_proxy.py`) to achieve reliable, multi-agent, one-agent-per-container QMS workflows — the vision established in Sessions 2026-02-03-003 and 2026-02-04-002.
+
+Steps:
+1. QA reviews and approves CR-056-VAR-001
+2. Create CR for stdio proxy implementation (per VAR's corrective action)
+3. Implement `mcp_proxy.py`
+4. Update container config (`.mcp.json`, Dockerfile, entrypoint)
+5. Validate 30/30 MCP connection reliability
+6. Re-run CR-056 EI-6 end-to-end test
+7. Close VAR, then close CR-056
