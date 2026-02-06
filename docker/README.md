@@ -8,48 +8,40 @@ The container provides:
 - **Isolation**: Claude runs in a container with restricted filesystem access
 - **Read-only QMS access**: Production QMS files are mounted read-only
 - **Controlled write access**: Only workspace and /projects/ are writable
-- **MCP connectivity**: All QMS operations flow through the host MCP server
+- **MCP connectivity**: All QMS operations flow through the host MCP server via stdio proxy
 
 ## Quick Start
 
+All container sessions use the unified `launch.sh` script in the repository root.
+
 ### Single Agent
 
-From the repository root, run:
-
 ```bash
-./claude-session.sh [agent_name]
-```
-
-Examples:
-```bash
-./claude-session.sh        # Launches as 'claude' (default)
-./claude-session.sh qa     # Launches as 'qa' agent
-./claude-session.sh tu_ui  # Launches as 'tu_ui' agent
+./launch.sh              # Launches as 'claude' (default)
+./launch.sh qa           # Launches as 'qa' agent
+./launch.sh tu_ui        # Launches as 'tu_ui' agent
 ```
 
 Valid agents: `claude`, `qa`, `tu_ui`, `tu_scene`, `tu_sketch`, `tu_sim`, `bu`
 
 This single command:
 1. Starts the MCP servers in background (if not running)
-2. Starts the Docker container for the specified agent
-3. Mounts the appropriate CLAUDE.md (agent definition for non-claude agents)
-4. Launches Claude Code with MCP auto-configured
+2. Builds the Docker image (if needed)
+3. Starts the container with SETUP_ONLY=1 (entrypoint configures, then sleeps)
+4. Attaches an interactive Claude session via `docker exec`
+5. Mounts the appropriate CLAUDE.md (agent definition for non-claude agents)
+6. Cleans up the container on exit
 
 **First run per agent:** Browser OAuth required (credentials persist per-agent)
 **Subsequent runs:** No authentication, MCP auto-connects
 
 ### Multi-Agent Session
 
-To run multiple agents simultaneously with inbox notifications:
+Pass two or more agent names to launch them in separate terminal windows:
 
 ```bash
-./multi-agent-session.sh [agent1] [agent2] ...
-```
-
-Examples:
-```bash
-./multi-agent-session.sh              # Launches claude + qa (default)
-./multi-agent-session.sh claude qa tu_ui  # Launches all three
+./launch.sh claude qa           # Launches claude + qa (default pair)
+./launch.sh claude qa tu_ui     # Launches all three
 ```
 
 This opens:
@@ -79,6 +71,39 @@ docker-compose up -d
 docker-compose exec claude-agent claude
 ```
 
+## MCP Architecture: Stdio Proxy
+
+Container MCP connections use a **stdio-to-HTTP proxy** rather than direct HTTP transport. This eliminates the ~10% intermittent connection failure that Claude Code's HTTP MCP client exhibited in Docker containers.
+
+```
+Claude Code  <--stdio-->  mcp_proxy.py  <--HTTP-->  Host MCP Server
+(container)               (container)                (host)
+```
+
+**How it works:**
+1. Claude Code spawns `mcp_proxy.py` as a local subprocess (stdio transport)
+2. The proxy reads JSON-RPC messages from stdin
+3. The proxy forwards each request as an HTTP POST to the host MCP server
+4. The proxy parses the response (JSON or SSE format) and returns it via stdout
+5. On HTTP failure, the proxy retries with exponential backoff before returning an error
+
+**Configuration** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "qms": {
+      "command": "python3",
+      "args": ["/proxy/mcp_proxy.py", "http://host.docker.internal:8000/mcp",
+               "--retries", "3", "--timeout", "10000",
+               "--header", "X-API-Key=qms-internal",
+               "--header", "Authorization=Bearer internal-trusted"]
+    }
+  }
+}
+```
+
+**Why not direct HTTP?** Claude Code's HTTP MCP client intermittently fails to connect in Docker (~10% failure rate). The failure is client-side — sometimes no HTTP request is even attempted. Stdio connections are local subprocess spawns with no network dependency, achieving 100% reliability in testing (40/40 across scripted and manual tests).
+
 ## Filesystem Structure
 
 ```
@@ -93,7 +118,7 @@ docker-compose exec claude-agent claude
 │   ├── CLAUDE.md                      # [READ-ONLY or OVERLAY]
 │   │                                  # - claude: uses real CLAUDE.md
 │   │                                  # - others: .claude/agents/{agent}.md mounted over
-│   ├── .mcp.json                      # [OVERLAY] HTTP MCP config with dual headers
+│   ├── .mcp.json                      # [OVERLAY] MCP config (stdio proxy to host servers)
 │   ├── QMS/                           # [READ-ONLY]
 │   ├── flow-state/                    # [READ-ONLY]
 │   ├── qms-cli/                       # [READ-ONLY]
@@ -249,14 +274,24 @@ docker-compose exec claude-agent gh auth status
 
 ## Troubleshooting
 
-### Container cannot reach MCP server
+### MCP servers show "failed" in Claude Code
 
-1. Verify MCP server is running on host:
+1. Verify the host MCP servers are running:
    ```bash
-   curl http://localhost:8000/mcp
+   curl -s -X POST http://localhost:8000/mcp \
+     -H "Content-Type: application/json" \
+     -H "Accept: application/json, text/event-stream" \
+     -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}'
    ```
 
-2. On Linux, ensure `host.docker.internal` is configured:
+2. Test the proxy from inside the container:
+   ```bash
+   echo '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}' \
+     | python3 /proxy/mcp_proxy.py http://host.docker.internal:8000/mcp --retries 1 --timeout 5000 \
+       --header "X-API-Key=qms-internal" --header "Authorization=Bearer internal-trusted"
+   ```
+
+3. On Linux, ensure `host.docker.internal` is configured:
    ```bash
    # docker-compose.yml already includes:
    extra_hosts:
@@ -277,7 +312,7 @@ Auth is stored per-agent in `.claude/users/{agent}/container/`. To reset for a s
 rm -rf .claude/users/qa/container/*  # Reset qa agent
 ```
 
-Then run `./claude-session.sh qa` again to re-authenticate.
+Then run `./launch.sh qa` again to re-authenticate.
 
 ### Inbox watcher not detecting new files (Windows)
 
@@ -307,6 +342,7 @@ docker build -t claude-agent .
 - CR-053: Container git authentication via GitHub CLI
 - CR-054: Git MCP Server for Container Operations
 - CR-056: Multi-Agent Container Session Infrastructure
+- CR-057: MCP Stdio Proxy for Reliable Container MCP Connections
 - [GitHub #1736](https://github.com/anthropics/claude-code/issues/1736): CLAUDE_CONFIG_DIR for auth persistence
 - [GitHub #7290](https://github.com/anthropics/claude-code/issues/7290): Multiple headers bypass for MCP auto-connect
 - [Anthropic - Claude Code Sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing): Security best practices

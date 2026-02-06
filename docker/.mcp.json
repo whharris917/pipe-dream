@@ -1,20 +1,26 @@
 {
   "mcpServers": {
     "qms": {
-      "type": "http",
-      "url": "http://host.docker.internal:8000/mcp",
-      "headers": {
-        "X-API-Key": "qms-internal",
-        "Authorization": "Bearer internal-trusted"
-      }
+      "command": "python3",
+      "args": [
+        "/proxy/mcp_proxy.py",
+        "http://host.docker.internal:8000/mcp",
+        "--retries", "3",
+        "--timeout", "10000",
+        "--header", "X-API-Key=qms-internal",
+        "--header", "Authorization=Bearer internal-trusted"
+      ]
     },
     "git": {
-      "type": "http",
-      "url": "http://host.docker.internal:8001/mcp",
-      "headers": {
-        "X-API-Key": "git-internal",
-        "Authorization": "Bearer internal-trusted"
-      }
+      "command": "python3",
+      "args": [
+        "/proxy/mcp_proxy.py",
+        "http://host.docker.internal:8001/mcp",
+        "--retries", "3",
+        "--timeout", "10000",
+        "--header", "X-API-Key=git-internal",
+        "--header", "Authorization=Bearer internal-trusted"
+      ]
     }
   }
 }

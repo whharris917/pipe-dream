@@ -29,6 +29,12 @@ RUN npm install -g @anthropic-ai/claude-code
 # Create directory structure
 RUN mkdir -p /projects /pipe-dream /.claude /.ssh /init-config /claude-config
 
+# Install Python HTTP client for MCP proxy
+RUN pip install httpx
+
+# Copy MCP stdio proxy script
+COPY scripts/mcp_proxy.py /proxy/mcp_proxy.py
+
 # Copy baked-in MCP configuration (project-scoped, kept for reference)
 COPY .mcp.json /.mcp.json
 

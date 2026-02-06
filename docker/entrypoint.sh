@@ -1,15 +1,13 @@
 #!/bin/bash
 # Entrypoint script for Claude container
-# Verifies MCP server connectivity, configures GitHub CLI, then starts Claude
+# Verifies mounts, configures GitHub CLI, cleans stale state, then starts Claude.
 #
 # MCP servers are configured via PROJECT-LEVEL config only:
 #   /pipe-dream/.mcp.json - defines servers (mounted from docker/.mcp.json)
 #   /pipe-dream/.claude/settings.local.json - enables servers (mounted from docker/.claude-settings.json)
 #
-# We do NOT use "claude mcp add" (user-level config) to avoid conflicts.
-
-QMS_MCP_URL="http://host.docker.internal:8000/mcp"
-GIT_MCP_URL="http://host.docker.internal:8001/mcp"
+# MCP connections use the stdio proxy (mcp_proxy.py) which handles HTTP
+# forwarding with retry logic. No direct HTTP health checks needed here.
 
 # --- Verify volume mounts are ready ---
 echo "Verifying volume mounts..."
@@ -39,30 +37,10 @@ fi
 echo "MCP config contents:"
 cat /pipe-dream/.mcp.json
 
-# Wait for QMS MCP server to be reachable (up to 30 seconds)
-echo "Waiting for QMS MCP server..."
-for i in $(seq 1 30); do
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "$QMS_MCP_URL" 2>/dev/null)
-    if echo "$HTTP_CODE" | grep -qE "^[0-9]+$" && [ "$HTTP_CODE" -gt 0 ]; then
-        echo "QMS MCP server reachable (HTTP $HTTP_CODE)"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo "Warning: QMS MCP server not reachable after 30 seconds"
-    fi
-    sleep 1
-done
-
-# Check Git MCP server
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "$GIT_MCP_URL" 2>/dev/null)
-if echo "$HTTP_CODE" | grep -qE "^[0-9]+$" && [ "$HTTP_CODE" -gt 0 ]; then
-    echo "Git MCP server reachable (HTTP $HTTP_CODE)"
-else
-    echo "Note: Git MCP server not available on port 8001"
-fi
-
-# MCP configuration comes from project-level .mcp.json (already mounted)
-echo "MCP configured via project-level .mcp.json"
+# MCP connections are handled by the stdio proxy (mcp_proxy.py).
+# The proxy forwards JSON-RPC over HTTP with retry logic, so no
+# health checks, handshake warm-up, or sleep delays are needed here.
+echo "MCP configured via stdio proxy (see .mcp.json)"
 
 # Configure GitHub CLI if token provided (per CR-053)
 if [ -n "$GH_TOKEN" ]; then
@@ -115,22 +93,13 @@ if [ -d "/claude-config" ]; then
     echo "State cleared (auth preserved)"
 fi
 
-# Test actual MCP protocol handshake (not just HTTP reachability)
-echo "Testing MCP protocol handshake..."
-MCP_TEST=$(curl -s -X POST "$QMS_MCP_URL" \
-    -H "Content-Type: application/json" \
-    -H "X-API-Key: qms-internal" \
-    -H "Authorization: Bearer internal-trusted" \
-    -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}' \
-    --max-time 5 2>/dev/null)
-if echo "$MCP_TEST" | grep -q "result"; then
-    echo "MCP handshake successful"
-else
-    echo "MCP handshake response: $MCP_TEST"
+# If SETUP_ONLY mode, sleep instead of starting Claude
+# Used by launch.sh: "docker run -d -e SETUP_ONLY=1" does setup, then
+# "docker exec -it claude" attaches the interactive session separately.
+if [ "${SETUP_ONLY:-}" = "1" ]; then
+    echo "Setup complete. Waiting for docker exec..."
+    exec sleep infinity
 fi
-
-# Small delay to let network stack settle
-sleep 2
 
 # Start Claude Code
 exec claude "$@"

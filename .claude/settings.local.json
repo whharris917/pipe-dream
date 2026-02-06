@@ -38,7 +38,14 @@
       "Bash(grep:*)",
       "Bash(docker-compose exec:*)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log --oneline --all --grep=\"identity\\\\|multi-agent\\\\|qa.*claude\\\\|agent.*session\\\\|MCP.*auto\\\\|MCP.*fail\")",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log --oneline --all --grep=\"multi-agent\\\\|Multi-Agent\\\\|CR-056\")",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log --format=\"%h %s\" --all --grep=\"identity\\\\|QMS_USER\\\\|agent defini\")",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream show --stat 249171f)",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" 249171f)",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" 6a1549f)",
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" f5f2cfe)"
     ],
     "deny": [
       "Edit(QMS/**)",
