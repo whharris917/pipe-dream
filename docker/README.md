@@ -12,19 +12,55 @@ The container provides:
 
 ## Quick Start
 
+### Single Agent
+
 From the repository root, run:
 
 ```bash
-./claude-session.sh
+./claude-session.sh [agent_name]
 ```
 
-This single command:
-1. Starts the MCP server in background (if not running)
-2. Starts the Docker container
-3. Launches Claude Code with MCP auto-configured
+Examples:
+```bash
+./claude-session.sh        # Launches as 'claude' (default)
+./claude-session.sh qa     # Launches as 'qa' agent
+./claude-session.sh tu_ui  # Launches as 'tu_ui' agent
+```
 
-**First run:** Browser OAuth required (credentials persist for future runs)
+Valid agents: `claude`, `qa`, `tu_ui`, `tu_scene`, `tu_sketch`, `tu_sim`, `bu`
+
+This single command:
+1. Starts the MCP servers in background (if not running)
+2. Starts the Docker container for the specified agent
+3. Mounts the appropriate CLAUDE.md (agent definition for non-claude agents)
+4. Launches Claude Code with MCP auto-configured
+
+**First run per agent:** Browser OAuth required (credentials persist per-agent)
 **Subsequent runs:** No authentication, MCP auto-connects
+
+### Multi-Agent Session
+
+To run multiple agents simultaneously with inbox notifications:
+
+```bash
+./multi-agent-session.sh [agent1] [agent2] ...
+```
+
+Examples:
+```bash
+./multi-agent-session.sh              # Launches claude + qa (default)
+./multi-agent-session.sh claude qa tu_ui  # Launches all three
+```
+
+This opens:
+- One terminal window per agent
+- An inbox watcher that monitors all agent inboxes
+- Notifications when new tasks arrive (switch to appropriate terminal)
+
+**Workflow example:**
+1. In claude's terminal: route a document for review
+2. Inbox watcher shows: `[QA] New task: Review CR-056`
+3. Switch to qa's terminal and run `qms inbox` to see the task
 
 ### Manual Setup (if needed)
 
@@ -48,12 +84,15 @@ docker-compose exec claude-agent claude
 ```
 /                                      # Container root (HOME=/)
 ├── .ssh/                              # Deploy keys (mounted from host)
-├── claude-config/                     # [NAMED VOLUME] Auth + MCP config persistence
+├── claude-config/                     # [BIND MOUNT] Per-agent auth + config persistence
 │   ├── .claude.json                   # User-scoped MCP config
 │   └── .credentials.json              # OAuth credentials
+│   # Mounted from: .claude/users/{agent}/container/
 │
 ├── pipe-dream/                        # Production QMS mount (working_dir)
-│   ├── CLAUDE.md                      # [READ-ONLY]
+│   ├── CLAUDE.md                      # [READ-ONLY or OVERLAY]
+│   │                                  # - claude: uses real CLAUDE.md
+│   │                                  # - others: .claude/agents/{agent}.md mounted over
 │   ├── .mcp.json                      # [OVERLAY] HTTP MCP config with dual headers
 │   ├── QMS/                           # [READ-ONLY]
 │   ├── flow-state/                    # [READ-ONLY]
@@ -61,11 +100,28 @@ docker-compose exec claude-agent claude
 │   └── .claude/
 │       ├── settings.local.json        # [OVERLAY] MCP enablement
 │       ├── sessions/                  # [READ-WRITE] Session persistence
-│       └── users/claude/workspace/    # [READ-WRITE] QMS document checkout
+│       └── users/{agent}/workspace/   # [READ-WRITE] QMS document checkout (per-agent)
 │
 └── projects/                          # [READ-WRITE] Development workspace
     └── {repo}/                        # Cloned repositories
 ```
+
+### Per-Agent Configuration (Host-side)
+
+```
+.claude/users/
+├── claude/
+│   ├── container/    # Claude Code auth/config (bind mounted)
+│   ├── workspace/    # QMS workspace
+│   └── inbox/        # QMS inbox
+├── qa/
+│   ├── container/    # Separate auth for qa agent
+│   ├── workspace/
+│   └── inbox/
+└── ... (other agents)
+```
+
+Each agent has isolated authentication and conversation state via their own `container/` directory.
 
 ## Access Control
 
@@ -216,12 +272,20 @@ mkdir -p .claude/users/claude/workspace
 
 ### Claude Code authentication fails
 
-Auth is stored in the `claude-config` named volume. To reset:
+Auth is stored per-agent in `.claude/users/{agent}/container/`. To reset for a specific agent:
 ```bash
-docker volume rm docker_claude-config
+rm -rf .claude/users/qa/container/*  # Reset qa agent
 ```
 
-Then run `./claude-session.sh` again to re-authenticate.
+Then run `./claude-session.sh qa` again to re-authenticate.
+
+### Inbox watcher not detecting new files (Windows)
+
+The watchdog library uses different backends on different platforms. On Windows, it uses ReadDirectoryChangesW which should work automatically. If notifications aren't appearing:
+
+1. Verify inbox-watcher.py is running: `cat .inbox-watcher.pid`
+2. Check logs: `cat .inbox-watcher.log`
+3. Ensure the inbox directory exists: `ls .claude/users/qa/inbox/`
 
 ## Building the Image
 
@@ -242,6 +306,7 @@ docker build -t claude-agent .
 - CR-052: Zero-friction container startup (auth persistence, MCP auto-connect)
 - CR-053: Container git authentication via GitHub CLI
 - CR-054: Git MCP Server for Container Operations
+- CR-056: Multi-Agent Container Session Infrastructure
 - [GitHub #1736](https://github.com/anthropics/claude-code/issues/1736): CLAUDE_CONFIG_DIR for auth persistence
 - [GitHub #7290](https://github.com/anthropics/claude-code/issues/7290): Multiple headers bypass for MCP auto-connect
 - [Anthropic - Claude Code Sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing): Security best practices

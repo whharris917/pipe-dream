@@ -1,0 +1,312 @@
+---
+title: Multi-Agent Container Session Infrastructure
+revision_summary: Initial draft
+---
+
+# CR-056: Multi-Agent Container Session Infrastructure
+
+## 1. Purpose
+
+Enable multiple QMS agents (claude, qa, tu_*, bu) to run simultaneously in separate containers, with automatic notification when new tasks arrive in their inboxes. This is the "Multi-Agent Session" rung on the ladder toward full GUI-based agent orchestration.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+This CR implements infrastructure designed in Sessions 2026-02-03-003 and 2026-02-04-002, building on the existing `claude-session.sh` single-agent launcher.
+
+- **Parent Document:** None (independent infrastructure improvement)
+
+### 2.2 Changes Summary
+
+1. Extend `claude-session.sh` to support any QMS agent (not just claude)
+2. Migrate from Docker named volume to per-agent bind mounts for container config
+3. Create `multi-agent-session.sh` to launch multiple agents simultaneously
+4. Create `inbox-watcher.py` to monitor inboxes and notify agents of new tasks
+
+### 2.3 Files Affected
+
+- `claude-session.sh` - Add agent parameter, mount agent-specific CLAUDE.md
+- `docker/docker-compose.yml` - Replace named volume with per-agent bind mount
+- `docker/multi-agent-session.sh` - New file: multi-agent launcher
+- `docker/scripts/inbox-watcher.py` - New file: cross-platform inbox watcher
+- `.claude/users/*/container/` - New directories for per-agent Claude Code config
+- `.gitignore` - Add container directories (contain auth tokens)
+
+---
+
+## 3. Current State
+
+- `claude-session.sh` launches a single container for the `claude` user only
+- Docker uses a named volume (`claude-config`) for Claude Code configuration
+- All containers would share the same auth/config state
+- Containers use `CLAUDE.md` regardless of which agent they represent
+- No mechanism exists to notify running agents when tasks arrive in their inbox
+- Agents must manually poll their inbox to discover new work
+
+---
+
+## 4. Proposed State
+
+- `claude-session.sh` accepts an optional agent parameter (e.g., `./claude-session.sh qa`)
+- Each agent has isolated Claude Code config via bind mount (`.claude/users/{agent}/container/`)
+- Non-claude agents have their definition file (`.claude/agents/{agent}.md`) mounted as `CLAUDE.md`
+- `multi-agent-session.sh` launches multiple agents in separate terminal windows
+- `inbox-watcher.py` monitors all agent inboxes and notifies running containers when tasks arrive
+- Agents see a visual notification prompting them to check their inbox
+
+---
+
+## 5. Change Description
+
+### 5.1 Per-Agent Container Configuration
+
+Replace the Docker named volume with per-agent bind mounts:
+
+```
+.claude/users/
+├── claude/
+│   ├── container/    # Claude Code config (NEW)
+│   ├── workspace/    # QMS workspace (exists)
+│   └── inbox/        # QMS inbox (exists)
+├── qa/
+│   ├── container/    # Claude Code config (NEW)
+│   ├── workspace/
+│   └── inbox/
+└── ... (other agents)
+```
+
+This provides:
+- **Isolation:** Each agent has separate auth tokens and conversation state
+- **Transparency:** Config is visible in project tree (not hidden in Docker volumes)
+- **Scriptability:** Easy to provision new agents
+
+### 5.2 Agent Context Loading
+
+Claude Code auto-loads `CLAUDE.md` from the project root. For non-claude agents, mount their definition file over it:
+
+| Agent | Context Source | Mount Behavior |
+|-------|----------------|----------------|
+| claude | `CLAUDE.md` | No overlay (use real file) |
+| qa | `.claude/agents/qa.md` | Mount as `/pipe-dream/CLAUDE.md` |
+| tu_ui | `.claude/agents/tu_ui.md` | Mount as `/pipe-dream/CLAUDE.md` |
+| (etc.) | `.claude/agents/{agent}.md` | Mount as `/pipe-dream/CLAUDE.md` |
+
+### 5.3 Updated docker-compose.yml
+
+Key changes:
+- `QMS_USER` environment variable determines which agent
+- Workspace bind mount uses `${QMS_USER}`
+- Container config bind mount uses `${QMS_USER}`
+- Remove named volume definition
+
+```yaml
+volumes:
+  # Workspace (read-write overlay) - per agent
+  - ../.claude/users/${QMS_USER:-claude}/workspace:/pipe-dream/.claude/users/${QMS_USER:-claude}/workspace:rw
+  # Claude Code config (bind mount per agent) - replaces named volume
+  - ../.claude/users/${QMS_USER:-claude}/container:/claude-config:rw
+```
+
+### 5.4 Extended claude-session.sh
+
+Add agent parameter support:
+
+```bash
+#!/bin/bash
+# Usage: ./claude-session.sh [agent_name]
+# Example: ./claude-session.sh qa
+
+QMS_USER="${1:-claude}"
+
+# Validate agent
+VALID_AGENTS=("claude" "qa" "tu_ui" "tu_scene" "tu_sketch" "tu_sim" "bu")
+
+# Ensure container directory exists
+mkdir -p ".claude/users/$QMS_USER/container"
+
+# For non-claude agents, pass extra mount to docker-compose
+if [ "$QMS_USER" != "claude" ]; then
+    CLAUDE_MD_MOUNT="-v $(pwd)/.claude/agents/${QMS_USER}.md:/pipe-dream/CLAUDE.md:ro"
+fi
+
+# Launch with QMS_USER environment variable
+QMS_USER="$QMS_USER" docker-compose ... $CLAUDE_MD_MOUNT
+```
+
+### 5.5 multi-agent-session.sh
+
+Launches multiple agents, each in its own terminal window:
+
+```bash
+#!/bin/bash
+# Usage: ./multi-agent-session.sh [agent1] [agent2] ...
+# Default: claude qa
+
+AGENTS=("${@:-claude qa}")
+
+# Start MCP servers (shared by all agents)
+# Start inbox watcher in background
+# Launch each agent in a new terminal window
+for agent in "${AGENTS[@]}"; do
+    start "" bash -c "./claude-session.sh $agent"  # Windows
+    # OR: gnome-terminal -- ./claude-session.sh $agent  # Linux
+done
+```
+
+### 5.6 inbox-watcher.py
+
+Cross-platform Python script using `watchdog` library:
+
+```python
+# Monitors .claude/users/*/inbox/ for new files
+# When file detected:
+#   1. Determine agent from path
+#   2. Generate notification based on file type (task-, msg-, notif-)
+#   3. Inject notification into agent's container via docker exec
+```
+
+Notification injection:
+```bash
+docker exec -it agent-qa bash -c 'echo "
+╭────────────────────────────────────────╮
+│  New task: Review CR-056               │
+│  Run: qms inbox                        │
+╰────────────────────────────────────────╯
+"'
+```
+
+The notification appears in the agent's terminal, prompting action.
+
+---
+
+## 6. Justification
+
+- **The Problem:** Currently, agents are deaf to each other. When claude routes a document to qa, qa's container doesn't know a task arrived. The user must manually switch to qa and run `qms inbox`.
+
+- **Impact of Not Making This Change:** Multi-agent workflows require constant manual coordination, defeating the purpose of having multiple agents.
+
+- **How This Solves It:** The inbox watcher creates the missing "ping" mechanism. When a task arrives, the agent sees a notification and can respond immediately.
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `claude-session.sh` | Modify | Add agent parameter, CLAUDE.md mounting |
+| `docker/docker-compose.yml` | Modify | Per-agent bind mounts, remove named volume |
+| `docker/multi-agent-session.sh` | Create | Multi-agent launcher script |
+| `docker/scripts/inbox-watcher.py` | Create | Cross-platform inbox watcher |
+| `.claude/users/*/container/` | Create | Per-agent config directories |
+| `.gitignore` | Modify | Exclude container directories |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| docker/README.md | Modify | Document multi-agent usage |
+
+### 7.3 Other Impacts
+
+- **Docker volumes:** The existing `claude-config` named volume will be orphaned after migration. Users can remove it with `docker volume rm docker_claude-config`.
+- **First-run auth:** Each agent's first container launch requires Claude Code authentication (subsequent launches use cached credentials in their container directory).
+
+---
+
+## 8. Testing Summary
+
+- **T1:** Run `./claude-session.sh` (default) - verify claude agent starts correctly
+- **T2:** Run `./claude-session.sh qa` - verify qa agent starts with correct CLAUDE.md
+- **T3:** Run `./multi-agent-session.sh claude qa` - verify both agents start in separate windows
+- **T4:** From claude, route a document for review - verify qa receives inbox notification
+- **T5:** Verify each agent has isolated config (separate auth state)
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: Per-Agent Directory Setup
+
+1. Create container directories for all agents
+2. Update `.gitignore` to exclude container directories
+
+### 9.2 Phase 2: Docker Configuration
+
+1. Update `docker/docker-compose.yml` with per-agent bind mounts
+2. Remove named volume definition
+3. Test single-agent launch still works
+
+### 9.3 Phase 3: claude-session.sh Extension
+
+1. Add agent parameter handling
+2. Add agent validation
+3. Add CLAUDE.md mount logic for non-claude agents
+4. Add container directory creation
+5. Pass QMS_USER to docker-compose
+6. Test with claude and qa agents
+
+### 9.4 Phase 4: Multi-Agent Launcher
+
+1. Create `docker/multi-agent-session.sh`
+2. Implement MCP server startup (reuse existing logic)
+3. Implement multi-terminal launch (Windows-compatible)
+4. Test launching claude + qa simultaneously
+
+### 9.5 Phase 5: Inbox Watcher
+
+1. Create `docker/scripts/inbox-watcher.py`
+2. Implement filesystem watching with watchdog
+3. Implement notification generation by file type
+4. Implement docker exec injection
+5. Integrate watcher startup into multi-agent-session.sh
+6. Test end-to-end: route document → notification appears
+
+### 9.6 Phase 6: Documentation
+
+1. Update docker/README.md with multi-agent usage instructions
+
+---
+
+## 10. Execution
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Create container directories and update .gitignore | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Update docker-compose.yml for per-agent bind mounts | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Extend claude-session.sh with agent parameter support | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Create multi-agent-session.sh | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Create inbox-watcher.py | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | End-to-end test: claude routes to qa, qa receives notification | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Update docker/README.md | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+---
+
+## 11. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **Session-2026-02-03-003:** Multi-agent container architecture design
+- **Session-2026-02-04-002:** Multi-agent session design (inbox watcher, launcher scripts)
+
+---
+
+**END OF DOCUMENT**

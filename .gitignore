@@ -26,3 +26,12 @@ prompt.txt
 # Container session files
 .mcp-server.pid
 .mcp-server.log
+.qms-mcp-server.pid
+.qms-mcp-server.log
+.git-mcp-server.pid
+.git-mcp-server.log
+.inbox-watcher.pid
+.inbox-watcher.log
+
+# Agent container config directories (contain auth tokens)
+.claude/users/*/container/

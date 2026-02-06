@@ -1,12 +1,43 @@
 #!/bin/bash
 # Entrypoint script for Claude container
-# Initializes config directory and MCP servers, then starts Claude
+# Verifies MCP server connectivity, configures GitHub CLI, then starts Claude
+#
+# MCP servers are configured via PROJECT-LEVEL config only:
+#   /pipe-dream/.mcp.json - defines servers (mounted from docker/.mcp.json)
+#   /pipe-dream/.claude/settings.local.json - enables servers (mounted from docker/.claude-settings.json)
+#
+# We do NOT use "claude mcp add" (user-level config) to avoid conflicts.
 
-CONFIG_DIR="${CLAUDE_CONFIG_DIR:-/claude-config}"
 QMS_MCP_URL="http://host.docker.internal:8000/mcp"
 GIT_MCP_URL="http://host.docker.internal:8001/mcp"
-MCP_MARKER="$CONFIG_DIR/.mcp-configured"
-GIT_MCP_MARKER="$CONFIG_DIR/.git-mcp-configured"
+
+# --- Verify volume mounts are ready ---
+echo "Verifying volume mounts..."
+
+# Wait for .mcp.json to be available (up to 10 seconds)
+for i in $(seq 1 10); do
+    if [ -f "/pipe-dream/.mcp.json" ]; then
+        echo "MCP config file mounted: /pipe-dream/.mcp.json"
+        break
+    fi
+    if [ $i -eq 10 ]; then
+        echo "ERROR: /pipe-dream/.mcp.json not found after 10 seconds"
+        exit 1
+    fi
+    echo "Waiting for mounts... ($i/10)"
+    sleep 1
+done
+
+# Verify settings file
+if [ -f "/pipe-dream/.claude/settings.local.json" ]; then
+    echo "Settings file mounted: /pipe-dream/.claude/settings.local.json"
+else
+    echo "WARNING: /pipe-dream/.claude/settings.local.json not found"
+fi
+
+# Show MCP config for debugging
+echo "MCP config contents:"
+cat /pipe-dream/.mcp.json
 
 # Wait for QMS MCP server to be reachable (up to 30 seconds)
 echo "Waiting for QMS MCP server..."
@@ -22,42 +53,22 @@ for i in $(seq 1 30); do
     sleep 1
 done
 
-# First run: configure QMS MCP server using claude mcp add
-# This ensures proper registration with all internal state
-if [ ! -f "$MCP_MARKER" ]; then
-    echo "First run detected - configuring QMS MCP server..."
-    # Add MCP server at user scope with auth header (persists in CLAUDE_CONFIG_DIR)
-    # The header tells Claude Code auth is already handled
-    # Per GitHub issue #7290: Multiple headers bypass OAuth discovery
-    claude mcp add --transport http --scope user \
-        --header "X-API-Key: qms-internal" \
-        --header "Authorization: Bearer internal-trusted" \
-        qms "$QMS_MCP_URL" 2>/dev/null || true
-    touch "$MCP_MARKER"
-    echo "QMS MCP server configured"
-fi
-
-# Check for Git MCP server and configure if available (CR-054)
+# Check Git MCP server
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "$GIT_MCP_URL" 2>/dev/null)
 if echo "$HTTP_CODE" | grep -qE "^[0-9]+$" && [ "$HTTP_CODE" -gt 0 ]; then
     echo "Git MCP server reachable (HTTP $HTTP_CODE)"
-    if [ ! -f "$GIT_MCP_MARKER" ]; then
-        echo "Configuring Git MCP server..."
-        claude mcp add --transport http --scope user \
-            git "$GIT_MCP_URL" 2>/dev/null || true
-        touch "$GIT_MCP_MARKER"
-        echo "Git MCP server configured"
-    fi
 else
     echo "Note: Git MCP server not available on port 8001"
 fi
+
+# MCP configuration comes from project-level .mcp.json (already mounted)
+echo "MCP configured via project-level .mcp.json"
 
 # Configure GitHub CLI if token provided (per CR-053)
 if [ -n "$GH_TOKEN" ]; then
     echo "Configuring GitHub CLI..."
     echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null
     gh auth setup-git 2>/dev/null
-    # Configure git user for commits (use GitHub-provided values or defaults)
     GH_USER=$(gh api user --jq '.login' 2>/dev/null || echo "claude-agent")
     GH_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null)
     if [ -z "$GH_EMAIL" ]; then
@@ -69,6 +80,57 @@ if [ -n "$GH_TOKEN" ]; then
 else
     echo "Note: GH_TOKEN not set - git push will not work"
 fi
+
+# Fix IPv6 issue: Node.js fetch fails when IPv6 is unreachable but listed in /etc/hosts
+# Force Node.js to prefer IPv4 addresses over IPv6
+export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--dns-result-order=ipv4first"
+echo "Node.js configured for IPv4-first DNS resolution"
+
+# Clear accumulated state that causes MCP connection failures on subsequent runs.
+# Two-part strategy:
+#   1. Delete expendable directories/files (sessions, caches, debug logs)
+#   2. Surgically remove MCP-related fields from .claude.json (preserve auth)
+if [ -d "/claude-config" ]; then
+    echo "Clearing accumulated state (preserving auth)..."
+    rm -rf /claude-config/cache 2>/dev/null
+    rm -rf /claude-config/projects 2>/dev/null
+    rm -rf /claude-config/session-env 2>/dev/null
+    rm -rf /claude-config/debug 2>/dev/null
+    rm -rf /claude-config/telemetry 2>/dev/null
+    rm -f /claude-config/.claude.json.backup.* 2>/dev/null
+    rm -f /claude-config/history.jsonl 2>/dev/null
+    rm -f /claude-config/.update.lock 2>/dev/null
+
+    # Surgically clean MCP state from .claude.json while preserving auth
+    if [ -f /claude-config/.claude.json ] && command -v jq >/dev/null 2>&1; then
+        echo "Cleaning MCP state from .claude.json..."
+        jq 'walk(if type == "object" and has("mcpServers") then .mcpServers = {} else . end)
+            | walk(if type == "object" and has("enabledMcpjsonServers") then .enabledMcpjsonServers = [] else . end)
+            | walk(if type == "object" and has("disabledMcpjsonServers") then .disabledMcpjsonServers = [] else . end)' \
+            /claude-config/.claude.json > /claude-config/.claude.json.tmp \
+            && mv /claude-config/.claude.json.tmp /claude-config/.claude.json
+        echo "MCP state cleaned from .claude.json"
+    fi
+
+    echo "State cleared (auth preserved)"
+fi
+
+# Test actual MCP protocol handshake (not just HTTP reachability)
+echo "Testing MCP protocol handshake..."
+MCP_TEST=$(curl -s -X POST "$QMS_MCP_URL" \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: qms-internal" \
+    -H "Authorization: Bearer internal-trusted" \
+    -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}' \
+    --max-time 5 2>/dev/null)
+if echo "$MCP_TEST" | grep -q "result"; then
+    echo "MCP handshake successful"
+else
+    echo "MCP handshake response: $MCP_TEST"
+fi
+
+# Small delay to let network stack settle
+sleep 2
 
 # Start Claude Code
 exec claude "$@"

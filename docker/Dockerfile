@@ -9,6 +9,7 @@ WORKDIR /
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    jq \
     nodejs \
     npm \
     python3-venv \

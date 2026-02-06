@@ -230,7 +230,11 @@ def main(cli_args: list[str] | None = None):
             "http://host.docker.internal:*"
         )
 
-        logger.info(f"Binding to {args.host}:{args.port} (streamable-http)")
+        # Stateless mode: disables server-side session tracking.
+        # Prevents stale Mcp-Session-Id reuse across container restarts (see #9608).
+        mcp.settings.stateless_http = True
+
+        logger.info(f"Binding to {args.host}:{args.port} (streamable-http, stateless)")
         mcp.run(transport="streamable-http")
 
 

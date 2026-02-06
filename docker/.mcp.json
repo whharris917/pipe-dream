@@ -10,7 +10,11 @@
     },
     "git": {
       "type": "http",
-      "url": "http://host.docker.internal:8001/mcp"
+      "url": "http://host.docker.internal:8001/mcp",
+      "headers": {
+        "X-API-Key": "git-internal",
+        "Authorization": "Bearer internal-trusted"
+      }
     }
   }
 }

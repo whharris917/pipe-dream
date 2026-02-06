@@ -7,8 +7,8 @@ services:
     volumes:
       # Production QMS (read-only)
       - ../:/pipe-dream:ro
-      # Workspace (read-write overlay)
-      - ../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace:rw
+      # Workspace (read-write overlay) - per agent via QMS_USER
+      - ../.claude/users/${QMS_USER:-claude}/workspace:/pipe-dream/.claude/users/${QMS_USER:-claude}/workspace:rw
       # Sessions (read-write overlay) - added per CR-046
       - ../.claude/sessions:/pipe-dream/.claude/sessions:rw
       # MCP config overlay - MUST overlay host's stdio config with container HTTP config
@@ -18,9 +18,9 @@ services:
       - ./.claude-settings.json:/pipe-dream/.claude/settings.local.json:ro
       # SSH keys (read-only)
       - ~/.ssh:/.ssh:ro
-      # Claude Code config (persistent via named volume) - per CR-052/issue #1736
-      # Auth persists: first run requires login, subsequent runs don't
-      - claude-config:/claude-config
+      # Claude Code config (bind mount per agent) - per CR-056
+      # Each agent has isolated auth/config in .claude/users/{agent}/container/
+      - ../.claude/users/${QMS_USER:-claude}/container:/claude-config:rw
     environment:
       - HOME=/
       # Point Claude Code to persistent config directory - per GitHub issue #1736
@@ -29,11 +29,9 @@ services:
       - MCP_TIMEOUT=60000
       # GitHub token for git operations (per CR-053) - reads from .env file
       - GH_TOKEN=${GH_TOKEN:-}
+      # QMS user identity - passed from claude-session.sh
+      - QMS_USER=${QMS_USER:-claude}
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux compatibility
     stdin_open: true
     tty: true
-
-# Named volumes for persistent data
-volumes:
-  claude-config:
