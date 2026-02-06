@@ -1,18 +1,16 @@
 {
-  "doc_id": "CR-056-VAR-001",
+  "doc_id": "CR-056-VAR-003",
   "doc_type": "VAR",
-  "version": "2.0",
-  "status": "CLOSED",
+  "version": "1.0",
+  "status": "PRE_APPROVED",
   "executable": true,
-  "execution_phase": "post_release",
-  "responsible_user": null,
+  "execution_phase": "pre_release",
+  "responsible_user": "claude",
   "checked_out": false,
   "checked_out_date": null,
   "effective_version": null,
   "pending_assignees": [],
   "review_outcomes": {
     "qa": "RECOMMEND"
-  },
-  "pending_reviewers": [],
-  "completed_reviewers": []
+  }
 }

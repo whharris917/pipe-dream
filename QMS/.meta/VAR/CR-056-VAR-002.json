@@ -1,5 +1,5 @@
 {
-  "doc_id": "CR-056-VAR-001",
+  "doc_id": "CR-056-VAR-002",
   "doc_type": "VAR",
   "version": "2.0",
   "status": "CLOSED",
@@ -12,7 +12,5 @@
   "pending_assignees": [],
   "review_outcomes": {
     "qa": "RECOMMEND"
-  },
-  "pending_reviewers": [],
-  "completed_reviewers": []
+  }
 }
