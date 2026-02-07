@@ -212,7 +212,7 @@ launch_claude() {
     echo -e "${GREEN}════════════════════════════════════════${NC}"
     echo ""
 
-    MSYS_NO_PATHCONV=1 docker exec -it "$container_name" claude
+    MSYS_NO_PATHCONV=1 docker exec -it "$container_name" tmux new-session -s agent "claude"
 
     # Cleanup after session ends
     stop_container "$agent"

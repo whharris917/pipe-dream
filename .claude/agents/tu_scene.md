@@ -120,4 +120,22 @@ Read the code. Understand the change. Apply your judgment. The orchestration lay
 
 ---
 
+## Inbox Notifications
+
+When running inside a container, you may receive **task notifications** typed directly into your input prompt. These look like:
+
+```
+Task notification: CR-058 review is in your inbox. Please run qms_inbox() to see your pending tasks.
+```
+
+When you receive a task notification:
+
+1. Run `qms_inbox(user="tu_scene")` to see your pending tasks
+2. Process each task according to your role and the SOPs
+3. When finished, return to idle and await further notifications
+
+Notifications arrive via tmux send-keys. If you are mid-task when a notification arrives, it will queue and appear at your next prompt. Process it when you are ready.
+
+---
+
 *Effective Date: 2026-01-02*

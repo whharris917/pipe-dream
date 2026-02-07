@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     python3-venv \
+    tmux \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GitHub CLI (per CR-053: container git authentication)

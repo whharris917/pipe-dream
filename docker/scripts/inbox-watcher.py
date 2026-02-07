@@ -84,7 +84,14 @@ class InboxEventHandler(FileSystemEventHandler):
         # Generate and send notification
         filename = filepath.name
         notification = self._generate_notification(agent, filename, filepath)
-        self._send_notification(container_name, notification)
+        injection = self._build_injection_text(agent, filename)
+
+        # Print ASCII notification to watcher console
+        print(notification, flush=True)
+
+        # Inject notification into agent's tmux session
+        if injection:
+            self._inject_notification(container_name, injection)
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {agent}: {filename}")
 
@@ -184,17 +191,76 @@ class InboxEventHandler(FileSystemEventHandler):
 +---------------------------------------------------+
 '''
 
-    def _send_notification(self, container_name: str, notification: str):
-        """Display notification for the agent.
+    def _build_injection_text(self, agent: str, filename: str) -> str:
+        """Build a concise instruction for tmux injection into the agent's session.
 
-        On Windows with separate terminal windows, we can't easily inject text
-        into another window. Instead, we print to this console - the user watches
-        this console and switches to the appropriate agent terminal.
-
-        Future enhancement: On Linux with tmux, could use tmux send-keys.
+        Returns a direct instruction that tells the agent what to do.
+        The message starts with "Task notification:" — the leading "T" is not
+        a valid Claude Code permission dialog response (y/n/a/i), mitigating
+        the edge case where send-keys arrives during a permission prompt.
         """
-        # Print to our own stdout - user watches this console
-        print(notification, flush=True)
+        if filename.startswith("task-"):
+            match = re.search(r'task-([A-Z]+-\d+)', filename)
+            doc_id = match.group(1) if match else "unknown"
+
+            if "review" in filename.lower():
+                action = "review"
+            elif "approval" in filename.lower():
+                action = "approval"
+            else:
+                action = "task"
+
+            return (
+                f"Task notification: {doc_id} {action} is in your inbox. "
+                f"Please run qms_inbox() to see your pending tasks."
+            )
+
+        elif filename.startswith("msg-"):
+            match = re.search(r'msg-([a-z_]+)-', filename)
+            sender = match.group(1) if match else "unknown"
+            return (
+                f"Task notification: New message from {sender} in your inbox. "
+                f"Please run qms_inbox() to see your pending tasks."
+            )
+
+        elif filename.startswith("notif-"):
+            match = re.search(r'([A-Z]+-\d+)', filename)
+            doc_id = match.group(1) if match else "unknown"
+            return (
+                f"Task notification: Update on {doc_id} in your inbox. "
+                f"Please run qms_inbox() to see your pending tasks."
+            )
+
+        else:
+            return (
+                "Task notification: New item in your inbox. "
+                "Please run qms_inbox() to see your pending tasks."
+            )
+
+    def _inject_notification(self, container_name: str, text: str):
+        """Inject notification text into the agent's tmux session via send-keys.
+
+        Uses two docker exec calls:
+        1. tmux send-keys -t agent -l "text" — sends text literally
+        2. tmux send-keys -t agent Enter — submits the text
+        """
+        try:
+            # Send the notification text literally
+            subprocess.run(
+                ["docker", "exec", container_name, "tmux", "send-keys",
+                 "-t", "agent", "-l", text],
+                capture_output=True, text=True, timeout=10
+            )
+            # Send Enter to submit
+            subprocess.run(
+                ["docker", "exec", container_name, "tmux", "send-keys",
+                 "-t", "agent", "Enter"],
+                capture_output=True, text=True, timeout=10
+            )
+        except subprocess.TimeoutExpired:
+            print(f"  Warning: tmux send-keys timed out for {container_name}")
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"  Warning: tmux injection failed for {container_name}: {e}")
 
 
 def main():
