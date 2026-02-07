@@ -47,6 +47,14 @@ No code changes needed. Documented in CR-058 Execution Comments.
 
 - Agent ID: `ac9c905` (reused across pre-review, pre-approval, post-review, post-approval)
 
+## First Opus 4.6 Session
+
+This session was powered by **Claude Opus 4.6** — the first time this model has been used on the Pipe Dream project. The Lead discovered this mid-session when reviewing the environment details.
+
+Notably, this session achieved consistent QA agent reuse across all four review/approval cycles without any reminders or corrections. This had been a persistent problem in prior sessions: the orchestrator would forget to pass the `resume` parameter and spawn fresh agents each time, despite clear instructions in both CLAUDE.md and SOP-007 Section 4.4. The advent of Opus 4.6 precisely aligns with this step-improvement. Whether attributable to better instruction-following over long contexts, improved tool-use patterns, or some combination — the behavior that CLAUDE.md and SOP-007 were designed to produce is now reliably happening.
+
+A small milestone for the Recursive Governance Loop: the process documents worked as designed, they just needed a model capable of following them consistently.
+
 ## Open Items
 
 None. CR-058 is fully closed.
