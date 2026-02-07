@@ -1,0 +1,16 @@
+{"ts": "2026-02-07T22:08:10+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Container Agent Permissions and State Persistence"}
+{"ts": "2026-02-07T22:14:48+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-07T22:14:53+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-07T22:14:53+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-07T22:16:45+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "CR-059 PRE-REVIEW: COMPLIANT. All verification items pass. FRONTMATTER: title = Container Agent Permissions and State Persistence (present, non-empty). revision_summary = Initial draft (acceptable for v0.1 per SOP-002 Section 8). STRUCTURE: All 12 required sections per SOP-002 Section 6 are present with substantive content. Sections 1-9 (pre-approved content) are complete. Sections 10-12 (execution-phase content) contain appropriate structural placeholders for execution. PLACEHOLDER CHECK: No TBD, TODO, FIXME, or XXX found. Execution table placeholders are in execution-phase sections, expected to be incomplete at pre-review. TRACEABILITY: References CR-056 (valid, CLOSED), SOP-001, SOP-002, SOP-004. FORMATTING: Consistent markdown throughout. Tables properly formatted. Section numbering sequential. TYPOS/ERRORS: None found. TECHNICAL ASSESSMENT: Purpose clear, scope well-bounded (two infrastructure files), allow/deny list design sound, risk assessment well-reasoned. REVIEW TEAM: No TU assignment required - Docker infrastructure only. Recommend for pre-approval."}
+{"ts": "2026-02-07T22:16:45+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-07T22:16:56+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-07T22:16:56+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-07T22:17:24+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-07T22:17:24+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-07T22:17:55+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-07T22:17:55+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-07T22:17:58+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-07T22:47:30+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-07T22:54:26+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-07T22:55:11+00:00", "event": "CHECKIN", "user": "claude", "version": "1.2"}

@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-02-07
+
+- [ ] Add prerequisite to always commit and push pipe-dream as the first EI of a CR
+  - Ensures QMS document state (CR drafts, routing, approvals) is captured in git before execution begins
+  - Consider: Update CR template to include a standard EI-0 for committing pre-execution state
+  - Consider: Update SOP-002 or SOP-004 to formalize this as a procedural requirement
+  - Reference: Session-2026-02-07-001, observed during CR-059 execution
+
+---
+
 ## 2026-02-02
 
 - [ ] Investigate why checking out an INV in IN_PRE_REVIEW didn't cancel ongoing workflows and transition back to DRAFT

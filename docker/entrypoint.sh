@@ -64,19 +64,19 @@ fi
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--dns-result-order=ipv4first"
 echo "Node.js configured for IPv4-first DNS resolution"
 
-# Clear accumulated state that causes MCP connection failures on subsequent runs.
+# Clear ephemeral state while preserving auth, project memory, and history.
 # Two-part strategy:
-#   1. Delete expendable directories/files (sessions, caches, debug logs)
+#   1. Delete ephemeral files (caches, debug logs, telemetry)
 #   2. Surgically remove MCP-related fields from .claude.json (preserve auth)
+# Note: projects/ and history.jsonl are intentionally preserved (CR-059) to allow
+# agents to accumulate per-project memory and command history across sessions.
 if [ -d "/claude-config" ]; then
-    echo "Clearing accumulated state (preserving auth)..."
+    echo "Clearing ephemeral state (preserving auth, projects, history)..."
     rm -rf /claude-config/cache 2>/dev/null
-    rm -rf /claude-config/projects 2>/dev/null
     rm -rf /claude-config/session-env 2>/dev/null
     rm -rf /claude-config/debug 2>/dev/null
     rm -rf /claude-config/telemetry 2>/dev/null
     rm -f /claude-config/.claude.json.backup.* 2>/dev/null
-    rm -f /claude-config/history.jsonl 2>/dev/null
     rm -f /claude-config/.update.lock 2>/dev/null
 
     # Surgically clean MCP state from .claude.json while preserving auth
@@ -90,7 +90,7 @@ if [ -d "/claude-config" ]; then
         echo "MCP state cleaned from .claude.json"
     fi
 
-    echo "State cleared (auth preserved)"
+    echo "Ephemeral state cleared (auth, projects, history preserved)"
 fi
 
 # If SETUP_ONLY mode, sleep instead of starting Claude
