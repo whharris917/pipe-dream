@@ -1,0 +1,14 @@
+{"ts": "2026-02-07T23:33:10+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Agent Hub Genesis - Core Infrastructure"}
+{"ts": "2026-02-07T23:39:44+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-07T23:39:48+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-07T23:39:48+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-07T23:41:11+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "CR-060 Pre-Review: COMPLIANT. All verification items pass. FRONTMATTER: title 'Agent Hub Genesis - Core Infrastructure' present and non-empty; revision_summary 'Initial draft' acceptable for v0.1 per SOP-001 Section 5.1. STRUCTURE: All 12 required sections per SOP-002 Section 6 present (Purpose, Scope, Current State, Proposed State, Change Description, Justification, Impact Assessment, Testing Summary, Implementation Plan, Execution, Execution Summary, References). SCOPE: Contains Context, Changes Summary, Files Affected per SOP-002 6.2. IMPACT ASSESSMENT: Contains Files Affected, Documents Affected, Other Impacts per SOP-002 6.7. PLACEHOLDER CONTENT: No TBD/TODO/FIXME/XXX found; bracketed placeholders in Sections 10-11 are execution-phase templates per SOP-002 Section 6. TRACEABILITY: References SOP-001, SOP-002, SOP-005; no parent (genesis work). TYPOS/ERRORS: None found. FORMATTING: Consistent throughout. CONTENT STANDARDS (SOP-001 5.4): No embedded metadata. TU ASSIGNMENT: None required - standalone system, no Flow State code changes. Recommend for approval."}
+{"ts": "2026-02-07T23:41:11+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-07T23:41:24+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-07T23:41:24+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-07T23:41:57+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-07T23:41:57+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-07T23:42:08+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-07T23:42:08+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-08T00:32:27+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-08T00:35:00+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
