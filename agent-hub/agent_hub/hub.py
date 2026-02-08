@@ -24,6 +24,8 @@ class AgentHub:
         self.inbox_watcher = InboxWatcher(config, self._on_inbox_change)
         self._started_at: datetime | None = None
         self._idle_check_task: asyncio.Task | None = None
+        self._container_sync_task: asyncio.Task | None = None
+        self._hub_managed: set[str] = set()  # agents whose containers the Hub started
 
     async def start(self) -> None:
         """Start the Hub and all always-on agents."""
@@ -55,25 +57,27 @@ class AgentHub:
                 if agent.state == AgentState.STOPPED:
                     await self.start_agent(agent_id)
 
-        # Start idle check loop
+        # Start periodic loops
         self._idle_check_task = asyncio.create_task(self._idle_check_loop())
+        self._container_sync_task = asyncio.create_task(self._container_sync_loop())
 
         logger.info("Hub started with %d agents", len(self.agents))
 
     async def stop(self) -> None:
         """Stop the Hub and all running agents."""
-        if self._idle_check_task:
-            self._idle_check_task.cancel()
-            try:
-                await self._idle_check_task
-            except asyncio.CancelledError:
-                pass
+        for task in (self._idle_check_task, self._container_sync_task):
+            if task:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
         await self.inbox_watcher.stop()
 
-        # Stop all running containers
+        # Stop only Hub-managed containers (not externally started ones)
         for agent_id, agent in self.agents.items():
-            if agent.state == AgentState.RUNNING:
+            if agent.state == AgentState.RUNNING and agent_id in self._hub_managed:
                 try:
                     await self.stop_agent(agent_id)
                 except Exception as e:
@@ -103,6 +107,7 @@ class AgentHub:
             agent.state = AgentState.RUNNING
             agent.started_at = datetime.now()
             agent.last_activity = datetime.now()
+            self._hub_managed.add(agent_id)
             logger.info("Agent %s is now RUNNING", agent_id)
         except Exception as e:
             agent.state = AgentState.ERROR
@@ -237,3 +242,33 @@ class AgentHub:
                         logger.error(
                             "Idle shutdown failed for %s: %s", agent_id, e
                         )
+
+    async def _container_sync_loop(self) -> None:
+        """Periodically reconcile Hub state with Docker reality.
+
+        Containers may be started or stopped externally (e.g., by launch.sh).
+        This loop ensures the Hub's view stays consistent with what Docker
+        reports, enabling correct notification injection and policy evaluation.
+        """
+        while True:
+            await asyncio.sleep(10)
+            for agent_id, agent in self.agents.items():
+                try:
+                    running = await self.container_mgr.is_running(agent_id)
+                except Exception:
+                    continue
+
+                if running and agent.state == AgentState.STOPPED:
+                    agent.state = AgentState.RUNNING
+                    agent.started_at = datetime.now()
+                    agent.last_activity = datetime.now()
+                    logger.info(
+                        "Sync: discovered running container for %s", agent_id
+                    )
+                elif not running and agent.state == AgentState.RUNNING:
+                    agent.state = AgentState.STOPPED
+                    agent.container_id = None
+                    agent.started_at = None
+                    logger.info(
+                        "Sync: container stopped externally for %s", agent_id
+                    )
