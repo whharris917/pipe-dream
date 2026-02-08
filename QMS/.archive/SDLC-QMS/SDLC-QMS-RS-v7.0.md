@@ -1,6 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-049: Add qms_withdraw to REQ-MCP-004 workflow tools list'
+revision_summary: 'CR-048: Add workflow improvement requirements (REQ-WF-016 through
+  REQ-WF-021) for status-aware checkout, withdraw command, and versioning'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -497,7 +498,7 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-MCP-001 | **MCP Protocol Implementation.** The CLI shall provide an MCP (Model Context Protocol) server that exposes QMS operations as native tools for AI agents. The server shall implement the MCP specification for tool registration and invocation. |
 | REQ-MCP-002 | **User Command Tools.** The MCP server shall expose the following user query tools: `qms_inbox` (list pending tasks), `qms_workspace` (list checked-out documents), `qms_status` (get document status), `qms_read` (read document content with version/draft options), `qms_history` (view audit trail), and `qms_comments` (view review comments). |
 | REQ-MCP-003 | **Document Lifecycle Tools.** The MCP server shall expose the following document lifecycle tools: `qms_create` (create new document), `qms_checkout` (check out document), `qms_checkin` (check in document with content), and `qms_cancel` (cancel never-effective document). |
-| REQ-MCP-004 | **Workflow Tools.** The MCP server shall expose the following workflow tools: `qms_route` (route for review/approval with optional retire flag), `qms_assign` (add reviewers), `qms_review` (submit review with outcome and comment), `qms_approve` (approve document), `qms_reject` (reject document with comment), and `qms_withdraw` (withdraw document from review/approval workflow). |
+| REQ-MCP-004 | **Workflow Tools.** The MCP server shall expose the following workflow tools: `qms_route` (route for review/approval with optional retire flag), `qms_assign` (add reviewers), `qms_review` (submit review with outcome and comment), `qms_approve` (approve document), and `qms_reject` (reject document with comment). |
 | REQ-MCP-005 | **Execution Tools.** The MCP server shall expose the following execution tools for executable documents: `qms_release` (release for execution), `qms_revert` (revert to execution with reason), and `qms_close` (close document). |
 | REQ-MCP-006 | **Administrative Tools.** The MCP server shall expose the `qms_fix` tool for administrative fixes on EFFECTIVE documents. This tool shall enforce administrator-only access. |
 | REQ-MCP-007 | **Functional Equivalence.** Each MCP tool shall produce functionally equivalent results to the corresponding CLI command. The MCP interface shall delegate to the same internal functions as the CLI to ensure consistency. |

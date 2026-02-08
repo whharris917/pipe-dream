@@ -44,13 +44,32 @@
 - Both share RTM update (v9.0 -> v10.0)
 - Fixed Unicode encoding issues (U+2014 em dash, U+2192 arrow) in both CRs to prevent `charmap` codec errors in MCP read tool
 
-### QA Review and Approval
+### Pre-Execution: QA Review and Approval
 - QA reviewed both CRs via CLI (MCP review tool broken -- the bug CR-065 fixes)
 - CR-049: RECOMMEND -- compliant, all 12 sections present, sound technical content
 - CR-065: RECOMMEND -- compliant, defect well-documented with code evidence, audit thorough
 - Both routed for approval, QA approved both
 - Both released for execution: CR-049 v1.0 IN_EXECUTION, CR-065 v1.0 IN_EXECUTION
-- QA agent ID: `a569621`
+
+### Combined Requalification Execution (CR-049 + CR-065)
+- **EI-1 (shared):** Created branch `cr-049-065-requalification` from main (b3d0c58). Baseline: 364/364 passing.
+- **CR-049 EI-2:** RS updated -- added `qms_withdraw` to REQ-MCP-004. QA reviewed, approved. SDLC-QMS-RS v7.0 -> v8.0 EFFECTIVE.
+- **CR-049 EI-3:** Implemented `qms_withdraw` in `qms_mcp/tools.py` following established pattern.
+- **CR-049 EI-4:** Added `test_qms_withdraw_equivalence` and `test_qms_withdraw_mcp_layer`. Updated tool count 19 -> 20.
+- **CR-065 EI-2:** Fixed `qms_review` line 333: `["--outcome", outcome]` -> `[f"--{outcome}"]`.
+- **CR-065 EI-3:** Added `test_qms_review_mcp_layer_recommend`, `test_qms_review_mcp_layer_request_updates`, `test_qms_route_mcp_layer`.
+- **EI (shared) CI:** 369/369 tests passing locally and on GitHub Actions. Commit `2fed599`, CI run `21803124788`.
+- **EI (shared) RTM:** Updated baseline to 2fed599/369 tests/RS v8.0. QA found 3 corrections needed:
+  1. Per-file test counts drifted (sop_lifecycle 16->15, cr_lifecycle 12->11, queries 18->16, init 10->15)
+  2. Section 1 referenced stale RS v7.0 (should be v8.0)
+  3. REQ-MCP-001 detail still said "19 MCP tools" (should be 20)
+  All corrected, re-reviewed. SDLC-QMS-RTM v9.0 -> v10.0 EFFECTIVE.
+- **EI (shared) PR:** PR #8 merged (admin, branch protection). Merge commit `32324af`. Submodule pointer updated.
+
+### Post-Execution: QA Review, Approval, and Closure
+- QA post-reviewed both CRs: RECOMMEND for both (all EIs Pass, evidence documented)
+- Both routed for post-approval, QA approved both (v1.1 -> v2.0)
+- Both CLOSED
 
 ### Infrastructure Actions
 - Started MCP servers via `docker/scripts/start-mcp-server.sh --background` and `docker/scripts/start-git-mcp.sh --background`
@@ -58,35 +77,30 @@
 - Canceled original test CR-064 (raw template), re-created CR-064 with readiness check content
 - Set QA policy to `manual` (was `auto_on_task`), stopped QA container
 - Added to-do item: "Prevent multiple instances of the same QMS user running simultaneously"
+- QA agent ID: `a569621`
 
 ## Current State
 
 | Item | Status | Notes |
 |------|--------|-------|
-| CR-049 | IN_EXECUTION (v1.0) | Add `qms_withdraw` MCP tool, RS update |
-| CR-065 | IN_EXECUTION (v1.0) | Fix `qms_review` mapping, strengthen tests |
-| CR-064 | IN_PRE_REVIEW | QA assigned, review not formally submitted (MCP bug). Two deficiencies noted verbally |
+| CR-049 | CLOSED (v2.0) | Add `qms_withdraw` MCP tool |
+| CR-065 | CLOSED (v2.0) | Fix `qms_review` mapping, strengthen tests |
+| CR-064 | IN_PRE_REVIEW | QA assigned, review not formally submitted. Two deficiencies noted verbally |
+| SDLC-QMS-RS | EFFECTIVE v8.0 | Added `qms_withdraw` to REQ-MCP-004 |
+| SDLC-QMS-RTM | EFFECTIVE v10.0 | Baseline: 2fed599, 369/369, RS v8.0 |
+| qms-cli submodule | main @ 32324af | PR #8 merged |
 | QA policy | manual | Changed from auto_on_task |
 | QA container | stopped | |
 | MCP servers | running | :8000 (QMS), :8001 (Git) |
 | Hub | running | :9000 |
 
-## Key Files Investigated
+## Key Files Modified
 
-- `agent-hub/agent_hub/container.py` -- Container lifecycle, `_exec_claude()` fire-and-forget
-- `agent-hub/agent_hub/hub.py` -- `_on_inbox_change` race condition (lines 178-217)
-- `agent-hub/agent_hub/notifier.py` -- Two-step tmux injection (send-keys text, then Enter)
-- `qms-cli/qms_mcp/tools.py` -- **THE BUG** at line 333
-- `qms-cli/commands/review.py` -- CLI defines `--recommend`/`--request-updates` as `store_true` flags
-- `qms-cli/commands/withdraw.py` -- Withdraw CLI command (CR-048), needs MCP equivalent
-- `qms-cli/tests/qualification/test_mcp.py` -- Tests only exercise CLI path, not MCP layer
+- `qms-cli/qms_mcp/tools.py` -- Added `qms_withdraw`, fixed `qms_review` arg mapping
+- `qms-cli/tests/qualification/test_mcp.py` -- 5 new tests, tool count 19->20
+- `QMS/SDLC-QMS/SDLC-QMS-RS.md` -- REQ-MCP-004 updated (v8.0)
+- `QMS/SDLC-QMS/SDLC-QMS-RTM.md` -- New baseline (v10.0)
 
 ## Pending
 
-- **CR-049 + CR-065 execution:** Combined requalification on branch `cr-049-065-requalification`
-  - Setup test environment, create branch
-  - CR-049: implement `qms_withdraw`, add equivalence test, update tool count (19 -> 20)
-  - CR-065: fix `qms_review` mapping, add MCP-layer equivalence tests
-  - RS update (add `qms_withdraw` to REQ-MCP-004, v7.0 -> v8.0)
-  - CI verification, RTM update (v9.0 -> v10.0), PR merge, submodule update
-- **CR-064:** Needs deficiencies addressed, then QA re-review and full lifecycle
+- **CR-064:** Needs deficiencies addressed (comment block, hub.py inconsistency), then QA re-review and full lifecycle (implement readiness check in container.py)

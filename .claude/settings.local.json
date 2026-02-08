@@ -57,7 +57,8 @@
       "Bash(bash:*)",
       "Bash(echo:*)",
       "Bash(powershell.exe -NoProfile -Command \"Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 8000,8001,9000 } | Select-Object LocalPort,OwningProcess\")",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(git push:*)"
     ],
     "deny": [
       "Edit(QMS/**)",

@@ -1,14 +1,14 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-049/CR-065: Update qualified baseline with CI-verified commit
-  2fed599 (369/369 tests passing). RS updated to v8.0.'
+revision_summary: 'CR-050: Update qualified baseline with CI-verified commit 63123fe
+  (364/364 tests passing)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v8.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v7.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
@@ -162,10 +162,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-001 | MCP Protocol Implementation | test_mcp::test_mcp_server_imports, test_register_tools_creates_all_tools | PASS |
 | REQ-MCP-002 | User Command Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_inbox_equivalence, test_qms_workspace_equivalence, test_qms_status_equivalence, test_qms_read_equivalence, test_qms_history_equivalence, test_qms_comments_equivalence, test_full_sop_lifecycle_via_cli | PASS |
 | REQ-MCP-003 | Document Lifecycle Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_create_equivalence, test_qms_checkout_equivalence, test_qms_checkin_equivalence, test_qms_cancel_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
-| REQ-MCP-004 | Workflow Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_route_review_equivalence, test_qms_route_approval_equivalence, test_qms_assign_equivalence, test_qms_review_equivalence, test_qms_approve_equivalence, test_qms_reject_equivalence, test_qms_withdraw_equivalence, test_qms_review_mcp_layer_recommend, test_qms_review_mcp_layer_request_updates, test_qms_route_mcp_layer, test_qms_withdraw_mcp_layer, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
+| REQ-MCP-004 | Workflow Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_route_review_equivalence, test_qms_route_approval_equivalence, test_qms_assign_equivalence, test_qms_review_equivalence, test_qms_approve_equivalence, test_qms_reject_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
 | REQ-MCP-005 | Execution Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_release_equivalence, test_qms_revert_equivalence, test_qms_close_equivalence, test_full_cr_lifecycle_via_cli | PASS |
 | REQ-MCP-006 | Administrative Tools | test_mcp::test_register_tools_creates_all_tools, test_qms_fix_equivalence, test_qms_fix_requires_administrator | PASS |
-| REQ-MCP-007 | Functional Equivalence | test_mcp::test_qms_inbox_equivalence, test_qms_workspace_equivalence, test_qms_status_equivalence, test_qms_read_equivalence, test_qms_history_equivalence, test_qms_comments_equivalence, test_qms_create_equivalence, test_qms_checkout_equivalence, test_qms_checkin_equivalence, test_qms_cancel_equivalence, test_qms_route_review_equivalence, test_qms_route_approval_equivalence, test_qms_assign_equivalence, test_qms_review_equivalence, test_qms_approve_equivalence, test_qms_reject_equivalence, test_qms_withdraw_equivalence, test_qms_review_mcp_layer_recommend, test_qms_review_mcp_layer_request_updates, test_qms_route_mcp_layer, test_qms_withdraw_mcp_layer, test_qms_release_equivalence, test_qms_revert_equivalence, test_qms_close_equivalence, test_qms_fix_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
+| REQ-MCP-007 | Functional Equivalence | test_mcp::test_qms_inbox_equivalence, test_qms_workspace_equivalence, test_qms_status_equivalence, test_qms_read_equivalence, test_qms_history_equivalence, test_qms_comments_equivalence, test_qms_create_equivalence, test_qms_checkout_equivalence, test_qms_checkin_equivalence, test_qms_cancel_equivalence, test_qms_route_review_equivalence, test_qms_route_approval_equivalence, test_qms_assign_equivalence, test_qms_review_equivalence, test_qms_approve_equivalence, test_qms_reject_equivalence, test_qms_release_equivalence, test_qms_revert_equivalence, test_qms_close_equivalence, test_qms_fix_equivalence, test_full_sop_lifecycle_via_cli, test_full_cr_lifecycle_via_cli | PASS |
 | REQ-MCP-008 | Structured Responses | test_mcp::test_mcp_tool_returns_string | PASS |
 | REQ-MCP-009 | Permission Enforcement | test_mcp::test_qms_fix_requires_administrator, test_mcp_permission_enforcement, test_mcp_assign_requires_quality_group | PASS |
 | REQ-MCP-010 | Setup Command Exclusion | test_mcp::test_mcp_excludes_setup_commands | PASS |
@@ -1189,7 +1189,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_mcp.py | test_mcp_server_imports | Verifies MCP server module imports correctly. |
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all 20 MCP tools are registered. |
+| test_mcp.py | test_register_tools_creates_all_tools | Verifies all 19 MCP tools are registered. |
 
 ---
 
@@ -1228,22 +1228,17 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-MCP-004: Workflow Tools
 
-**Requirement:** The MCP server shall expose workflow tools: qms_route, qms_assign, qms_review, qms_approve, qms_reject, and qms_withdraw.
+**Requirement:** The MCP server shall expose workflow tools: qms_route, qms_assign, qms_review, qms_approve, and qms_reject.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_mcp.py | test_register_tools_creates_all_tools | Verifies all 20 workflow tools are registered. |
+| test_mcp.py | test_register_tools_creates_all_tools | Verifies all workflow tools are registered. |
 | test_mcp.py | test_qms_route_review_equivalence | Verifies qms_route for review produces equivalent results. |
 | test_mcp.py | test_qms_route_approval_equivalence | Verifies qms_route for approval produces equivalent results. |
 | test_mcp.py | test_qms_assign_equivalence | Verifies qms_assign produces equivalent results to CLI. |
 | test_mcp.py | test_qms_review_equivalence | Verifies qms_review produces equivalent results to CLI. |
 | test_mcp.py | test_qms_approve_equivalence | Verifies qms_approve produces equivalent results to CLI. |
 | test_mcp.py | test_qms_reject_equivalence | Verifies qms_reject produces equivalent results to CLI. |
-| test_mcp.py | test_qms_withdraw_equivalence | Verifies qms_withdraw produces equivalent results to CLI. |
-| test_mcp.py | test_qms_review_mcp_layer_recommend | Verifies qms_review MCP-to-CLI arg mapping for recommend outcome. |
-| test_mcp.py | test_qms_review_mcp_layer_request_updates | Verifies qms_review MCP-to-CLI arg mapping for request-updates outcome. |
-| test_mcp.py | test_qms_route_mcp_layer | Verifies qms_route MCP-to-CLI arg mapping for review/approval. |
-| test_mcp.py | test_qms_withdraw_mcp_layer | Verifies qms_withdraw MCP-to-CLI arg mapping. |
 | test_mcp.py | test_full_sop_lifecycle_via_cli | Integration test exercising route, review, approve. |
 | test_mcp.py | test_full_cr_lifecycle_via_cli | Integration test for executable workflow. |
 
@@ -1297,11 +1292,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_mcp.py | test_qms_review_equivalence | CLI/MCP equivalence for review. |
 | test_mcp.py | test_qms_approve_equivalence | CLI/MCP equivalence for approve. |
 | test_mcp.py | test_qms_reject_equivalence | CLI/MCP equivalence for reject. |
-| test_mcp.py | test_qms_withdraw_equivalence | CLI/MCP equivalence for withdraw. |
-| test_mcp.py | test_qms_review_mcp_layer_recommend | MCP-to-CLI arg mapping for review recommend. |
-| test_mcp.py | test_qms_review_mcp_layer_request_updates | MCP-to-CLI arg mapping for review request-updates. |
-| test_mcp.py | test_qms_route_mcp_layer | MCP-to-CLI arg mapping for route types. |
-| test_mcp.py | test_qms_withdraw_mcp_layer | MCP-to-CLI arg mapping for withdraw. |
 | test_mcp.py | test_qms_release_equivalence | CLI/MCP equivalence for release. |
 | test_mcp.py | test_qms_revert_equivalence | CLI/MCP equivalence for revert. |
 | test_mcp.py | test_qms_close_equivalence | CLI/MCP equivalence for close. |
@@ -1403,13 +1393,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v8.0 |
+| Requirements Spec | SDLC-QMS-RS v7.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-049-065-requalification |
-| Commit | 2fed599 |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21803124788 |
-| Total Tests | 369 |
-| Passed | 369 |
+| Branch | main |
+| Commit | 63123fe |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21609392809 |
+| Total Tests | 364 |
+| Passed | 364 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1418,25 +1408,25 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test Protocol | Tests | Passed | Failed |
 |---------------|-------|--------|--------|
-| test_sop_lifecycle.py | 15 | 15 | 0 |
-| test_cr_lifecycle.py | 11 | 11 | 0 |
+| test_sop_lifecycle.py | 16 | 16 | 0 |
+| test_cr_lifecycle.py | 12 | 12 | 0 |
 | test_cr048_workflow.py | 11 | 11 | 0 |
 | test_security.py | 19 | 19 | 0 |
 | test_document_types.py | 22 | 22 | 0 |
-| test_queries.py | 16 | 16 | 0 |
+| test_queries.py | 18 | 18 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
-| test_init.py | 15 | 15 | 0 |
-| test_mcp.py | 47 | 47 | 0 |
-| **Subtotal** | **172** | **172** | **0** |
+| test_init.py | 10 | 10 | 0 |
+| test_mcp.py | 42 | 42 | 0 |
+| **Subtotal** | **166** | **166** | **0** |
 
 #### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 172 | 172 | 0 |
-| Unit Tests | 197 | 197 | 0 |
-| **Total** | **369** | **369** | **0** |
+| Qualification Tests | 166 | 166 | 0 |
+| Unit Tests | 198 | 198 | 0 |
+| **Total** | **364** | **364** | **0** |
 
 ### 6.3 Test Environment
 
