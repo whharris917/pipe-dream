@@ -45,7 +45,18 @@
       "Bash(git -C /c/Users/wilha/projects/pipe-dream show --stat 249171f)",
       "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" 249171f)",
       "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" 6a1549f)",
-      "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" f5f2cfe)"
+      "Bash(git -C /c/Users/wilha/projects/pipe-dream log -1 --format=\"%H %ai %s%n%b\" f5f2cfe)",
+      "Bash(pip install:*)",
+      "Bash(curl:*)",
+      "Bash(agent-hub set-policy:*)",
+      "Bash(docker image inspect:*)",
+      "Bash(agent-hub start-agent:*)",
+      "Bash(agent-hub status:*)",
+      "Bash(git status:*)",
+      "Bash(docker ps:*)",
+      "Bash(bash:*)",
+      "Bash(echo:*)",
+      "Bash(powershell.exe -NoProfile -Command \"Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 8000,8001,9000 } | Select-Object LocalPort,OwningProcess\")"
     ],
     "deny": [
       "Edit(QMS/**)",
