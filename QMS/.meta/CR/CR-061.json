@@ -12,7 +12,6 @@
   "pending_assignees": [
     "qa"
   ],
-  "review_outcomes": {
-    "qa": "RECOMMEND"
-  }
+  "review_outcomes": {},
+  "completed_reviewers": []
 }

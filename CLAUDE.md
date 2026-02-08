@@ -196,7 +196,7 @@ Since containers mount pipe-dream as read-only (including `.git/`), git operatio
 
 **Start Git MCP server on host:**
 ```bash
-cd docker/scripts && ./start-git_mcp.sh
+cd docker/scripts && ./start-git-mcp.sh
 ```
 
 **Available tool:**

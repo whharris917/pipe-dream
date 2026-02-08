@@ -46,12 +46,12 @@ Pass two or more agent names to launch them in separate terminal windows:
 
 This opens:
 - One terminal window per agent
-- An inbox watcher that monitors all agent inboxes
+- The Agent Hub, which monitors all agent inboxes and injects tmux notifications
 - Notifications when new tasks arrive (switch to appropriate terminal)
 
 **Workflow example:**
 1. In claude's terminal: route a document for review
-2. Inbox watcher shows: `[QA] New task: Review CR-056`
+2. QA's terminal shows a tmux notification: `[QA] New task: Review CR-056`
 3. Switch to qa's terminal and run `qms inbox` to see the task
 
 ### Manual Setup (if needed)

@@ -176,6 +176,7 @@ None. The `mcp_proxy.py` script remains in place (actively used by Docker image)
 | EI-6 | UAT: end-to-end multi-agent launch and Hub integration | **Test 1 (multi-agent launch):** `./launch.sh claude qa` — both containers started, MCP connected, agents self-identified correctly. **Pass.** **Test 2 (Hub status):** `/api/status` showed both agents STOPPED despite running containers. **Fail.** Root cause: Hub starts before containers (step 3 vs step 4); `_discover_running_containers()` runs once at startup, never re-scans. **Test 3 (notification injection):** No tmux notification in QA terminal when CR routed. **Fail.** Root cause: Hub believed QA was STOPPED, so notification injection was skipped. | Fail | Lead - 2026-02-07 |
 | EI-7 | Fix Hub container state sync: add `_container_sync_loop` and `_hub_managed` tracking | Added `_container_sync_loop()` to `hub.py` — polls Docker every 10 seconds, reconciles Hub state with container reality. Added `_hub_managed` set to track containers the Hub started; `stop()` only kills Hub-managed containers (not externally-started ones). Reinstalled agent-hub package. | Pass | claude - 2026-02-07 |
 | EI-8 | Re-test: verify sync loop detects containers and notification injection works | Started Hub, then launched `./launch.sh claude qa`. Within 10 seconds, `/api/status` showed both agents as `running`. Logs confirmed `Sync: discovered running container for claude` and `Sync: discovered running container for qa`. Routed CR for QA review — tmux notification appeared in QA terminal. Both original failures resolved. | Pass | Lead - 2026-02-07 |
+| EI-9 | Fix QA post-review deficiencies: stale inbox watcher references in `docker/README.md`, typo in `CLAUDE.md`, stale comment in `requirements.txt` | Fixed `docker/README.md` lines 49/54 (inbox watcher → Agent Hub). Fixed `CLAUDE.md` line 199 (`start-git_mcp.sh` → `start-git-mcp.sh`). Fixed `requirements.txt` line 42 comment (inbox-watcher.py → Agent Hub inbox watcher). | Pass | claude - 2026-02-07 |
 
 ---
 
@@ -185,12 +186,13 @@ None. The `mcp_proxy.py` script remains in place (actively used by Docker image)
 |---------|---------------------|
 | EI-5 discovered stale references in `docker/README.md` and `docker/CONTAINER-GUIDE.md` — fixed as part of testing. These files were not in the original scope but contained functional references to deleted files. | claude - 2026-02-07 |
 | EI-6 UAT revealed Hub doesn't detect containers started after Hub startup. Root cause: launch.sh starts Hub (step 3) before containers (step 4), and the one-time `_discover_running_containers()` scan finds nothing. Fix implemented in EI-7, verified in EI-8. | claude - 2026-02-07 |
+| EI-9 addresses three deficiencies found during QA post-review: residual inbox watcher language in docker/README.md multi-agent description, missed typo fix in CLAUDE.md git command example, and stale comment in requirements.txt. | claude - 2026-02-07 |
 
 ---
 
 ## 11. Execution Summary
 
-All EIs complete (6 pass, 1 fail-then-fix, 1 re-test pass). Deleted 5 obsolete scripts, 8 path corruption artifacts, and 1 stale log. Replaced `start_inbox_watcher()` with `ensure_hub()` in `launch.sh`. Updated `CLAUDE.md` directory listing. Fixed stale references in `docker/README.md` and `docker/CONTAINER-GUIDE.md`. UAT revealed Hub container state sync gap — fixed by adding `_container_sync_loop` (10s Docker polling) and `_hub_managed` set (prevents Hub from killing externally-started containers). Re-test confirmed both original UAT failures resolved.
+All 9 EIs complete (7 pass, 1 fail-then-fix, 1 re-test pass). Deleted 5 obsolete scripts, 8 path corruption artifacts, and 1 stale log. Replaced `start_inbox_watcher()` with `ensure_hub()` in `launch.sh`. Updated `CLAUDE.md` directory listing. Fixed stale references in `docker/README.md`, `docker/CONTAINER-GUIDE.md`, and `requirements.txt`. UAT revealed Hub container state sync gap — fixed by adding `_container_sync_loop` (10s Docker polling) and `_hub_managed` set (prevents Hub from killing externally-started containers). Re-test confirmed both original UAT failures resolved. QA post-review deficiencies (3 stale references) corrected in EI-9.
 
 ---
 
