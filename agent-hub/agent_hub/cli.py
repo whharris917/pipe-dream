@@ -203,5 +203,53 @@ def set_policy(
         sys.exit(1)
 
 
+@cli.command("attach")
+@click.argument("agent_id")
+@click.option("--hub-url", default="http://localhost:9000", help="Hub URL")
+def attach(agent_id: str, hub_url: str):
+    """Attach to a running agent's terminal.
+
+    Connects directly to the agent's tmux session inside its container.
+    Detach with Ctrl-B D.
+    """
+    import httpx
+    import subprocess as sp
+
+    try:
+        response = httpx.get(
+            f"{hub_url}/api/agents/{agent_id}", timeout=5
+        )
+        if response.status_code == 404:
+            click.echo(f"Unknown agent: {agent_id}")
+            sys.exit(1)
+        response.raise_for_status()
+        data = response.json()
+
+        if data["state"] != "running":
+            click.echo(
+                f"Agent {agent_id} is {data['state']}. "
+                f"Must be running to attach."
+            )
+            sys.exit(1)
+
+    except httpx.ConnectError:
+        click.echo("Hub is not running. Start with: agent-hub start")
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}")
+        sys.exit(1)
+
+    container_name = f"agent-{agent_id}"
+    click.echo(f"Attaching to {agent_id}... (detach with Ctrl-B D)")
+
+    result = sp.run(
+        ["docker", "exec", "-it", container_name,
+         "tmux", "attach", "-t", "agent"]
+    )
+
+    if result.returncode != 0:
+        click.echo(f"Attach exited with code {result.returncode}")
+
+
 if __name__ == "__main__":
     cli()

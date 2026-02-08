@@ -33,6 +33,9 @@ class HubConfig(BaseSettings):
     default_shutdown_policy: ShutdownPolicy = ShutdownPolicy.MANUAL
     default_idle_timeout: int = 30
 
+    # PTY Manager
+    pty_buffer_size: int = 262144  # 256KB scrollback buffer per agent
+
     model_config = {"env_prefix": "HUB_"}
 
     @field_validator("project_root", mode="before")

@@ -50,6 +50,7 @@ class Agent(BaseModel):
     started_at: datetime | None = None
     last_activity: datetime | None = None
     inbox_count: int = 0
+    pty_attached: bool = False
 
 
 class AgentSummary(BaseModel):

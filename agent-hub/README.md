@@ -14,7 +14,8 @@ agent-hub/
 │   ├── notifier.py     # tmux send-keys notification injection
 │   ├── policy.py       # Launch/shutdown policy evaluation engine
 │   ├── hub.py          # Core orchestrator wiring all components
-│   ├── cli.py          # Click CLI (5 commands)
+│   ├── pty_manager.py  # PTY session management (Docker exec socket I/O)
+│   ├── cli.py          # Click CLI (6 commands)
 │   └── api/
 │       ├── server.py   # FastAPI app factory with lifespan management
 │       └── routes.py   # REST endpoints on /api
@@ -52,6 +53,7 @@ agent-hub stop-agent qa
 | `agent-hub start-agent <id>` | Start an agent's container |
 | `agent-hub stop-agent <id>` | Stop an agent's container |
 | `agent-hub set-policy <id>` | Set an agent's launch/shutdown policy |
+| `agent-hub attach <id>` | Attach to a running agent's terminal |
 
 ### `start` Options
 
@@ -147,6 +149,28 @@ All config can be set via environment variables with the `HUB_` prefix:
 | `HUB_DEFAULT_LAUNCH_POLICY` | `manual` | Default launch policy |
 | `HUB_DEFAULT_SHUTDOWN_POLICY` | `manual` | Default shutdown policy |
 | `HUB_DEFAULT_IDLE_TIMEOUT` | `30` | Default idle timeout (minutes) |
+| `HUB_PTY_BUFFER_SIZE` | `262144` | PTY scrollback buffer size per agent (bytes) |
+
+## PTY Manager
+
+The Hub attaches a persistent PTY session to each running agent's tmux session using the Docker SDK's exec socket API. This provides:
+
+- **Live idle detection:** `Agent.last_activity` is updated on every terminal output event, enabling the `idle_timeout` shutdown policy to function correctly.
+- **Scrollback buffer:** A configurable ring buffer (default 256KB) captures recent terminal output per agent. Future WebSocket clients can retrieve this on connect.
+- **Callback interface:** Output callbacks can be registered for real-time streaming (designed for a future WebSocket endpoint).
+
+PTY sessions are automatically attached when an agent starts and detached when it stops. The Hub also attaches to containers discovered already running at startup.
+
+### CLI Attach
+
+`agent-hub attach <id>` connects your terminal directly to a running agent's tmux session:
+
+```bash
+agent-hub attach qa        # Attach to QA agent
+                            # Detach with Ctrl-B D
+```
+
+This bypasses the Hub's PTY Manager and runs `docker exec -it` directly, giving you a raw interactive terminal.
 
 ## Agent Roster
 

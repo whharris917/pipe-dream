@@ -10,6 +10,7 @@ from agent_hub.inbox import InboxWatcher
 from agent_hub.models import Agent, AgentPolicy, AgentState, LaunchPolicy, ShutdownPolicy
 from agent_hub.notifier import build_notification_text, inject_notification
 from agent_hub.policy import evaluate_launch, evaluate_shutdown
+from agent_hub.pty_manager import PTYManager
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ class AgentHub:
         self.agents: dict[str, Agent] = {}
         self.container_mgr = ContainerManager(config)
         self.inbox_watcher = InboxWatcher(config, self._on_inbox_change)
+        self.pty_manager = PTYManager(config, self.container_mgr.client)
         self._started_at: datetime | None = None
         self._idle_check_task: asyncio.Task | None = None
         self._container_sync_task: asyncio.Task | None = None
@@ -30,6 +32,9 @@ class AgentHub:
     async def start(self) -> None:
         """Start the Hub and all always-on agents."""
         self._started_at = datetime.now()
+
+        # Register PTY output callback for activity tracking
+        self.pty_manager.register_callback(self._on_pty_output)
 
         # Initialize agent records
         for agent_id in self.config.agents:
@@ -40,7 +45,7 @@ class AgentHub:
             )
             self.agents[agent_id] = Agent(id=agent_id, policy=policy)
 
-        # Scan for already-running containers
+        # Scan for already-running containers (includes PTY attach)
         await self._discover_running_containers()
 
         # Start inbox watcher
@@ -75,8 +80,12 @@ class AgentHub:
 
         await self.inbox_watcher.stop()
 
+        # Detach all PTY sessions
+        await self.pty_manager.detach_all()
+
         # Stop only Hub-managed containers (not externally started ones)
         for agent_id, agent in self.agents.items():
+            agent.pty_attached = False
             if agent.state == AgentState.RUNNING and agent_id in self._hub_managed:
                 try:
                     await self.stop_agent(agent_id)
@@ -114,6 +123,13 @@ class AgentHub:
             logger.error("Failed to start agent %s: %s", agent_id, e)
             raise
 
+        # Attach PTY (non-fatal — agent runs even if PTY fails)
+        try:
+            await self.pty_manager.attach(agent_id)
+            agent.pty_attached = True
+        except Exception as e:
+            logger.warning("PTY attach failed for %s: %s", agent_id, e)
+
         return agent
 
     async def stop_agent(self, agent_id: str) -> Agent:
@@ -125,6 +141,10 @@ class AgentHub:
 
         agent.state = AgentState.STOPPING
         logger.info("Stopping agent %s", agent_id)
+
+        # Detach PTY before stopping container
+        await self.pty_manager.detach(agent_id)
+        agent.pty_attached = False
 
         try:
             await self.container_mgr.stop(agent_id)
@@ -165,6 +185,12 @@ class AgentHub:
             raise ValueError(f"Unknown agent: {agent_id}")
         return agent
 
+    async def _on_pty_output(self, agent_id: str, data: bytes) -> None:
+        """Handle PTY output — update agent activity timestamp."""
+        agent = self.agents.get(agent_id)
+        if agent is not None:
+            agent.last_activity = datetime.now()
+
     async def _discover_running_containers(self) -> None:
         """Check for containers already running from a previous Hub session."""
         for agent_id in self.config.agents:
@@ -174,6 +200,16 @@ class AgentHub:
                 agent.started_at = datetime.now()
                 agent.last_activity = datetime.now()
                 logger.info("Discovered running container for %s", agent_id)
+
+                # Attempt PTY attach (non-fatal)
+                try:
+                    await self.pty_manager.attach(agent_id)
+                    agent.pty_attached = True
+                except Exception as e:
+                    logger.warning(
+                        "PTY attach failed for discovered container %s: %s",
+                        agent_id, e,
+                    )
 
     async def _on_inbox_change(
         self, agent_id: str, inbox_count: int, new_filename: str | None
@@ -265,10 +301,24 @@ class AgentHub:
                     logger.info(
                         "Sync: discovered running container for %s", agent_id
                     )
+                    # Attempt PTY attach for externally started container
+                    if not self.pty_manager.is_attached(agent_id):
+                        try:
+                            await self.pty_manager.attach(agent_id)
+                            agent.pty_attached = True
+                        except Exception as e:
+                            logger.warning(
+                                "Sync: PTY attach failed for %s: %s",
+                                agent_id, e,
+                            )
                 elif not running and agent.state == AgentState.RUNNING:
+                    # Detach PTY for externally stopped container
+                    if self.pty_manager.is_attached(agent_id):
+                        await self.pty_manager.detach(agent_id)
                     agent.state = AgentState.STOPPED
                     agent.container_id = None
                     agent.started_at = None
+                    agent.pty_attached = False
                     logger.info(
                         "Sync: container stopped externally for %s", agent_id
                     )
