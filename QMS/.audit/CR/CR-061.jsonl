@@ -1,0 +1,14 @@
+{"ts": "2026-02-08T00:57:14+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Launch script Hub integration and obsolete file cleanup"}
+{"ts": "2026-02-08T00:58:14+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-08T00:58:34+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-08T00:58:34+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-08T00:59:32+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW COMPLIANCE ASSESSMENT: COMPLIANT. All 12 required CR sections per SOP-002 Section 6 are present and properly populated. Frontmatter verified: title='Launch script Hub integration and obsolete file cleanup', revision_summary='Initial draft' (acceptable for v0.1). Parent document CR-060 confirmed CLOSED at v2.0. No placeholder content (TBD/TODO/FIXME) found in pre-approved sections 1-9. Execution section placeholders are standard EI template markers expected to be populated during execution phase. File lists consistent across Sections 2.3, 5.2, and 7.1. No typos, formatting issues, or section numbering errors found. No TU assignment required - change affects only infrastructure scripts and project documentation, no Flow State application code."}
+{"ts": "2026-02-08T00:59:32+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-08T00:59:40+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-08T00:59:40+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-08T01:00:00+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-08T01:00:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-08T01:00:08+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-08T01:00:08+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-08T01:00:11+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-08T01:11:59+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}

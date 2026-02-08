@@ -211,13 +211,6 @@ Starts the MCP server with correct options:
 ./docker/scripts/start-mcp-server.sh
 ```
 
-### docker/scripts/start-container.sh
-
-Starts container and drops into bash:
-```bash
-./docker/scripts/start-container.sh
-```
-
 ## Session Management
 
 Sessions are persisted to the host at `.claude/sessions/`. When starting a new session inside the container:

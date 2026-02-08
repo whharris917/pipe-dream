@@ -227,8 +227,8 @@ docker/
 ├── README.md               # Detailed usage documentation
 └── scripts/
     ├── start-mcp-server.sh # Start QMS MCP server on host
-    ├── start-git_mcp.sh    # Start Git MCP server on host
-    └── start-container.sh  # Start container with checks
+    ├── start-git-mcp.sh    # Start Git MCP server on host
+    └── mcp_proxy.py        # Stdio-to-HTTP MCP proxy (baked into image)
 ```
 
 **Quick Start:**

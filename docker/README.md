@@ -314,12 +314,12 @@ rm -rf .claude/users/qa/container/*  # Reset qa agent
 
 Then run `./launch.sh qa` again to re-authenticate.
 
-### Inbox watcher not detecting new files (Windows)
+### Inbox notifications not arriving
 
-The watchdog library uses different backends on different platforms. On Windows, it uses ReadDirectoryChangesW which should work automatically. If notifications aren't appearing:
+Inbox monitoring is handled by the Agent Hub. If notifications aren't appearing:
 
-1. Verify inbox-watcher.py is running: `cat .inbox-watcher.pid`
-2. Check logs: `cat .inbox-watcher.log`
+1. Verify the Hub is running: `curl http://localhost:9000/api/health`
+2. Check logs: `cat .agent-hub.log`
 3. Ensure the inbox directory exists: `ls .claude/users/qa/inbox/`
 
 ## Building the Image

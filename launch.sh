@@ -4,7 +4,7 @@
 # Usage:
 #   ./launch.sh              # Launch claude in current terminal
 #   ./launch.sh qa           # Launch qa in current terminal
-#   ./launch.sh claude qa    # Launch both in separate terminals + inbox watcher
+#   ./launch.sh claude qa    # Launch both in separate terminals + Agent Hub
 #
 # Replaces: claude-session.sh, claude-session-v2/v3.sh, multi-agent-session.sh
 #
@@ -241,32 +241,30 @@ launch_in_terminal() {
     fi
 }
 
-start_inbox_watcher() {
-    local python_exe agents_str
+ensure_hub() {
+    # Check if Hub is already running
+    if curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/api/health 2>/dev/null | grep -q "200"; then
+        echo -e "  ${GREEN}✓${NC} Agent Hub already running"
+        return 0
+    fi
+
+    echo -e "  Starting Agent Hub..."
+    local python_exe
     python_exe=$(find_python)
-    agents_str="$*"
 
-    # Kill any existing inbox watcher
-    if [ -f "$SCRIPT_DIR/.inbox-watcher.pid" ]; then
-        local old_pid
-        old_pid=$(cat "$SCRIPT_DIR/.inbox-watcher.pid")
-        kill "$old_pid" 2>/dev/null || true
-        rm -f "$SCRIPT_DIR/.inbox-watcher.pid"
-    fi
+    cd "$SCRIPT_DIR"
+    "$python_exe" -m agent_hub.cli start --project-root "$SCRIPT_DIR" \
+        > "$SCRIPT_DIR/.agent-hub.log" 2>&1 &
+    echo $! > "$SCRIPT_DIR/.agent-hub.pid"
 
-    local watcher_cmd="cd '$SCRIPT_DIR' && '$python_exe' -u docker/scripts/inbox-watcher.py $agents_str; read -p 'Press Enter to close...'"
-
-    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "mingw"* || "$OSTYPE" == "cygwin" ]]; then
-        start "" mintty -t "Inbox Watcher" -e bash -c "$watcher_cmd" &
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        osascript -e "tell application \"Terminal\" to do script \"$watcher_cmd\""
-    elif command -v gnome-terminal &> /dev/null; then
-        gnome-terminal --title="Inbox Watcher" -- bash -c "$watcher_cmd" &
-    elif command -v xterm &> /dev/null; then
-        xterm -title "Inbox Watcher" -e bash -c "$watcher_cmd" &
-    fi
-
-    echo -e "  ${GREEN}✓${NC} Inbox watcher launched"
+    for i in {1..10}; do
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/api/health 2>/dev/null | grep -q "200"; then
+            echo -e "  ${GREEN}✓${NC} Agent Hub started"
+            return 0
+        fi
+        [ $i -eq 10 ] && echo -e "  ${RED}✗${NC} Agent Hub failed to start" && exit 1
+        sleep 1
+    done
 }
 
 # ============================================================================
@@ -302,20 +300,22 @@ echo -e "${GREEN}═════════════════════
 echo ""
 
 # Step 1: MCP servers
-echo -e "${YELLOW}[1/3]${NC} Ensuring MCP servers..."
+echo -e "${YELLOW}[1/4]${NC} Ensuring MCP servers..."
 ensure_mcp_servers
 
 # Step 2: Docker image
-echo -e "${YELLOW}[2/3]${NC} Checking Docker image..."
+echo -e "${YELLOW}[2/4]${NC} Checking Docker image..."
 ensure_image
 
-# Step 3: Launch
-echo -e "${YELLOW}[3/3]${NC} Launching containers..."
+# Step 3: Agent Hub
+echo -e "${YELLOW}[3/4]${NC} Ensuring Agent Hub..."
+ensure_hub
+
+# Step 4: Launch
+echo -e "${YELLOW}[4/4]${NC} Launching containers..."
 
 if [ "$MULTI_MODE" = true ]; then
-    # Multi-agent: start inbox watcher, then launch each agent in its own terminal
-    start_inbox_watcher "${AGENTS[@]}"
-
+    # Multi-agent: launch each agent in its own terminal
     for agent in "${AGENTS[@]}"; do
         echo -e "  Launching ${CYAN}$agent${NC} in new terminal..."
         launch_in_terminal "$agent"
@@ -327,13 +327,13 @@ if [ "$MULTI_MODE" = true ]; then
     echo -e "  All agents launched!"
     echo -e ""
     echo -e "  Terminal windows:"
-    echo -e "    - ${CYAN}Inbox Watcher${NC}: Shows notifications when tasks arrive"
     for agent in "${AGENTS[@]}"; do
         echo -e "    - ${CYAN}Agent: $agent${NC}"
     done
     echo -e ""
-    echo -e "  ${YELLOW}To stop MCP servers:${NC}"
-    echo -e "    kill \$(cat .qms-mcp-server.pid) \$(cat .git-mcp-server.pid)"
+    echo -e "  ${YELLOW}Agent Hub:${NC} http://localhost:9000/api/status"
+    echo -e "  ${YELLOW}To stop services:${NC}"
+    echo -e "    kill \$(cat .agent-hub.pid) \$(cat .qms-mcp-server.pid) \$(cat .git-mcp-server.pid)"
     echo -e "${GREEN}════════════════════════════════════════════════${NC}"
 else
     # Single-agent: start container in this terminal, exec into it
@@ -344,7 +344,5 @@ else
     launch_claude "$agent"
 
     # Post-session info
-    if [ -f "$SCRIPT_DIR/.qms-mcp-server.pid" ] || [ -f "$SCRIPT_DIR/.git-mcp-server.pid" ]; then
-        echo -e "MCP servers still running. To stop: ${YELLOW}kill \$(cat .qms-mcp-server.pid) \$(cat .git-mcp-server.pid)${NC}"
-    fi
+    echo -e "Services still running. To stop: ${YELLOW}kill \$(cat .agent-hub.pid) \$(cat .qms-mcp-server.pid) \$(cat .git-mcp-server.pid) 2>/dev/null${NC}"
 fi
