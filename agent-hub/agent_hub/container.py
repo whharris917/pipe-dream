@@ -63,6 +63,9 @@ class ContainerManager:
         # Start claude inside tmux
         await self._exec_claude(name)
 
+        # Wait for Claude Code to be ready for input
+        await self._wait_for_ready(name)
+
         logger.info("Container %s started for agent %s", name, agent_id)
         return container.id
 
@@ -237,6 +240,39 @@ class ContainerManager:
             tty=True,
         )
         logger.info("claude started in tmux session for %s", name)
+
+    async def _wait_for_ready(self, name: str, timeout: float = 60.0) -> None:
+        """Wait for Claude Code to be ready for input.
+
+        Polls tmux capture-pane output until the prompt character
+        (U+276F) is detected, indicating Claude Code has finished
+        initializing and is ready to accept user input.
+        """
+        deadline = asyncio.get_event_loop().time() + timeout
+        while asyncio.get_event_loop().time() < deadline:
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "docker", "exec", name,
+                    "tmux", "capture-pane", "-t", "agent", "-p",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
+                if "\u276f" in stdout.decode("utf-8", errors="replace"):
+                    logger.info("Claude Code ready in %s", name)
+                    return
+            except (asyncio.TimeoutError, Exception):
+                pass
+            await asyncio.sleep(2.0)
+
+        logger.warning(
+            "Claude Code readiness not confirmed in %s after %.0fs -- "
+            "container left running for inspection",
+            name, timeout,
+        )
+        raise RuntimeError(
+            f"Claude Code in {name} did not become ready within {timeout:.0f}s"
+        )
 
     def close(self) -> None:
         """Close the Docker client."""
