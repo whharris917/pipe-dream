@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-02-08
+
+- [ ] Prevent multiple instances of the same QMS user running simultaneously
+  - If agent-qa is already running (via Hub or launch.sh), a second instance should be blocked
+  - Risk: Two containers with the same QMS identity could race on checkout/checkin, corrupt workspace state, or produce duplicate reviews
+  - Consider: Check for existing container with `agent-{id}` name before starting a new one
+  - Consider: Lock file or mutex in the user's workspace directory
+  - Reference: Session-2026-02-08-001
+
+---
+
 ## 2026-02-07
 
 - [ ] Add prerequisite to always commit and push pipe-dream as the first EI of a CR

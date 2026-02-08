@@ -1,0 +1,4 @@
+{"ts": "2026-02-08T16:38:29+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Fix MCP qms_review argument mapping and strengthen equivalence tests"}
+{"ts": "2026-02-08T16:48:03+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-08T16:48:06+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-08T16:48:06+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
