@@ -1,14 +1,14 @@
 #!/bin/bash
 # pd-status — Pipe Dream process overview utility
 #
-# Shows status of all Pipe Dream background services, containers, and
-# flags stale PID files. Zero Python dependencies.
+# Shows status of all Pipe Dream background services and containers.
+# Zero Python dependencies.
 #
 # Usage:
 #   ./pd-status              # Show status overview
 #   ./pd-status --stop-all   # Kill all services and remove containers
 #
-# Authorized by: CR-062
+# Authorized by: CR-062, CR-063
 
 set -euo pipefail
 
@@ -24,11 +24,11 @@ DIM='\033[2m'
 NC='\033[0m'
 
 # --- Service definitions ---
-# Format: "label:port:pid_file:health_path"
+# Format: "label:port:health_path"
 SERVICES=(
-    "QMS MCP:8000:.qms-mcp-server.pid:/mcp"
-    "Git MCP:8001:.git-mcp-server.pid:/mcp"
-    "Agent Hub:9000:.agent-hub.pid:/api/health"
+    "QMS MCP:8000:/mcp"
+    "Git MCP:8001:/mcp"
+    "Agent Hub:9000:/api/health"
 )
 
 # --- Container name patterns from launch.sh ---
@@ -37,13 +37,19 @@ CONTAINER_FILTERS=("name=agent-")
 
 # --- Helpers ---
 
-# Check if a PID is alive. Uses tasklist.exe on Windows (Git Bash), kill -0 elsewhere.
-pid_alive() {
-    local pid="$1"
+# Find the PID of the process listening on a given port.
+# Returns the PID on stdout, or empty string if no listener found.
+find_pid_on_port() {
+    local port="$1"
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "mingw"* || "$OSTYPE" == "cygwin" ]]; then
-        tasklist.exe 2>/dev/null | grep -qE "^\S+\s+${pid}\s"
-    else
-        kill -0 "$pid" 2>/dev/null
+        powershell.exe -NoProfile -Command "
+            \$c = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (\$c) { \$c.OwningProcess }
+        " 2>/dev/null | tr -d '\r\n[:space:]'
+    elif command -v lsof &>/dev/null; then
+        lsof -ti :"$port" 2>/dev/null | head -1
+    elif command -v ss &>/dev/null; then
+        ss -tlnp "sport = :$port" 2>/dev/null | { grep -oP 'pid=\K\d+' || true; } | head -1
     fi
 }
 
@@ -52,7 +58,7 @@ port_alive() {
     local port="$1"
     local path="$2"
     local code
-    code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}${path}" 2>/dev/null || echo "000")
+    code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}${path}" 2>/dev/null) || code="000"
     [[ "$code" != "000" ]]
 }
 
@@ -60,7 +66,9 @@ port_alive() {
 health_code() {
     local port="$1"
     local path="$2"
-    curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}${path}" 2>/dev/null || echo "000"
+    local code
+    code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}${path}" 2>/dev/null) || code="000"
+    echo "$code"
 }
 
 # --- Stop-all mode ---
@@ -74,9 +82,8 @@ stop_all() {
     local has_work=false
 
     for svc in "${SERVICES[@]}"; do
-        IFS=':' read -r label port pidfile healthpath <<< "$svc"
-        local pidfile_path="${SCRIPT_DIR}/${pidfile}"
-        if [ -f "$pidfile_path" ] || port_alive "$port" "$healthpath"; then
+        IFS=':' read -r label port healthpath <<< "$svc"
+        if port_alive "$port" "$healthpath"; then
             has_work=true
             break
         fi
@@ -99,11 +106,10 @@ stop_all() {
     echo ""
 
     for svc in "${SERVICES[@]}"; do
-        IFS=':' read -r label port pidfile healthpath <<< "$svc"
-        local pidfile_path="${SCRIPT_DIR}/${pidfile}"
-        local pid=""
-        [ -f "$pidfile_path" ] && pid=$(cat "$pidfile_path" 2>/dev/null || true)
-        if [ -n "$pid" ] || port_alive "$port" "$healthpath"; then
+        IFS=':' read -r label port healthpath <<< "$svc"
+        if port_alive "$port" "$healthpath"; then
+            local pid
+            pid=$(find_pid_on_port "$port")
             printf "    %-12s :%-5s" "$label" "$port"
             [ -n "$pid" ] && printf "  (PID %s)" "$pid"
             echo ""
@@ -126,43 +132,24 @@ stop_all() {
 
     echo ""
 
-    # Kill services
+    # Kill services by port-based PID discovery
     for svc in "${SERVICES[@]}"; do
-        IFS=':' read -r label port pidfile healthpath <<< "$svc"
-        local pidfile_path="${SCRIPT_DIR}/${pidfile}"
-        local pid=""
-        [ -f "$pidfile_path" ] && pid=$(cat "$pidfile_path" 2>/dev/null || true)
+        IFS=':' read -r label port healthpath <<< "$svc"
 
-        if [ -n "$pid" ] && pid_alive "$pid"; then
+        local pid
+        pid=$(find_pid_on_port "$port")
+
+        if [ -n "$pid" ]; then
             if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "mingw"* || "$OSTYPE" == "cygwin" ]]; then
                 taskkill.exe //PID "$pid" //F >/dev/null 2>&1 || true
             else
                 kill "$pid" 2>/dev/null || true
             fi
-            echo -e "  ${GREEN}✓${NC} Killed $label (PID $pid)"
-        fi
-
-        if [ -f "$pidfile_path" ]; then
-            rm -f "$pidfile_path"
-            echo -e "  ${GREEN}✓${NC} Removed $pidfile"
+            echo -e "  ${GREEN}✓${NC} Killed $label (PID $pid on :$port)"
+        elif port_alive "$port" "$healthpath"; then
+            echo -e "  ${YELLOW}!${NC} $label on :$port is responding but could not find owning PID"
         fi
     done
-
-    # Also remove legacy .mcp-server.pid if present
-    local legacy_pid="${SCRIPT_DIR}/.mcp-server.pid"
-    if [ -f "$legacy_pid" ]; then
-        local lpid
-        lpid=$(cat "$legacy_pid" 2>/dev/null || true)
-        if [ -n "$lpid" ] && pid_alive "$lpid"; then
-            if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "mingw"* || "$OSTYPE" == "cygwin" ]]; then
-                taskkill.exe //PID "$lpid" //F >/dev/null 2>&1 || true
-            else
-                kill "$lpid" 2>/dev/null || true
-            fi
-        fi
-        rm -f "$legacy_pid"
-        echo -e "  ${GREEN}✓${NC} Removed .mcp-server.pid (legacy)"
-    fi
 
     # Stop containers
     if [ -n "$containers" ]; then
@@ -184,47 +171,19 @@ show_status() {
     echo -e "═══════════════════════════════════════════════"
     echo ""
 
-    local warnings=()
-
     # --- Services ---
     echo -e "${CYAN}Services${NC}"
 
     for svc in "${SERVICES[@]}"; do
-        IFS=':' read -r label port pidfile healthpath <<< "$svc"
-        local pidfile_path="${SCRIPT_DIR}/${pidfile}"
+        IFS=':' read -r label port healthpath <<< "$svc"
 
-        # Read PID file
-        local file_pid=""
-        local file_exists=false
-        if [ -f "$pidfile_path" ]; then
-            file_exists=true
-            file_pid=$(cat "$pidfile_path" 2>/dev/null | tr -d '[:space:]')
-        fi
-
-        # Check PID alive
-        local pid_is_alive=false
-        if [ -n "$file_pid" ] && pid_alive "$file_pid"; then
-            pid_is_alive=true
-        fi
-
-        # Probe port
-        local port_is_alive=false
         if port_alive "$port" "$healthpath"; then
-            port_is_alive=true
-        fi
-
-        # Determine status and build output line
-        if [ "$port_is_alive" = true ]; then
-            # Port is responding — service is running
             local status="${GREEN}RUNNING${NC}"
             local suffix=""
 
-            if [ "$pid_is_alive" = true ]; then
-                suffix="  ${DIM}(PID ${file_pid})${NC}"
-            elif [ "$file_exists" = true ]; then
-                suffix="  ${DIM}(port responding, PID file stale)${NC}"
-                warnings+=("${pidfile} contains PID ${file_pid} which is not running, but port :${port} is active")
-            fi
+            local pid
+            pid=$(find_pid_on_port "$port")
+            [ -n "$pid" ] && suffix="  ${DIM}(PID ${pid})${NC}"
 
             # Special: Hub agent summary
             if [ "$label" = "Agent Hub" ]; then
@@ -241,29 +200,10 @@ show_status() {
             fi
 
             printf "  %-12s :%-5s %b%b\n" "$label" "$port" "$status" "$suffix"
-
-        elif [ "$pid_is_alive" = true ]; then
-            # PID alive but port not responding — starting or broken
-            printf "  %-12s :%-5s ${YELLOW}PID ALIVE${NC}  ${DIM}(PID ${file_pid}, port not responding)${NC}\n" "$label" "$port"
-            warnings+=("${label}: PID ${file_pid} is running but port :${port} is not responding")
-
         else
-            # Nothing running
             printf "  %-12s :%-5s ${RED}STOPPED${NC}\n" "$label" "$port"
-
-            if [ "$file_exists" = true ]; then
-                warnings+=("${pidfile} is stale (PID ${file_pid} not running)")
-            fi
         fi
     done
-
-    # Check for legacy .mcp-server.pid
-    local legacy_pid="${SCRIPT_DIR}/.mcp-server.pid"
-    if [ -f "$legacy_pid" ]; then
-        local lpid
-        lpid=$(cat "$legacy_pid" 2>/dev/null | tr -d '[:space:]')
-        warnings+=(".mcp-server.pid exists (legacy, PID ${lpid}) — safe to remove")
-    fi
 
     echo ""
 
@@ -294,15 +234,6 @@ show_status() {
     fi
 
     echo ""
-
-    # --- Warnings ---
-    if [ ${#warnings[@]} -gt 0 ]; then
-        echo -e "${YELLOW}Warnings${NC}"
-        for w in "${warnings[@]}"; do
-            echo -e "  ${YELLOW}!${NC} $w"
-        done
-        echo ""
-    fi
 }
 
 # --- Main ---

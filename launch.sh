@@ -66,7 +66,6 @@ ensure_mcp_servers() {
         cd "$SCRIPT_DIR/qms-cli"
         "$python_exe" -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 \
             --project-root "$SCRIPT_DIR" > "$SCRIPT_DIR/.qms-mcp-server.log" 2>&1 &
-        echo $! > "$SCRIPT_DIR/.qms-mcp-server.pid"
         cd "$SCRIPT_DIR"
         for i in {1..10}; do
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/mcp 2>/dev/null | grep -qE "200|40[0-9]"; then
@@ -86,7 +85,6 @@ ensure_mcp_servers() {
         cd "$SCRIPT_DIR"
         "$python_exe" -m git_mcp --transport streamable-http --host 0.0.0.0 --port 8001 \
             --project-root "$SCRIPT_DIR" > "$SCRIPT_DIR/.git-mcp-server.log" 2>&1 &
-        echo $! > "$SCRIPT_DIR/.git-mcp-server.pid"
         for i in {1..10}; do
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/mcp 2>/dev/null | grep -qE "200|40[0-9]"; then
                 echo -e "  ${GREEN}✓${NC} Git MCP server started"
@@ -255,7 +253,6 @@ ensure_hub() {
     cd "$SCRIPT_DIR"
     "$python_exe" -m agent_hub.cli start --project-root "$SCRIPT_DIR" \
         > "$SCRIPT_DIR/.agent-hub.log" 2>&1 &
-    echo $! > "$SCRIPT_DIR/.agent-hub.pid"
 
     for i in {1..10}; do
         if curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/api/health 2>/dev/null | grep -q "200"; then
@@ -332,8 +329,7 @@ if [ "$MULTI_MODE" = true ]; then
     done
     echo -e ""
     echo -e "  ${YELLOW}Agent Hub:${NC} http://localhost:9000/api/status"
-    echo -e "  ${YELLOW}To stop services:${NC}"
-    echo -e "    kill \$(cat .agent-hub.pid) \$(cat .qms-mcp-server.pid) \$(cat .git-mcp-server.pid)"
+    echo -e "  ${YELLOW}To stop services:${NC} ./pd-status --stop-all"
     echo -e "${GREEN}════════════════════════════════════════════════${NC}"
 else
     # Single-agent: start container in this terminal, exec into it
@@ -344,5 +340,5 @@ else
     launch_claude "$agent"
 
     # Post-session info
-    echo -e "Services still running. To stop: ${YELLOW}kill \$(cat .agent-hub.pid) \$(cat .qms-mcp-server.pid) \$(cat .git-mcp-server.pid) 2>/dev/null${NC}"
+    echo -e "Services still running. To stop: ${YELLOW}./pd-status --stop-all${NC}"
 fi
