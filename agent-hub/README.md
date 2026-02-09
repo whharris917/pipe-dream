@@ -52,7 +52,9 @@ Four commands cover daily use. Five more are available for fine-grained control.
 
 ### Hub API Commands
 
-These talk directly to the Hub's REST API on port 9000. `launch` calls these internally, but they're available for scripting or when you want to manage individual agents without touching the infrastructure layer.
+The Hub runs as a persistent background service — it has to, because it continuously watches inboxes, evaluates policies, and streams terminal output to the GUI. Since it's a separate process, the CLI needs a way to talk to it. It uses HTTP, the same protocol that powers the web. HTTP isn't the most efficient choice for local inter-process communication, but it's the most practical: every language has an HTTP library, you can debug it with `curl`, and the tooling ecosystem is unmatched.
+
+These commands talk directly to the Hub's HTTP API on port 9000. `launch` calls these internally, but they're available for scripting or when you want to manage individual agents without touching the infrastructure layer.
 
 | Command | What it does |
 |---------|-------------|
@@ -102,7 +104,7 @@ agent-hub/
 - **agent_hub/** — The orchestration engine. CLI entry point, Docker SDK container management, inbox monitoring via watchdog, tmux notification injection, policy evaluation, and a FastAPI service (REST + WebSocket) for programmatic access.
 - **docker/** — Container infrastructure. The Dockerfile, compose config, entrypoint script, and host-side helper scripts for starting MCP servers manually. See `docker/README.md`.
 - **gui/** — A Tauri desktop app that connects to the Hub's WebSocket API to provide a multi-terminal GUI. See `gui/README.md`.
-- **mcp-servers/git_mcp/** — A standalone MCP server that proxies git commands from read-only containers to the host repository. Blocks destructive operations and submodule references.
+- **mcp-servers/git_mcp/** — A standalone MCP server that proxies git commands from read-only containers to the host repository. Blocks destructive operations and submodule references. MCP (Model Context Protocol) uses JSON-RPC under the hood — a different style from REST where every request goes to a single endpoint and the `method` field says what you want (e.g., `{"method": "git_exec", "params": {"command": "status"}}`). REST is about managing resources; JSON-RPC is about calling functions. The Hub uses REST because it manages things (agents, policies). MCP uses JSON-RPC because it exposes tool calls.
 
 ## Configuration
 
@@ -142,6 +144,8 @@ Watchdog monitors `.claude/users/{agent_id}/inbox/` directories. When a task fil
 
 ### REST API
 
+REST (Representational State Transfer) is a convention for structuring HTTP APIs: URLs represent things (resources), and HTTP methods represent what you're doing to them. GET reads, POST triggers an action, PUT updates. This style works well when the API is about managing things — agents, policies, status — as opposed to calling functions.
+
 The Hub exposes a REST API on `/api` consumed by the CLI and GUI.
 
 | Method | Endpoint | Description |
@@ -156,6 +160,8 @@ The Hub exposes a REST API on `/api` consumed by the CLI and GUI.
 | PUT | `/api/agents/{id}/policy` | Set agent policy |
 
 ### WebSocket API
+
+While REST is request/response (client asks, server answers), WebSockets provide a persistent two-way channel — either side can send messages at any time. This is what makes live terminal streaming possible: the Hub pushes terminal output to the GUI as it happens, without the GUI having to poll for it.
 
 The Hub provides a WebSocket endpoint at `/ws` for real-time terminal I/O and event broadcasting, consumed by the GUI's xterm.js terminals.
 
