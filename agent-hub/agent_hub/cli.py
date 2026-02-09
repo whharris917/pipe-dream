@@ -458,7 +458,7 @@ def launch(agents: tuple[str, ...], project_root: str | None):
                 f"{hub_url}/api/agents/{agent_id}/start", timeout=120
             )
             if response.status_code == 200:
-                click.echo(click.style("  \u2713 ", fg="green") + f"{agent_id} container started")
+                click.echo(click.style("  + ", fg="green") + f"{agent_id} container started")
             elif response.status_code == 409:
                 click.echo(
                     click.style("  ! ", fg="yellow")
@@ -468,10 +468,10 @@ def launch(agents: tuple[str, ...], project_root: str | None):
                 sys.exit(0)
             else:
                 detail = response.json().get("detail", "Unknown error")
-                click.echo(click.style("  \u2717 ", fg="red") + f"Failed: {detail}")
+                click.echo(click.style("  x ", fg="red") + f"Failed: {detail}")
                 sys.exit(1)
         except httpx.ConnectError:
-            click.echo(click.style("  \u2717 ", fg="red") + "Hub not responding")
+            click.echo(click.style("  x ", fg="red") + "Hub not responding")
             sys.exit(1)
 
         # Attach to tmux session interactively
@@ -492,7 +492,7 @@ def launch(agents: tuple[str, ...], project_root: str | None):
                     f"{hub_url}/api/agents/{agent_id}/start", timeout=120
                 )
                 if response.status_code == 200:
-                    click.echo(click.style("  \u2713 ", fg="green") + f"{agent_id} started")
+                    click.echo(click.style("  + ", fg="green") + f"{agent_id} started")
                     launch_in_terminal(agent_id, config)
                 elif response.status_code == 409:
                     click.echo(
@@ -502,9 +502,9 @@ def launch(agents: tuple[str, ...], project_root: str | None):
                     )
                 else:
                     detail = response.json().get("detail", "Unknown error")
-                    click.echo(click.style("  \u2717 ", fg="red") + f"{agent_id}: {detail}")
+                    click.echo(click.style("  x ", fg="red") + f"{agent_id}: {detail}")
             except httpx.ConnectError:
-                click.echo(click.style("  \u2717 ", fg="red") + "Hub not responding")
+                click.echo(click.style("  x ", fg="red") + "Hub not responding")
                 sys.exit(1)
 
         click.echo()

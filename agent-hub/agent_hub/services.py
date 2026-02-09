@@ -154,7 +154,7 @@ def ensure_mcp_servers(config: HubConfig) -> None:
 
     # QMS MCP server (port 8000)
     if is_port_alive(config.qms_mcp_port, "/mcp"):
-        click.echo(click.style("  \u2713 ", fg="green") + "QMS MCP server already running")
+        click.echo(click.style("  + ", fg="green") + "QMS MCP server already running")
     else:
         click.echo("  Starting QMS MCP server...")
         log_file = open(log_dir / "qms-mcp-server.log", "w")
@@ -170,14 +170,14 @@ def ensure_mcp_servers(config: HubConfig) -> None:
             stdout=log_file, stderr=log_file,
         )
         if _wait_for_service(config.qms_mcp_port, "/mcp"):
-            click.echo(click.style("  \u2713 ", fg="green") + "QMS MCP server started")
+            click.echo(click.style("  + ", fg="green") + "QMS MCP server started")
         else:
-            click.echo(click.style("  \u2717 ", fg="red") + "QMS MCP server failed to start")
+            click.echo(click.style("  x ", fg="red") + "QMS MCP server failed to start")
             raise SystemExit(1)
 
     # Git MCP server (port 8001)
     if is_port_alive(config.git_mcp_port, "/mcp"):
-        click.echo(click.style("  \u2713 ", fg="green") + "Git MCP server already running")
+        click.echo(click.style("  + ", fg="green") + "Git MCP server already running")
     else:
         click.echo("  Starting Git MCP server...")
         log_file = open(log_dir / "git-mcp-server.log", "w")
@@ -193,16 +193,16 @@ def ensure_mcp_servers(config: HubConfig) -> None:
             stdout=log_file, stderr=log_file,
         )
         if _wait_for_service(config.git_mcp_port, "/mcp"):
-            click.echo(click.style("  \u2713 ", fg="green") + "Git MCP server started")
+            click.echo(click.style("  + ", fg="green") + "Git MCP server started")
         else:
-            click.echo(click.style("  \u2717 ", fg="red") + "Git MCP server failed to start")
+            click.echo(click.style("  x ", fg="red") + "Git MCP server failed to start")
             raise SystemExit(1)
 
 
 def ensure_hub(config: HubConfig) -> None:
     """Start the Agent Hub if not already running."""
     if is_port_alive(config.port, "/api/health"):
-        click.echo(click.style("  \u2713 ", fg="green") + "Agent Hub already running")
+        click.echo(click.style("  + ", fg="green") + "Agent Hub already running")
         return
 
     click.echo("  Starting Agent Hub...")
@@ -220,9 +220,9 @@ def ensure_hub(config: HubConfig) -> None:
         stdout=log_file, stderr=log_file,
     )
     if _wait_for_service(config.port, "/api/health"):
-        click.echo(click.style("  \u2713 ", fg="green") + "Agent Hub started")
+        click.echo(click.style("  + ", fg="green") + "Agent Hub started")
     else:
-        click.echo(click.style("  \u2717 ", fg="red") + "Agent Hub failed to start")
+        click.echo(click.style("  x ", fg="red") + "Agent Hub failed to start")
         raise SystemExit(1)
 
 
@@ -233,7 +233,7 @@ def ensure_docker_image(config: HubConfig) -> None:
         capture_output=True, timeout=10,
     )
     if result.returncode == 0:
-        click.echo(click.style("  \u2713 ", fg="green") + "Docker image exists")
+        click.echo(click.style("  + ", fg="green") + "Docker image exists")
     else:
         click.echo("  Building Docker image...")
         env = os.environ.copy()
@@ -245,7 +245,7 @@ def ensure_docker_image(config: HubConfig) -> None:
             env=env,
             check=True,
         )
-        click.echo(click.style("  \u2713 ", fg="green") + "Docker image built")
+        click.echo(click.style("  + ", fg="green") + "Docker image built")
 
 
 # ---------------------------------------------------------------------------
@@ -266,7 +266,7 @@ def stop_service_on_port(port: int, label: str) -> bool:
             )
         else:
             os.kill(pid, 9)
-        click.echo(click.style("  \u2713 ", fg="green") + f"Killed {label} (PID {pid} on :{port})")
+        click.echo(click.style("  + ", fg="green") + f"Killed {label} (PID {pid} on :{port})")
         return True
     except (subprocess.TimeoutExpired, ProcessLookupError, PermissionError):
         click.echo(click.style("  ! ", fg="yellow") + f"Could not kill {label} (PID {pid})")
@@ -353,7 +353,7 @@ def stop_all_services(config: HubConfig, skip_confirm: bool = False) -> None:
     has_work = bool(running_services) or bool(containers)
 
     if not has_work:
-        click.echo("  Nothing to stop \u2014 no services or containers found.")
+        click.echo("  Nothing to stop -- no services or containers found.")
         return
 
     # Show what will be stopped
@@ -388,7 +388,7 @@ def stop_all_services(config: HubConfig, skip_confirm: bool = False) -> None:
                 ["docker", "rm", "-f", name],
                 capture_output=True, timeout=10,
             )
-            click.echo(click.style("  \u2713 ", fg="green") + f"Removed container {name}")
+            click.echo(click.style("  + ", fg="green") + f"Removed container {name}")
         except (subprocess.TimeoutExpired, FileNotFoundError):
             click.echo(click.style("  ! ", fg="yellow") + f"Could not remove container {name}")
 
