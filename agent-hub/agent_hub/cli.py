@@ -75,6 +75,7 @@ def status(hub_url: str):
                 "stopped": "white",
                 "starting": "yellow",
                 "stopping": "yellow",
+                "stale": "yellow",
                 "error": "red",
             }.get(agent["state"], "white")
 
@@ -211,6 +212,9 @@ def attach(agent_id: str, hub_url: str):
 
     Connects directly to the agent's tmux session inside its container.
     Detach with Ctrl-B D.
+
+    If the agent is stale (container running but session dead), offers
+    recovery options: restart session or teardown container.
     """
     import httpx
     import subprocess as sp
@@ -225,7 +229,54 @@ def attach(agent_id: str, hub_url: str):
         response.raise_for_status()
         data = response.json()
 
-        if data["state"] != "running":
+        if data["state"] == "stale":
+            click.echo(
+                f"Agent '{agent_id}' is "
+                + click.style("stale", fg="yellow")
+                + " (container running, session dead)."
+            )
+            click.echo()
+            click.echo("  [R] Restart session - launch Claude Code in existing container")
+            click.echo("  [T] Teardown       - remove the container entirely")
+            click.echo("  [C] Cancel")
+            click.echo()
+            choice = click.prompt("Choice", type=click.Choice(["R", "T", "C"], case_sensitive=False))
+
+            if choice.upper() == "R":
+                click.echo(f"Restarting session for {agent_id}...")
+                try:
+                    resp = httpx.post(
+                        f"{hub_url}/api/agents/{agent_id}/restart-session",
+                        timeout=120,
+                    )
+                    if resp.status_code != 200:
+                        detail = resp.json().get("detail", "Unknown error")
+                        click.echo(click.style(f"  Error: {detail}", fg="red"))
+                        sys.exit(1)
+                    click.echo(click.style("  Session restarted.", fg="green"))
+                except httpx.ConnectError:
+                    click.echo(click.style("  Hub not responding.", fg="red"))
+                    sys.exit(1)
+            elif choice.upper() == "T":
+                click.echo(f"Tearing down {agent_id}...")
+                try:
+                    resp = httpx.post(
+                        f"{hub_url}/api/agents/{agent_id}/stop",
+                        timeout=15,
+                    )
+                    if resp.status_code == 200:
+                        click.echo(click.style("  Container removed.", fg="green"))
+                    else:
+                        detail = resp.json().get("detail", "Unknown error")
+                        click.echo(click.style(f"  Error: {detail}", fg="red"))
+                except httpx.ConnectError:
+                    click.echo(click.style("  Hub not responding.", fg="red"))
+                sys.exit(0)
+            else:
+                click.echo("Cancelled.")
+                sys.exit(0)
+
+        elif data["state"] != "running":
             click.echo(
                 f"Agent {agent_id} is {data['state']}. "
                 f"Must be running to attach."
@@ -397,8 +448,18 @@ def services_cmd(project_root: str | None):
         pid_str = str(s.pid) if s.pid else "-"
         click.echo(f"  {s.label:<14} :{s.port:<7} {state_str:<19} {pid_str:<8} {s.extra}")
 
-    # Docker containers
+    # Docker containers — enrich with Hub session health when available
     containers = get_containers()
+    hub_agents = {}
+    try:
+        import httpx
+        resp = httpx.get(f"http://localhost:{config.port}/api/agents", timeout=3)
+        if resp.status_code == 200:
+            for a in resp.json():
+                hub_agents[f"{config.container_prefix}{a['id']}"] = a
+    except Exception:
+        pass
+
     click.echo()
     click.echo(click.style("=== Containers ===", bold=True))
     click.echo()
@@ -407,9 +468,17 @@ def services_cmd(project_root: str | None):
         click.echo(f"  {'NAME':<20} {'STATE':<12} {'STATUS'}")
         click.echo(f"  {'-' * 50}")
         for name, state, status_str in containers:
-            state_color = "green" if state == "running" else "yellow"
+            # Check if Hub reports this agent as stale
+            hub_info = hub_agents.get(name)
+            if hub_info and hub_info.get("state") == "stale":
+                display_state = "stale"
+                state_color = "yellow"
+                status_str = "container running, session dead"
+            else:
+                display_state = state
+                state_color = "green" if state == "running" else "yellow"
             click.echo(
-                f"  {name:<20} {click.style(state, fg=state_color):<21} {status_str}"
+                f"  {name:<20} {click.style(display_state, fg=state_color):<21} {status_str}"
             )
     else:
         click.echo("  No agent containers found.")

@@ -95,6 +95,25 @@ class ContainerManager:
             pass
         return None
 
+    async def is_session_alive(self, agent_id: str) -> bool:
+        """Check if the tmux agent session is alive inside the container.
+
+        Returns True if the tmux session named 'agent' exists,
+        False if it doesn't or the container isn't running.
+        """
+        name = self.container_name(agent_id)
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "docker", "exec", name,
+                "tmux", "has-session", "-t", "agent",
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            returncode = await asyncio.wait_for(proc.wait(), timeout=5)
+            return returncode == 0
+        except (asyncio.TimeoutError, Exception):
+            return False
+
     async def _remove_if_exists(self, name: str, stop_first: bool = False) -> None:
         """Remove a container if it exists."""
         try:
@@ -284,6 +303,16 @@ class ContainerManager:
         raise RuntimeError(
             f"Claude Code in {name} did not become ready within {timeout:.0f}s"
         )
+
+    async def restart_session(self, agent_id: str) -> None:
+        """Restart the Claude Code tmux session inside an existing container.
+
+        Used to recover a stale container whose session has died.
+        """
+        name = self.container_name(agent_id)
+        await self._exec_claude(name)
+        await self._wait_for_ready(name)
+        logger.info("Session restarted in container %s for agent %s", name, agent_id)
 
     def close(self) -> None:
         """Close the Docker client."""

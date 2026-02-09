@@ -114,7 +114,7 @@ class AgentHub:
         if agent.state == AgentState.RUNNING:
             return agent
 
-        if agent.state not in (AgentState.STOPPED, AgentState.ERROR):
+        if agent.state not in (AgentState.STOPPED, AgentState.ERROR, AgentState.STALE):
             raise RuntimeError(
                 f"Cannot start agent {agent_id}: state is {agent.state}"
             )
@@ -126,6 +126,7 @@ class AgentHub:
             container_id = await self.container_mgr.start(agent_id)
             agent.container_id = container_id
             agent.state = AgentState.RUNNING
+            agent.session_alive = True
             agent.started_at = datetime.now()
             agent.last_activity = datetime.now()
             self._hub_managed.add(agent_id)
@@ -152,6 +153,11 @@ class AgentHub:
         if agent.state == AgentState.STOPPED:
             return agent
 
+        if agent.state not in (AgentState.RUNNING, AgentState.STALE, AgentState.ERROR):
+            raise RuntimeError(
+                f"Cannot stop agent {agent_id}: state is {agent.state}"
+            )
+
         agent.state = AgentState.STOPPING
         logger.info("Stopping agent %s", agent_id)
 
@@ -164,11 +170,46 @@ class AgentHub:
             agent.state = AgentState.STOPPED
             agent.container_id = None
             agent.started_at = None
+            agent.session_alive = False
             logger.info("Agent %s is now STOPPED", agent_id)
         except Exception as e:
             agent.state = AgentState.ERROR
             logger.error("Failed to stop agent %s: %s", agent_id, e)
             raise
+
+        await self._broadcast_state(agent_id, agent)
+        return agent
+
+    async def restart_agent_session(self, agent_id: str) -> Agent:
+        """Restart the Claude Code session inside a stale container."""
+        agent = self._get_agent(agent_id)
+
+        if agent.state != AgentState.STALE:
+            raise RuntimeError(
+                f"Cannot restart session for {agent_id}: state is {agent.state} (expected stale)"
+            )
+
+        logger.info("Restarting session for stale agent %s", agent_id)
+
+        try:
+            await self.container_mgr.restart_session(agent_id)
+            agent.state = AgentState.RUNNING
+            agent.session_alive = True
+            agent.last_activity = datetime.now()
+            logger.info("Agent %s session restarted, now RUNNING", agent_id)
+        except Exception as e:
+            agent.state = AgentState.ERROR
+            logger.error("Failed to restart session for %s: %s", agent_id, e)
+            raise
+
+        # Re-attach PTY
+        try:
+            if self.pty_manager.is_attached(agent_id):
+                await self.pty_manager.detach(agent_id)
+            await self.pty_manager.attach(agent_id)
+            agent.pty_attached = True
+        except Exception as e:
+            logger.warning("PTY attach failed after session restart for %s: %s", agent_id, e)
 
         await self._broadcast_state(agent_id, agent)
         return agent
@@ -237,20 +278,32 @@ class AgentHub:
             container_id = await self.container_mgr.get_container_id(agent_id)
             if container_id is not None:
                 agent = self.agents[agent_id]
-                agent.state = AgentState.RUNNING
                 agent.container_id = container_id
                 agent.started_at = datetime.now()
-                agent.last_activity = datetime.now()
-                logger.info("Discovered running container for %s", agent_id)
 
-                # Attempt PTY attach (non-fatal)
-                try:
-                    await self.pty_manager.attach(agent_id)
-                    agent.pty_attached = True
-                except Exception as e:
+                # Check if the session is actually alive
+                session_alive = await self.container_mgr.is_session_alive(agent_id)
+                agent.session_alive = session_alive
+
+                if session_alive:
+                    agent.state = AgentState.RUNNING
+                    agent.last_activity = datetime.now()
+                    logger.info("Discovered running container for %s (session alive)", agent_id)
+
+                    # Attempt PTY attach (non-fatal)
+                    try:
+                        await self.pty_manager.attach(agent_id)
+                        agent.pty_attached = True
+                    except Exception as e:
+                        logger.warning(
+                            "PTY attach failed for discovered container %s: %s",
+                            agent_id, e,
+                        )
+                else:
+                    agent.state = AgentState.STALE
                     logger.warning(
-                        "PTY attach failed for discovered container %s: %s",
-                        agent_id, e,
+                        "Discovered stale container for %s (container running, session dead)",
+                        agent_id,
                     )
 
     async def _on_inbox_change(
@@ -331,6 +384,9 @@ class AgentHub:
         Containers may be started or stopped externally (e.g., by launch.sh).
         This loop ensures the Hub's view stays consistent with what Docker
         reports, enabling correct notification injection and policy evaluation.
+
+        Also checks session health: if a container is running but the tmux
+        session has died, the agent transitions to STALE.
         """
         while True:
             await asyncio.sleep(10)
@@ -341,32 +397,59 @@ class AgentHub:
                     continue
 
                 if running and agent.state == AgentState.STOPPED:
-                    agent.state = AgentState.RUNNING
+                    # New container discovered — check session health
+                    session_alive = await self.container_mgr.is_session_alive(agent_id)
                     agent.container_id = await self.container_mgr.get_container_id(agent_id)
                     agent.started_at = datetime.now()
-                    agent.last_activity = datetime.now()
-                    logger.info(
-                        "Sync: discovered running container for %s", agent_id
-                    )
-                    # Attempt PTY attach for externally started container
-                    if not self.pty_manager.is_attached(agent_id):
-                        try:
-                            await self.pty_manager.attach(agent_id)
-                            agent.pty_attached = True
-                        except Exception as e:
-                            logger.warning(
-                                "Sync: PTY attach failed for %s: %s",
-                                agent_id, e,
-                            )
+                    agent.session_alive = session_alive
+
+                    if session_alive:
+                        agent.state = AgentState.RUNNING
+                        agent.last_activity = datetime.now()
+                        logger.info(
+                            "Sync: discovered running container for %s", agent_id
+                        )
+                        if not self.pty_manager.is_attached(agent_id):
+                            try:
+                                await self.pty_manager.attach(agent_id)
+                                agent.pty_attached = True
+                            except Exception as e:
+                                logger.warning(
+                                    "Sync: PTY attach failed for %s: %s",
+                                    agent_id, e,
+                                )
+                    else:
+                        agent.state = AgentState.STALE
+                        logger.warning(
+                            "Sync: discovered stale container for %s", agent_id
+                        )
                     await self._broadcast_state(agent_id, agent)
-                elif not running and agent.state == AgentState.RUNNING:
-                    # Detach PTY for externally stopped container
+
+                elif running and agent.state == AgentState.RUNNING:
+                    # Check if session has died inside a running container
+                    session_alive = await self.container_mgr.is_session_alive(agent_id)
+                    agent.session_alive = session_alive
+                    if not session_alive:
+                        # Detach PTY — session is gone
+                        if self.pty_manager.is_attached(agent_id):
+                            await self.pty_manager.detach(agent_id)
+                        agent.state = AgentState.STALE
+                        agent.pty_attached = False
+                        logger.warning(
+                            "Sync: agent %s session died, transitioning to STALE",
+                            agent_id,
+                        )
+                        await self._broadcast_state(agent_id, agent)
+
+                elif not running and agent.state in (AgentState.RUNNING, AgentState.STALE):
+                    # Container stopped (externally or after teardown)
                     if self.pty_manager.is_attached(agent_id):
                         await self.pty_manager.detach(agent_id)
                     agent.state = AgentState.STOPPED
                     agent.container_id = None
                     agent.started_at = None
                     agent.pty_attached = False
+                    agent.session_alive = False
                     logger.info(
                         "Sync: container stopped externally for %s", agent_id
                     )

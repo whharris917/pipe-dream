@@ -86,6 +86,20 @@ async def stop_agent(agent_id: str, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/agents/{agent_id}/restart-session", response_model=Agent)
+async def restart_session(agent_id: str, request: Request):
+    """Restart the Claude Code session in a stale container."""
+    hub = _get_hub(request)
+    try:
+        return await hub.restart_agent_session(agent_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/agents/{agent_id}/policy", response_model=AgentPolicy)
 async def get_policy(agent_id: str, request: Request):
     """Get an agent's launch/shutdown policy."""

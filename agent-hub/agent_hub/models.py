@@ -12,6 +12,7 @@ class AgentState(str, Enum):
     STOPPED = "stopped"
     STARTING = "starting"
     RUNNING = "running"
+    STALE = "stale"
     STOPPING = "stopping"
     ERROR = "error"
 
@@ -51,6 +52,7 @@ class Agent(BaseModel):
     last_activity: datetime | None = None
     inbox_count: int = 0
     pty_attached: bool = False
+    session_alive: bool = False
 
 
 class AgentSummary(BaseModel):
