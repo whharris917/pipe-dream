@@ -28,6 +28,8 @@ async def hub_status(request: Request):
                 state=agent.state,
                 inbox_count=agent.inbox_count,
                 launch_policy=agent.policy.launch,
+                shutdown_policy=agent.policy.shutdown,
+                started_at=agent.started_at,
             )
             for agent in hub.agents.values()
         ],
@@ -45,6 +47,8 @@ async def list_agents(request: Request):
             state=agent.state,
             inbox_count=agent.inbox_count,
             launch_policy=agent.policy.launch,
+            shutdown_policy=agent.policy.shutdown,
+            started_at=agent.started_at,
         )
         for agent in hub.agents.values()
     ]

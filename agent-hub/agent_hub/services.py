@@ -310,6 +310,20 @@ def get_services_status(config: HubConfig) -> list[ServiceStatus]:
     return results
 
 
+def classify_container(
+    name: str, valid_agents: list[str], prefix: str = "agent-"
+) -> str:
+    """Classify a container as 'managed' or 'manual'.
+
+    Managed: matches {prefix}{known_agent_id} exactly (e.g., agent-claude).
+    Manual: anything else matching the docker ps filter (e.g., docker-claude-agent-1).
+    """
+    for agent_id in valid_agents:
+        if name == f"{prefix}{agent_id}":
+            return "managed"
+    return "manual"
+
+
 def get_containers() -> list[tuple[str, str, str]]:
     """Get agent containers. Returns list of (name, state, status)."""
     try:

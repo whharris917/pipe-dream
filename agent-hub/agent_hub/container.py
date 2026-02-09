@@ -46,7 +46,18 @@ class ContainerManager:
         """
         name = self.container_name(agent_id)
 
-        # Remove any existing container with this name
+        # Check if a container with this name is already running
+        try:
+            existing = await asyncio.to_thread(self.client.containers.get, name)
+            if existing.status == "running":
+                raise RuntimeError(
+                    f"Container {name} is already running. "
+                    f"Use 'agent-hub attach {agent_id}' to connect."
+                )
+        except NotFound:
+            pass
+
+        # Remove any existing stopped container with this name
         await self._remove_if_exists(name)
 
         # Ensure required directories exist

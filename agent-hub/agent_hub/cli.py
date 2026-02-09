@@ -51,47 +51,129 @@ def start(host: str, port: int, project_root: str | None, log_level: str):
 
 
 @cli.command()
+@click.option(
+    "--project-root", default=None, type=click.Path(exists=True),
+    help="Project root directory (default: auto-detect)",
+)
 @click.option("--hub-url", default="http://localhost:9000", help="Hub URL")
-def status(hub_url: str):
-    """Show hub and agent status."""
+def status(project_root: str | None, hub_url: str):
+    """Show complete project runtime status.
+
+    Always shows three sections: Services, Containers, and Agents.
+    Works whether the Hub is running or not.
+    """
+    from datetime import datetime, timezone
+    from agent_hub.services import (
+        get_services_status, get_containers, classify_container, VALID_AGENTS,
+    )
     import httpx
 
+    kwargs = {}
+    if project_root:
+        kwargs["project_root"] = project_root
+    config = HubConfig(**kwargs)
+
+    # --- Section 1: Services (always, via direct port probing) ---
+    click.echo()
+    click.echo(click.style("=== Services ===", bold=True))
+    click.echo()
+
+    statuses = get_services_status(config)
+
+    click.echo(f"  {'SERVICE':<14} {'PORT':<8} {'STATE':<10} {'PID':<8} {'INFO'}")
+    click.echo(f"  {'-' * 58}")
+
+    for s in statuses:
+        state_str = click.style("UP", fg="green") if s.alive else click.style("DOWN", fg="red")
+        pid_str = str(s.pid) if s.pid else "-"
+        click.echo(f"  {s.label:<14} :{s.port:<7} {state_str:<19} {pid_str:<8} {s.extra}")
+
+    # --- Section 2: Containers (always, via direct docker ps) ---
+    containers = get_containers()
+
+    click.echo()
+    click.echo(click.style("=== Containers ===", bold=True))
+    click.echo()
+
+    if containers:
+        click.echo(f"  {'NAME':<28} {'TYPE':<10} {'DOCKER STATE':<14} {'STATUS'}")
+        click.echo(f"  {'-' * 68}")
+        for name, state, status_str in containers:
+            ctype = classify_container(name, VALID_AGENTS, config.container_prefix)
+            state_color = "green" if state == "running" else "yellow"
+            click.echo(
+                f"  {name:<28} {ctype:<10} "
+                f"{click.style(state, fg=state_color):<23} {status_str}"
+            )
+    else:
+        click.echo("  No containers found (direct Docker query -- does not depend on Hub).")
+
+    # --- Section 3: Agents (Hub-dependent) ---
+    click.echo()
+
+    hub_up = False
+    hub_data = None
     try:
         response = httpx.get(f"{hub_url}/api/status", timeout=5)
         response.raise_for_status()
-        data = response.json()
+        hub_data = response.json()
+        hub_up = True
+    except (httpx.ConnectError, httpx.TimeoutException, Exception):
+        pass
 
-        uptime = data["uptime_seconds"]
-        hours = int(uptime // 3600)
-        minutes = int((uptime % 3600) // 60)
-
-        click.echo(f"Hub uptime: {hours}h {minutes}m")
+    if hub_up and hub_data:
+        click.echo(click.style("=== Agents ===", bold=True))
         click.echo()
-        click.echo(f"{'AGENT':<14} {'STATE':<12} {'INBOX':<8} {'POLICY'}")
-        click.echo("-" * 50)
-        for agent in data["agents"]:
-            state_color = {
-                "running": "green",
-                "stopped": "white",
-                "starting": "yellow",
-                "stopping": "yellow",
-                "stale": "yellow",
-                "error": "red",
-            }.get(agent["state"], "white")
+        click.echo(
+            f"  {'AGENT':<14} {'STATE':<12} {'UPTIME':<10} "
+            f"{'INBOX':<8} {'START POLICY':<16} {'STOP POLICY'}"
+        )
+        click.echo(f"  {'-' * 75}")
+
+        state_colors = {
+            "running": "green",
+            "stopped": "white",
+            "starting": "yellow",
+            "stopping": "yellow",
+            "stale": "yellow",
+            "error": "red",
+        }
+
+        now = datetime.now(timezone.utc)
+        for agent in hub_data["agents"]:
+            state_color = state_colors.get(agent["state"], "white")
+
+            # Compute uptime
+            started_at = agent.get("started_at")
+            if started_at and agent["state"] in ("running", "stale"):
+                try:
+                    started = datetime.fromisoformat(started_at)
+                    if started.tzinfo is None:
+                        started = started.replace(tzinfo=timezone.utc)
+                    delta = now - started
+                    total_seconds = int(delta.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    uptime_str = f"{hours}h {minutes:02d}m"
+                except (ValueError, TypeError):
+                    uptime_str = "-"
+            else:
+                uptime_str = "-"
 
             click.echo(
-                f"{agent['id']:<14} "
+                f"  {agent['id']:<14} "
                 f"{click.style(agent['state'], fg=state_color):<21} "
+                f"{uptime_str:<10} "
                 f"{agent['inbox_count']:<8} "
-                f"{agent['launch_policy']}"
+                f"{agent.get('launch_policy', '-'):<16} "
+                f"{agent.get('shutdown_policy', '-')}"
             )
+    else:
+        click.echo(click.style("=== Agents (Hub not running) ===", bold=True))
+        click.echo()
+        click.echo("  Agent state unavailable. Start Hub with: agent-hub start")
 
-    except httpx.ConnectError:
-        click.echo("Hub is not running. Start with: agent-hub start")
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"Error: {e}")
-        sys.exit(1)
+    click.echo()
 
 
 @cli.command("start-agent")
@@ -377,6 +459,13 @@ def launch(agents: tuple[str, ...], project_root: str | None):
             )
             if response.status_code == 200:
                 click.echo(click.style("  \u2713 ", fg="green") + f"{agent_id} container started")
+            elif response.status_code == 409:
+                click.echo(
+                    click.style("  ! ", fg="yellow")
+                    + f"Agent '{agent_id}' is already running. "
+                    + f"Use 'agent-hub attach {agent_id}' to connect."
+                )
+                sys.exit(0)
             else:
                 detail = response.json().get("detail", "Unknown error")
                 click.echo(click.style("  \u2717 ", fg="red") + f"Failed: {detail}")
@@ -405,6 +494,12 @@ def launch(agents: tuple[str, ...], project_root: str | None):
                 if response.status_code == 200:
                     click.echo(click.style("  \u2713 ", fg="green") + f"{agent_id} started")
                     launch_in_terminal(agent_id, config)
+                elif response.status_code == 409:
+                    click.echo(
+                        click.style("  ! ", fg="yellow")
+                        + f"{agent_id} already running "
+                        + f"(use 'agent-hub attach {agent_id}')"
+                    )
                 else:
                     detail = response.json().get("detail", "Unknown error")
                     click.echo(click.style("  \u2717 ", fg="red") + f"{agent_id}: {detail}")
@@ -415,80 +510,6 @@ def launch(agents: tuple[str, ...], project_root: str | None):
         click.echo()
         click.echo(click.style("All agents launched.", fg="green"))
         click.echo("Use 'agent-hub attach <agent>' to connect to an agent.")
-
-
-@cli.command("services")
-@click.option(
-    "--project-root", default=None, type=click.Path(exists=True),
-    help="Project root directory (default: auto-detect)",
-)
-def services_cmd(project_root: str | None):
-    """Show status of all background services and containers.
-
-    Replaces the old pd-status script.
-    """
-    from agent_hub.services import get_services_status, get_containers
-
-    kwargs = {}
-    if project_root:
-        kwargs["project_root"] = project_root
-    config = HubConfig(**kwargs)
-
-    click.echo()
-    click.echo(click.style("=== Services ===", bold=True))
-    click.echo()
-
-    statuses = get_services_status(config)
-
-    click.echo(f"  {'SERVICE':<14} {'PORT':<8} {'STATE':<10} {'PID':<8} {'INFO'}")
-    click.echo(f"  {'-' * 58}")
-
-    for s in statuses:
-        state_str = click.style("UP", fg="green") if s.alive else click.style("DOWN", fg="red")
-        pid_str = str(s.pid) if s.pid else "-"
-        click.echo(f"  {s.label:<14} :{s.port:<7} {state_str:<19} {pid_str:<8} {s.extra}")
-
-    # Docker containers — enrich with Hub session health when available
-    containers = get_containers()
-    hub_agents = {}
-    hub_available = False
-    try:
-        import httpx
-        resp = httpx.get(f"http://localhost:{config.port}/api/agents", timeout=3)
-        if resp.status_code == 200:
-            hub_available = True
-            for a in resp.json():
-                hub_agents[f"{config.container_prefix}{a['id']}"] = a
-    except Exception:
-        pass
-
-    click.echo()
-    click.echo(click.style("=== Containers ===", bold=True))
-    click.echo()
-
-    if containers:
-        click.echo(f"  {'NAME':<20} {'STATE':<12} {'STATUS'}")
-        click.echo(f"  {'-' * 50}")
-        for name, state, status_str in containers:
-            hub_info = hub_agents.get(name)
-            if hub_info and hub_info.get("state") == "stale":
-                display_state = "stale"
-                state_color = "yellow"
-                status_str = "container running, session dead"
-            elif state == "running" and not hub_available:
-                display_state = state
-                state_color = "green"
-                status_str = "session state unknown (Hub down)"
-            else:
-                display_state = state
-                state_color = "green" if state == "running" else "yellow"
-            click.echo(
-                f"  {name:<20} {click.style(display_state, fg=state_color):<21} {status_str}"
-            )
-    else:
-        click.echo("  No agent containers found.")
-
-    click.echo()
 
 
 @cli.command("stop-all")

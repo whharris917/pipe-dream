@@ -112,7 +112,10 @@ class AgentHub:
         agent = self._get_agent(agent_id)
 
         if agent.state == AgentState.RUNNING:
-            return agent
+            raise RuntimeError(
+                f"Agent {agent_id} is already running. "
+                f"Use 'agent-hub attach {agent_id}' to connect."
+            )
 
         if agent.state not in (AgentState.STOPPED, AgentState.ERROR, AgentState.STALE):
             raise RuntimeError(

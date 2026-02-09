@@ -62,6 +62,8 @@ class AgentSummary(BaseModel):
     state: AgentState
     inbox_count: int
     launch_policy: LaunchPolicy
+    shutdown_policy: ShutdownPolicy
+    started_at: datetime | None = None
 
 
 class HubStatus(BaseModel):
