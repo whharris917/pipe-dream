@@ -1,8 +1,11 @@
 """Core Hub class — orchestrates container, inbox, and policy components."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from agent_hub.config import HubConfig
 from agent_hub.container import ContainerManager
@@ -11,6 +14,9 @@ from agent_hub.models import Agent, AgentPolicy, AgentState, LaunchPolicy, Shutd
 from agent_hub.notifier import build_notification_text, inject_notification
 from agent_hub.policy import evaluate_launch, evaluate_shutdown
 from agent_hub.pty_manager import PTYManager
+
+if TYPE_CHECKING:
+    from agent_hub.broadcaster import Broadcaster
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +35,7 @@ class AgentHub:
         self._container_sync_task: asyncio.Task | None = None
         self._hub_managed: set[str] = set()  # agents whose containers the Hub started
         self._pty_last_event: dict[str, datetime] = {}  # rate-limit activity tracking
+        self._broadcaster: Broadcaster | None = None
 
     async def start(self) -> None:
         """Start the Hub and all always-on agents."""
@@ -81,6 +88,10 @@ class AgentHub:
 
         await self.inbox_watcher.stop()
 
+        # Unregister broadcaster from PTY callbacks
+        if self._broadcaster:
+            self.pty_manager.unregister_callback(self._broadcaster.broadcast_pty_output)
+
         # Detach all PTY sessions
         await self.pty_manager.detach_all()
 
@@ -131,6 +142,7 @@ class AgentHub:
         except Exception as e:
             logger.warning("PTY attach failed for %s: %s", agent_id, e)
 
+        await self._broadcast_state(agent_id, agent)
         return agent
 
     async def stop_agent(self, agent_id: str) -> Agent:
@@ -158,6 +170,7 @@ class AgentHub:
             logger.error("Failed to stop agent %s: %s", agent_id, e)
             raise
 
+        await self._broadcast_state(agent_id, agent)
         return agent
 
     def get_agent(self, agent_id: str) -> Agent | None:
@@ -171,6 +184,11 @@ class AgentHub:
         logger.info("Policy updated for %s: %s", agent_id, policy)
         return agent
 
+    def set_broadcaster(self, broadcaster: Broadcaster) -> None:
+        """Wire the broadcaster for WebSocket event fan-out."""
+        self._broadcaster = broadcaster
+        self.pty_manager.register_callback(broadcaster.broadcast_pty_output)
+
     @property
     def uptime_seconds(self) -> float:
         if self._started_at is None:
@@ -178,6 +196,13 @@ class AgentHub:
         return (datetime.now() - self._started_at).total_seconds()
 
     # -- Internal methods --
+
+    async def _broadcast_state(self, agent_id: str, agent: Agent) -> None:
+        """Broadcast agent state change to WebSocket clients."""
+        if self._broadcaster:
+            await self._broadcaster.broadcast_agent_state(
+                agent_id, agent.state.value, agent.model_dump(mode="json"),
+            )
 
     def _get_agent(self, agent_id: str) -> Agent:
         """Get agent state (internal, raises if not found)."""
@@ -241,6 +266,10 @@ class AgentHub:
             "Inbox change for %s: %d items (new: %s)",
             agent_id, inbox_count, new_filename,
         )
+
+        # Broadcast inbox change to WebSocket clients
+        if self._broadcaster:
+            await self._broadcaster.broadcast_inbox_change(agent_id, inbox_count)
 
         # Evaluate launch policy
         decision = evaluate_launch(agent, inbox_count)
@@ -329,6 +358,7 @@ class AgentHub:
                                 "Sync: PTY attach failed for %s: %s",
                                 agent_id, e,
                             )
+                    await self._broadcast_state(agent_id, agent)
                 elif not running and agent.state == AgentState.RUNNING:
                     # Detach PTY for externally stopped container
                     if self.pty_manager.is_attached(agent_id):
@@ -340,3 +370,4 @@ class AgentHub:
                     logger.info(
                         "Sync: container stopped externally for %s", agent_id
                     )
+                    await self._broadcast_state(agent_id, agent)
