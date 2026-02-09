@@ -28,6 +28,7 @@ class AgentHub:
         self._idle_check_task: asyncio.Task | None = None
         self._container_sync_task: asyncio.Task | None = None
         self._hub_managed: set[str] = set()  # agents whose containers the Hub started
+        self._pty_last_event: dict[str, datetime] = {}  # rate-limit activity tracking
 
     async def start(self) -> None:
         """Start the Hub and all always-on agents."""
@@ -186,17 +187,33 @@ class AgentHub:
         return agent
 
     async def _on_pty_output(self, agent_id: str, data: bytes) -> None:
-        """Handle PTY output — update agent activity timestamp."""
+        """Handle PTY output — update agent activity timestamp.
+
+        Uses rate-based filtering to ignore periodic terminal noise (e.g.,
+        tmux status bar refreshes every ~60s). Only counts as real activity
+        when output events arrive in rapid succession (within 10 seconds),
+        which is characteristic of actual Claude Code work.
+        """
         agent = self.agents.get(agent_id)
-        if agent is not None:
-            agent.last_activity = datetime.now()
+        if agent is None:
+            return
+        now = datetime.now()
+        prev = self._pty_last_event.get(agent_id)
+        self._pty_last_event[agent_id] = now
+        # Require two output events within 10s to count as activity.
+        # tmux status bar fires once every ~60s — won't trigger this.
+        # Real Claude Code output fires many events per second — triggers immediately.
+        if prev is not None and (now - prev).total_seconds() < 10:
+            agent.last_activity = now
 
     async def _discover_running_containers(self) -> None:
         """Check for containers already running from a previous Hub session."""
         for agent_id in self.config.agents:
-            if await self.container_mgr.is_running(agent_id):
+            container_id = await self.container_mgr.get_container_id(agent_id)
+            if container_id is not None:
                 agent = self.agents[agent_id]
                 agent.state = AgentState.RUNNING
+                agent.container_id = container_id
                 agent.started_at = datetime.now()
                 agent.last_activity = datetime.now()
                 logger.info("Discovered running container for %s", agent_id)
@@ -296,6 +313,7 @@ class AgentHub:
 
                 if running and agent.state == AgentState.STOPPED:
                     agent.state = AgentState.RUNNING
+                    agent.container_id = await self.container_mgr.get_container_id(agent_id)
                     agent.started_at = datetime.now()
                     agent.last_activity = datetime.now()
                     logger.info(

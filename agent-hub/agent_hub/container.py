@@ -84,6 +84,17 @@ class ContainerManager:
         except NotFound:
             return False
 
+    async def get_container_id(self, agent_id: str) -> str | None:
+        """Get the container ID if the agent's container is running."""
+        name = self.container_name(agent_id)
+        try:
+            container = await asyncio.to_thread(self.client.containers.get, name)
+            if container.status == "running":
+                return container.id
+        except NotFound:
+            pass
+        return None
+
     async def _remove_if_exists(self, name: str, stop_first: bool = False) -> None:
         """Remove a container if it exists."""
         try:
