@@ -1,95 +1,148 @@
 # Agent Hub
 
-Multi-agent container orchestration for Pipe Dream. Manages Docker container lifecycle, inbox monitoring, and policy-driven auto-start/stop for QMS agents.
+The unified tool for running Claude agents on Pipe Dream. Agent Hub manages a three-layer stack — MCP servers, a central orchestration service, and Docker containers — so you don't have to.
 
-## Architecture
+## Mental Model
 
 ```
-agent-hub/
-├── agent_hub/                  # Python package
-│   ├── models.py               # Agent, AgentState, LaunchPolicy, ShutdownPolicy
-│   ├── config.py               # HubConfig (pydantic-settings, env-configurable)
-│   ├── container.py            # Docker SDK lifecycle (SETUP_ONLY two-phase startup)
-│   ├── services.py             # Cross-platform service lifecycle (MCP, Hub, Docker)
-│   ├── inbox.py                # Watchdog-based inbox monitoring
-│   ├── notifier.py             # tmux send-keys notification injection
-│   ├── policy.py               # Launch/shutdown policy evaluation engine
-│   ├── hub.py                  # Core orchestrator wiring all components
-│   ├── pty_manager.py          # PTY session management (Docker exec socket I/O)
-│   ├── broadcaster.py          # WebSocket connection fan-out coordinator
-│   ├── cli.py                  # Click CLI (9 commands)
-│   └── api/
-│       ├── server.py           # FastAPI app factory with lifespan management
-│       ├── routes.py           # REST endpoints on /api
-│       └── websocket.py        # WebSocket endpoint on /ws
-├── docker/                     # Container infrastructure (Dockerfile, compose, scripts)
-├── gui/                        # Tauri + React GUI (terminal multiplexer)
-├── mcp-servers/
-│   └── git_mcp/                # Git MCP server for container git operations
-├── logs/                       # Runtime logs (gitignored)
-├── tests/
-└── pyproject.toml
+┌─────────────────────────────────────────────────┐
+│  Layer 3: Containers                            │
+│  One Docker container per agent, each running   │
+│  Claude Code inside a tmux session.             │
+├─────────────────────────────────────────────────┤
+│  Layer 2: The Hub (port 9000)                   │
+│  Orchestrator: lifecycle, inbox monitoring,     │
+│  policy engine, terminal I/O, WebSocket API.    │
+├─────────────────────────────────────────────────┤
+│  Layer 1: MCP Servers                           │
+│  QMS MCP (:8000) and Git MCP (:8001) — the     │
+│  host-side services that containers connect to. │
+└─────────────────────────────────────────────────┘
 ```
 
-## Installation
-
-```bash
-cd agent-hub
-pip install -e .
-```
-
-Requires Python 3.11+ and a running Docker daemon.
+`agent-hub launch` brings up all three layers in order. `agent-hub stop-all` tears them down. Everything else is detail.
 
 ## Quick Start
 
 ```bash
-# Full orchestration: start MCP servers, Hub, and launch agent
-agent-hub launch claude
+pip install -e agent-hub/           # One-time setup
 
-# Or launch multiple agents in separate terminals
-agent-hub launch claude qa tu_ui
+agent-hub launch claude             # Start everything, attach to claude
+agent-hub launch claude qa tu_ui    # Start everything, open each in a terminal
 
-# Check status of all services and containers
-agent-hub services
-
-# Stop everything
-agent-hub stop-all
+agent-hub services                  # What's running?
+agent-hub attach qa                 # Connect to a running agent (Ctrl-B D to detach)
+agent-hub stop-all                  # Shut it all down
 ```
 
-## CLI Commands
+Requires Python 3.11+ and Docker.
 
-| Command | Description |
+## CLI
+
+Four commands cover daily use. Five more are available for fine-grained control.
+
+### Primary Commands
+
+| Command | What it does |
 |---------|-------------|
-| `agent-hub launch [agents...]` | Full orchestration: start infra + launch agent(s) |
-| `agent-hub services` | Show status of all services and containers |
-| `agent-hub stop-all` | Stop all services and remove containers |
-| `agent-hub start` | Start the Hub as a foreground service |
-| `agent-hub status` | Show hub uptime and all agent states |
-| `agent-hub start-agent <id>` | Start an agent's container |
-| `agent-hub stop-agent <id>` | Stop an agent's container |
-| `agent-hub set-policy <id>` | Set an agent's launch/shutdown policy |
-| `agent-hub attach <id>` | Attach to a running agent's terminal |
+| `agent-hub launch [agents...]` | Start MCP servers, Hub, and agent containers. Single agent attaches interactively; multiple agents open in separate terminals. |
+| `agent-hub services` | Show the status of all three layers: MCP servers, Hub, and containers. |
+| `agent-hub stop-all [-y]` | Stop all services and remove all containers. Prompts for confirmation unless `-y` is passed. |
+| `agent-hub attach <id>` | Attach to a running agent's tmux session. Detach with Ctrl-B D. |
 
-### `start` Options
+### Hub API Commands
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--host` | `127.0.0.1` | Host to bind |
-| `--port` | `9000` | Port to bind |
-| `--project-root` | cwd | Pipe Dream project root |
-| `--log-level` | `info` | Logging level |
+These talk directly to the Hub's REST API on port 9000. `launch` calls these internally, but they're available for scripting or when you want to manage individual agents without touching the infrastructure layer.
 
-### `set-policy` Options
+| Command | What it does |
+|---------|-------------|
+| `agent-hub start` | Start the Hub as a foreground service (Layer 2 only). |
+| `agent-hub status` | Show Hub uptime and per-agent state/inbox/policy. |
+| `agent-hub start-agent <id>` | Start a single agent's container via the Hub. |
+| `agent-hub stop-agent <id>` | Stop a single agent's container via the Hub. |
+| `agent-hub set-policy <id>` | Configure an agent's launch/shutdown policy. |
 
-| Flag | Values | Description |
-|------|--------|-------------|
-| `--launch` | `manual`, `auto_on_task`, `always_on` | When to start the agent |
-| `--shutdown` | `manual`, `on_inbox_empty`, `idle_timeout` | When to stop the agent |
-| `--idle-timeout` | minutes (int) | Idle timeout duration |
+### Agents
 
-## REST API
+The roster: `claude`, `qa`, `tu_ui`, `tu_scene`, `tu_sketch`, `tu_sim`, `bu`
 
-All endpoints are prefixed with `/api`.
+## Policies
+
+Agents can be configured to start and stop automatically based on inbox activity.
+
+| Launch Policy | Behavior |
+|---------------|----------|
+| `manual` (default) | Only starts via explicit command |
+| `auto_on_task` | Auto-starts when a task arrives in the agent's inbox |
+| `always_on` | Starts with the Hub, never auto-stops |
+
+| Shutdown Policy | Behavior |
+|-----------------|----------|
+| `manual` (default) | Only stops via explicit command |
+| `on_inbox_empty` | Auto-stops when inbox drops to zero |
+| `idle_timeout` | Auto-stops after N minutes of terminal inactivity |
+
+```bash
+agent-hub set-policy qa --launch auto_on_task --shutdown on_inbox_empty
+```
+
+## What's Inside
+
+```
+agent-hub/
+├── agent_hub/          # Python package (the Hub itself)
+├── docker/             # Dockerfile, docker-compose.yml, entrypoint, helper scripts
+├── gui/                # Tauri + React terminal multiplexer (xterm.js)
+├── mcp-servers/
+│   └── git_mcp/        # Git MCP server — proxies git commands from containers to host
+├── logs/               # Runtime logs (gitignored)
+└── pyproject.toml
+```
+
+- **agent_hub/** — The orchestration engine. CLI entry point, Docker SDK container management, inbox monitoring via watchdog, tmux notification injection, policy evaluation, and a FastAPI service (REST + WebSocket) for programmatic access.
+- **docker/** — Container infrastructure. The Dockerfile, compose config, entrypoint script, and host-side helper scripts for starting MCP servers manually. See `docker/README.md`.
+- **gui/** — A Tauri desktop app that connects to the Hub's WebSocket API to provide a multi-terminal GUI. See `gui/README.md`.
+- **mcp-servers/git_mcp/** — A standalone MCP server that proxies git commands from read-only containers to the host repository. Blocks destructive operations and submodule references.
+
+## Configuration
+
+All config is set via environment variables with the `HUB_` prefix, or via CLI flags.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HUB_HOST` | `127.0.0.1` | Bind host |
+| `HUB_PORT` | `9000` | Bind port |
+| `HUB_PROJECT_ROOT` | cwd | Pipe Dream project root |
+| `HUB_DOCKER_IMAGE` | `docker-claude-agent` | Docker image name |
+| `HUB_CONTAINER_PREFIX` | `agent-` | Container name prefix |
+| `HUB_DEFAULT_LAUNCH_POLICY` | `manual` | Default launch policy |
+| `HUB_DEFAULT_SHUTDOWN_POLICY` | `manual` | Default shutdown policy |
+| `HUB_DEFAULT_IDLE_TIMEOUT` | `30` | Default idle timeout (minutes) |
+| `HUB_PTY_BUFFER_SIZE` | `262144` | PTY scrollback buffer (bytes per agent) |
+
+---
+
+## Internals
+
+Everything below this line is implementation detail for developers working on Agent Hub itself.
+
+### Agent Lifecycle
+
+```
+STOPPED ──> STARTING ──> RUNNING ──> STOPPING ──> STOPPED
+                │                        │
+                └────────> ERROR <───────┘
+```
+
+Container startup uses a two-phase pattern: `docker run -d` with `SETUP_ONLY=1` (entrypoint configures the environment, then sleeps), followed by `docker exec` to start Claude Code inside a tmux session named `agent`.
+
+### Inbox Monitoring
+
+Watchdog monitors `.claude/users/{agent_id}/inbox/` directories. When a task file appears: inbox count updates, launch policy evaluates (may auto-start), a tmux notification is injected if the agent is running, and shutdown policy evaluates (may auto-stop if empty). Notifications are prefixed with `"Task notification:"` — the leading `T` cannot be mistaken for a Claude Code permission dialog response.
+
+### REST API
+
+The Hub exposes a REST API on `/api` consumed by the CLI and GUI.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -102,157 +155,34 @@ All endpoints are prefixed with `/api`.
 | GET | `/api/agents/{id}/policy` | Get agent policy |
 | PUT | `/api/agents/{id}/policy` | Set agent policy |
 
-## WebSocket API
+### WebSocket API
 
-The Hub provides a WebSocket endpoint at `/ws` for real-time terminal I/O and event broadcasting. Designed for GUI clients (xterm.js), but usable by any WebSocket client.
+The Hub provides a WebSocket endpoint at `/ws` for real-time terminal I/O and event broadcasting, consumed by the GUI's xterm.js terminals.
 
-### Connection
-
-```
-ws://localhost:9000/ws
-```
-
-### Client -> Server Messages (JSON)
+**Client -> Server:**
 
 | Type | Fields | Description |
 |------|--------|-------------|
-| `subscribe` | `agent_id` | Start receiving PTY output for an agent |
+| `subscribe` | `agent_id` | Start receiving PTY output |
 | `unsubscribe` | `agent_id` | Stop receiving PTY output |
-| `input` | `agent_id, data` | Send keystrokes (UTF-8 string, e.g. `"ls\r"`) |
-| `resize` | `agent_id, cols, rows` | Resize agent terminal |
+| `input` | `agent_id, data` | Send keystrokes (UTF-8) |
+| `resize` | `agent_id, cols, rows` | Resize terminal |
 
-### Server -> Client Messages (JSON)
+**Server -> Client:**
 
 | Type | Fields | Description |
 |------|--------|-------------|
-| `subscribed` | `agent_id, buffer` | Subscription confirmed; `buffer` = base64-encoded scrollback |
-| `unsubscribed` | `agent_id` | Unsubscription confirmed |
-| `output` | `agent_id, data` | PTY output; `data` = base64-encoded bytes |
-| `agent_state_changed` | `agent_id, state, agent` | Agent state transition (all clients) |
-| `inbox_changed` | `agent_id, count` | Inbox count changed (all clients) |
-| `error` | `message` | Error response |
+| `subscribed` | `agent_id, buffer` | Confirmed; buffer = base64 scrollback |
+| `unsubscribed` | `agent_id` | Confirmed |
+| `output` | `agent_id, data` | PTY output (base64) |
+| `agent_state_changed` | `agent_id, state, agent` | State transition (broadcast) |
+| `inbox_changed` | `agent_id, count` | Inbox count changed (broadcast) |
+| `error` | `message` | Error |
 
-### Example Session
+### PTY Manager
 
-```json
-// Client subscribes to agent terminal
--> {"type": "subscribe", "agent_id": "claude"}
-<- {"type": "subscribed", "agent_id": "claude", "buffer": "...base64..."}
+The Hub attaches a persistent PTY session to each running agent via Docker's exec socket API. This provides live idle detection (for `idle_timeout` policy), a scrollback buffer (256KB default, served to WebSocket clients on subscribe), and a callback interface for real-time output streaming.
 
-// Server streams PTY output
-<- {"type": "output", "agent_id": "claude", "data": "...base64..."}
+### Dependencies
 
-// Client sends keystrokes
--> {"type": "input", "agent_id": "claude", "data": "ls\r"}
-
-// Agent state changes broadcast to all clients
-<- {"type": "agent_state_changed", "agent_id": "qa", "state": "running", "agent": {...}}
-```
-
-### Notes
-
-- PTY data is base64-encoded for JSON protocol uniformity
-- Subscribe to a stopped agent is allowed; you'll receive state-change events when it starts
-- `input` and `resize` require an active subscription to the agent
-- Multiple clients can subscribe to the same agent simultaneously
-
-## Agent Lifecycle
-
-Agents transition through these states:
-
-```
-STOPPED ──► STARTING ──► RUNNING ──► STOPPING ──► STOPPED
-                │                        │
-                └────────► ERROR ◄───────┘
-```
-
-## Container Startup (SETUP_ONLY Pattern)
-
-The Hub uses a two-phase startup pattern:
-
-1. `docker run -d` with `SETUP_ONLY=1` — entrypoint runs setup, then sleeps
-2. `docker exec` — starts `claude` inside a `tmux` session named `agent`
-
-This separates container provisioning from Claude Code initialization.
-
-## Policies
-
-### Launch Policies
-
-| Policy | Behavior |
-|--------|----------|
-| `manual` | Only starts via explicit command |
-| `auto_on_task` | Auto-starts when inbox receives a task |
-| `always_on` | Starts with the Hub, never auto-stops |
-
-### Shutdown Policies
-
-| Policy | Behavior |
-|--------|----------|
-| `manual` | Only stops via explicit command |
-| `on_inbox_empty` | Auto-stops when inbox drops to zero |
-| `idle_timeout` | Auto-stops after N minutes of inactivity |
-
-## Inbox Monitoring
-
-Uses `watchdog` to watch `.claude/users/{agent_id}/inbox/` directories. When a new task file appears:
-
-1. Inbox count is updated on the agent record
-2. Launch policy is evaluated (may auto-start the agent)
-3. If the agent is running, a notification is injected via `tmux send-keys`
-4. Shutdown policy is evaluated (may auto-stop if inbox is empty)
-
-Notifications start with `"Task notification:"` — the leading `T` is not a valid Claude Code permission dialog response (`y`/`n`/`a`/`i`), mitigating accidental prompt responses.
-
-## Environment Variables
-
-All config can be set via environment variables with the `HUB_` prefix:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `HUB_HOST` | `127.0.0.1` | Bind host |
-| `HUB_PORT` | `9000` | Bind port |
-| `HUB_PROJECT_ROOT` | cwd | Project root path |
-| `HUB_DOCKER_IMAGE` | `docker-claude-agent` | Docker image name |
-| `HUB_CONTAINER_PREFIX` | `agent-` | Container name prefix |
-| `HUB_DEFAULT_LAUNCH_POLICY` | `manual` | Default launch policy |
-| `HUB_DEFAULT_SHUTDOWN_POLICY` | `manual` | Default shutdown policy |
-| `HUB_DEFAULT_IDLE_TIMEOUT` | `30` | Default idle timeout (minutes) |
-| `HUB_PTY_BUFFER_SIZE` | `262144` | PTY scrollback buffer size per agent (bytes) |
-
-## PTY Manager
-
-The Hub attaches a persistent PTY session to each running agent's tmux session using the Docker SDK's exec socket API. This provides:
-
-- **Live idle detection:** `Agent.last_activity` is updated on every terminal output event, enabling the `idle_timeout` shutdown policy to function correctly.
-- **Scrollback buffer:** A configurable ring buffer (default 256KB) captures recent terminal output per agent. WebSocket clients receive this on subscribe.
-- **Callback interface:** Output callbacks are registered for real-time streaming. The Broadcaster uses this to fan out PTY output to subscribed WebSocket clients.
-
-PTY sessions are automatically attached when an agent starts and detached when it stops. The Hub also attaches to containers discovered already running at startup.
-
-### CLI Attach
-
-`agent-hub attach <id>` connects your terminal directly to a running agent's tmux session:
-
-```bash
-agent-hub attach qa        # Attach to QA agent
-                            # Detach with Ctrl-B D
-```
-
-This bypasses the Hub's PTY Manager and runs `docker exec -it` directly, giving you a raw interactive terminal.
-
-## Agent Roster
-
-The default roster includes all QMS agents:
-
-`claude`, `qa`, `tu_ui`, `tu_scene`, `tu_sketch`, `tu_sim`, `bu`
-
-## Dependencies
-
-- **fastapi** + **uvicorn** — REST API + WebSocket server
-- **docker** — Docker SDK for container management
-- **watchdog** — File system monitoring for inboxes
-- **click** — CLI framework
-- **pydantic** + **pydantic-settings** — Config and data models
-- **httpx** — HTTP client for CLI-to-Hub communication
-- **mcp** — Model Context Protocol for MCP server management
+fastapi, uvicorn, docker, watchdog, click, pydantic, pydantic-settings, httpx, mcp
