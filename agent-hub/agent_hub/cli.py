@@ -62,7 +62,7 @@ def status(project_root: str | None, hub_url: str):
     Always shows three sections: Services, Containers, and Agents.
     Works whether the Hub is running or not.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
     from agent_hub.services import (
         get_services_status, get_containers, classify_container, VALID_AGENTS,
     )
@@ -139,17 +139,17 @@ def status(project_root: str | None, hub_url: str):
             "error": "red",
         }
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now()
         for agent in hub_data["agents"]:
             state_color = state_colors.get(agent["state"], "white")
 
-            # Compute uptime
+            # Compute uptime (Hub stores started_at as naive local time)
             started_at = agent.get("started_at")
             if started_at and agent["state"] in ("running", "stale"):
                 try:
                     started = datetime.fromisoformat(started_at)
-                    if started.tzinfo is None:
-                        started = started.replace(tzinfo=timezone.utc)
+                    if started.tzinfo is not None:
+                        started = started.replace(tzinfo=None)
                     delta = now - started
                     total_seconds = int(delta.total_seconds())
                     hours = total_seconds // 3600
