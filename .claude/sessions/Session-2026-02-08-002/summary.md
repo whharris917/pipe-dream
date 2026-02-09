@@ -2,59 +2,59 @@
 
 ## Completed
 
-### CR-066 Implementation: Agent Hub PTY Manager
-- Reviewed the multi-agent orchestration refresh design doc (Session-2026-02-06-004)
-- Identified what Rung 4 (Hub) still needs before Rung 5 (GUI) can start: PTY Manager, WebSocket endpoint, MCP Monitor
-- Discussed what the PTY Manager alone enables (CLI attach, real idle detection) without WebSocket
-- Drafted CR-066: Agent Hub PTY Manager -- terminal I/O multiplexing for agent containers
-- QA reviewed (recommend) and approved (v1.0 PRE_APPROVED). QA agent ID: `ad4c5ff`
-- Released for execution
+### CR-066: Agent Hub PTY Manager (CLOSED v2.0)
 
-### CR-066 Execution (all 4 EIs Pass)
-- **EI-1:** Created `agent-hub/agent_hub/pty_manager.py` with:
-  - `PTYSession`: Docker SDK exec socket (exec_create tty=True + exec_start socket=True), async read loop via asyncio.to_thread, ring buffer (256KB default), single output callback
-  - `PTYManager`: session lifecycle (attach/detach/detach_all), callback registry (register/unregister), buffer access (get_buffer), write/resize for future GUI input
-  - Added `pty_buffer_size` to HubConfig, `pty_attached` to Agent model
-- **EI-2:** Wired PTY Manager into `hub.py`:
-  - Instantiated in __init__, callback registered in start()
-  - Auto-attach after agent reaches RUNNING in start_agent()
-  - Detach before container stop in stop_agent()
-  - Attach for discovered containers in _discover_running_containers()
-  - Attach/detach in _container_sync_loop() for externally started/stopped containers
-  - _on_pty_output callback updates agent.last_activity
-  - detach_all() in stop()
-  - All PTY operations non-fatal (agent runs even if PTY fails)
-- **EI-3:** Added `agent-hub attach <id>` CLI command (queries Hub API, then subprocess.run docker exec -it)
-- **EI-4:** Updated README with PTY Manager section, attach command, env var
-- All modules import cleanly. Committed `98dab02`.
+**Design & Approval:**
+- Reviewed multi-agent orchestration refresh design doc (Session-2026-02-06-004)
+- Identified Rung 4 remaining work: PTY Manager, WebSocket endpoint, MCP Monitor
+- Drafted CR-066, QA reviewed/approved, released for execution
 
-### UAT Designed
-- Created 10-test stress test plan covering: basic attachment, activity tracking, idle goes quiet, idle timeout fires, CLI attach, pre-existing container discovery, external stop sync, multiple agents, rapid start/stop cycle, hub shutdown
-- Saved to session folder: `uat-cr066-pty-manager.md`
-- Live integration testing with Docker planned next
+**Implementation (EI-1 through EI-4, commit 98dab02):**
+- Created `agent-hub/agent_hub/pty_manager.py` (PTYSession + PTYManager)
+- Integrated into Hub lifecycle (hub.py): attach/detach/discovery/sync
+- Added CLI `attach` command, README docs, config/model fields
+
+**UAT (EI-5, 10 tests against live Docker):**
+- 9 PASS, 1 PARTIAL PASS (idle timeout)
+- F-001: tmux status bar noise defeats idle detection
+- F-002: discovery doesn't capture container_id
+
+**Fixes (EI-6 through EI-8, commit f21264d):**
+- F-001: Rate-based activity filter in `Hub._on_pty_output()` — requires two PTY events
+  within 10s to count as activity. tmux status bar (~60s) filtered; real output passes.
+  Idle timeout verified: fired at 3m (previously defeated by noise).
+- F-002: Added `ContainerManager.get_container_id()`, wired into both discovery paths.
+- EI-8: Lead manually verified CLI attach (tmux renders, Ctrl-B D detaches cleanly).
+
+**Post-review & closure:**
+- QA post-reviewed (recommend) and approved (v2.0)
+- Closed
+
+### Key Technical Insights
+
+- **tmux status bar** generates terminal output every ~60s even when idle. Any PTY-based
+  idle detection must filter this noise. Rate-based filtering (require sustained output)
+  is more robust than size-based thresholds.
+- **OS sleep suspends asyncio** — timers, sleep(), and background tasks all freeze.
+  Wall-clock-based idle calculations work correctly across sleep (idle time = real elapsed).
+- **Docker exec socket types** vary by platform (`recv`/`send` vs `read`/`write`).
+  The `_recv`/`_send` helpers in PTYSession handle both.
 
 ## Current State
 
 | Item | Status | Notes |
 |------|--------|-------|
-| CR-066 | IN_EXECUTION (v1.1) | All EIs Pass, awaiting UAT then post-review |
-| Agent Hub | genesis, not under SDLC | `agent-hub/` in pipe-dream repo |
-| QA agent | ad4c5ff | Available for resume |
-| MCP servers | unknown | Need to verify before UAT |
-| Docker | unknown | Need to verify before UAT |
+| CR-066 | CLOSED (v2.0) | All 8 EIs Pass |
+| Agent Hub | genesis, not under SDLC | Rung 4 Hub: PTY Manager complete |
+| Rung 4 remaining | WebSocket endpoint, MCP Health Monitor | Next CRs |
+| QA agent | a35c443 | Available for resume |
 
-## Key Files Modified
+## Key Files
 
-- `agent-hub/agent_hub/pty_manager.py` -- NEW: PTYSession + PTYManager
-- `agent-hub/agent_hub/hub.py` -- PTY Manager integration throughout lifecycle
-- `agent-hub/agent_hub/models.py` -- Added pty_attached field
-- `agent-hub/agent_hub/config.py` -- Added pty_buffer_size
-- `agent-hub/agent_hub/cli.py` -- Added attach command
+- `agent-hub/agent_hub/pty_manager.py` -- PTYSession + PTYManager
+- `agent-hub/agent_hub/hub.py` -- PTY integration + rate-based activity filter
+- `agent-hub/agent_hub/container.py` -- get_container_id() for discovery
+- `agent-hub/agent_hub/models.py` -- pty_attached field
+- `agent-hub/agent_hub/cli.py` -- attach command
+- `agent-hub/agent_hub/config.py` -- pty_buffer_size
 - `agent-hub/README.md` -- PTY Manager documentation
-
-## Pending
-
-- Execute UAT (10 tests) against live Docker environment
-- Route CR-066 for post-review after UAT passes
-- QA post-review and approval
-- Close CR-066
