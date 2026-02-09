@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from agent_hub.api.routes import router
 from agent_hub.api.websocket import ws_router
@@ -28,6 +29,13 @@ def create_app(hub: AgentHub) -> FastAPI:
         description="Multi-agent container orchestration for Pipe Dream",
         version="0.1.0",
         lifespan=lifespan,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     app.state.hub = hub
