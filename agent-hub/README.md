@@ -15,10 +15,12 @@ agent-hub/
 │   ├── policy.py       # Launch/shutdown policy evaluation engine
 │   ├── hub.py          # Core orchestrator wiring all components
 │   ├── pty_manager.py  # PTY session management (Docker exec socket I/O)
+│   ├── broadcaster.py  # WebSocket connection fan-out coordinator
 │   ├── cli.py          # Click CLI (6 commands)
 │   └── api/
 │       ├── server.py   # FastAPI app factory with lifespan management
-│       └── routes.py   # REST endpoints on /api
+│       ├── routes.py   # REST endpoints on /api
+│       └── websocket.py # WebSocket endpoint on /ws
 ├── tests/
 └── pyproject.toml
 ```
@@ -86,6 +88,60 @@ All endpoints are prefixed with `/api`.
 | POST | `/api/agents/{id}/stop` | Stop agent container |
 | GET | `/api/agents/{id}/policy` | Get agent policy |
 | PUT | `/api/agents/{id}/policy` | Set agent policy |
+
+## WebSocket API
+
+The Hub provides a WebSocket endpoint at `/ws` for real-time terminal I/O and event broadcasting. Designed for GUI clients (xterm.js), but usable by any WebSocket client.
+
+### Connection
+
+```
+ws://localhost:9000/ws
+```
+
+### Client -> Server Messages (JSON)
+
+| Type | Fields | Description |
+|------|--------|-------------|
+| `subscribe` | `agent_id` | Start receiving PTY output for an agent |
+| `unsubscribe` | `agent_id` | Stop receiving PTY output |
+| `input` | `agent_id, data` | Send keystrokes (UTF-8 string, e.g. `"ls\r"`) |
+| `resize` | `agent_id, cols, rows` | Resize agent terminal |
+
+### Server -> Client Messages (JSON)
+
+| Type | Fields | Description |
+|------|--------|-------------|
+| `subscribed` | `agent_id, buffer` | Subscription confirmed; `buffer` = base64-encoded scrollback |
+| `unsubscribed` | `agent_id` | Unsubscription confirmed |
+| `output` | `agent_id, data` | PTY output; `data` = base64-encoded bytes |
+| `agent_state_changed` | `agent_id, state, agent` | Agent state transition (all clients) |
+| `inbox_changed` | `agent_id, count` | Inbox count changed (all clients) |
+| `error` | `message` | Error response |
+
+### Example Session
+
+```json
+// Client subscribes to agent terminal
+-> {"type": "subscribe", "agent_id": "claude"}
+<- {"type": "subscribed", "agent_id": "claude", "buffer": "...base64..."}
+
+// Server streams PTY output
+<- {"type": "output", "agent_id": "claude", "data": "...base64..."}
+
+// Client sends keystrokes
+-> {"type": "input", "agent_id": "claude", "data": "ls\r"}
+
+// Agent state changes broadcast to all clients
+<- {"type": "agent_state_changed", "agent_id": "qa", "state": "running", "agent": {...}}
+```
+
+### Notes
+
+- PTY data is base64-encoded for JSON protocol uniformity
+- Subscribe to a stopped agent is allowed; you'll receive state-change events when it starts
+- `input` and `resize` require an active subscription to the agent
+- Multiple clients can subscribe to the same agent simultaneously
 
 ## Agent Lifecycle
 
@@ -156,8 +212,8 @@ All config can be set via environment variables with the `HUB_` prefix:
 The Hub attaches a persistent PTY session to each running agent's tmux session using the Docker SDK's exec socket API. This provides:
 
 - **Live idle detection:** `Agent.last_activity` is updated on every terminal output event, enabling the `idle_timeout` shutdown policy to function correctly.
-- **Scrollback buffer:** A configurable ring buffer (default 256KB) captures recent terminal output per agent. Future WebSocket clients can retrieve this on connect.
-- **Callback interface:** Output callbacks can be registered for real-time streaming (designed for a future WebSocket endpoint).
+- **Scrollback buffer:** A configurable ring buffer (default 256KB) captures recent terminal output per agent. WebSocket clients receive this on subscribe.
+- **Callback interface:** Output callbacks are registered for real-time streaming. The Broadcaster uses this to fan out PTY output to subscribed WebSocket clients.
 
 PTY sessions are automatically attached when an agent starts and detached when it stops. The Hub also attaches to containers discovered already running at startup.
 
@@ -180,7 +236,7 @@ The default roster includes all QMS agents:
 
 ## Dependencies
 
-- **fastapi** + **uvicorn** — REST API server
+- **fastapi** + **uvicorn** — REST API + WebSocket server
 - **docker** — Docker SDK for container management
 - **watchdog** — File system monitoring for inboxes
 - **click** — CLI framework
