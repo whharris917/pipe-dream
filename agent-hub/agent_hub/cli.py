@@ -451,10 +451,12 @@ def services_cmd(project_root: str | None):
     # Docker containers — enrich with Hub session health when available
     containers = get_containers()
     hub_agents = {}
+    hub_available = False
     try:
         import httpx
         resp = httpx.get(f"http://localhost:{config.port}/api/agents", timeout=3)
         if resp.status_code == 200:
+            hub_available = True
             for a in resp.json():
                 hub_agents[f"{config.container_prefix}{a['id']}"] = a
     except Exception:
@@ -468,12 +470,15 @@ def services_cmd(project_root: str | None):
         click.echo(f"  {'NAME':<20} {'STATE':<12} {'STATUS'}")
         click.echo(f"  {'-' * 50}")
         for name, state, status_str in containers:
-            # Check if Hub reports this agent as stale
             hub_info = hub_agents.get(name)
             if hub_info and hub_info.get("state") == "stale":
                 display_state = "stale"
                 state_color = "yellow"
                 status_str = "container running, session dead"
+            elif state == "running" and not hub_available:
+                display_state = state
+                state_color = "green"
+                status_str = "session state unknown (Hub down)"
             else:
                 display_state = state
                 state_color = "green" if state == "running" else "yellow"

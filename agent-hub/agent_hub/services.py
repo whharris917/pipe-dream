@@ -291,9 +291,15 @@ def get_services_status(config: HubConfig) -> list[ServiceStatus]:
                     data = resp.json()
                     agents = data.get("agents", [])
                     running = sum(1 for a in agents if a.get("state") == "running")
+                    stale = sum(1 for a in agents if a.get("state") == "stale")
                     stopped = sum(1 for a in agents if a.get("state") == "stopped")
-                    if running > 0 or stopped > 0:
-                        extra = f"({running} agents running, {stopped} stopped)"
+                    parts = []
+                    if running > 0:
+                        parts.append(f"{running} running")
+                    if stale > 0:
+                        parts.append(f"{stale} stale")
+                    parts.append(f"{stopped} stopped")
+                    extra = f"({', '.join(parts)})"
             except (httpx.ConnectError, httpx.TimeoutException):
                 pass
 
