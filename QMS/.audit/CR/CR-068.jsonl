@@ -1,0 +1,12 @@
+{"ts": "2026-02-09T02:30:00+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Agent Hub GUI Scaffold"}
+{"ts": "2026-02-09T02:31:24+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-09T02:31:30+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-09T02:31:30+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-09T02:33:06+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW: COMPLIANT. Verified: (1) Frontmatter -- title: \"Agent Hub GUI Scaffold\", revision_summary: \"Initial draft\" (appropriate for v0.1). (2) All 12 required CR sections per SOP-002 Section 6 are present and complete. (3) No placeholder content (TBD/TODO/FIXME/XXX) in pre-approved sections 1-9. (4) Traceability -- CR-067 referenced as dependency, confirmed CLOSED v2.0. (5) No typos or formatting errors found. (6) Section numbering sequential and correct. (7) Technology stack, WebSocket protocol, and implementation plan are well-defined with seven concrete execution items. No TU assignment required -- genesis sandbox with no existing domain jurisdiction."}
+{"ts": "2026-02-09T02:33:06+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-09T02:33:17+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-09T02:33:17+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-09T02:33:43+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-09T02:33:43+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-09T02:33:54+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-09T02:33:54+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}

@@ -1,0 +1,268 @@
+---
+title: Agent Hub GUI Scaffold
+revision_summary: Initial draft
+---
+
+# CR-068: Agent Hub GUI Scaffold
+
+## 1. Purpose
+
+Create the Agent Hub GUI — a Tauri desktop application providing a visual terminal multiplexer for all agents. The GUI connects to the Hub's existing REST and WebSocket APIs to display agent states, manage terminal sessions via xterm.js, and provide a unified interface for the multi-agent orchestration system.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+This CR creates the GUI layer (Rung 5) of the multi-agent orchestration infrastructure. The Hub (Rung 4) is complete with container lifecycle, PTY multiplexing, inbox watching, policy engine, REST API, and WebSocket endpoint. The GUI is the final infrastructure layer before the system is ready for adoption.
+
+- **Parent Document:** None (genesis sandbox, continuation of Rung 4→5 roadmap from Session-2026-02-06-004)
+
+### 2.2 Changes Summary
+
+Create a new Tauri + React + TypeScript desktop application in `agent-gui/` that:
+- Connects to the Hub's WebSocket API for real-time terminal I/O and event streaming
+- Renders agent terminal sessions via xterm.js
+- Displays agent states, inbox counts, and lifecycle controls in a sidebar
+- Provides tab-based terminal management for multiple simultaneous agents
+
+Additionally, add CORS middleware to the Hub's FastAPI server to allow Tauri webview connections.
+
+### 2.3 Files Affected
+
+- `agent-gui/` — New directory: entire Tauri + React application
+- `agent-hub/agent_hub/api/server.py` — Add CORS middleware
+
+---
+
+## 3. Current State
+
+The Agent Hub provides a complete backend API (REST + WebSocket) for agent lifecycle management and terminal I/O multiplexing. The only clients are the CLI (`agent-hub status`, `agent-hub attach`) and the WebSocket UAT test suite. There is no graphical interface. Users interact with agents via separate terminal windows.
+
+---
+
+## 4. Proposed State
+
+A Tauri desktop application provides a single-window interface to the Agent Hub. Users see all agents in a sidebar with real-time state indicators and inbox counts. Clicking an agent opens a terminal tab rendered by xterm.js, connected to the agent's PTY stream via WebSocket. Multiple agents can be open simultaneously in tabs. The Hub's FastAPI server includes CORS middleware to support Tauri webview connections.
+
+---
+
+## 5. Change Description
+
+### 5.1 Technology Stack
+
+| Component | Choice | Rationale |
+|-----------|--------|-----------|
+| Desktop framework | Tauri v2 | Lightweight native app, minimal Rust backend |
+| Frontend | React 18 + TypeScript | Standard ecosystem, xterm.js compatibility |
+| Build tool | Vite | Fast dev server, Tauri v2 default |
+| Terminal emulator | xterm.js 5.x + fit addon | Battle-tested (VS Code terminal), full ANSI support |
+| State management | Zustand | Works outside React lifecycle (WebSocket callbacks) |
+| Styling | CSS custom properties | Dark terminal aesthetic (Catppuccin Mocha palette) |
+
+### 5.2 Application Layout
+
+```
++------------------------------------------------------------------+
+| Pipe Dream - Agent Hub                                    [-][o][x]|
++--------------+---------------------------------------------------+
+|              |  claude | qa | tu_ui |                              |
+|  AGENTS      +--------+----+-------+------------------------------+
+|              |                                                     |
+|  * claude    |  Terminal output rendered by xterm.js               |
+|    > inbox 0 |                                                     |
+|  * qa        |                                                     |
+|    > inbox 1 |                                                     |
+|  o tu_ui     |                                                     |
+|  o tu_scene  |  > _                                                |
+|  o tu_sketch |                                                     |
+|  o tu_sim    |                                                     |
+|  o bu        |                                                     |
+|              |                                                     |
+|--------------+                                                     |
+|  MCP SERVERS |                                                     |
+|  (coming soon)|                                                    |
+|--------------+                                                     |
+|  QMS STATUS  |                                                     |
+|  (coming soon)|                                                    |
++--------------+---------------------------------------------------+
+| Connected | Hub uptime: 1h 23m                                     |
++------------------------------------------------------------------+
+
+Legend: * running  o stopped
+```
+
+### 5.3 WebSocket Integration
+
+The GUI maintains a single WebSocket connection to `ws://localhost:9000/ws`, multiplexing subscriptions for all open terminal tabs. Key protocol details:
+
+- **Subscribe**: On tab open, sends `{type: "subscribe", agent_id: "..."}`. Hub responds with base64-encoded scrollback buffer.
+- **Output**: Hub streams `{type: "output", agent_id: "...", data: "<base64>"}`. GUI decodes to `Uint8Array` and writes to xterm.js.
+- **Input**: Keystrokes from xterm.js sent as `{type: "input", agent_id: "...", data: "..."}` (UTF-8 string).
+- **Resize**: Terminal resize events sent as `{type: "resize", agent_id: "...", cols: N, rows: N}`.
+- **Events**: `agent_state_changed` and `inbox_changed` broadcast to all clients, updating sidebar.
+
+### 5.4 Terminal Persistence
+
+Terminal instances are preserved across tab switches via CSS visibility toggle (`display: none` vs `display: block`). This avoids re-subscribing and losing scrollback/cursor state on tab switch.
+
+### 5.5 Reconnection
+
+On WebSocket disconnect: exponential backoff (1s → 2s → 4s → ... → 30s max). On reconnect: re-subscribe to all agents with open tabs. Terminal shows "Disconnected" overlay during downtime.
+
+### 5.6 CORS Middleware
+
+Add `CORSMiddleware` to Hub's `server.py` to allow requests from Tauri's `tauri://localhost` origin. Permissive configuration appropriate for localhost-only service.
+
+---
+
+## 6. Justification
+
+- The current CLI-only interface requires separate terminal windows per agent, making multi-agent workflows cumbersome
+- The Hub's WebSocket API was designed specifically for GUI consumption (CR-067)
+- A visual interface enables at-a-glance monitoring of agent states, inbox counts, and terminal activity
+- This completes the multi-agent orchestration infrastructure roadmap (Rungs 1-5)
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `agent-gui/**` | Create | Entire Tauri + React application |
+| `agent-hub/agent_hub/api/server.py` | Modify | Add CORS middleware |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| None | — | Genesis sandbox, no SDLC docs yet |
+
+### 7.3 Other Impacts
+
+- **New dependency:** Rust/Cargo required on dev machine for Tauri builds
+- **New dependency:** Additional npm packages (xterm, zustand, Tauri client APIs)
+
+---
+
+## 8. Testing Summary
+
+Manual integration testing against a running Hub:
+
+- **Connectivity:** GUI connects to Hub WebSocket, status bar shows "Connected"
+- **Agent list:** All 7 agents displayed with correct states and inbox counts
+- **Agent start:** Click stopped agent, verify state transitions, terminal tab opens
+- **Terminal I/O:** Type commands in terminal, verify output renders correctly
+- **Terminal resize:** Resize window, verify terminal reflows properly
+- **Tab switching:** Open multiple agents, switch tabs, verify state preserved
+- **Tab close:** Close tab, verify agent keeps running, unsubscribe sent
+- **Reconnection:** Kill Hub, verify disconnect overlay, restart Hub, verify auto-reconnect
+- **Inbox updates:** Verify badge count updates on inbox_changed events
+
+---
+
+## 9. Implementation Plan
+
+### EI-1: Install Rust and scaffold Tauri project
+
+1. Install Rust via `rustup-init`
+2. Scaffold Tauri + React + TypeScript project in `agent-gui/`
+3. Install dependencies: xterm, @xterm/addon-fit, @xterm/addon-web-links, zustand
+4. Configure tauri.conf.json (window title, dimensions)
+5. Add CORS middleware to Hub's server.py
+6. Verify: `npm run tauri dev` opens window
+
+### EI-2: Type system, state store, and WebSocket client
+
+1. Create `src/types.ts` mirroring Hub models
+2. Create `src/constants.ts` (Hub URL, agent display names)
+3. Create `src/hooks/useAgentStore.ts` (Zustand store)
+4. Create `src/hooks/useHubConnection.ts` (WebSocket client with reconnection)
+5. Create `src/hub-api.ts` (REST client wrappers)
+6. Verify: connection to Hub, agent states loaded
+
+### EI-3: Application layout and sidebar
+
+1. Create CSS dark theme with Catppuccin Mocha palette
+2. Build TitleBar, StatusBar, Sidebar components
+3. Build AgentList + AgentItem with state indicators and inbox badges
+4. Add McpHealth + QmsStatus skeleton placeholders
+5. Wire initial REST fetch on mount
+6. Verify: all 7 agents displayed with correct states
+
+### EI-4: Terminal panel with tab management
+
+1. Build TerminalPanel, TabBar, Tab components
+2. Implement CSS visibility toggle for terminal persistence
+3. Implement empty state message
+4. Verify: tab open/close/switch works correctly
+
+### EI-5: xterm.js terminal integration
+
+1. Build TerminalView wrapping xterm.js with fit addon
+2. Implement base64 decode for scrollback buffer and live output
+3. Wire onData → sendInput, onResize → sendResize callbacks
+4. Implement subscribe/unsubscribe lifecycle
+5. Verify: terminal I/O works with running agent
+
+### EI-6: Agent lifecycle integration
+
+1. Wire sidebar clicks to REST start/stop + tab management
+2. Implement right-click context menu (Start/Stop)
+3. Handle agent-stopped overlay on terminal
+4. Wire inbox badge updates from WebSocket events
+5. Verify: full lifecycle from start to terminal to stop
+
+### EI-7: Polish, edge cases, and README
+
+1. Add keyboard shortcuts (Ctrl+Tab/Ctrl+Shift+Tab)
+2. Implement reconnection overlay and re-subscribe logic
+3. Handle edge cases (rapid clicks, unknown agents, double-click)
+4. Refine hover states and transitions
+5. Write agent-gui/README.md
+6. Verify: full UAT pass
+
+---
+
+## 10. Execution
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Install Rust, scaffold Tauri project, add CORS to Hub | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Type system, state store, WebSocket client | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Application layout and sidebar | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Terminal panel with tab management | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | xterm.js terminal integration | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Agent lifecycle integration | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Polish, edge cases, and README | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+---
+
+## 11. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-005:** Code Governance (genesis sandbox model)
+- **Session-2026-02-06-004:** Multi-Agent Orchestration Refresh (Sections 4.1-4.6: GUI design)
+- **CR-067:** Agent Hub WebSocket Endpoint (the API this GUI consumes)
+
+---
+
+**END OF DOCUMENT**
