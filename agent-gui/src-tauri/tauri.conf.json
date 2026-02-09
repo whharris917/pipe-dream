@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/main/crates/tauri-config-schema/schema.json",
+  "productName": "Pipe Dream - Agent Hub",
+  "version": "0.1.0",
+  "identifier": "com.pipedream.agent-hub",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Pipe Dream - Agent Hub",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 500,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:9000 ws://localhost:9000; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}
