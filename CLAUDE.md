@@ -196,7 +196,7 @@ Since containers mount pipe-dream as read-only (including `.git/`), git operatio
 
 **Start Git MCP server on host:**
 ```bash
-cd docker/scripts && ./start-git-mcp.sh
+cd agent-hub/docker/scripts && ./start-git-mcp.sh
 ```
 
 **Available tool:**
@@ -217,10 +217,10 @@ git_exec("git add .claude/sessions/ && git commit -m 'Session notes' && git push
 
 ### Container Infrastructure
 
-The `docker/` directory contains infrastructure for running Claude agents in isolated containers:
+The `agent-hub/docker/` directory contains infrastructure for running Claude agents in isolated containers:
 
 ```
-docker/
+agent-hub/docker/
 ├── Dockerfile              # Container image definition
 ├── docker-compose.yml      # Orchestration configuration
 ├── .mcp.json               # MCP config (baked into image)
@@ -231,13 +231,19 @@ docker/
     └── mcp_proxy.py        # Stdio-to-HTTP MCP proxy (baked into image)
 ```
 
-**Quick Start:**
+**Quick Start (recommended):**
+```bash
+agent-hub launch claude         # Single agent
+agent-hub launch claude qa      # Multiple agents
+```
+
+**Manual Start (if needed):**
 ```bash
 # Terminal 1: Start MCP server on host
-cd docker/scripts && ./start-mcp-server.sh
+cd agent-hub/docker/scripts && ./start-mcp-server.sh
 
 # Terminal 2: Start container
-cd docker && docker-compose up -d && docker-compose exec claude-agent bash
+cd agent-hub/docker && docker-compose up -d && docker-compose exec claude-agent bash
 ```
 
 **Container Filesystem:**
@@ -247,13 +253,13 @@ cd docker && docker-compose up -d && docker-compose exec claude-agent bash
 - `/.claude/.credentials.json` - Mounted credentials for Claude Code auth
 
 **Git Authentication:**
-Git operations in the container use GitHub CLI (`gh`) with a Personal Access Token. The token is passed via the `GH_TOKEN` environment variable from `docker/.env`. This approach follows Anthropic's security guidance for keeping credentials minimal, external, and easily revocable.
+Git operations in the container use GitHub CLI (`gh`) with a Personal Access Token. The token is passed via the `GH_TOKEN` environment variable from `agent-hub/docker/.env`. This approach follows Anthropic's security guidance for keeping credentials minimal, external, and easily revocable.
 
-Setup: Create a PAT at github.com/settings/tokens with `repo` scope, then add it to `docker/.env`. See `docker/README.md` for detailed instructions.
+Setup: Create a PAT at github.com/settings/tokens with `repo` scope, then add it to `agent-hub/docker/.env`. See `agent-hub/docker/README.md` for detailed instructions.
 
 **Key Principle:** All QMS writes flow through the MCP server on the host. The container cannot directly modify production QMS files.
 
-See `docker/README.md` for detailed documentation.
+See `agent-hub/docker/README.md` for detailed documentation.
 
 ### Permissions
 

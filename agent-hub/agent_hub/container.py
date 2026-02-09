@@ -135,10 +135,10 @@ class ContainerManager:
             self.config.container_config_path(agent_id)
         )
         mcp_json = self._resolve_host_path(
-            self.config.project_root / "docker" / ".mcp.json"
+            self.config.docker_dir / ".mcp.json"
         )
         settings_json = self._resolve_host_path(
-            self.config.project_root / "docker" / ".claude-settings.json"
+            self.config.docker_dir / ".claude-settings.json"
         )
 
         # Volume mounts
@@ -179,7 +179,7 @@ class ContainerManager:
         # Add GH_TOKEN if available
         gh_token = os.environ.get("GH_TOKEN")
         if not gh_token:
-            env_file = self.config.project_root / "docker" / ".env"
+            env_file = self.config.docker_dir / ".env"
             if env_file.exists():
                 for line in env_file.read_text().splitlines():
                     if line.startswith("GH_TOKEN="):

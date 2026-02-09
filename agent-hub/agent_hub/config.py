@@ -17,6 +17,8 @@ class HubConfig(BaseSettings):
     # Network
     host: str = "127.0.0.1"
     port: int = 9000
+    qms_mcp_port: int = 8000
+    git_mcp_port: int = 8001
 
     # Docker
     docker_image: str = "docker-claude-agent"
@@ -62,3 +64,15 @@ class HubConfig(BaseSettings):
 
     def agent_definition_path(self, agent_id: str) -> Path:
         return self.agents_dir / f"{agent_id}.md"
+
+    @property
+    def docker_dir(self) -> Path:
+        return self.project_root / "agent-hub" / "docker"
+
+    @property
+    def log_dir(self) -> Path:
+        return self.project_root / "agent-hub" / "logs"
+
+    @property
+    def mcp_servers_dir(self) -> Path:
+        return self.project_root / "agent-hub" / "mcp-servers"

@@ -251,5 +251,196 @@ def attach(agent_id: str, hub_url: str):
         click.echo(f"Attach exited with code {result.returncode}")
 
 
+# ---------------------------------------------------------------------------
+# New subcommands (CR-069: absorb launch.sh and pd-status)
+# ---------------------------------------------------------------------------
+
+@cli.command()
+@click.argument("agents", nargs=-1)
+@click.option(
+    "--project-root", default=None, type=click.Path(exists=True),
+    help="Project root directory (default: auto-detect)",
+)
+def launch(agents: tuple[str, ...], project_root: str | None):
+    """Launch agent session(s) with full orchestration.
+
+    Starts MCP servers, builds Docker image, starts the Hub, then launches
+    the specified agent(s). Replaces the old launch.sh script.
+
+    \b
+    Single agent:  agent-hub launch claude
+    Multiple:      agent-hub launch qa tu_ui bu
+    """
+    from pathlib import Path
+    from agent_hub.services import (
+        VALID_AGENTS, ensure_mcp_servers, ensure_docker_image,
+        ensure_hub, launch_in_terminal,
+    )
+    import httpx
+    import subprocess as sp
+
+    if not agents:
+        click.echo("Usage: agent-hub launch <agent> [agent ...]")
+        click.echo(f"Valid agents: {', '.join(VALID_AGENTS)}")
+        sys.exit(1)
+
+    # Validate agent names
+    invalid = [a for a in agents if a not in VALID_AGENTS]
+    if invalid:
+        click.echo(f"Unknown agent(s): {', '.join(invalid)}")
+        click.echo(f"Valid agents: {', '.join(VALID_AGENTS)}")
+        sys.exit(1)
+
+    kwargs = {}
+    if project_root:
+        kwargs["project_root"] = project_root
+    config = HubConfig(**kwargs)
+
+    click.echo()
+    click.echo(click.style("=== Agent Hub Launch ===", bold=True))
+    click.echo()
+
+    # Phase 1: Ensure infrastructure
+    click.echo(click.style("Infrastructure:", bold=True))
+    try:
+        ensure_mcp_servers(config)
+        ensure_docker_image(config)
+        ensure_hub(config)
+    except SystemExit:
+        click.echo()
+        click.echo(click.style("Launch aborted due to infrastructure failure.", fg="red"))
+        sys.exit(1)
+
+    click.echo()
+
+    hub_url = f"http://localhost:{config.port}"
+
+    if len(agents) == 1:
+        # Single agent: start via Hub API, then attach interactively
+        agent_id = agents[0]
+        click.echo(click.style(f"Starting {agent_id}...", bold=True))
+
+        try:
+            response = httpx.post(
+                f"{hub_url}/api/agents/{agent_id}/start", timeout=120
+            )
+            if response.status_code == 200:
+                click.echo(click.style("  \u2713 ", fg="green") + f"{agent_id} container started")
+            else:
+                detail = response.json().get("detail", "Unknown error")
+                click.echo(click.style("  \u2717 ", fg="red") + f"Failed: {detail}")
+                sys.exit(1)
+        except httpx.ConnectError:
+            click.echo(click.style("  \u2717 ", fg="red") + "Hub not responding")
+            sys.exit(1)
+
+        # Attach to tmux session interactively
+        container_name = f"{config.container_prefix}{agent_id}"
+        click.echo(f"Attaching to {agent_id}... (detach with Ctrl-B D)")
+        click.echo()
+        sp.run(
+            ["docker", "exec", "-it", container_name,
+             "tmux", "attach", "-t", "agent"]
+        )
+    else:
+        # Multiple agents: start each via Hub API, spawn in new terminals
+        click.echo(click.style(f"Starting {len(agents)} agents...", bold=True))
+
+        for agent_id in agents:
+            try:
+                response = httpx.post(
+                    f"{hub_url}/api/agents/{agent_id}/start", timeout=120
+                )
+                if response.status_code == 200:
+                    click.echo(click.style("  \u2713 ", fg="green") + f"{agent_id} started")
+                    launch_in_terminal(agent_id, config)
+                else:
+                    detail = response.json().get("detail", "Unknown error")
+                    click.echo(click.style("  \u2717 ", fg="red") + f"{agent_id}: {detail}")
+            except httpx.ConnectError:
+                click.echo(click.style("  \u2717 ", fg="red") + "Hub not responding")
+                sys.exit(1)
+
+        click.echo()
+        click.echo(click.style("All agents launched.", fg="green"))
+        click.echo("Use 'agent-hub attach <agent>' to connect to an agent.")
+
+
+@cli.command("services")
+@click.option(
+    "--project-root", default=None, type=click.Path(exists=True),
+    help="Project root directory (default: auto-detect)",
+)
+def services_cmd(project_root: str | None):
+    """Show status of all background services and containers.
+
+    Replaces the old pd-status script.
+    """
+    from agent_hub.services import get_services_status, get_containers
+
+    kwargs = {}
+    if project_root:
+        kwargs["project_root"] = project_root
+    config = HubConfig(**kwargs)
+
+    click.echo()
+    click.echo(click.style("=== Services ===", bold=True))
+    click.echo()
+
+    statuses = get_services_status(config)
+
+    click.echo(f"  {'SERVICE':<14} {'PORT':<8} {'STATE':<10} {'PID':<8} {'INFO'}")
+    click.echo(f"  {'-' * 58}")
+
+    for s in statuses:
+        state_str = click.style("UP", fg="green") if s.alive else click.style("DOWN", fg="red")
+        pid_str = str(s.pid) if s.pid else "-"
+        click.echo(f"  {s.label:<14} :{s.port:<7} {state_str:<19} {pid_str:<8} {s.extra}")
+
+    # Docker containers
+    containers = get_containers()
+    click.echo()
+    click.echo(click.style("=== Containers ===", bold=True))
+    click.echo()
+
+    if containers:
+        click.echo(f"  {'NAME':<20} {'STATE':<12} {'STATUS'}")
+        click.echo(f"  {'-' * 50}")
+        for name, state, status_str in containers:
+            state_color = "green" if state == "running" else "yellow"
+            click.echo(
+                f"  {name:<20} {click.style(state, fg=state_color):<21} {status_str}"
+            )
+    else:
+        click.echo("  No agent containers found.")
+
+    click.echo()
+
+
+@cli.command("stop-all")
+@click.option(
+    "--project-root", default=None, type=click.Path(exists=True),
+    help="Project root directory (default: auto-detect)",
+)
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+def stop_all_cmd(project_root: str | None, yes: bool):
+    """Stop all services and remove containers.
+
+    Replaces the old pd-status --stop-all command.
+    """
+    from agent_hub.services import stop_all_services
+
+    kwargs = {}
+    if project_root:
+        kwargs["project_root"] = project_root
+    config = HubConfig(**kwargs)
+
+    click.echo()
+    click.echo(click.style("=== Stop All ===", bold=True))
+    click.echo()
+
+    stop_all_services(config, skip_confirm=yes)
+
+
 if __name__ == "__main__":
     cli()

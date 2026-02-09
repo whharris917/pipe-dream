@@ -4,3 +4,11 @@ __pycache__/
 dist/
 build/
 .venv/
+
+# Runtime logs (centralized by CR-069)
+logs/*
+!logs/.gitkeep
+
+# GUI build artifacts
+gui/node_modules/
+gui/dist/

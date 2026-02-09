@@ -12,14 +12,14 @@ The container provides:
 
 ## Quick Start
 
-All container sessions use the unified `launch.sh` script in the repository root.
+All container sessions use the `agent-hub` CLI.
 
 ### Single Agent
 
 ```bash
-./launch.sh              # Launches as 'claude' (default)
-./launch.sh qa           # Launches as 'qa' agent
-./launch.sh tu_ui        # Launches as 'tu_ui' agent
+agent-hub launch claude         # Launches as 'claude'
+agent-hub launch qa             # Launches as 'qa' agent
+agent-hub launch tu_ui          # Launches as 'tu_ui' agent
 ```
 
 Valid agents: `claude`, `qa`, `tu_ui`, `tu_scene`, `tu_sketch`, `tu_sim`, `bu`
@@ -40,8 +40,8 @@ This single command:
 Pass two or more agent names to launch them in separate terminal windows:
 
 ```bash
-./launch.sh claude qa           # Launches claude + qa (default pair)
-./launch.sh claude qa tu_ui     # Launches all three
+agent-hub launch claude qa           # Launches claude + qa
+agent-hub launch claude qa tu_ui     # Launches all three
 ```
 
 This opens:
@@ -66,7 +66,7 @@ python -m qms_mcp --transport streamable-http --host 0.0.0.0 --port 8000 --proje
 
 **Terminal 2 - Container:**
 ```bash
-cd docker
+cd agent-hub/docker
 docker-compose up -d
 docker-compose exec claude-agent claude
 ```
@@ -198,7 +198,7 @@ Since `/pipe-dream/` is mounted read-only (including `.git/`), git operations ca
 **Starting the Git MCP Server (on host):**
 
 ```bash
-cd docker/scripts
+cd agent-hub/docker/scripts
 ./start-git-mcp.sh            # Foreground
 ./start-git-mcp.sh --background  # Background
 ```
@@ -233,7 +233,7 @@ Git operations in the container are authenticated via GitHub CLI using a Persona
    - Required scope: `repo` (full control of private repositories)
    - Recommended expiration: 90 days (rotate periodically)
 
-2. **Create `.env` file** in the `docker/` directory:
+2. **Create `.env` file** in the `agent-hub/docker/` directory:
    ```bash
    cp .env.example .env
    # Edit .env and add your token
@@ -312,25 +312,26 @@ Auth is stored per-agent in `.claude/users/{agent}/container/`. To reset for a s
 rm -rf .claude/users/qa/container/*  # Reset qa agent
 ```
 
-Then run `./launch.sh qa` again to re-authenticate.
+Then run `agent-hub launch qa` again to re-authenticate.
 
 ### Inbox notifications not arriving
 
 Inbox monitoring is handled by the Agent Hub. If notifications aren't appearing:
 
 1. Verify the Hub is running: `curl http://localhost:9000/api/health`
-2. Check logs: `cat .agent-hub.log`
+2. Check logs: `cat agent-hub/logs/agent-hub.log`
 3. Ensure the inbox directory exists: `ls .claude/users/qa/inbox/`
 
 ## Building the Image
 
 ```bash
-cd docker
+cd agent-hub/docker
 docker-compose build
 ```
 
 Or:
 ```bash
+cd agent-hub/docker
 docker build -t claude-agent .
 ```
 

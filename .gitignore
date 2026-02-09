@@ -23,11 +23,5 @@ prompt.txt
 # QMS CLI test environment
 .test-env/
 
-# Service log files
-.qms-mcp-server.log
-.git-mcp-server.log
-.agent-hub.log
-.agent-hub-test.log
-
 # Agent container config directories (contain auth tokens)
 .claude/users/*/container/

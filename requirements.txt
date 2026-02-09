@@ -39,7 +39,7 @@ proxy_tools==0.1.0
 Pygments==2.19.2
 PyYAML==6.0.3
 six==1.17.0
-watchdog>=3.0.0  # Filesystem monitoring for Agent Hub inbox watcher
+
 
 # Build Dependencies
 cffi==2.0.0

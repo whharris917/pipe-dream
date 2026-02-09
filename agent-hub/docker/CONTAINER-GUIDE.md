@@ -46,21 +46,23 @@ The containerized architecture provides:
 From the repository root, run:
 
 ```bash
-./claude-session.sh
+agent-hub launch claude
 ```
 
 This single command:
-1. Starts the MCP server in background (if not already running)
-2. Starts the Docker container
-3. Launches Claude Code with MCP auto-configured
+1. Starts the MCP servers in background (if not already running)
+2. Builds the Docker image (if needed)
+3. Starts the Agent Hub (if not running)
+4. Starts the Docker container
+5. Launches Claude Code with MCP auto-configured
 
 You'll be in a Claude session with full QMS access. Verify by asking Claude to check your inbox.
 
 ### Stopping the Session
 
 - Type `exit` or press Ctrl+D to leave the Claude session
-- The MCP server continues running in background
-- To stop the MCP server: `kill $(cat .mcp-server.pid)`
+- To stop all services and containers: `agent-hub stop-all`
+- To view status: `agent-hub services`
 
 ---
 
@@ -80,7 +82,7 @@ Keep this terminal open.
 ### Step 2: Start Container (Terminal 2)
 
 ```bash
-cd /path/to/pipe-dream/docker
+cd /path/to/pipe-dream/agent-hub/docker
 docker-compose up -d
 docker-compose exec claude-agent claude
 ```
@@ -102,9 +104,9 @@ If you see a response like `{"result": "Inbox is empty"}`, the setup is complete
 
 | Mount | Mode | Purpose |
 |-------|------|---------|
-| `../:/pipe-dream` | ro | Production QMS (read-only) |
-| `../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace` | rw | QMS document checkout |
-| `../.claude/sessions:/pipe-dream/.claude/sessions` | rw | Session persistence |
+| `../../:/pipe-dream` | ro | Production QMS (read-only) |
+| `../../.claude/users/claude/workspace:/pipe-dream/.claude/users/claude/workspace` | rw | QMS document checkout |
+| `../../.claude/sessions:/pipe-dream/.claude/sessions` | rw | Session persistence |
 | `./.mcp.json:/pipe-dream/.mcp.json` | ro | Container MCP config (HTTP transport with dual headers) |
 | `./.claude-settings.json:/pipe-dream/.claude/settings.local.json` | ro | MCP server enablement |
 | `~/.ssh:/.ssh` | ro | SSH keys for git |

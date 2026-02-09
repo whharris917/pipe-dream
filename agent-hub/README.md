@@ -6,21 +6,27 @@ Multi-agent container orchestration for Pipe Dream. Manages Docker container lif
 
 ```
 agent-hub/
-├── agent_hub/
-│   ├── models.py       # Agent, AgentState, LaunchPolicy, ShutdownPolicy
-│   ├── config.py       # HubConfig (pydantic-settings, env-configurable)
-│   ├── container.py    # Docker SDK lifecycle (SETUP_ONLY two-phase startup)
-│   ├── inbox.py        # Watchdog-based inbox monitoring
-│   ├── notifier.py     # tmux send-keys notification injection
-│   ├── policy.py       # Launch/shutdown policy evaluation engine
-│   ├── hub.py          # Core orchestrator wiring all components
-│   ├── pty_manager.py  # PTY session management (Docker exec socket I/O)
-│   ├── broadcaster.py  # WebSocket connection fan-out coordinator
-│   ├── cli.py          # Click CLI (6 commands)
+├── agent_hub/                  # Python package
+│   ├── models.py               # Agent, AgentState, LaunchPolicy, ShutdownPolicy
+│   ├── config.py               # HubConfig (pydantic-settings, env-configurable)
+│   ├── container.py            # Docker SDK lifecycle (SETUP_ONLY two-phase startup)
+│   ├── services.py             # Cross-platform service lifecycle (MCP, Hub, Docker)
+│   ├── inbox.py                # Watchdog-based inbox monitoring
+│   ├── notifier.py             # tmux send-keys notification injection
+│   ├── policy.py               # Launch/shutdown policy evaluation engine
+│   ├── hub.py                  # Core orchestrator wiring all components
+│   ├── pty_manager.py          # PTY session management (Docker exec socket I/O)
+│   ├── broadcaster.py          # WebSocket connection fan-out coordinator
+│   ├── cli.py                  # Click CLI (9 commands)
 │   └── api/
-│       ├── server.py   # FastAPI app factory with lifespan management
-│       ├── routes.py   # REST endpoints on /api
-│       └── websocket.py # WebSocket endpoint on /ws
+│       ├── server.py           # FastAPI app factory with lifespan management
+│       ├── routes.py           # REST endpoints on /api
+│       └── websocket.py        # WebSocket endpoint on /ws
+├── docker/                     # Container infrastructure (Dockerfile, compose, scripts)
+├── gui/                        # Tauri + React GUI (terminal multiplexer)
+├── mcp-servers/
+│   └── git_mcp/                # Git MCP server for container git operations
+├── logs/                       # Runtime logs (gitignored)
 ├── tests/
 └── pyproject.toml
 ```
@@ -37,19 +43,26 @@ Requires Python 3.11+ and a running Docker daemon.
 ## Quick Start
 
 ```bash
-# Start the Hub (foreground service on :9000)
-agent-hub start
+# Full orchestration: start MCP servers, Hub, and launch agent
+agent-hub launch claude
 
-# In another terminal:
-agent-hub status
-agent-hub start-agent qa
-agent-hub stop-agent qa
+# Or launch multiple agents in separate terminals
+agent-hub launch claude qa tu_ui
+
+# Check status of all services and containers
+agent-hub services
+
+# Stop everything
+agent-hub stop-all
 ```
 
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
+| `agent-hub launch [agents...]` | Full orchestration: start infra + launch agent(s) |
+| `agent-hub services` | Show status of all services and containers |
+| `agent-hub stop-all` | Stop all services and remove containers |
 | `agent-hub start` | Start the Hub as a foreground service |
 | `agent-hub status` | Show hub uptime and all agent states |
 | `agent-hub start-agent <id>` | Start an agent's container |
@@ -155,7 +168,7 @@ STOPPED ──► STARTING ──► RUNNING ──► STOPPING ──► STOPPE
 
 ## Container Startup (SETUP_ONLY Pattern)
 
-The Hub uses a two-phase startup matching the existing `launch.sh` pattern:
+The Hub uses a two-phase startup pattern:
 
 1. `docker run -d` with `SETUP_ONLY=1` — entrypoint runs setup, then sleeps
 2. `docker exec` — starts `claude` inside a `tmux` session named `agent`
@@ -242,3 +255,4 @@ The default roster includes all QMS agents:
 - **click** — CLI framework
 - **pydantic** + **pydantic-settings** — Config and data models
 - **httpx** — HTTP client for CLI-to-Hub communication
+- **mcp** — Model Context Protocol for MCP server management

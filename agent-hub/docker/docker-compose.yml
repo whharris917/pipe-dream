@@ -6,11 +6,11 @@ services:
     working_dir: /pipe-dream
     volumes:
       # Production QMS (read-only)
-      - ../:/pipe-dream:ro
+      - ../../:/pipe-dream:ro
       # Workspace (read-write overlay) - per agent via QMS_USER
-      - ../.claude/users/${QMS_USER:-claude}/workspace:/pipe-dream/.claude/users/${QMS_USER:-claude}/workspace:rw
+      - ../../.claude/users/${QMS_USER:-claude}/workspace:/pipe-dream/.claude/users/${QMS_USER:-claude}/workspace:rw
       # Sessions (read-write overlay) - added per CR-046
-      - ../.claude/sessions:/pipe-dream/.claude/sessions:rw
+      - ../../.claude/sessions:/pipe-dream/.claude/sessions:rw
       # MCP config overlay - MUST overlay host's stdio config with container HTTP config
       # (host's .mcp.json has Windows paths that don't work in container)
       - ./.mcp.json:/pipe-dream/.mcp.json:ro
@@ -20,7 +20,7 @@ services:
       - ~/.ssh:/.ssh:ro
       # Claude Code config (bind mount per agent) - per CR-056
       # Each agent has isolated auth/config in .claude/users/{agent}/container/
-      - ../.claude/users/${QMS_USER:-claude}/container:/claude-config:rw
+      - ../../.claude/users/${QMS_USER:-claude}/container:/claude-config:rw
     environment:
       - HOME=/
       # Point Claude Code to persistent config directory - per GitHub issue #1736
