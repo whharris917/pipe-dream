@@ -1,0 +1,17 @@
+{
+  "doc_id": "CR-074",
+  "doc_type": "CR",
+  "version": "2.0",
+  "status": "CLOSED",
+  "executable": true,
+  "execution_phase": "post_release",
+  "responsible_user": null,
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "pending_assignees": [],
+  "review_outcomes": {
+    "qa": "RECOMMEND"
+  },
+  "completed_reviewers": []
+}

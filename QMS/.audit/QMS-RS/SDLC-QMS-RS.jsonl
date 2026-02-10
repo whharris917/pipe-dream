@@ -190,3 +190,15 @@
 {"ts": "2026-02-10T18:24:19+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-10T18:24:19+00:00", "event": "EFFECTIVE", "user": "qa", "version": "9.0", "from_version": "8.1"}
 {"ts": "2026-02-10T18:24:19+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-10T20:30:51+00:00", "event": "CHECKOUT", "user": "claude", "version": "9.1", "from_version": "9.0"}
+{"ts": "2026-02-10T20:34:05+00:00", "event": "CHECKIN", "user": "claude", "version": "9.1"}
+{"ts": "2026-02-10T20:34:09+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "9.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-10T20:34:09+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "9.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-10T20:53:30+00:00", "event": "REVIEW", "user": "qa", "version": "9.1", "outcome": "RECOMMEND", "comment": "QA Review - SDLC-QMS-RS v9.1 - COMPLIANT.\n\nVerification Evidence:\n1. Frontmatter title: \"QMS CLI Requirements Specification\" - present, non-empty.\n2. Frontmatter revision_summary: \"CR-074: Add REQ-MCP-016 identity collision prevention\" - present, references authorizing CR, descriptive.\n3. Document structure: All sections present (1-5) following established RS format.\n4. No placeholder content (TBD/TODO/FIXME/XXX): None found.\n5. New requirement REQ-MCP-016 is clear, specific, and testable. It specifies three distinct behaviors: (a) reject stdio when identity locked in HTTP, (b) reject duplicate container instances via X-QMS-Instance header, (c) TTL-based expiry for crash recovery. Error message requirements are explicit.\n6. REQ-MCP-016 is consistent with REQ-MCP-015 (builds on transport-based identity resolution).\n7. CR-074 exists at v1.0 IN_EXECUTION - valid traceability.\n8. No typos or errors found.\n9. Formatting consistent throughout.\n10. Change is a clean, surgical addition of one requirement at the end of the REQ-MCP table. No other content modified.\n\nRecommend for approval."}
+{"ts": "2026-02-10T20:53:30+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-10T20:54:01+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "9.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-10T20:54:01+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "9.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-10T20:54:14+00:00", "event": "APPROVE", "user": "qa", "version": "9.1"}
+{"ts": "2026-02-10T20:54:14+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-10T20:54:14+00:00", "event": "EFFECTIVE", "user": "qa", "version": "10.0", "from_version": "9.1"}
+{"ts": "2026-02-10T20:54:14+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

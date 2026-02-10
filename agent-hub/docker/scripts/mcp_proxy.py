@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+import uuid
 
 import httpx
 
@@ -45,7 +46,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def build_headers(header_args):
+def build_headers(header_args, instance_id=""):
     """Build HTTP headers from CLI --header arguments."""
     headers = {
         "Content-Type": "application/json",
@@ -60,6 +61,10 @@ def build_headers(header_args):
     qms_user = os.environ.get("QMS_USER")
     if qms_user:
         headers["X-QMS-Identity"] = qms_user
+
+    # Inject instance UUID for collision detection (REQ-MCP-016)
+    if instance_id:
+        headers["X-QMS-Instance"] = instance_id
 
     return headers
 
@@ -128,11 +133,13 @@ def forward_request(client, url, message, headers, retries, timeout):
 
 def main():
     args = parse_args()
-    headers = build_headers(args.header)
+    instance_id = str(uuid.uuid4())  # Unique per proxy lifecycle (REQ-MCP-016)
+    headers = build_headers(args.header, instance_id)
     timeout = args.timeout / 1000.0  # ms -> seconds
 
     log(f"Starting: {args.url}")
     log(f"Retries: {args.retries}, Timeout: {args.timeout}ms")
+    log(f"Instance: {instance_id[:8]}")
     if "X-QMS-Identity" in headers:
         log(f"Identity: {headers['X-QMS-Identity']} (from QMS_USER)")
 
