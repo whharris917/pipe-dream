@@ -58,7 +58,19 @@
       "Bash(echo:*)",
       "Bash(powershell.exe -NoProfile -Command \"Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 8000,8001,9000 } | Select-Object LocalPort,OwningProcess\")",
       "Bash(docker exec:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(/tmp/rustup-init.exe:*)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "Bash(rustc --version:*)",
+      "Bash(cargo --version:*)",
+      "Bash(npm create:*)",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite build)",
+      "Bash(cargo check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git mv:*)",
+      "Bash(docker-compose config:*)"
     ],
     "deny": [
       "Edit(QMS/**)",

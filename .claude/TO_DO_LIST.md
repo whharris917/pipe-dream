@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-02-10
+
+- [ ] Investigate whether the defensive fallback in `resolve_identity()` is still needed
+  - After CR-075 (single-authority MCP), all connections go through HTTP — the `except (AttributeError, LookupError)` fallback for "no request context" should never fire in production
+  - Question: Can we remove the fallback entirely, or does it serve a legitimate purpose (e.g., unit testing with mocked contexts)?
+  - If removable: simplify `resolve_identity()` to only handle HTTP paths, remove fallback tests (`test_resolve_identity_no_context_default`, `test_resolve_identity_no_context_custom_user`, `test_resolve_identity_attribute_error_defensive_fallback`, `test_identity_collision_enforced_locks_fallback`)
+  - If keeping: document why in a code comment
+  - Reference: Session-2026-02-10-004, RTM line 1408
+
+---
+
 ## 2026-02-08
 
 - [ ] Prevent multiple instances of the same QMS user running simultaneously
