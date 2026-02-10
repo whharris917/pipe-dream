@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-075: Update REQ-MCP-015, REQ-MCP-016 for header-based identity
-  model; update qualified baseline'
+revision_summary: 'CR-074: Add REQ-MCP-016 (identity collision prevention), update
+  qualified baseline with CI-verified commit. RS updated to v10.0.'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -173,8 +173,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices, test_mcp_sse_transport_configuration, test_mcp_streamable_http_cli_args | PASS |
 | REQ-MCP-013 | Project Root Configuration | test_mcp::test_mcp_cli_args_project_root, test_mcp_project_root_env_var, test_mcp_project_root_env_var_invalid | PASS |
 | REQ-MCP-014 | Streamable-HTTP Transport | test_mcp::test_mcp_streamable_http_transport_configuration, test_mcp_streamable_http_transport_security_allows_docker, test_mcp_streamable_http_cli_args, test_mcp_streamable_http_is_recommended_over_sse | PASS |
-| REQ-MCP-015 | Header-Based Identity Resolution | test_mcp::test_resolve_identity_no_context_default, test_resolve_identity_no_context_custom_user, test_resolve_identity_http_header_enforced, test_resolve_identity_http_header_overrides_user_param, test_resolve_identity_http_no_header_trusted_mode, test_resolve_identity_unknown_agent_still_resolves, test_known_agents_set, test_resolve_identity_attribute_error_defensive_fallback, test_resolve_identity_tools_receive_resolved_identity | PASS |
-| REQ-MCP-016 | Identity Collision Prevention | test_mcp::test_identity_collision_exception_class, test_identity_lock_ttl_constant, test_identity_collision_enforced_locks_trusted, test_identity_collision_enforced_locks_fallback, test_identity_collision_error_message_terminal, test_identity_lock_ttl_expiry, test_identity_lock_heartbeat_refreshes, test_identity_collision_different_identities_ok, test_identity_collision_trusted_mode_does_not_lock, test_identity_collision_duplicate_container, test_identity_collision_same_instance_heartbeat, test_identity_collision_duplicate_after_ttl, test_identity_registry_cleanup, test_identity_lock_empty_instance_id, test_identity_collision_tool_returns_error | PASS |
+| REQ-MCP-015 | Transport-Based Identity Resolution | test_mcp::test_resolve_identity_stdio_default, test_resolve_identity_stdio_custom_user, test_resolve_identity_http_header_enforced, test_resolve_identity_http_header_overrides_user_param, test_resolve_identity_http_no_header_falls_back, test_resolve_identity_unknown_agent_still_resolves, test_known_agents_set, test_resolve_identity_attribute_error_falls_back, test_resolve_identity_tools_receive_resolved_identity | PASS |
+| REQ-MCP-016 | Identity Collision Prevention | test_mcp::test_identity_collision_exception_class, test_identity_lock_ttl_constant, test_identity_collision_http_locks_stdio, test_identity_collision_error_message_terminal, test_identity_lock_ttl_expiry, test_identity_lock_heartbeat_refreshes, test_identity_collision_different_identities_ok, test_identity_collision_stdio_does_not_lock, test_identity_collision_duplicate_container, test_identity_collision_same_instance_heartbeat, test_identity_collision_duplicate_after_ttl, test_identity_registry_cleanup, test_identity_lock_empty_instance_id, test_identity_collision_tool_returns_error | PASS |
 
 ---
 
@@ -1399,39 +1399,38 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-MCP-015: Header-Based Identity Resolution
+#### REQ-MCP-015: Transport-Based Identity Resolution
 
-**Requirement:** The MCP server shall resolve caller identity based on the presence of the X-QMS-Identity HTTP request header. When the header is present (enforced mode): identity shall be read from the header value; the user tool parameter shall be ignored. When the header is absent (trusted mode): identity shall be read from the user tool parameter. All MCP tools shall accept a ctx: Context parameter for request context access.
+**Requirement:** The MCP server shall resolve caller identity based on transport context. For HTTP transport, the server shall read identity from the X-QMS-Identity header (enforced mode). For stdio transport, the server shall use the user parameter (trusted mode). When the HTTP header is present, it shall take precedence over the user parameter.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_mcp.py | test_resolve_identity_no_context_default | Verifies default 'claude' identity when no request context (defensive fallback). |
-| test_mcp.py | test_resolve_identity_no_context_custom_user | Verifies custom user parameter when no request context (defensive fallback). |
-| test_mcp.py | test_resolve_identity_http_header_enforced | Verifies X-QMS-Identity header is used for enforced mode. |
-| test_mcp.py | test_resolve_identity_http_header_overrides_user_param | Verifies header overrides mismatched user parameter in enforced mode. |
-| test_mcp.py | test_resolve_identity_http_no_header_trusted_mode | Verifies user parameter is used when header is absent (trusted mode). |
+| test_mcp.py | test_resolve_identity_stdio_default | Verifies default 'claude' identity for stdio transport. |
+| test_mcp.py | test_resolve_identity_stdio_custom_user | Verifies custom user parameter returned for stdio transport. |
+| test_mcp.py | test_resolve_identity_http_header_enforced | Verifies X-QMS-Identity header is used for HTTP transport. |
+| test_mcp.py | test_resolve_identity_http_header_overrides_user_param | Verifies header overrides mismatched user parameter. |
+| test_mcp.py | test_resolve_identity_http_no_header_falls_back | Verifies fallback to user parameter when header is missing. |
 | test_mcp.py | test_resolve_identity_unknown_agent_still_resolves | Verifies unknown agent identities are accepted from headers. |
 | test_mcp.py | test_known_agents_set | Verifies KNOWN_AGENTS contains all expected agent identities. |
-| test_mcp.py | test_resolve_identity_attribute_error_defensive_fallback | Verifies graceful fallback on context chain errors. |
+| test_mcp.py | test_resolve_identity_attribute_error_falls_back | Verifies graceful fallback on context chain errors. |
 | test_mcp.py | test_resolve_identity_tools_receive_resolved_identity | End-to-end: tools pass resolved identity to run_qms_command. |
 
 ---
 
 #### REQ-MCP-016: Identity Collision Prevention
 
-**Requirement:** The MCP server shall prevent identity collisions between concurrent callers. When an identity is active in enforced mode (request with X-QMS-Identity header), the server shall: (1) reject trusted-mode requests (no X-QMS-Identity header) attempting to use the same identity with a terminal error message, (2) reject enforced-mode requests from a different container instance claiming the same identity (using X-QMS-Instance header for disambiguation), and (3) maintain identity locks with TTL-based expiry for crash recovery. The proxy shall inject a unique instance identifier (X-QMS-Instance header) per proxy lifecycle for duplicate container detection.
+**Requirement:** The MCP server shall prevent identity collisions between concurrent callers. When an identity is active in enforced mode (HTTP transport with X-QMS-Identity header), the server shall: (1) reject stdio transport requests claiming the same identity with a terminal error message, (2) reject HTTP requests from a different container instance claiming the same identity (using X-QMS-Instance header for disambiguation), and (3) maintain identity locks with TTL-based expiry for crash recovery. The proxy shall inject a unique instance identifier (X-QMS-Instance header) per proxy lifecycle for duplicate container detection.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_mcp.py | test_identity_collision_exception_class | Verifies IdentityCollisionError exception class exists and is importable. |
 | test_mcp.py | test_identity_lock_ttl_constant | Verifies IDENTITY_LOCK_TTL_SECONDS constant exists and is positive. |
-| test_mcp.py | test_identity_collision_enforced_locks_trusted | Verifies enforced-mode identity blocks trusted-mode (HTTP no header) requests for the same identity. |
-| test_mcp.py | test_identity_collision_enforced_locks_fallback | Verifies enforced-mode identity blocks defensive-fallback (no context) requests for the same identity. |
-| test_mcp.py | test_identity_collision_error_message_terminal | Verifies error message contains "IDENTITY LOCKED", "Trusted-mode request rejected", and "Do not attempt to troubleshoot". |
-| test_mcp.py | test_identity_lock_ttl_expiry | Verifies identity lock expires after TTL, allowing trusted-mode access. |
-| test_mcp.py | test_identity_lock_heartbeat_refreshes | Verifies enforced-mode heartbeat refreshes lock TTL, preventing expiry. |
+| test_mcp.py | test_identity_collision_http_locks_stdio | Verifies HTTP-registered identity blocks stdio requests for the same identity. |
+| test_mcp.py | test_identity_collision_error_message_terminal | Verifies error message contains "IDENTITY LOCKED" and "Do not attempt to troubleshoot". |
+| test_mcp.py | test_identity_lock_ttl_expiry | Verifies identity lock expires after TTL, allowing stdio access. |
+| test_mcp.py | test_identity_lock_heartbeat_refreshes | Verifies HTTP heartbeat refreshes lock TTL, preventing expiry. |
 | test_mcp.py | test_identity_collision_different_identities_ok | Verifies different identities do not collide (qa lock does not block tu_ui). |
-| test_mcp.py | test_identity_collision_trusted_mode_does_not_lock | Verifies trusted-mode calls do not create registry entries (no self-collision). |
+| test_mcp.py | test_identity_collision_stdio_does_not_lock | Verifies stdio calls do not create registry entries (no self-collision). |
 | test_mcp.py | test_identity_collision_duplicate_container | Verifies different instance_id for same identity raises collision error. |
 | test_mcp.py | test_identity_collision_same_instance_heartbeat | Verifies same instance_id refreshes heartbeat without collision. |
 | test_mcp.py | test_identity_collision_duplicate_after_ttl | Verifies expired lock allows new instance to register. |
@@ -1447,13 +1446,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v11.0 |
+| Requirements Spec | SDLC-QMS-RS v10.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-075-single-authority-mcp |
-| Commit | 486bc0b |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21886071685 |
-| Total Tests | 393 |
-| Passed | 393 |
+| Branch | cr-074-identity-collision |
+| Commit | 78ec519 |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21881322045 |
+| Total Tests | 392 |
+| Passed | 392 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1471,16 +1470,16 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 15 | 15 | 0 |
-| test_mcp.py | 71 | 71 | 0 |
-| **Subtotal** | **196** | **196** | **0** |
+| test_mcp.py | 70 | 70 | 0 |
+| **Subtotal** | **195** | **195** | **0** |
 
 #### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 196 | 196 | 0 |
+| Qualification Tests | 195 | 195 | 0 |
 | Unit Tests | 197 | 197 | 0 |
-| **Total** | **393** | **393** | **0** |
+| **Total** | **392** | **392** | **0** |
 
 ### 6.3 Test Environment
 
