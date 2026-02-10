@@ -16,11 +16,13 @@ export default function StatusBar() {
   const label =
     connectionStatus === "connected"
       ? "Connected"
-      : connectionStatus === "connecting"
-        ? "Connecting..."
-        : connectionStatus === "error"
-          ? "Connection error"
-          : "Disconnected";
+      : connectionStatus === "bootstrapping"
+        ? "Starting Hub..."
+        : connectionStatus === "connecting"
+          ? "Connecting..."
+          : connectionStatus === "error"
+            ? "Connection error"
+            : "Disconnected";
 
   return (
     <div className="status-bar">

@@ -10,6 +10,7 @@ import uvicorn
 from agent_hub.config import HubConfig
 from agent_hub.hub import AgentHub
 from agent_hub.api.server import create_app
+from agent_hub.services import ensure_mcp_servers
 
 
 @click.group()
@@ -39,6 +40,7 @@ def start(host: str, port: int, project_root: str | None, log_level: str):
         kwargs["project_root"] = project_root
 
     config = HubConfig(**kwargs)
+    ensure_mcp_servers(config)
     hub = AgentHub(config)
     app = create_app(hub)
 

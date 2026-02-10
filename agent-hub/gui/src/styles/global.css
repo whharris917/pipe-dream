@@ -304,6 +304,7 @@ body {
 .status-bar .status-dot.connected { background: var(--green); }
 .status-bar .status-dot.disconnected { background: var(--red); }
 .status-bar .status-dot.connecting { background: var(--yellow); }
+.status-bar .status-dot.bootstrapping { background: var(--yellow); animation: pulse 1s ease-in-out infinite; }
 .status-bar .status-dot.error { background: var(--red); }
 
 .status-item {

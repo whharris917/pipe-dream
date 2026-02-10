@@ -49,4 +49,4 @@ export type ClientMessage =
   | { type: "input"; agent_id: string; data: string }
   | { type: "resize"; agent_id: string; cols: number; rows: number };
 
-export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "bootstrapping";

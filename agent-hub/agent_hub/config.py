@@ -8,11 +8,20 @@ from pydantic_settings import BaseSettings
 from agent_hub.models import LaunchPolicy, ShutdownPolicy
 
 
+def _find_project_root() -> Path:
+    """Walk up from cwd looking for the pipe-dream project root."""
+    current = Path.cwd().resolve()
+    for parent in [current, *current.parents]:
+        if (parent / "QMS").is_dir() and (parent / ".claude").is_dir():
+            return parent
+    return current
+
+
 class HubConfig(BaseSettings):
     """Hub configuration, loadable from environment variables."""
 
     # Paths
-    project_root: Path = Path.cwd()
+    project_root: Path = _find_project_root()
 
     # Network
     host: str = "127.0.0.1"

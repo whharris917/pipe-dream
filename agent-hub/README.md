@@ -30,7 +30,7 @@ pip install -e agent-hub/           # One-time setup
 agent-hub launch claude             # Start everything, attach to claude
 agent-hub launch claude qa tu_ui    # Start everything, open each in a terminal
 
-agent-hub services                  # What's running?
+agent-hub status                    # What's running?
 agent-hub attach qa                 # Connect to a running agent (Ctrl-B D to detach)
 agent-hub stop-all                  # Shut it all down
 ```
@@ -46,7 +46,7 @@ Four commands cover daily use. Five more are available for fine-grained control.
 | Command | What it does |
 |---------|-------------|
 | `agent-hub launch [agents...]` | Start MCP servers, Hub, and agent containers. Single agent attaches interactively; multiple agents open in separate terminals. |
-| `agent-hub services` | Show the status of all three layers: MCP servers, Hub, and containers. |
+| `agent-hub status` | Show the status of all three layers: MCP servers, Hub, and containers. |
 | `agent-hub stop-all [-y]` | Stop all services and remove all containers. Prompts for confirmation unless `-y` is passed. |
 | `agent-hub attach <id>` | Attach to a running agent's tmux session. Detach with Ctrl-B D. |
 
@@ -58,7 +58,7 @@ These commands talk directly to the Hub's HTTP API on port 9000. `launch` calls 
 
 | Command | What it does |
 |---------|-------------|
-| `agent-hub start` | Start the Hub as a foreground service (Layer 2 only). |
+| `agent-hub start` | Start the Hub as a foreground service. Auto-starts MCP servers (Layer 1) if not already running. |
 | `agent-hub status` | Show Hub uptime and per-agent state/inbox/policy. |
 | `agent-hub start-agent <id>` | Start a single agent's container via the Hub. |
 | `agent-hub stop-agent <id>` | Stop a single agent's container via the Hub. |
@@ -103,7 +103,7 @@ agent-hub/
 
 - **agent_hub/** — The orchestration engine. CLI entry point, Docker SDK container management, inbox monitoring via watchdog, tmux notification injection, policy evaluation, and a FastAPI service (REST + WebSocket) for programmatic access.
 - **docker/** — Container infrastructure. The Dockerfile, compose config, entrypoint script, and host-side helper scripts for starting MCP servers manually. See `docker/README.md`.
-- **gui/** — A Tauri desktop app that connects to the Hub's WebSocket API to provide a multi-terminal GUI. See `gui/README.md`.
+- **gui/** — A Tauri desktop app that connects to the Hub's WebSocket API to provide a multi-terminal GUI. Auto-bootstraps the Hub on launch if it isn't running. See `gui/README.md`.
 - **mcp-servers/git_mcp/** — A standalone MCP server that proxies git commands from read-only containers to the host repository. Blocks destructive operations and submodule references. MCP (Model Context Protocol) uses JSON-RPC under the hood — a different style from REST where every request goes to a single endpoint and the `method` field says what you want (e.g., `{"method": "git_exec", "params": {"command": "status"}}`). REST is about managing resources; JSON-RPC is about calling functions. The Hub uses REST because it manages things (agents, policies). MCP uses JSON-RPC because it exposes tool calls.
 
 ## Configuration

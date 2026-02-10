@@ -1,14 +1,29 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import "./styles/global.css";
-import { useHubConnection } from "./hooks/useHubConnection";
+import { hubConnection } from "./hooks/useHubConnection";
 import { useAgentStore } from "./hooks/useAgentStore";
 import { fetchAgents, fetchHubStatus } from "./hub-api";
+import { ensureHub } from "./ensureHub";
 import Sidebar from "./components/Sidebar/Sidebar";
 import TerminalPanel from "./components/Terminal/TerminalPanel";
 import StatusBar from "./components/StatusBar";
 
 function App() {
-  useHubConnection();
+  const bootstrapRef = useRef(false);
+
+  useEffect(() => {
+    if (bootstrapRef.current) return;
+    bootstrapRef.current = true;
+
+    ensureHub().then(() => {
+      hubConnection.connect();
+    });
+
+    return () => {
+      hubConnection.disconnect();
+      bootstrapRef.current = false;
+    };
+  }, []);
 
   const setAgents = useAgentStore((s) => s.setAgents);
   const setHubUptime = useAgentStore((s) => s.setHubUptime);
