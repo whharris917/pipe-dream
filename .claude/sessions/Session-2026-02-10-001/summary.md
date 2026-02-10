@@ -76,9 +76,18 @@ Session 2026-02-09-006:
 ### Other Pending Work
 
 - Docker image rebuild needed for mcp_proxy.py changes
-  (`docker-compose build --no-cache`)
-- ContainerManager needs `QMS_USER` env var injection at container creation
-  (manual override via docker-compose.yml for now)
+  (`docker-compose build --no-cache`) -- this is the only step needed
+  to activate identity enforcement for containers
 - The `.test-env/` directory can be cleaned up (not tracked in git)
 - Workspace file `.claude/users/claude/workspace/CR-073.md` is stale
   (document is closed at `QMS/CR/CR-073/CR-073.md`)
+
+### Infrastructure Already Wired
+
+The container infrastructure already passes `QMS_USER` correctly:
+- `docker-compose.yml` line 33: `QMS_USER=${QMS_USER:-claude}`
+- `container.py` line 205: `"QMS_USER": agent_id`
+- `agent-hub launch qa` sets QMS_USER=qa automatically
+
+After rebuilding the Docker image, the full identity enforcement chain
+is operational with zero additional configuration.
