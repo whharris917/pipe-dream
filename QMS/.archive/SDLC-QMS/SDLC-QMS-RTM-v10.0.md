@@ -1,20 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-073: Add REQ-MCP-015 (transport-based identity resolution),
-  update qualified baseline with CI-verified commit. RS updated to v9.0.'
+revision_summary: 'CR-049/CR-065: Update qualified baseline with CI-verified commit
+  2fed599 (369/369 tests passing). RS updated to v8.0.'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v9.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v8.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 105 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 104 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 14 requirements
@@ -28,7 +28,7 @@ This RTM covers all 105 requirements defined in SDLC-QMS-RS across the following
 - REQ-TEMPLATE (Document Templates): 5 requirements
 - REQ-INIT (Project Initialization): 8 requirements
 - REQ-USER (User Management): 5 requirements
-- REQ-MCP (MCP Server): 15 requirements
+- REQ-MCP (MCP Server): 14 requirements
 
 ---
 
@@ -173,7 +173,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-012 | Transport CLI Configuration | test_mcp::test_mcp_cli_args_default, test_mcp_cli_args_sse_transport, test_mcp_cli_args_host_port, test_mcp_transport_choices, test_mcp_sse_transport_configuration, test_mcp_streamable_http_cli_args | PASS |
 | REQ-MCP-013 | Project Root Configuration | test_mcp::test_mcp_cli_args_project_root, test_mcp_project_root_env_var, test_mcp_project_root_env_var_invalid | PASS |
 | REQ-MCP-014 | Streamable-HTTP Transport | test_mcp::test_mcp_streamable_http_transport_configuration, test_mcp_streamable_http_transport_security_allows_docker, test_mcp_streamable_http_cli_args, test_mcp_streamable_http_is_recommended_over_sse | PASS |
-| REQ-MCP-015 | Transport-Based Identity Resolution | test_mcp::test_resolve_identity_stdio_default, test_resolve_identity_stdio_custom_user, test_resolve_identity_http_header_enforced, test_resolve_identity_http_header_overrides_user_param, test_resolve_identity_http_no_header_falls_back, test_resolve_identity_unknown_agent_still_resolves, test_known_agents_set, test_resolve_identity_attribute_error_falls_back, test_resolve_identity_tools_receive_resolved_identity | PASS |
 
 ---
 
@@ -444,7 +443,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-WF-002: Non-Executable Document Lifecycle
 
-**Requirement:** Non-executable documents shall follow: DRAFT -> IN_REVIEW -> REVIEWED -> IN_APPROVAL -> APPROVED -> EFFECTIVE.
+**Requirement:** Non-executable documents shall follow: DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
@@ -1344,7 +1343,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-### 5.14 Remote Transport and Identity (REQ-MCP-011 through REQ-MCP-015)
+### 5.14 Remote Transport (REQ-MCP-011 through REQ-MCP-013)
 
 #### REQ-MCP-011: Remote Transport Support
 
@@ -1398,37 +1397,19 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-MCP-015: Transport-Based Identity Resolution
-
-**Requirement:** The MCP server shall resolve caller identity based on transport context. For HTTP transport, the server shall read identity from the X-QMS-Identity header (enforced mode). For stdio transport, the server shall use the user parameter (trusted mode). When the HTTP header is present, it shall take precedence over the user parameter.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_mcp.py | test_resolve_identity_stdio_default | Verifies default 'claude' identity for stdio transport. |
-| test_mcp.py | test_resolve_identity_stdio_custom_user | Verifies custom user parameter returned for stdio transport. |
-| test_mcp.py | test_resolve_identity_http_header_enforced | Verifies X-QMS-Identity header is used for HTTP transport. |
-| test_mcp.py | test_resolve_identity_http_header_overrides_user_param | Verifies header overrides mismatched user parameter. |
-| test_mcp.py | test_resolve_identity_http_no_header_falls_back | Verifies fallback to user parameter when header is missing. |
-| test_mcp.py | test_resolve_identity_unknown_agent_still_resolves | Verifies unknown agent identities are accepted from headers. |
-| test_mcp.py | test_known_agents_set | Verifies KNOWN_AGENTS contains all expected agent identities. |
-| test_mcp.py | test_resolve_identity_attribute_error_falls_back | Verifies graceful fallback on context chain errors. |
-| test_mcp.py | test_resolve_identity_tools_receive_resolved_identity | End-to-end: tools pass resolved identity to run_qms_command. |
-
----
-
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v9.0 |
+| Requirements Spec | SDLC-QMS-RS v8.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-073-identity-resolution |
-| Commit | d2ad514 |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21878115349 |
-| Total Tests | 378 |
-| Passed | 378 |
+| Branch | cr-049-065-requalification |
+| Commit | 2fed599 |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21803124788 |
+| Total Tests | 369 |
+| Passed | 369 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1446,16 +1427,16 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 15 | 15 | 0 |
-| test_mcp.py | 56 | 56 | 0 |
-| **Subtotal** | **181** | **181** | **0** |
+| test_mcp.py | 47 | 47 | 0 |
+| **Subtotal** | **172** | **172** | **0** |
 
 #### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 181 | 181 | 0 |
+| Qualification Tests | 172 | 172 | 0 |
 | Unit Tests | 197 | 197 | 0 |
-| **Total** | **378** | **378** | **0** |
+| **Total** | **369** | **369** | **0** |
 
 ### 6.3 Test Environment
 

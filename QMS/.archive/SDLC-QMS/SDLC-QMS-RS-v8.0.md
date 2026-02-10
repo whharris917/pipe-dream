@@ -1,7 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-073: Add REQ-MCP-015 transport-based identity resolution; update
-  Section 5.4 authentication exclusion'
+revision_summary: 'CR-049: Add qms_withdraw to REQ-MCP-004 workflow tools list'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -509,7 +508,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-MCP-012 | **Transport CLI Configuration.** The MCP server shall accept command-line arguments for transport configuration: `--transport` (stdio, sse, or streamable-http; default: stdio), `--host` (bind address, default: 127.0.0.1), and `--port` (bind port, default: 8000). Host and port arguments shall apply to remote transports (sse and streamable-http). |
 | REQ-MCP-013 | **Project Root Configuration.** The MCP server shall support explicit project root configuration via: (1) `--project-root` command-line argument, or (2) `QMS_PROJECT_ROOT` environment variable. When specified, the server shall use the configured path instead of auto-discovery. The CLI argument shall take precedence over the environment variable. |
 | REQ-MCP-014 | **Streamable-HTTP Transport.** When configured for streamable-http transport, the MCP server shall: (1) bind to the specified host and port, (2) expose the MCP endpoint at `/mcp`, (3) allow connections from `host.docker.internal` for Docker container access, and (4) support the standard MCP streamable-http protocol as the recommended transport for remote connections. |
-| REQ-MCP-015 | **Transport-Based Identity Resolution.** The MCP server shall resolve caller identity based on transport type. For HTTP transport: identity shall be read from the `X-QMS-Identity` request header (enforced mode); if the header is present, the `user` parameter shall be ignored. For stdio transport: identity shall be read from the `user` parameter (trusted mode). If an HTTP request lacks the `X-QMS-Identity` header, the server shall log a warning and fall back to the `user` parameter. All MCP tools shall accept a `ctx: Context` parameter for transport context access. |
 
 ---
 
@@ -557,7 +555,7 @@ The following are explicitly outside the CLI's scope:
 |-----------|-----------|
 | **Agent behavioral directives** | While the CLI reads agent definition files for group membership (per REQ-USER-002), the behavioral directives within those files are consumed by Claude Code when spawning subagents, not by the QMS CLI. |
 | **Git operations** | Version control is managed separately. The CLI does not commit, push, or interact with git repositories. |
-| **User authentication (CLI)** | The CLI trusts the `--user` flag. It does not authenticate users or verify identity. The MCP server provides transport-based identity resolution for HTTP callers (per REQ-MCP-015) but does not implement cryptographic authentication. |
+| **User authentication** | The CLI trusts the `--user` flag. It does not authenticate users or verify identity. |
 | **Migration tooling** | The `migrate` and `verify-migration` commands are administrative utilities for schema evolution, not core QMS functionality. They are not covered by requirements in this specification. |
 
 ---

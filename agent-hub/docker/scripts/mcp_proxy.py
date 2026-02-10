@@ -15,6 +15,7 @@ Example:
 
 import argparse
 import json
+import os
 import sys
 import time
 
@@ -54,6 +55,12 @@ def build_headers(header_args):
         if "=" in h:
             key, value = h.split("=", 1)
             headers[key] = value
+
+    # Inject QMS identity from container environment (REQ-MCP-015)
+    qms_user = os.environ.get("QMS_USER")
+    if qms_user:
+        headers["X-QMS-Identity"] = qms_user
+
     return headers
 
 
@@ -126,6 +133,8 @@ def main():
 
     log(f"Starting: {args.url}")
     log(f"Retries: {args.retries}, Timeout: {args.timeout}ms")
+    if "X-QMS-Identity" in headers:
+        log(f"Identity: {headers['X-QMS-Identity']} (from QMS_USER)")
 
     client = httpx.Client()
 
