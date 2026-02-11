@@ -6,6 +6,12 @@
 
 ## 2026-02-10
 
+- [ ] Surface identity mismatch warning to the caller, not just the server log
+  - When a container passes `user="tu_sim"` but its `X-QMS-Identity` header says `tu_ui`, the server silently overrides to `tu_ui`
+  - The caller sees no indication that its `user` parameter was ignored — it believes it queried tu_sim's inbox when it actually got tu_ui's
+  - Proposal: Return the resolved identity in the tool response (e.g., `"resolved_as": "tu_ui"`) or include a warning in the result text when a mismatch occurs
+  - Reference: Session-2026-02-10-005 UAT, P1-T3 observation
+
 - [ ] Investigate whether the defensive fallback in `resolve_identity()` is still needed
   - After CR-075 (single-authority MCP), all connections go through HTTP — the `except (AttributeError, LookupError)` fallback for "no request context" should never fire in production
   - Question: Can we remove the fallback entirely, or does it serve a legitimate purpose (e.g., unit testing with mocked contexts)?
