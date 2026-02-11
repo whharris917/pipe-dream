@@ -1,12 +1,7 @@
 {
   "mcpServers": {
     "qms": {
-      "command": "C:/Users/wilha/projects/pipe-dream/.venv/Scripts/python.exe",
-      "args": ["-m", "qms_mcp"],
-      "cwd": "C:/Users/wilha/projects/pipe-dream/qms-cli",
-      "env": {
-        "PYTHONPATH": "C:/Users/wilha/projects/pipe-dream/qms-cli"
-      }
+      "url": "http://localhost:8000/mcp"
     }
   }
 }

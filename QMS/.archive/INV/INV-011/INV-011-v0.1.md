@@ -1,0 +1,210 @@
+---
+title: CR-075 Incomplete Execution — .mcp.json Transport Change Omitted
+revision_summary: Initial draft
+---
+
+# INV-011: CR-075 Incomplete Execution — .mcp.json Transport Change Omitted
+
+## 1. Purpose
+
+Investigate the incomplete execution of CR-075 EI-3, where the `.mcp.json` transport change was omitted despite being explicitly in scope. Identify root causes for the omission and for QA's failure to detect it during post-review.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+During UAT preparation in Session 2026-02-10-004, the `.mcp.json` file was found unchanged (still using stdio transport) despite CR-075 EI-3 explicitly requiring it to be updated to HTTP transport.
+
+- **Triggering Event:** UAT preparation revealed `.mcp.json` not updated per CR-075 Section 5.1
+- **Related Document:** CR-075 (Single-Authority MCP + HTTP Hardening) — CLOSED
+
+### 2.2 Deviation Type
+
+- **Type:** Procedural — execution did not fully implement an approved change, and post-review did not detect the omission
+
+### 2.3 Systems/Documents Affected
+
+- `.mcp.json` — host MCP transport configuration (not updated as required)
+- `CR-075` — closed with incomplete EI-3
+- `qms-cli/prompts/review/post_review/cr.yaml` — QA post-review prompt insufficiently specific
+
+---
+
+## 3. Background
+
+### 3.1 Expected Behavior
+
+CR-075 EI-3 specified three tasks: (1) modify `resolve_identity()` for header-based mode selection, (2) update `.mcp.json` for HTTP transport, (3) add/update qualification tests. All three should have been completed and verified during post-review.
+
+### 3.2 Actual Behavior
+
+Items (1) and (3) were implemented. Item (2) — changing `.mcp.json` from stdio to HTTP transport — was not implemented. The initiator added an execution comment stating: "`.mcp.json` host transport change (stdio → HTTP) noted in Section 5.1 is an operational deployment change. The code qualification in EI-3/EI-4 validates the server-side logic; the `.mcp.json` change will be applied when the single-authority architecture is deployed." QA post-review recommended approval without flagging the omission.
+
+### 3.3 Discovery
+
+Identified during UAT preparation in Session 2026-02-10-004, when reviewing the previous UAT matrix (Session 2026-02-10-003) to build a re-test plan for CR-075.
+
+### 3.4 Timeline
+
+| Date | Event |
+|------|-------|
+| 2026-02-10 | CR-075 pre-approved and released for execution |
+| 2026-02-10 | EI-3 executed (partially): `resolve_identity()` modified, tests updated; `.mcp.json` not changed |
+| 2026-02-10 | Initiator added execution comment rationalizing `.mcp.json` omission as "operational" |
+| 2026-02-10 | QA post-review recommended approval; did not flag incomplete EI-3 |
+| 2026-02-10 | CR-075 closed (v2.0) |
+| 2026-02-10 | Deviation discovered during UAT preparation |
+
+---
+
+## 4. Description of Deviation(s)
+
+### 4.1 Facts and Observations
+
+**Deviation 1: Incomplete EI execution**
+- CR-075 Section 5.1 explicitly specifies the `.mcp.json` change with current and proposed JSON content
+- CR-075 Section 7 (Impact Assessment) lists `.mcp.json` as an affected file: "host MCP transport config (replace contents)"
+- CR-075 EI-3 task description: "Implement changes: modify `resolve_identity()` for header-based mode selection; update `.mcp.json` for HTTP transport; add/update qualification tests"
+- EI-3 execution summary: "Modified `resolve_identity()` for header-based mode selection. Renamed 8 tests, added 1 new test (`test_identity_collision_enforced_locks_fallback`). Commit 486bc0b." — no mention of `.mcp.json`
+- The initiator self-rationalized the omission in execution comments rather than raising a VAR per SOP-004
+
+**Deviation 2: QA post-review did not detect omission**
+- QA post-review verification summary explicitly confirmed "All EIs Pass (or Fail with VAR): 6/6 Pass, 0 Fail, 0 VARs"
+- QA did not cross-reference the EI-3 execution summary against its task description
+- The review prompt's check "Execution summaries describe what was done" is too vague to enforce item-level cross-referencing
+
+### 4.2 Evidence
+
+- CR-075 Section 5.1: specifies `.mcp.json` current/proposed content
+- CR-075 EI-3 execution summary: omits `.mcp.json`
+- CR-075 execution comments: contains rationalization for omission
+- `.mcp.json` current content: still uses stdio transport (`"command"`, `"args"`, `"cwd"`, `"env"`)
+- QA post-review record: recommended with no deficiencies flagged
+- `cr.yaml` line 32: `"Execution summaries describe what was done"` — non-specific check
+
+---
+
+## 5. Impact Assessment
+
+### 5.1 Systems Affected
+
+| System | Impact | Description |
+|--------|--------|-------------|
+| MCP transport | Medium | Host still uses stdio (separate process), single-authority architecture not deployed |
+| Identity registry | Medium | Cross-transport collision detection (P2-T2) remains non-functional |
+
+### 5.2 Documents Affected
+
+| Document | Impact | Description |
+|----------|--------|-------------|
+| CR-075 | Low | Closed with incomplete EI; stated objective not fully achieved |
+
+### 5.3 Other Impacts
+
+No data loss, no security impact beyond the pre-existing dual-process vulnerability. The server-side code changes (header-based mode selection) are correctly deployed and tested; only the transport configuration is missing.
+
+---
+
+## 6. Root Cause Analysis
+
+### 6.1 Contributing Factors
+
+- The initiator treated a configuration change as separable from the code change, despite the CR explicitly scoping them together
+- The `.mcp.json` change has an operational implication (HTTP server must be running) that the initiator may have been reluctant to introduce mid-session
+- No mechanism exists for post-closure corrections to executable documents — VARs cannot retroactively block a closed parent, so the only remediation path is a full INV/CAPA cycle
+
+### 6.2 Root Cause(s)
+
+1. **Primary:** The QA post-review prompt does not require cross-referencing EI execution summaries against EI task descriptions. The check "Execution summaries describe what was done" is non-actionable — it does not verify that all scoped items in each EI's task description were addressed in the execution summary. This allowed the omission to pass review undetected.
+
+2. **Secondary:** The QMS lacks a document type for post-closure corrections. When an issue is found after a document is closed, there is no lightweight mechanism to reopen and complete the work. This creates a high barrier to correction (full INV/CAPA cycle) that may discourage timely remediation of minor omissions.
+
+---
+
+## 7. Remediation Plan (CAPAs)
+
+<!--
+CAPA EXECUTION INSTRUCTIONS
+===========================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+- Sections 1-6 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the sections below should be edited during execution phase
+
+CAPA TYPES (per SOP-003 Section 6):
+- Corrective Action: Eliminate cause of existing deviation and/or remediate consequences
+- Preventive Action: Eliminate cause of potential future deviation; continuous improvement
+
+COLUMNS:
+- CAPA: CAPA identifier (e.g., INV-001-CAPA-001)
+- Type: Corrective or Preventive
+- Description: What the CAPA accomplishes (static)
+- Implementation: How it will be implemented, child CR references (editable)
+- Outcome: Pass or Fail (editable)
+- Verified By - Date: Signature (editable)
+
+CHILD CRs:
+CAPAs may spawn child CRs. Reference them in the Implementation column.
+All child CRs must be CLOSED before the INV can be closed.
+-->
+
+| CAPA | Type | Description | Implementation | Outcome | Verified By - Date |
+|------|------|-------------|----------------|---------|---------------------|
+| INV-011-CAPA-001 | Corrective | Update `.mcp.json` to HTTP transport per CR-075 Section 5.1. Verify host MCP operations work via the HTTP server. | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-011-CAPA-002 | Preventive | Strengthen QA CR post-review prompt: replace vague "Execution summaries describe what was done" with explicit cross-reference check requiring QA to verify each EI's execution summary addresses all items in its task description. | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-011-CAPA-003 | Preventive | Implement ADD (Addendum) document type for post-closure corrections to executable documents. Spawn child CR. | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 4-6 during execution.
+-->
+
+---
+
+## 8. Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during CAPA execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual CAPA, but apply to the INV as a whole.
+-->
+
+---
+
+## 9. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all CAPAs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 10. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-003:** Deviation Management
+- **SOP-004:** Document Execution
+- **CR-075:** Single-Authority MCP + HTTP Hardening (CLOSED)
+- **Session 2026-02-10-003:** UAT results for Phases 1 & 2
+- **Session 2026-02-10-004:** Deviation discovery
+
+---
+
+**END OF DOCUMENT**
