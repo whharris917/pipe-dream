@@ -9,6 +9,8 @@
 - [ ] Surface identity mismatch warning to the caller, not just the server log
   - When a container passes `user="tu_sim"` but its `X-QMS-Identity` header says `tu_ui`, the server silently overrides to `tu_ui`
   - The caller sees no indication that its `user` parameter was ignored — it believes it queried tu_sim's inbox when it actually got tu_ui's
+  - **Confusion cascade observed in UAT:** tu_ui container tested `user=""`, `user="not_a_real_username"`, and omitted `user` entirely — all returned "Inbox is empty". The agent concluded "the QMS inbox endpoint doesn't validate whether the username exists" which is completely wrong: enforced mode was ignoring the parameter in all cases and always returning tu_ui's inbox. The agent was reasoning about phantom behavior and drawing false conclusions about system capabilities.
+  - This is not just a UX issue — silent identity override causes agents to form incorrect mental models of the system, which could lead to flawed decisions in more consequential operations (e.g., checkout, create, route)
   - Proposal: Return the resolved identity in the tool response (e.g., `"resolved_as": "tu_ui"`) or include a warning in the result text when a mismatch occurs
   - Reference: Session-2026-02-10-005 UAT, P1-T3 observation
 
