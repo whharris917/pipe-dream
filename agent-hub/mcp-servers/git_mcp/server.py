@@ -11,6 +11,7 @@ import argparse
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -44,6 +45,16 @@ BLOCKED_DESTRUCTIVE = [
     r"checkout\s+\.\s*[;&|]",
     r"restore\s+\.\s*$",
     r"restore\s+\.\s*[;&|]",
+]
+
+# Blocked shell metacharacters (CR-077: prevent command injection)
+BLOCKED_SHELL_CHARS = [
+    r";",           # Command separator
+    r"`",           # Backtick command substitution
+    r"\$\(",        # $() command substitution
+    r"\$\{",        # ${} variable expansion
+    r"[><]",        # I/O redirection
+    r"\n",          # Newline injection
 ]
 
 
@@ -88,6 +99,13 @@ def validate_command(command: str) -> None:
     Raises:
         PermissionError: If command matches a blocked pattern
     """
+    # Check for shell metacharacters (CR-077: injection prevention)
+    for pattern in BLOCKED_SHELL_CHARS:
+        if re.search(pattern, command):
+            raise PermissionError(
+                f"Blocked: shell metacharacter not permitted (pattern: {pattern})"
+            )
+
     # Check for submodule references
     for pattern in BLOCKED_SUBMODULES:
         if re.search(pattern, command, re.IGNORECASE):
@@ -101,6 +119,68 @@ def validate_command(command: str) -> None:
             raise PermissionError(
                 f"Blocked: destructive operation not permitted (pattern: {pattern})"
             )
+
+
+def _ensure_git_prefix(parts: list[str]) -> list[str]:
+    """Ensure a parsed command list starts with 'git'."""
+    if parts and parts[0] != "git":
+        return ["git"] + parts
+    return parts
+
+
+def _execute_single(cmd_str: str, project_root: Path) -> tuple[str, int]:
+    """
+    Execute a single git command with shell=False.
+
+    Returns (output, returncode).
+    """
+    parts = shlex.split(cmd_str)
+    if not parts:
+        return "(empty command)", 1
+    parts = _ensure_git_prefix(parts)
+
+    logger.info(f"Executing: {parts}")
+
+    result = subprocess.run(
+        parts,
+        shell=False,
+        capture_output=True,
+        text=True,
+        cwd=str(project_root),
+        timeout=60,
+        env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+    )
+
+    output = result.stdout
+    if result.stderr:
+        output += "\n" + result.stderr if output else result.stderr
+
+    return output.strip() if output else "", result.returncode
+
+
+def _split_chain(command: str) -> list[tuple[str, str | None]]:
+    """
+    Split a chained command into (segment, operator) tuples.
+
+    Splits on && and || while preserving the operator that follows each segment.
+    The last segment has operator=None.
+
+    Example: "add . && commit -m 'msg'" -> [("add .", "&&"), ("commit -m 'msg'", None)]
+    """
+    segments: list[tuple[str, str | None]] = []
+    current = ""
+    i = 0
+    while i < len(command):
+        if command[i : i + 2] in ("&&", "||"):
+            segments.append((current.strip(), command[i : i + 2]))
+            current = ""
+            i += 2
+        else:
+            current += command[i]
+            i += 1
+    if current.strip():
+        segments.append((current.strip(), None))
+    return segments
 
 
 @mcp.tool()
@@ -132,42 +212,35 @@ def git_exec(command: str) -> str:
     except PermissionError as e:
         return f"Error: {e}"
 
-    # Ensure command starts with 'git' for each command in chain
-    # Handle simple case where single command doesn't start with git
-    cmd = command.strip()
-    if not cmd.startswith("git ") and not cmd.startswith("git\t"):
-        # Check if this is a chained command
-        if "&&" in cmd or "||" in cmd or ";" in cmd:
-            # For chained commands, prepend git to segments that don't have it
-            # This is a simple heuristic - user can always include 'git' explicitly
-            pass  # Let shell handle it as-is, user should include git
-        else:
-            cmd = f"git {cmd}"
-
-    logger.info(f"Executing: {cmd}")
-
     try:
-        # Use shell=True for cross-platform compatibility
-        # On Windows: uses cmd.exe (git must be in PATH)
-        # On Unix: uses /bin/sh
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            capture_output=True,
-            text=True,
-            cwd=str(project_root),
-            timeout=60,
-            env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
-        )
+        # Split chained commands and execute sequentially
+        segments = _split_chain(command.strip())
+        all_output: list[str] = []
 
-        output = result.stdout
-        if result.stderr:
-            output += "\n" + result.stderr if output else result.stderr
+        for cmd_str, operator in segments:
+            if not cmd_str:
+                continue
 
-        if result.returncode != 0:
-            return f"[Exit code: {result.returncode}]\n{output.strip() if output else '(no output)'}"
+            output, returncode = _execute_single(cmd_str, project_root)
 
-        return output.strip() if output else "(no output)"
+            if output:
+                all_output.append(output)
+
+            if returncode != 0:
+                if output:
+                    all_output[-1] = f"[Exit code: {returncode}]\n{output}"
+                else:
+                    all_output.append(f"[Exit code: {returncode}]\n(no output)")
+                # && semantics: stop on first failure
+                if operator == "&&" or operator is None:
+                    break
+                # || semantics: continue on failure
+            else:
+                # || semantics: stop on first success
+                if operator == "||":
+                    break
+
+        return "\n".join(all_output) if all_output else "(no output)"
 
     except subprocess.TimeoutExpired:
         return "Error: Command timed out after 60 seconds"

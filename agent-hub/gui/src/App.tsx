@@ -15,8 +15,12 @@ function App() {
     if (bootstrapRef.current) return;
     bootstrapRef.current = true;
 
-    ensureHub().then(() => {
-      hubConnection.connect();
+    ensureHub().then((ok) => {
+      if (ok) {
+        hubConnection.connect();
+      } else {
+        useAgentStore.getState().setConnectionStatus("error");
+      }
     });
 
     return () => {
