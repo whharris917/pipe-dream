@@ -1,0 +1,158 @@
+---
+title: 'Phase A Integration Testing: Infrastructure Fixes'
+revision_summary: A.4 Multi-Agent Workflow PASS, Phase A complete
+---
+
+# CR-078: Phase A Integration Testing: Infrastructure Fixes
+
+## 1. Purpose
+
+This CR authorizes fixes to Agent Hub infrastructure discovered during Phase A integration testing (regression verification). Findings are documented as they are discovered and fixed inline during testing.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Phase A integration testing (per Session-2026-02-14-001 project plan) exercises the full Agent Hub stack: Docker containers, MCP servers, Hub CLI, and GUI. This CR captures infrastructure fixes required to complete that testing.
+
+- **Parent Document:** None
+
+### 2.2 Changes Summary
+
+Fixes to Agent Hub infrastructure (Docker, entrypoint, MCP servers, Hub backend, GUI) as discovered during integration testing. Specific changes are documented in the Execution table as they are performed.
+
+**Out of scope:** This CR does not modify any SDLC-governed controlled modules (qms-cli, flow-state). Changes to those systems would require a separate CR with detailed implementation plans approved before execution.
+
+### 2.3 Files Affected
+
+Agent Hub infrastructure files only. Specific files documented per execution item.
+
+---
+
+## 3. Current State
+
+Phase A integration testing is underway. Infrastructure issues are discovered as the system is exercised end-to-end for the first time since the Feb 9-10 development sessions.
+
+---
+
+## 4. Proposed State
+
+All infrastructure issues discovered during Phase A testing are resolved, enabling reliable multi-agent workflows.
+
+---
+
+## 5. Change Description
+
+Changes are emergent — discovered during testing and documented in the Execution table. Each execution item describes the finding, root cause, and fix applied.
+
+---
+
+## 6. Justification
+
+Integration testing cannot proceed if infrastructure bugs block the testing workflow. Inline fixes during testing are more efficient than creating individual CRs for each infrastructure fix, while still maintaining change control traceability.
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+Agent Hub infrastructure only. Specific files per execution item.
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| None | — | No controlled documents modified |
+
+### 7.3 Other Impacts
+
+Docker image rebuild required when entrypoint or Dockerfile changes are made.
+
+---
+
+## 8. Testing Summary
+
+Each fix is verified by re-running the integration test step that discovered the issue. Overall verification is the successful completion of Phase A testing.
+
+---
+
+## 9. Implementation Plan
+
+Fixes are applied as discovered during Phase A integration testing. Each fix is:
+
+1. Identified during testing
+2. Root-caused
+3. Fixed in source
+4. Verified by re-running the failing test step
+5. Documented as an execution item in Section 10
+
+---
+
+## 10. Execution
+
+<!--
+EXECUTION PHASE INSTRUCTIONS
+============================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+- Sections 1-9 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the comment sections below should be edited during execution phase
+-->
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| 1 | Fix Claude Code ENOENT crash in container — `/claude-config/debug/` directory deleted during entrypoint cleanup but Claude Code expects it to exist | Root cause: `entrypoint.sh` deletes `/claude-config/debug/` at line 77 during ephemeral state cleanup, but Claude Code writes debug logs there at startup. Fix: Added `mkdir -p /claude-config/debug` after the cleanup section to recreate the directory. Docker image rebuilt with `--no-cache`. | PASS — Container launches cleanly, MCP connectivity verified end-to-end | claude - 2026-02-14 |
+| 2 | Fix GUI `spawn_hub` crash — `agent-hub start` fails with `OSError: Bad file descriptor` when spawned from Tauri | Root cause: `lib.rs` spawns `agent-hub start` with `CREATE_NO_WINDOW` flag (Windows), which creates a process with no console and therefore no valid stdout/stderr handles. `click.echo()` in the Hub CLI crashes when writing to the invalid descriptors. Fix: Added `cmd.stdout(Stdio::null())` and `cmd.stderr(Stdio::null())` to redirect output to null before spawning. File: `agent-hub/gui/src-tauri/src/lib.rs`. Pre-existing latent bug, not caused by recent changes. | PASS — Tauri rebuilt, GUI launches cleanly, Hub auto-bootstraps, QA agent session opened via GUI | claude - 2026-02-14 |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| **A.1 Infrastructure Health Check — PASS.** Docker image rebuilt (`--no-cache`). `agent-hub launch claude` cascaded all services (MCP servers, Hub, container). Container MCP connectivity verified (qms_inbox succeeded, identity `claude` registered in server log). Clean shutdown via `agent-hub stop-all -y` confirmed. EI-1 fix required during this phase. | claude - 2026-02-14 |
+| **A.2 GUI Revalidation — PASS.** `npm install` clean (0 vulnerabilities). Vite dev build compiles in <1s. `npm run tauri dev` compiles Rust backend, opens native window. GUI renders correctly post-CR-069 directory move. QA agent session launched from GUI — both MCP servers connected, QA checked inbox successfully. EI-2 fix required during this phase. QA agent refused identity impersonation test (behavioral integrity verified). | claude - 2026-02-14 |
+| **A.3 Hub Docker SDK -> Identity Verification — PASS.** Five-step test: (1) Services confirmed running via `agent-hub status`. (2) QA launched via Hub (Docker SDK path). (3) Server log confirms identity `qa` registered as enforced mode, instance `d27b78e1`. (4) Lock TTL expiry observed after ~15 min idle — host call cleaned up expired lock. Container re-registered lock on next call, restoring enforced mode. (5) Subsequent host call as `qa` correctly blocked with `IDENTITY LOCKED` error. Priority system verified: enforced mode (container) overrides trusted mode (host). | claude - 2026-02-14 |
+| **A.4 Multi-Agent QMS Workflow — PASS.** Full CR lifecycle completed across two containerized agents (claude + qa), both launched from the GUI. CR-079 ("Multi-Agent Integration Test") traversed all ten state transitions: DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED (v1.0) → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL → POST_APPROVED (v2.0) → CLOSED. QA performed four autonomous actions (pre-review, pre-approval, post-review, post-approval) via notification injection. **Observation 1:** Claude-in-container attempted to spawn a local QA sub-agent via Task tool instead of relying on the external QA container — corrected by user, after which claude polled status and continued correctly. This reveals the need for inter-agent communication (Phase D.3 notification API). **Observation 2:** GUI terminal tabs do not support scrollback — output that scrolls past the visible area is lost to the user. | claude - 2026-02-14 |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+-->
+
+---
+
+## 11. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-004:** Document Execution
+- **Session-2026-02-14-001:** Project plan (Phase A)
+
+---
+
+**END OF DOCUMENT**

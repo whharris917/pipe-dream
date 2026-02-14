@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -8,6 +8,12 @@ use std::os::windows::process::CommandExt;
 fn spawn_hub() -> Result<(), String> {
     let mut cmd = Command::new("agent-hub");
     cmd.arg("start");
+
+    // Detached/windowless processes have no console, so stdout/stderr are
+    // invalid file descriptors.  Redirect to null to prevent the Hub CLI
+    // (click.echo) from crashing with OSError: Bad file descriptor.
+    cmd.stdout(Stdio::null());
+    cmd.stderr(Stdio::null());
 
     // Detach from parent process group so the Hub survives GUI close.
     #[cfg(windows)]

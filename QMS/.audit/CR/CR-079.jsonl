@@ -1,0 +1,24 @@
+{"ts": "2026-02-14T23:25:07+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Multi-Agent Integration Test"}
+{"ts": "2026-02-14T23:26:11+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-14T23:26:20+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-14T23:26:20+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-14T23:27:15+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "Pre-review COMPLIANT. Verified: frontmatter title='Multi-Agent Integration Test', revision_summary='Initial draft'. All 12 CR sections present and complete. No placeholder content in sections 1-9. Execution section template markers appropriate for pre-review stage of executable CR. No code or controlled document changes — TU review not required. Recommend for approval."}
+{"ts": "2026-02-14T23:27:15+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-14T23:30:26+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-14T23:30:26+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-14T23:30:34+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-14T23:30:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-14T23:32:41+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-14T23:32:41+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-14T23:32:44+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-14T23:33:11+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-14T23:33:15+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-14T23:33:15+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.1", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-14T23:33:51+00:00", "event": "REVIEW", "user": "qa", "version": "1.1", "outcome": "RECOMMEND", "comment": "Post-review COMPLIANT. Sections 1-9 unchanged from pre-approved content. Both execution items completed with Pass outcomes by claude on 2026-02-14. Execution summaries describe state transitions clearly. Section 11 Execution Summary completed and consistent with EI results. No placeholder content remaining. No VARs required. Recommend for post-approval."}
+{"ts": "2026-02-14T23:33:51+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-14T23:37:01+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-02-14T23:37:01+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.1", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-02-14T23:37:09+00:00", "event": "APPROVE", "user": "qa", "version": "1.1"}
+{"ts": "2026-02-14T23:37:09+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-02-14T23:37:14+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-02-14T23:37:14+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}

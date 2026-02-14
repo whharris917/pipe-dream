@@ -90,6 +90,9 @@ if [ -d "/claude-config" ]; then
         echo "MCP state cleaned from .claude.json"
     fi
 
+    # Recreate directories Claude Code expects to exist
+    mkdir -p /claude-config/debug
+
     echo "Ephemeral state cleared (auth, projects, history preserved)"
 fi
 

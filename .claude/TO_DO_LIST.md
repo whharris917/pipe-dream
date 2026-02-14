@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-02-14
+
+- [ ] Unify Agent Hub logging and close observability gaps
+  - Ensure every segment of the MCP chain (container -> stdio proxy -> HTTP -> host MCP server -> QMS backend) is observable in persistent log files
+  - Stdio proxy logs currently go to container stderr/tmux scrollback — not persisted
+  - Fix health check protocol mismatch: `agent-hub services` uses GET to probe MCP endpoints, but MCP protocol expects POST — results in `406 Not Acceptable` noise in logs
+  - Make identity management logging verbose: authentication, authorization, identity resolution, collision detection, lock acquisition/release should all be logged at INFO level with clear context
+  - Consider unified log format across all services (QMS MCP, Git MCP, Hub, proxy)
+  - Reference: Session-2026-02-14-002, Phase A.1 integration testing
+
+---
+
 ## 2026-02-11
 
 - [ ] Formalize UAT as a stage gate for CRs that affect code

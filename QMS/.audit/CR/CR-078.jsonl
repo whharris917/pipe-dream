@@ -1,0 +1,20 @@
+{"ts": "2026-02-14T22:09:38+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Phase A Integration Testing: Infrastructure Fixes"}
+{"ts": "2026-02-14T22:10:46+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-14T22:10:51+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-14T22:10:51+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-14T22:11:46+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "QA Pre-Review: RECOMMEND. All verification items passed.\n\nFRONTMATTER:\n- title: \"Phase A Integration Testing: Infrastructure Fixes\" -- present, non-empty\n- revision_summary: \"Initial draft\" -- acceptable for v0.1 executable document (no CR ID required per SOP-002 Section 8)\n\nREQUIRED SECTIONS (SOP-002 Section 6):\nAll 12 sections present: Purpose, Scope (with Context, Changes Summary, Files Affected, and explicit out-of-scope statement), Current State, Proposed State, Change Description, Justification, Impact Assessment (Files per EI, Documents None, Other Docker rebuild), Testing Summary, Implementation Plan (5-step discover/fix/verify/document cycle), Execution (empty table appropriate for emergent-fix CR at pre-review), Execution Summary (placeholder appropriate for pre-review), References.\n\nPLACEHOLDER CONTENT:\nNo TBD, TODO, FIXME, or XXX in authored content. [EXECUTION_SUMMARY] placeholder and empty Execution table are appropriate for pre-review phase of an emergent-fix CR.\n\nTRACEABILITY:\n- Session-2026-02-14-001 project plan verified to exist at .claude/sessions/Session-2026-02-14-001/multi-agent-orchestration-plan.md\n- \"Phase A: Regression Verification & Integration Testing\" confirmed at line 117 of that document\n- SOP-001, SOP-002, SOP-004 references present\n\nSCOPE BOUNDARY:\n- Section 2.2 explicitly constrains: \"This CR does not modify any SDLC-governed controlled modules (qms-cli, flow-state)\" -- will verify during post-review\n\nFORMATTING: Consistent throughout. Section numbering correct (1-12). Tables well-formed.\nTYPOS/ERRORS: None found.\n\nTU ASSIGNMENT: No TU reviewers assigned per Lead direction. Changes affect Agent Hub infrastructure only, outside the domain scope of all existing TU agents."}
+{"ts": "2026-02-14T22:11:46+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-14T22:12:00+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-14T22:12:00+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-14T22:12:16+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-14T22:12:16+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-14T22:12:26+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-14T22:12:26+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-14T22:32:50+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-14T22:33:18+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-14T22:46:09+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-14T22:46:42+00:00", "event": "CHECKIN", "user": "claude", "version": "1.2"}
+{"ts": "2026-02-14T23:16:19+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.2"}
+{"ts": "2026-02-14T23:16:53+00:00", "event": "CHECKIN", "user": "claude", "version": "1.3"}
+{"ts": "2026-02-14T23:40:09+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.3"}
+{"ts": "2026-02-14T23:40:39+00:00", "event": "CHECKIN", "user": "claude", "version": "1.4"}
