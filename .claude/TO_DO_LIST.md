@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-02-11
+
+- [ ] Formalize UAT as a stage gate for CRs that affect code
+  - Currently UATs are performed ad hoc; consider making UAT a required step (e.g., between execution and post-review routing) for any CR that modifies an SDLC-governed system
+  - Would involve updates to SOP-002 and/or SOP-004
+  - Consider: new UAT document type, or a standardized EI in the CR template
+  - Reference: Session-2026-02-11-001
+
+---
+
 ## 2026-02-10
 
 - [ ] Surface identity mismatch warning to the caller, not just the server log

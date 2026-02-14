@@ -70,7 +70,9 @@
       "Bash(cargo check:*)",
       "Bash(npx tsc:*)",
       "Bash(git mv:*)",
-      "Bash(docker-compose config:*)"
+      "Bash(docker-compose config:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
