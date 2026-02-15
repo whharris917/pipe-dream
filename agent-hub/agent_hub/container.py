@@ -271,16 +271,25 @@ class ContainerManager:
         """Start claude inside tmux in the container.
 
         This is a fire-and-forget exec — claude runs interactively
-        inside tmux and we don't capture its output here.
+        inside tmux and we don't capture its output here.  Uses
+        configured default terminal dimensions so that the initial
+        render is close to the GUI's actual size rather than 80x24.
         """
+        cols = str(self.config.default_terminal_cols)
+        rows = str(self.config.default_terminal_rows)
         container = await asyncio.to_thread(self.client.containers.get, name)
         await asyncio.to_thread(
             container.exec_run,
-            cmd=["tmux", "new-session", "-d", "-s", "agent", "claude"],
+            cmd=[
+                "tmux", "new-session", "-d", "-s", "agent",
+                "-x", cols, "-y", rows, "claude",
+            ],
             detach=True,
             tty=True,
         )
-        logger.info("claude started in tmux session for %s", name)
+        logger.info(
+            "claude started in tmux session for %s (%sx%s)", name, cols, rows
+        )
 
     async def _wait_for_ready(self, name: str, timeout: float = 60.0) -> None:
         """Wait for Claude Code to be ready for input.

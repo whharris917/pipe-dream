@@ -30,17 +30,42 @@ function base64ToBytes(base64: string): Uint8Array {
  *    Alt screen has zero scrollback in xterm.js.
  *
  * 3. Clear scrollback (ESC[3J) and full reset (ESC c):
- *    Claude Code clears the scrollback buffer on every render cycle as
- *    part of its differential rendering system. ESC c (RIS) also clears
- *    scrollback along with all terminal state.
+ *    Claude Code clears the scrollback buffer on every render cycle.
+ *    These are consumed by tmux and rarely reach the attached client,
+ *    but stripped defensively in case they do.
+ *
+ * 4. Scroll region / DECSTBM (ESC[n;mr):
+ *    Both tmux and Claude Code set scroll regions to protect their
+ *    status bars. When xterm.js processes ESC[nS (scroll up) inside
+ *    a sub-region, scrolled-off content is DISCARDED instead of going
+ *    to the scrollback buffer. Stripping DECSTBM forces all scroll
+ *    operations to use the full terminal, so content enters scrollback.
+ *
+ *    Trade-off: The tmux status bar occasionally scrolls with content,
+ *    but tmux redraws it frequently. Full re-renders also produce
+ *    cosmetic duplication in scrollback. Both are acceptable — losing
+ *    scrollback is a functional defect; cosmetic artifacts are not.
  */
 const STRIP_MODES_RE =
   /\x1b\[\?(?:\d+;)*(1000|1002|1003|1005|1006|1015|47|1047|1049)(?:;\d+)*[hl]/g;
 const STRIP_CLEAR_SCROLLBACK_RE = /\x1b\[3J|\x1bc/g;
+const STRIP_SCROLL_REGION_RE = /\x1b\[\d+;\d+r/g;
+const SCROLL_UP_RE = /\x1b\[(\d*)S/g;
 
 function stripTerminalModes(data: Uint8Array): Uint8Array {
   const str = new TextDecoder().decode(data);
-  const filtered = str.replace(STRIP_MODES_RE, "").replace(STRIP_CLEAR_SCROLLBACK_RE, "");
+  const filtered = str
+    .replace(STRIP_MODES_RE, "")
+    .replace(STRIP_CLEAR_SCROLLBACK_RE, "")
+    .replace(STRIP_SCROLL_REGION_RE, "")
+    .replace(SCROLL_UP_RE, (_match, n) => {
+      // Convert SU (which may not push to scrollback) into actual newlines
+      // at the bottom of the screen, which always push to scrollback.
+      // ESC 7 = save cursor, ESC[999;1H = move to last row, \n = scroll,
+      // ESC 8 = restore cursor.
+      const count = parseInt(n || "1", 10);
+      return `\x1b7\x1b[999;1H${"\n".repeat(count)}\x1b8`;
+    });
   if (filtered.length === str.length) return data;
   return new TextEncoder().encode(filtered);
 }

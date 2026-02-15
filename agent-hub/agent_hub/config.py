@@ -47,6 +47,10 @@ class HubConfig(BaseSettings):
     # PTY Manager
     pty_buffer_size: int = 262144  # 256KB scrollback buffer per agent
 
+    # Terminal defaults (used for tmux session creation)
+    default_terminal_cols: int = 120
+    default_terminal_rows: int = 30
+
     model_config = {"env_prefix": "HUB_"}
 
     @field_validator("project_root", mode="before")
