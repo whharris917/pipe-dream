@@ -20,6 +20,26 @@ Think of it as an extension of CLAUDE.md that belongs to you. You might use it t
 
 ---
 
+## Project State
+
+Maintain `.claude/PROJECT_STATE.md` as the living project planning document. This is the single source of truth for where the project is, what's next, and what's waiting.
+
+**Contents:**
+- Current focus and recent arc (brief context, not session logs)
+- Open QMS documents
+- Forward plan with phases and dependencies
+- Structured backlog: Ready / Bundleable / Blocked / Deferred (with rationale for deferrals)
+- Gaps and risks
+
+**Maintenance rules:**
+- Update at the end of each session, or when the Lead requests it
+- Keep it concise. Completed items are removed once their context no longer adds value.
+- The document should not grow endlessly — prune aggressively
+- Backlog items that become CRs move out of the backlog; items that are resolved disappear
+- New items discovered during sessions are added in the appropriate category
+
+---
+
 ## Terminal & Environment
 - **Shell:** Git Bash (Windows).
 - **Commands:** Always use Bash commands (e.g., `ls -la`, `cat`, `grep`, `rm`) instead of Windows CMD commands (e.g., `dir`, `type`, `findstr`, `del`).
