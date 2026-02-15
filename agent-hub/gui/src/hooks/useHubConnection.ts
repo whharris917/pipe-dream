@@ -18,6 +18,26 @@ function base64ToBytes(base64: string): Uint8Array {
 }
 
 /**
+ * Regex matching DECSET/DECRST sequences for mouse tracking and alternate
+ * screen buffer modes. Stripping these ensures xterm.js never enters mouse
+ * mode (so wheel events scroll the buffer instead of being forwarded to
+ * the application) and never switches to the alternate screen (so all
+ * output accumulates in the scrollback buffer).
+ *
+ * Mouse tracking modes: 1000, 1002, 1003, 1005, 1006, 1015
+ * Alternate screen modes: 47, 1047, 1049
+ */
+const STRIP_MODES_RE =
+  /\x1b\[\?(?:\d+;)*(1000|1002|1003|1005|1006|1015|47|1047|1049)(?:;\d+)*[hl]/g;
+
+function stripTerminalModes(data: Uint8Array): Uint8Array {
+  const str = new TextDecoder().decode(data);
+  const filtered = str.replace(STRIP_MODES_RE, "");
+  if (filtered.length === str.length) return data;
+  return new TextEncoder().encode(filtered);
+}
+
+/**
  * Singleton WebSocket connection manager.
  * Lives outside React lifecycle — Zustand store dispatches are called directly.
  */
@@ -102,7 +122,7 @@ class HubConnection {
         const term = this.terminals.get(msg.agent_id);
         if (term && msg.buffer) {
           this.muteInput.add(msg.agent_id);
-          term.write(base64ToBytes(msg.buffer), () => {
+          term.write(stripTerminalModes(base64ToBytes(msg.buffer)), () => {
             this.muteInput.delete(msg.agent_id);
           });
         }
@@ -111,7 +131,7 @@ class HubConnection {
       case "output": {
         const term = this.terminals.get(msg.agent_id);
         if (term) {
-          term.write(base64ToBytes(msg.data));
+          term.write(stripTerminalModes(base64ToBytes(msg.data)));
         }
         break;
       }

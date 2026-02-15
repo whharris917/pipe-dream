@@ -62,20 +62,6 @@ export default function TerminalView({ agentId, visible }: Props) {
     terminal.loadAddon(webLinksAddon);
     terminal.open(containerRef.current);
 
-    // Intercept wheel events to always scroll the terminal buffer,
-    // even when the running application has mouse tracking enabled
-    // (e.g., tmux mouse mode forwards wheel as up/down input)
-    const currentContainer = containerRef.current;
-    const handleWheel = (e: WheelEvent) => {
-      terminal.scrollLines(Math.sign(e.deltaY) * 3);
-      e.preventDefault();
-      e.stopPropagation();
-    };
-    currentContainer.addEventListener("wheel", handleWheel, {
-      passive: false,
-      capture: true,
-    });
-
     // Fit after a frame to let the DOM settle
     requestAnimationFrame(() => {
       fitAddon.fit();
@@ -107,9 +93,6 @@ export default function TerminalView({ agentId, visible }: Props) {
     observer.observe(containerRef.current);
 
     return () => {
-      currentContainer.removeEventListener("wheel", handleWheel, {
-        capture: true,
-      });
       observer.disconnect();
       dataDisposable.dispose();
       resizeDisposable.dispose();
