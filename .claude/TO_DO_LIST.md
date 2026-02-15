@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-02-15
+
+- [ ] Update QMS document creation confirmation message to remind user the document is auto-checked-out to their workspace
+  - Currently `qms create` returns the workspace path but doesn't explicitly remind the user they can start editing immediately
+  - Consider: Add a line like "Document is checked out to your workspace — you can begin editing now."
+  - Location: `qms-cli/qms.py` (create command handler) or MCP server equivalent
+
+- [ ] Update CR and VAR templates to make integration/UAT testing mandatory for code changes
+  - Low-level unit tests are useful but insufficient — integration/UAT testing should be a required EI
+  - Related to existing to-do item from 2026-02-11: "Formalize UAT as a stage gate for CRs that affect code"
+  - Update CR template: add a standard EI for integration/UAT verification
+  - Update VAR template: add similar requirement for resolution work involving code changes
+  - Templates: `QMS/TEMPLATE/TEMPLATE-CR.md`, `QMS/TEMPLATE/TEMPLATE-VAR.md`
+
+---
+
 ## 2026-02-14
 
 - [ ] Unify Agent Hub logging and close observability gaps
