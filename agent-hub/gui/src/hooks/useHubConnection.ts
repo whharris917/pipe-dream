@@ -38,39 +38,8 @@ const STRIP_MODES_RE =
   /\x1b\[\?(?:\d+;)*(1000|1002|1003|1005|1006|1015|47|1047|1049)(?:;\d+)*[hl]/g;
 const STRIP_CLEAR_SCROLLBACK_RE = /\x1b\[3J|\x1bc/g;
 
-/**
- * DEBUG: Log escape sequences that might affect scrollback.
- * Looks for any CSI J (erase display) variants and other clearing sequences.
- * Remove this once scrollback investigation is complete.
- */
-function debugLogEscapeSequences(str: string): void {
-  // Match all CSI ... J sequences (erase in display variants)
-  const edMatches = str.match(/\x1b\[\d*J/g);
-  if (edMatches) {
-    const unique = [...new Set(edMatches)];
-    for (const seq of unique) {
-      const code = seq.replace("\x1b", "ESC");
-      console.log(`[scroll-debug] Erase display sequence: ${code}`);
-    }
-  }
-  // Match full reset
-  if (/\x1bc/.test(str)) {
-    console.log("[scroll-debug] Full reset (ESC c) detected");
-  }
-  // Match any CSI ? ... h/l we're NOT already stripping
-  const modeMatches = str.match(/\x1b\[\?\d+[hl]/g);
-  if (modeMatches) {
-    const unique = [...new Set(modeMatches)];
-    for (const seq of unique) {
-      const code = seq.replace("\x1b", "ESC");
-      console.log(`[scroll-debug] Mode set/reset: ${code}`);
-    }
-  }
-}
-
 function stripTerminalModes(data: Uint8Array): Uint8Array {
   const str = new TextDecoder().decode(data);
-  debugLogEscapeSequences(str);
   const filtered = str.replace(STRIP_MODES_RE, "").replace(STRIP_CLEAR_SCROLLBACK_RE, "");
   if (filtered.length === str.length) return data;
   return new TextEncoder().encode(filtered);
@@ -87,7 +56,6 @@ class HubConnection {
   private terminals = new Map<string, Terminal>();
   private muteInput = new Set<string>();
   private intentionalClose = false;
-  private _debugThrottle = false;
 
   connect() {
     this.intentionalClose = false;
@@ -171,17 +139,7 @@ class HubConnection {
       case "output": {
         const term = this.terminals.get(msg.agent_id);
         if (term) {
-          const raw = base64ToBytes(msg.data);
-          // DEBUG: Sample ongoing output to understand what tmux sends
-          const sample = new TextDecoder().decode(raw);
-          const csiMatches = sample.match(/\x1b\[[^a-zA-Z]*[a-zA-Z]/g);
-          if (csiMatches && !this._debugThrottle) {
-            this._debugThrottle = true;
-            const unique = [...new Set(csiMatches)].map(s => s.replace("\x1b", "ESC"));
-            console.log(`[scroll-debug] output chunk: ${raw.length} bytes, CSI sequences:`, unique.slice(0, 20));
-            setTimeout(() => { this._debugThrottle = false; }, 3000);
-          }
-          term.write(stripTerminalModes(raw));
+          term.write(stripTerminalModes(base64ToBytes(msg.data)));
         }
         break;
       }

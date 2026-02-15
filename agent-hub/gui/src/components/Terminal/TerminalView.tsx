@@ -92,18 +92,7 @@ export default function TerminalView({ agentId, visible }: Props) {
     });
     observer.observe(containerRef.current);
 
-    // DEBUG: Log xterm.js buffer state every 5 seconds
-    const debugInterval = setInterval(() => {
-      const buf = terminal.buffer.active;
-      console.log(
-        `[scroll-debug] buffer: length=${buf.length} baseY=${buf.baseY} ` +
-        `cursorY=${buf.cursorY} viewportRows=${terminal.rows} ` +
-        `scrollback=${buf.baseY} type=${buf.type}`
-      );
-    }, 5000);
-
     return () => {
-      clearInterval(debugInterval);
       observer.disconnect();
       dataDisposable.dispose();
       resizeDisposable.dispose();
