@@ -82,13 +82,47 @@ Created CR-078 ("Phase A Integration Testing: Infrastructure Fixes") as a lightw
 | `agent-hub/docker/entrypoint.sh` | Add `mkdir -p /claude-config/debug` after cleanup |
 | `agent-hub/gui/src-tauri/src/lib.rs` | Add `Stdio::null()` for detached process stdout/stderr |
 
+### CR-078 Closure
+
+- Execution summary completed, routed for post-review
+- Containerized QA (still running from A.4) autonomously picked up both the post-review and post-approval — no sub-agent spawn or manual notification needed
+- CR-078 CLOSED at v2.0, committed at `b5a8c1f`
+
+### Key Insight: Preventing Sub-Agent Conflicts
+
+The most potent way to prevent a containerized agent from spawning potentially-conflicting sub-agents is to block it from seeing any agent definition files in `.claude/agents/`. Without agent definitions, the Task tool has no agent types to spawn (beyond built-in types like Bash/Explore). This is simpler and more reliable than behavioral instructions telling the agent not to spawn — as demonstrated when claude-in-container tried to spawn a local QA despite operating in a multi-container environment.
+
 ### Open Items
 
-- **CR-078 IN_EXECUTION** — Phase A complete, CR needs post-review/approval/closure
 - **Phase A: ALL PASS** — primary success criterion (multi-agent QMS workflow) met
+- **CR-078 CLOSED** — both infrastructure fixes verified
+- **CR-079 CLOSED** — multi-agent workflow test complete
 - INV-011 remains IN_EXECUTION v1.2
 - ~20 TO_DO_LIST items accumulated
 - QMS gap: no `unassign` command
 - TU gap: no TU agent for Agent Hub domain
 - GUI gap: no terminal scrollback
 - Agent gap: no inter-agent communication (containers can't notify each other)
+
+---
+
+### Next Steps
+
+Per the project plan (Session-2026-02-14-001), Phase A is complete. The remaining phases can proceed in this order:
+
+1. **Phase B: Git MCP Access Control** — Add identity resolution to `git_mcp/server.py` so only `claude`/`lead` can execute git commands. Requires a CR with RS/RTM updates. (~1 session)
+
+2. **Phase C: Close INV-011** — Document CAPA-003 as deferred via Type 2 VAR, route INV-011 through post-review/approval to CLOSED. (~1 session, can parallel with B)
+
+3. **Phase D: GUI Enhancement** — Four sub-phases:
+   - D.1: MCP health monitoring (replace "Coming soon" placeholder)
+   - D.2: QMS status panel (replace "Coming soon" placeholder)
+   - D.3: Notification injection API (`POST /api/agents/{id}/notify`) — needed for inter-agent communication
+   - D.4: Identity status visibility in sidebar
+   - Also: terminal scrollback support
+
+4. **Phase E: Process Alignment** — SOP-007 and SOP-001 updates to reflect identity architecture accurately.
+
+5. **Immediate quick wins to consider:**
+   - Hide `.claude/agents/` from container mounts to prevent sub-agent spawning conflicts
+   - Add `agent-hub services` deprecation notice or alias to `agent-hub status`
