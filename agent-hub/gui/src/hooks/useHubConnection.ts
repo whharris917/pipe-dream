@@ -29,17 +29,48 @@ function base64ToBytes(base64: string): Uint8Array {
  *    Defensive — Claude Code doesn't use alt screen, but tmux might.
  *    Alt screen has zero scrollback in xterm.js.
  *
- * 3. Clear scrollback (ESC[3J):
+ * 3. Clear scrollback (ESC[3J) and full reset (ESC c):
  *    Claude Code clears the scrollback buffer on every render cycle as
- *    part of its differential rendering system. This is the primary reason
- *    scrollback doesn't accumulate.
+ *    part of its differential rendering system. ESC c (RIS) also clears
+ *    scrollback along with all terminal state.
  */
 const STRIP_MODES_RE =
   /\x1b\[\?(?:\d+;)*(1000|1002|1003|1005|1006|1015|47|1047|1049)(?:;\d+)*[hl]/g;
-const STRIP_CLEAR_SCROLLBACK_RE = /\x1b\[3J/g;
+const STRIP_CLEAR_SCROLLBACK_RE = /\x1b\[3J|\x1bc/g;
+
+/**
+ * DEBUG: Log escape sequences that might affect scrollback.
+ * Looks for any CSI J (erase display) variants and other clearing sequences.
+ * Remove this once scrollback investigation is complete.
+ */
+function debugLogEscapeSequences(str: string): void {
+  // Match all CSI ... J sequences (erase in display variants)
+  const edMatches = str.match(/\x1b\[\d*J/g);
+  if (edMatches) {
+    const unique = [...new Set(edMatches)];
+    for (const seq of unique) {
+      const code = seq.replace("\x1b", "ESC");
+      console.log(`[scroll-debug] Erase display sequence: ${code}`);
+    }
+  }
+  // Match full reset
+  if (/\x1bc/.test(str)) {
+    console.log("[scroll-debug] Full reset (ESC c) detected");
+  }
+  // Match any CSI ? ... h/l we're NOT already stripping
+  const modeMatches = str.match(/\x1b\[\?\d+[hl]/g);
+  if (modeMatches) {
+    const unique = [...new Set(modeMatches)];
+    for (const seq of unique) {
+      const code = seq.replace("\x1b", "ESC");
+      console.log(`[scroll-debug] Mode set/reset: ${code}`);
+    }
+  }
+}
 
 function stripTerminalModes(data: Uint8Array): Uint8Array {
   const str = new TextDecoder().decode(data);
+  debugLogEscapeSequences(str);
   const filtered = str.replace(STRIP_MODES_RE, "").replace(STRIP_CLEAR_SCROLLBACK_RE, "");
   if (filtered.length === str.length) return data;
   return new TextEncoder().encode(filtered);
