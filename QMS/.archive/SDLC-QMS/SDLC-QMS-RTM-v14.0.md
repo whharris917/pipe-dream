@@ -1,23 +1,23 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-082: Add ADD (Addendum) document type — 7 new tests, REQ-DOC-015
-  added, REQ-DOC-001/-002/-005/-012 updated; qualified baseline 403 tests'
+revision_summary: 'CR-076: Harden REQ-MCP-015 tests (delete 1, add 4, rename 3, rewrite
+  1); rename REQ-MCP-016 test; update qualified baseline to 396 tests'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v13.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v10.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 107 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 106 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
-- REQ-DOC (Document Management): 15 requirements
+- REQ-DOC (Document Management): 14 requirements
 - REQ-WF (Workflow): 21 requirements
 - REQ-META (Metadata): 4 requirements
 - REQ-AUDIT (Audit Trail): 4 requirements
@@ -77,21 +77,20 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-SEC-006 | Unknown User Rejection | test_security::test_unknown_user_rejection | PASS |
 | REQ-SEC-007 | Assignment Validation | test_security::test_assignment_validation_review, test_assignment_validation_approval | PASS |
 | REQ-SEC-008 | Workspace/Inbox Isolation | test_security::test_workspace_isolation, test_inbox_isolation | PASS |
-| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp, test_create_add_under_cr | PASS |
-| REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr, test_create_var_under_cr, test_create_var_under_inv, test_create_add_under_inv, test_create_add_under_var, test_create_add_requires_parent, test_create_add_rejects_invalid_parent_type | PASS |
+| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp | PASS |
+| REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr, test_create_var_under_cr, test_create_var_under_inv | PASS |
 | REQ-DOC-003 | QMS Folder Structure | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-004 | Sequential ID Generation | test_document_types::test_sequential_id_generation | PASS |
-| REQ-DOC-005 | Child Document ID Generation | test_document_types::test_create_var_under_cr, test_child_id_generation, test_add_sequential_id_generation | PASS |
+| REQ-DOC-005 | Child Document ID Generation | test_document_types::test_create_var_under_cr, test_child_id_generation | PASS |
 | REQ-DOC-006 | Version Format | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-007 | Checkout Behavior | test_sop_lifecycle::test_sop_full_lifecycle, test_document_types::test_checkout_effective_creates_archive | PASS |
 | REQ-DOC-008 | Checkin Updates QMS | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-009 | Checkin Reverts Reviewed Status | test_sop_lifecycle::test_checkin_reverts_reviewed, test_cr_lifecycle::test_checkin_reverts_pre_reviewed, test_cr_lifecycle::test_checkin_reverts_post_reviewed | PASS |
 | REQ-DOC-010 | Cancel Restrictions | test_document_types::test_cancel_v0_document, test_cancel_blocked_for_v1, test_cancel_blocked_while_checked_out, test_cancel_cleans_workspace_and_inbox | PASS |
 | REQ-DOC-011 | Template Name-Based ID | test_document_types::test_template_name_based_id | PASS |
-| REQ-DOC-012 | Folder-per-Document Storage | test_document_types::test_folder_per_document_cr, test_folder_per_document_inv, test_child_documents_in_parent_folder, test_create_add_under_cr | PASS |
+| REQ-DOC-012 | Folder-per-Document Storage | test_document_types::test_folder_per_document_cr, test_folder_per_document_inv, test_child_documents_in_parent_folder | PASS |
 | REQ-DOC-013 | SDLC Namespace Registration | test_document_types::test_sdlc_namespace_registration, test_sdlc_namespace_list | PASS |
 | REQ-DOC-014 | SDLC Document Identification | test_document_types::test_sdlc_document_identification | PASS |
-| REQ-DOC-015 | Addendum Parent State | test_document_types::test_create_add_requires_closed_parent, test_create_add_under_cr | PASS |
 | REQ-WF-001 | Status Transition Validation | test_sop_lifecycle::test_invalid_transition, test_invalid_transitions_comprehensive | PASS |
 | REQ-WF-002 | Non-Executable Document Lifecycle | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle::test_cr_full_lifecycle | PASS |
@@ -286,7 +285,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_cr | Create CR document type (executable, folder-per-doc). |
 | test_document_types.py | test_create_inv | Create INV document type (executable, folder-per-doc). |
 | test_document_types.py | test_create_er_under_tp | Create ER document type as child of TP. |
-| test_document_types.py | test_create_add_under_cr | Create ADD document type as child of CLOSED CR. |
 
 ---
 
@@ -299,10 +297,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_tp_under_cr | TP is created as a child of CR. |
 | test_document_types.py | test_create_var_under_cr | VAR is created as a child of CR. |
 | test_document_types.py | test_create_var_under_inv | VAR can also be created as a child of INV. |
-| test_document_types.py | test_create_add_under_inv | ADD is created as a child of CLOSED INV. |
-| test_document_types.py | test_create_add_under_var | ADD is created as a child of CLOSED VAR. |
-| test_document_types.py | test_create_add_requires_parent | ADD creation requires --parent flag. |
-| test_document_types.py | test_create_add_rejects_invalid_parent_type | ADD rejects invalid parent types (e.g., TP). |
 
 ---
 
@@ -334,7 +328,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|---------------|-------------|
 | test_document_types.py | test_create_var_under_cr | VAR ID follows {PARENT}-VAR-NNN format. |
 | test_document_types.py | test_child_id_generation | Child document IDs follow format {PARENT}-{TYPE}-NNN. |
-| test_document_types.py | test_add_sequential_id_generation | ADD IDs generated sequentially (ADD-001, ADD-002, ADD-003). |
 
 ---
 
@@ -413,7 +406,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_folder_per_document_cr | CR documents use folder-per-document pattern. |
 | test_document_types.py | test_folder_per_document_inv | INV documents use folder-per-document pattern. |
 | test_document_types.py | test_child_documents_in_parent_folder | Child documents stored in parent's folder. |
-| test_document_types.py | test_create_add_under_cr | ADD stored in parent CR's folder. |
 
 ---
 
@@ -435,17 +427,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_document_types.py | test_sdlc_document_identification | SDLC documents use correct identification pattern. |
-
----
-
-#### REQ-DOC-015: Addendum Parent State
-
-**Requirement:** ADD documents shall only be created against parents in CLOSED state. The CLI shall reject ADD creation when the parent is not CLOSED.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_document_types.py | test_create_add_requires_closed_parent | ADD creation rejected when parent is not CLOSED. |
-| test_document_types.py | test_create_add_under_cr | ADD successfully created when parent CR is CLOSED. |
 
 ---
 
@@ -1469,13 +1450,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v13.0 |
+| Requirements Spec | SDLC-QMS-RS v12.0 |
 | Repository | whharris917/qms-cli |
-| Branch | main |
-| Commit | dffd56c |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22045228764 |
-| Total Tests | 403 |
-| Passed | 403 |
+| Branch | cr-076-harden-identity |
+| Commit | a0b1c19 |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/21891224329 |
+| Total Tests | 396 |
+| Passed | 396 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1488,21 +1469,21 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_cr_lifecycle.py | 11 | 11 | 0 |
 | test_cr048_workflow.py | 11 | 11 | 0 |
 | test_security.py | 19 | 19 | 0 |
-| test_document_types.py | 29 | 29 | 0 |
+| test_document_types.py | 22 | 22 | 0 |
 | test_queries.py | 16 | 16 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 15 | 15 | 0 |
 | test_mcp.py | 74 | 74 | 0 |
-| **Subtotal** | **206** | **206** | **0** |
+| **Subtotal** | **199** | **199** | **0** |
 
 #### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 206 | 206 | 0 |
+| Qualification Tests | 199 | 199 | 0 |
 | Unit Tests | 197 | 197 | 0 |
-| **Total** | **403** | **403** | **0** |
+| **Total** | **396** | **396** | **0** |
 
 ### 6.3 Test Environment
 

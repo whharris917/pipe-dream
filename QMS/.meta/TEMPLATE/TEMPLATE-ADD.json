@@ -1,19 +1,18 @@
 {
-  "doc_id": "SOP-001",
-  "doc_type": "SOP",
-  "version": "20.0",
+  "doc_id": "TEMPLATE-ADD",
+  "doc_type": "TEMPLATE",
+  "version": "1.0",
   "status": "EFFECTIVE",
   "executable": false,
+  "execution_phase": null,
   "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": "20.0",
-  "supersedes": null,
+  "effective_version": "1.0",
   "pending_assignees": [],
-  "pending_reviewers": [],
-  "completed_reviewers": [],
   "review_outcomes": {
     "qa": "RECOMMEND"
   },
-  "approval_date": "2026-01-08"
+  "pending_reviewers": [],
+  "completed_reviewers": []
 }
