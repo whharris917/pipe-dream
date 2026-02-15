@@ -87,6 +87,7 @@ class HubConnection {
   private terminals = new Map<string, Terminal>();
   private muteInput = new Set<string>();
   private intentionalClose = false;
+  private _debugThrottle = false;
 
   connect() {
     this.intentionalClose = false;
@@ -170,7 +171,17 @@ class HubConnection {
       case "output": {
         const term = this.terminals.get(msg.agent_id);
         if (term) {
-          term.write(stripTerminalModes(base64ToBytes(msg.data)));
+          const raw = base64ToBytes(msg.data);
+          // DEBUG: Sample ongoing output to understand what tmux sends
+          const sample = new TextDecoder().decode(raw);
+          const csiMatches = sample.match(/\x1b\[[^a-zA-Z]*[a-zA-Z]/g);
+          if (csiMatches && !this._debugThrottle) {
+            this._debugThrottle = true;
+            const unique = [...new Set(csiMatches)].map(s => s.replace("\x1b", "ESC"));
+            console.log(`[scroll-debug] output chunk: ${raw.length} bytes, CSI sequences:`, unique.slice(0, 20));
+            setTimeout(() => { this._debugThrottle = false; }, 3000);
+          }
+          term.write(stripTerminalModes(raw));
         }
         break;
       }
