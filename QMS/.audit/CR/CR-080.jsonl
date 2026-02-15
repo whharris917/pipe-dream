@@ -1,0 +1,30 @@
+{"ts": "2026-02-15T02:10:00+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Terminal Scrollback Support in Agent GUI"}
+{"ts": "2026-02-15T02:16:43+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-15T02:16:49+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-15T02:16:49+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-15T02:18:19+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW COMPLIANT. Verified: frontmatter title='Terminal Scrollback Support in Agent GUI', revision_summary='Initial draft' (acceptable for v0.1). All 12 required sections per SOP-002 Section 6 present with substantive content. No placeholder content (TBD/TODO/FIXME/XXX) outside execution-phase sections. No typos or formatting errors found. Section numbering sequential and correct. References include SOP-001, SOP-002, SOP-004. Scope is well-bounded to 2 GUI files. No additional Technical Units required -- change does not affect Flow State core systems."}
+{"ts": "2026-02-15T02:18:19+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-15T02:18:39+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-15T02:18:39+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-15T02:19:15+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-15T02:19:15+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-15T02:19:24+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-15T02:19:24+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-15T02:21:10+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-15T04:23:41+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-15T04:23:56+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-15T04:23:56+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.1", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-15T04:26:33+00:00", "event": "REVIEW", "user": "qa", "version": "1.1", "outcome": "UPDATES_REQUIRED", "comment": "POST-REVIEW: NON-COMPLIANT — 1 deficiency. Frontmatter revision_summary='Initial draft' is stale for v1.1. Per SOP-001 Section 5.1, revision_summary must be 'Updated each revision cycle to describe changes.' The document was revised from v1.0 to v1.1 with execution results (EI table, execution comments, execution summary). The revision_summary must be updated to describe these changes (e.g., 'Add execution results and evidence'). All other post-review criteria met: all 3 EIs Pass, no VARs, no controlled documents modified, execution summary substantive, commit evidence verified (stripTerminalModes() confirmed in useHubConnection.ts). No placeholder content, no typos, formatting consistent."}
+{"ts": "2026-02-15T04:26:33+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-15T04:30:23+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-15T04:30:38+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
+{"ts": "2026-02-15T04:30:39+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "IN_EXECUTION", "to_status": "IN_POST_REVIEW"}
+{"ts": "2026-02-15T04:30:39+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "1.1", "assignees": ["qa"], "review_type": "POST_REVIEW"}
+{"ts": "2026-02-15T04:31:27+00:00", "event": "REVIEW", "user": "qa", "version": "1.1", "outcome": "RECOMMEND", "comment": "POST-REVIEW COMPLIANT (Round 2). Previous deficiency resolved: revision_summary updated from 'Initial draft' to 'Add execution results and evidence' — accurately describes v1.1 changes. All post-review criteria verified: frontmatter title='Terminal Scrollback Support in Agent GUI', all 3 EIs Pass (no VARs), no controlled documents affected, execution summary substantive with commit evidence (stripTerminalModes() in useHubConnection.ts), no placeholder content, no typos, formatting consistent. Pre-approved content (Sections 1-9) unchanged from pre-review. Recommend for post-approval."}
+{"ts": "2026-02-15T04:31:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.1", "from_status": "IN_POST_REVIEW", "to_status": "POST_REVIEWED"}
+{"ts": "2026-02-15T04:31:53+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.1", "from_status": "POST_REVIEWED", "to_status": "IN_POST_APPROVAL"}
+{"ts": "2026-02-15T04:31:53+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "1.1", "assignees": ["qa"], "approval_type": "POST_APPROVAL"}
+{"ts": "2026-02-15T04:32:10+00:00", "event": "APPROVE", "user": "qa", "version": "1.1"}
+{"ts": "2026-02-15T04:32:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "2.0", "from_status": "IN_POST_APPROVAL", "to_status": "POST_APPROVED"}
+{"ts": "2026-02-15T04:32:58+00:00", "event": "CLOSE", "user": "claude", "version": "2.0"}
+{"ts": "2026-02-15T04:32:58+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "2.0", "from_status": "POST_APPROVED", "to_status": "CLOSED"}
