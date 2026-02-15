@@ -247,7 +247,8 @@ Comprehensive audit performed Session-2026-02-14-001: ~3,600 lines across 40 fil
 - L3: Remove dead `useHubConnection()` hook
 - L4: Configurable Hub URL
 - L5, L6: Test infrastructure, lint config
-- Terminal scrollback support
+- Terminal scrollback support (CR-080, in execution)
+- Initial tmux terminal dimensions: `tmux new-session` in container.py:279 has no `-x`/`-y` flags, defaults to 80x24. Agent TUI tables render for wrong width until GUI resize arrives. Fix: pass initial dimensions or send resize on PTY attach.
 
 ### Blocked
 
