@@ -18,11 +18,11 @@ function base64ToBytes(base64: string): Uint8Array {
 }
 
 /**
- * Strip escape sequences that interfere with the monitoring GUI.
+ * Strip or convert escape sequences that interfere with the monitoring GUI.
  *
  * With tmux control mode, we receive Claude Code's raw PTY output
  * (not tmux's re-rendered viewport), so most workarounds are no longer
- * needed.  We still strip:
+ * needed.  We still handle:
  *
  * 1. Mouse tracking modes (1000, 1002, 1003, 1005, 1006, 1015):
  *    Claude Code enables mouse tracking, which causes xterm.js to forward
@@ -31,20 +31,24 @@ function base64ToBytes(base64: string): Uint8Array {
  * 2. Alternate screen modes (47, 1047, 1049):
  *    Defensive — alt screen has zero scrollback in xterm.js.
  *
- * 3. Clear scrollback (ESC[3J) and full reset (ESC c):
- *    Claude Code clears the scrollback buffer on every render cycle.
- *    Stripping preserves accumulated scrollback in the monitoring GUI.
+ * 3. Clear scrollback (ESC[3J) → converted to erase screen (ESC[2J):
+ *    Claude Code sends ESC[3J before every full re-render (startup, resize).
+ *    ESC[3J destroys scrollback; ESC[2J erases only the visible screen,
+ *    so the re-render draws fresh content without duplication while
+ *    preserving scrollback history.
+ *
+ * 4. Full reset (ESC c): stripped entirely.
  */
 const STRIP_MODES_RE =
   /\x1b\[\?(?:\d+;)*(1000|1002|1003|1005|1006|1015|47|1047|1049)(?:;\d+)*[hl]/g;
-const STRIP_CLEAR_SCROLLBACK_RE = /\x1b\[3J|\x1bc/g;
 
 function stripTerminalModes(data: Uint8Array): Uint8Array {
   const str = new TextDecoder().decode(data);
   const filtered = str
     .replace(STRIP_MODES_RE, "")
-    .replace(STRIP_CLEAR_SCROLLBACK_RE, "");
-  if (filtered.length === str.length) return data;
+    .replace(/\x1b\[3J/g, "\x1b[2J")
+    .replace(/\x1bc/g, "");
+  if (filtered === str) return data;
   return new TextEncoder().encode(filtered);
 }
 
@@ -59,6 +63,10 @@ class HubConnection {
   private terminals = new Map<string, Terminal>();
   private muteInput = new Set<string>();
   private intentionalClose = false;
+  /** Agents awaiting a re-render after resize — first output clears the screen */
+  private pendingRerender = new Set<string>();
+  /** Fallback timers to restore ring buffer if resize doesn't trigger a re-render */
+  private rerenderFallback = new Map<string, ReturnType<typeof setTimeout>>();
 
   connect() {
     this.intentionalClose = false;
@@ -131,21 +139,58 @@ class HubConnection {
     switch (msg.type) {
       case "subscribed": {
         const term = this.terminals.get(msg.agent_id);
-        if (term && msg.buffer) {
-          this.muteInput.add(msg.agent_id);
-          term.write(stripTerminalModes(base64ToBytes(msg.buffer)), () => {
-            this.muteInput.delete(msg.agent_id);
-          });
-        }
-        // Sync actual GUI dimensions with the container PTY
+        const bufferData = msg.buffer
+          ? stripTerminalModes(base64ToBytes(msg.buffer))
+          : null;
+
         if (term) {
-          this.sendResize(msg.agent_id, term.cols, term.rows);
+          // Clear visible screen before resize.  The resize triggers a
+          // fresh re-render from Claude Code at the correct dimensions.
+          // Without this, the ring buffer content (at container dimensions)
+          // persists and the re-render appends below it — duplication.
+          term.write("\x1b[2J\x1b[H");
+          this.sendResizeInternal(msg.agent_id, term.cols, term.rows);
+
+          // Fallback: if no output arrives within 1.5s (resize didn't
+          // trigger a re-render because dimensions already matched),
+          // display the ring buffer so the screen isn't blank.
+          if (bufferData) {
+            const agentId = msg.agent_id;
+            const existing = this.rerenderFallback.get(agentId);
+            if (existing) clearTimeout(existing);
+            this.rerenderFallback.set(
+              agentId,
+              setTimeout(() => {
+                this.rerenderFallback.delete(agentId);
+                this.pendingRerender.delete(agentId);
+                const t = this.terminals.get(agentId);
+                if (t) {
+                  this.muteInput.add(agentId);
+                  t.write(bufferData, () => this.muteInput.delete(agentId));
+                }
+              }, 1500),
+            );
+          }
         }
         break;
       }
       case "output": {
         const term = this.terminals.get(msg.agent_id);
         if (term) {
+          // Cancel ring buffer fallback — real output arrived
+          const fb = this.rerenderFallback.get(msg.agent_id);
+          if (fb) {
+            clearTimeout(fb);
+            this.rerenderFallback.delete(msg.agent_id);
+          }
+          // First output after a resize — clear the entire terminal
+          // (viewport + scrollback) so the re-render replaces all stale
+          // content.  Claude Code's re-render includes the full conversation
+          // at the correct width, so no content is lost.
+          if (this.pendingRerender.has(msg.agent_id)) {
+            term.clear();
+            this.pendingRerender.delete(msg.agent_id);
+          }
           term.write(stripTerminalModes(base64ToBytes(msg.data)));
         }
         break;
@@ -185,7 +230,16 @@ class HubConnection {
   }
 
   sendResize(agentId: string, cols: number, rows: number) {
+    this.sendResizeInternal(agentId, cols, rows);
+  }
+
+  private sendResizeInternal(agentId: string, cols: number, rows: number) {
+    // Track that a re-render is expected — the output handler will clear
+    // the screen before writing the first chunk after resize.
+    this.pendingRerender.add(agentId);
     this.send({ type: "resize", agent_id: agentId, cols, rows });
+    // Auto-expire if no re-render arrives (dimensions didn't change)
+    setTimeout(() => this.pendingRerender.delete(agentId), 2000);
   }
 
   /** Register a terminal instance for receiving output */
