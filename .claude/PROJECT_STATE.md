@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-02-14-003*
+*Last updated: Session-2026-02-14-005 (continued 2026-02-15)*
 
 ---
 
@@ -9,6 +9,8 @@
 The multi-agent orchestration platform is built and validated. Over 44 sessions and 38 Change Records (CR-042 through CR-079), the project evolved from a single Claude instance running locally into a containerized, identity-enforced, GUI-controlled multi-agent ecosystem. Phase A integration testing — the primary success criterion — passed on February 14: two containerized agents (claude and qa) autonomously completed a full QMS document lifecycle (DRAFT through CLOSED) with ten state transitions, four QA actions, and identity enforcement throughout.
 
 The platform layer is operational: Docker containers with read-only QMS mounts, MCP connectivity (QMS and Git servers), the Agent Hub (lifecycle management, PTY multiplexing, WebSocket streaming), a Tauri desktop GUI with xterm.js terminals, and a four-phase identity system (transport resolution, collision prevention, single-authority MCP, hardened validation) backed by 396 unit tests and 7/7 identity UAT. A comprehensive code review of ~3,600 lines across 40 files produced 27 findings; the four most critical (shell injection, CORS, error boundary, Hub failure propagation) were fixed in CR-077 before integration testing.
+
+Post-integration, the GUI terminal experience was hardened: CR-080 added scrollback support via escape sequence stripping, CR-081 fixed default terminal dimensions (120x30) and resize-on-subscribe, and CR-081-VAR-001 replaced the PTY manager's normal tmux attach with tmux control mode (`tmux -CC`) — delivering Claude Code's raw PTY bytes directly to xterm.js, bypassing tmux's viewport rendering entirely. This resolved the double-terminal-emulator problem that made scrollback fundamentally impossible with the old approach. A re-render duplication fix (`term.clear()` on first output after resize) completed the picture. 32 new unit tests cover control mode parsing.
 
 What remains is hardening, closing loose ends, and enhancing the GUI. Phases B through E cover Git MCP access control, INV-011 closure, GUI feature completion, and SOP alignment. Estimated 4-6 sessions.
 
@@ -71,8 +73,10 @@ What remains is hardening, closing loose ends, and enhancing the GUI. Phases B t
 | **Verification** | CR-077 | Pre-Integration Hardening | Shell injection fix, CORS, ErrorBoundary, Hub failure |
 | | CR-078 | Phase A Integration Fixes | Debug dir ENOENT, Tauri bad file descriptor |
 | | CR-079 | Multi-Agent Integration Test | Full QMS lifecycle across 2 containerized agents |
+| **GUI Hardening** | CR-080 | Terminal Scrollback Support | ESC sequence stripping for xterm.js scrollback |
+| | CR-081 | Terminal Dimensions + Control Mode | Default 120x30, tmux -CC for raw PTY bytes, duplication fix |
 
-*CR-057 predates the orchestration era. All 37 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 39 CRs above are CLOSED.*
 
 ### SDLC Document State
 
@@ -121,7 +125,7 @@ Legacy documents (all except INV-011) are from early QMS iterations before proce
 - **D.2:** QMS status panel (replace placeholder panel)
 - **D.3:** Notification injection API (`POST /api/agents/{id}/notify`) for inter-agent communication
 - **D.4:** Identity status visibility in sidebar
-- **D.+:** Terminal scrollback support (discovered gap during Phase A.4)
+- ~~**D.+:** Terminal scrollback support~~ **DONE** (CR-080 + CR-081 + CR-081-VAR-001)
 
 ### Phase E: Process Alignment (~1-2 sessions)
 - Update SOP-007 and SOP-001 to reflect identity architecture
@@ -247,8 +251,6 @@ Comprehensive audit performed Session-2026-02-14-001: ~3,600 lines across 40 fil
 - L3: Remove dead `useHubConnection()` hook
 - L4: Configurable Hub URL
 - L5, L6: Test infrastructure, lint config
-- Terminal scrollback support (CR-080, in execution)
-- Initial tmux terminal dimensions: `tmux new-session` in container.py:279 has no `-x`/`-y` flags, defaults to 80x24. Agent TUI tables render for wrong width until GUI resize arrives. Fix: pass initial dimensions or send resize on PTY attach.
 
 ### Blocked
 
@@ -282,7 +284,7 @@ Comprehensive audit performed Session-2026-02-14-001: ~3,600 lines across 40 fil
 
 **Container security posture.** C3 (root user) is the last critical code review finding. Combined with the resolved shell injection (C1), the container attack surface is narrowing but not fully hardened.
 
-**Hub/GUI test coverage.** Hub backend ~5% (10 tests), GUI 0%. QMS CLI is well-tested (396 tests). The GUI polish bundle should include test infrastructure (L5, L6).
+**Hub/GUI test coverage.** Hub backend growing (10 WebSocket UAT + 32 control mode parsing = 42 tests), GUI 0%. QMS CLI is well-tested (396 tests). The GUI polish bundle should include test infrastructure (L5, L6).
 
 **No inter-agent communication.** Containers can't notify each other directly. Phase D.3 (notification API) addresses this, but until then, agents can only coordinate through QMS document routing and inbox polling.
 
