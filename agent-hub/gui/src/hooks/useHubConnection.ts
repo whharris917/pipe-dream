@@ -18,21 +18,29 @@ function base64ToBytes(base64: string): Uint8Array {
 }
 
 /**
- * Regex matching DECSET/DECRST sequences for mouse tracking and alternate
- * screen buffer modes. Stripping these ensures xterm.js never enters mouse
- * mode (so wheel events scroll the buffer instead of being forwarded to
- * the application) and never switches to the alternate screen (so all
- * output accumulates in the scrollback buffer).
+ * Strip escape sequences that prevent terminal scrollback from working
+ * in the monitoring GUI.
  *
- * Mouse tracking modes: 1000, 1002, 1003, 1005, 1006, 1015
- * Alternate screen modes: 47, 1047, 1049
+ * 1. Mouse tracking modes (1000, 1002, 1003, 1005, 1006, 1015):
+ *    Claude Code enables mouse tracking, which causes xterm.js to forward
+ *    wheel events to the application instead of scrolling the buffer.
+ *
+ * 2. Alternate screen modes (47, 1047, 1049):
+ *    Defensive — Claude Code doesn't use alt screen, but tmux might.
+ *    Alt screen has zero scrollback in xterm.js.
+ *
+ * 3. Clear scrollback (ESC[3J):
+ *    Claude Code clears the scrollback buffer on every render cycle as
+ *    part of its differential rendering system. This is the primary reason
+ *    scrollback doesn't accumulate.
  */
 const STRIP_MODES_RE =
   /\x1b\[\?(?:\d+;)*(1000|1002|1003|1005|1006|1015|47|1047|1049)(?:;\d+)*[hl]/g;
+const STRIP_CLEAR_SCROLLBACK_RE = /\x1b\[3J/g;
 
 function stripTerminalModes(data: Uint8Array): Uint8Array {
   const str = new TextDecoder().decode(data);
-  const filtered = str.replace(STRIP_MODES_RE, "");
+  const filtered = str.replace(STRIP_MODES_RE, "").replace(STRIP_CLEAR_SCROLLBACK_RE, "");
   if (filtered.length === str.length) return data;
   return new TextEncoder().encode(filtered);
 }
