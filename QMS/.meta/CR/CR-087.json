@@ -1,7 +1,7 @@
 {
   "doc_id": "CR-087",
   "doc_type": "CR",
-  "version": "1.0",
+  "version": "1.1",
   "status": "IN_EXECUTION",
   "executable": true,
   "execution_phase": "post_release",
@@ -10,7 +10,6 @@
   "checked_out_date": null,
   "effective_version": null,
   "pending_assignees": [],
-  "review_outcomes": {
-    "qa": "RECOMMEND"
-  }
+  "review_outcomes": {},
+  "completed_reviewers": []
 }

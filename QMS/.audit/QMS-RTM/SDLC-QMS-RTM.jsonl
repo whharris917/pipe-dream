@@ -278,3 +278,27 @@
 {"ts": "2026-02-15T23:49:44+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "15.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-15T23:49:44+00:00", "event": "EFFECTIVE", "user": "qa", "version": "15.0", "from_version": "14.1"}
 {"ts": "2026-02-15T23:49:44+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "15.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T19:03:40+00:00", "event": "CHECKOUT", "user": "claude", "version": "15.1", "from_version": "15.0"}
+{"ts": "2026-02-16T19:14:19+00:00", "event": "CHECKIN", "user": "claude", "version": "15.1"}
+{"ts": "2026-02-16T19:14:23+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "15.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T19:14:23+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "15.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T19:18:08+00:00", "event": "REVIEW", "user": "qa", "version": "15.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Verified: (1) Frontmatter title='QMS CLI Requirements Traceability Matrix', revision_summary='CR-087: QMS CLI Quality, State Machine, and Workflow Enforcement -- REQ-WF-022/023 added, REQ-WF-015/REQ-AUDIT-002 updated; qualified baseline 416 tests'. (2) Scope: 109 requirements confirmed (23 REQ-WF, all 13 domain counts verified). (3) New test protocols: test_cr087_workflow.py (10 tests) and test_audit_completeness.py (2 tests) both exist with matching function names. (4) REQ-WF-015 updated to 'Route Auto-Checkin for Owner' with 5 test functions confirmed in source. (5) REQ-WF-022 (6 functions) and REQ-WF-023 (4 functions) verified in test_cr087_workflow.py. (6) REQ-AUDIT-002 lists 16 event types with 2 new completeness tests. (7) Qualified baseline: commit 6976e7f on cr-087-cli-quality-workflow branch confirmed; SDLC-QMS-RS v14.0 EFFECTIVE confirmed; 416 total tests (218 qual + 198 unit) confirmed via pytest collection; all 12 individual file counts match. (8) No placeholder content. (9) Section numbering correct. (10) Formatting consistent."}
+{"ts": "2026-02-16T19:18:08+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "15.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T19:18:23+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "15.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T19:18:23+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "15.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T19:18:38+00:00", "event": "APPROVE", "user": "qa", "version": "15.1"}
+{"ts": "2026-02-16T19:18:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T19:18:38+00:00", "event": "EFFECTIVE", "user": "qa", "version": "16.0", "from_version": "15.1"}
+{"ts": "2026-02-16T19:18:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T19:23:47+00:00", "event": "CHECKOUT", "user": "claude", "version": "16.1", "from_version": "16.0"}
+{"ts": "2026-02-16T19:24:05+00:00", "event": "CHECKIN", "user": "claude", "version": "16.1"}
+{"ts": "2026-02-16T19:24:09+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "16.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T19:24:09+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "16.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T19:25:13+00:00", "event": "REVIEW", "user": "qa", "version": "16.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Diff confirms changes limited to Section 6.1 Qualified Baseline (3 lines only): Branch cr-087-cli-quality-workflow->main, Commit 6976e7f->572339e, CI Run placeholder->https://github.com/whharris917/qms-cli/actions/runs/22075060264. Verified: (1) Commit 572339e confirmed as qms-cli main HEAD (merge PR #14). (2) CI run URL returns Success status for full hash 572339e8fac495158393d6f240bcae7e6fe80fd5. (3) No other content changed. (4) Frontmatter unchanged. (5) No placeholder content remains."}
+{"ts": "2026-02-16T19:25:13+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T19:25:23+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "16.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T19:25:23+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "16.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T19:25:38+00:00", "event": "APPROVE", "user": "qa", "version": "16.1"}
+{"ts": "2026-02-16T19:25:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T19:25:38+00:00", "event": "EFFECTIVE", "user": "qa", "version": "17.0", "from_version": "16.1"}
+{"ts": "2026-02-16T19:25:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

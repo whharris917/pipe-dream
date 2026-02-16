@@ -1509,9 +1509,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|-------|
 | Requirements Spec | SDLC-QMS-RS v14.0 |
 | Repository | whharris917/qms-cli |
-| Branch | main |
-| Commit | 572339e |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22075060264 |
+| Branch | cr-087-cli-quality-workflow |
+| Commit | 6976e7f |
+| CI Run | Pending merge to main |
 | Total Tests | 416 |
 | Passed | 416 |
 | Failed | 0 |

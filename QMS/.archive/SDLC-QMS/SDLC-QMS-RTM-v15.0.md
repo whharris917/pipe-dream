@@ -1,25 +1,24 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-087: QMS CLI Quality, State Machine, and Workflow Enforcement
-  — REQ-WF-022/023 added, REQ-WF-015/REQ-AUDIT-002 updated; qualified baseline 416
-  tests'
+revision_summary: 'CR-082: Add ADD (Addendum) document type — 7 new tests, REQ-DOC-015
+  added, REQ-DOC-001/-002/-005/-012 updated; qualified baseline 403 tests'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v14.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v13.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 109 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 107 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 15 requirements
-- REQ-WF (Workflow): 23 requirements
+- REQ-WF (Workflow): 21 requirements
 - REQ-META (Metadata): 4 requirements
 - REQ-AUDIT (Audit Trail): 4 requirements
 - REQ-TASK (Task/Inbox): 4 requirements
@@ -58,8 +57,6 @@ Tests are organized by workflow scenario rather than individual requirement. Eac
 | Prompts | `qualification/test_prompts.py` | Prompt generation and configuration |
 | Templates | `qualification/test_templates.py` | Template-based document creation |
 | Init | `qualification/test_init.py` | Project initialization and user management |
-| CR-087 Workflow | `qualification/test_cr087_workflow.py` | Checkout auto-withdraw (REQ-WF-022), route auto-checkin (REQ-WF-023) |
-| Audit Completeness | `qualification/test_audit_completeness.py` | All 16 audit event types (REQ-AUDIT-002) |
 | MCP | `qualification/test_mcp.py` | MCP server tools and functional equivalence |
 
 ### 3.4 Traceability Convention
@@ -109,21 +106,19 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-WF-012 | Retirement Routing | test_sop_lifecycle::test_retirement, test_retirement_rejected_for_v0 | PASS |
 | REQ-WF-013 | Retirement Transition | test_sop_lifecycle::test_retirement | PASS |
 | REQ-WF-014 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
-| REQ-WF-015 | Route Auto-Checkin for Owner | test_sop_lifecycle::test_routing_auto_checkin, test_cr087_workflow::test_route_auto_checkin_for_review, test_route_auto_checkin_blocked_for_non_owner, test_route_auto_checkin_for_sop, test_route_auto_checkin_workspace_cleaned | PASS |
+| REQ-WF-015 | Checked-in Requirement for Routing | test_sop_lifecycle::test_routing_requires_checkin | PASS |
 | REQ-WF-016 | Pre-Release Revision | test_cr048_workflow::test_checkout_from_pre_approved_reverts_to_draft | PASS |
 | REQ-WF-017 | Post-Review Continuation | test_cr048_workflow::test_checkout_from_post_reviewed_returns_to_execution | PASS |
 | REQ-WF-018 | Withdraw Command | test_cr048_workflow::test_withdraw_from_in_review_returns_to_draft, test_withdraw_from_in_pre_review_returns_to_draft, test_withdraw_from_in_post_review_returns_to_execution, test_withdraw_only_allowed_for_responsible_user, test_withdraw_clears_assignees_and_inbox | PASS |
 | REQ-WF-019 | Revert Command Deprecation | test_cr048_workflow::test_revert_shows_deprecation_warning | PASS |
 | REQ-WF-020 | Effective Version Preservation | test_document_types::test_checkout_effective_creates_archive | PASS |
 | REQ-WF-021 | Execution Version Tracking | test_cr048_workflow::test_execution_checkout_creates_minor_version, test_execution_checkin_archives_previous, test_closure_increments_major_version | PASS |
-| REQ-WF-022 | Checkout Auto-Withdraw | test_cr087_workflow::test_checkout_auto_withdraws_from_in_pre_review, test_checkout_auto_withdraws_from_in_pre_approval, test_checkout_auto_withdraws_from_in_post_review, test_checkout_auto_withdraw_clears_inbox_tasks, test_checkout_auto_withdraw_blocked_for_non_owner, test_checkout_auto_withdraws_from_non_executable_in_review | PASS |
-| REQ-WF-023 | Route Auto-Checkin | test_cr087_workflow::test_route_auto_checkin_for_review, test_route_auto_checkin_blocked_for_non_owner, test_route_auto_checkin_for_sop, test_route_auto_checkin_workspace_cleaned | PASS |
 | REQ-META-001 | Three-Tier Separation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-META-002 | CLI-Exclusive Metadata Management | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-META-003 | Required Metadata Fields | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_metadata_required_fields | PASS |
 | REQ-META-004 | Execution Phase Tracking | test_cr_lifecycle::test_cr_full_lifecycle, test_execution_phase_preserved | PASS |
 | REQ-AUDIT-001 | Append-Only Logging | test_sop_lifecycle::test_sop_full_lifecycle, test_audit_immutability | PASS |
-| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types, test_audit_completeness::test_all_audit_event_types, test_audit_completeness::test_audit_event_constants_match_requirement | PASS |
+| REQ-AUDIT-002 | Required Event Types | test_sop_lifecycle::test_sop_full_lifecycle, test_cr_lifecycle::test_cr_full_lifecycle, test_queries::test_history_shows_all_event_types, test_cr_lifecycle::test_all_audit_event_types | PASS |
 | REQ-AUDIT-003 | Event Attribution | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-AUDIT-004 | Comment Preservation | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-TASK-001 | Task Generation on Routing | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
@@ -605,17 +600,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-WF-015: Route Auto-Checkin for Owner
+#### REQ-WF-015: Checked-in Requirement for Routing
 
-**Requirement:** When the document owner routes a checked-out document for review or approval, the CLI shall auto-checkin the document first (per REQ-WF-023), then proceed with routing. If the document is checked out by a different user, routing shall be rejected.
+**Requirement:** The CLI shall require documents to be checked in before routing.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_sop_lifecycle.py | test_routing_auto_checkin | Routing a checked-out document auto-checks-in and succeeds. |
-| test_cr087_workflow.py | test_route_auto_checkin_for_review | Auto-checkin during route for review, verifies CHECKIN audit event. |
-| test_cr087_workflow.py | test_route_auto_checkin_blocked_for_non_owner | Non-owner cannot route checked-out document. |
-| test_cr087_workflow.py | test_route_auto_checkin_for_sop | Auto-checkin works for non-executable (SOP) documents. |
-| test_cr087_workflow.py | test_route_auto_checkin_workspace_cleaned | Workspace copy removed after auto-checkin. |
+| test_sop_lifecycle.py | test_routing_requires_checkin | Routing rejected for checked-out documents. |
 
 ---
 
@@ -685,34 +676,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-WF-022: Checkout Auto-Withdraw
-
-**Requirement:** When a document in an active workflow state (IN_REVIEW, IN_APPROVAL, IN_PRE_REVIEW, IN_PRE_APPROVAL, IN_POST_REVIEW, IN_POST_APPROVAL) is checked out by the responsible user, the CLI shall first withdraw the document (per REQ-WF-018 transitions), then proceed with checkout. Non-owners shall be rejected.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr087_workflow.py | test_checkout_auto_withdraws_from_in_pre_review | Auto-withdraw from IN_PRE_REVIEW to DRAFT, then checkout. |
-| test_cr087_workflow.py | test_checkout_auto_withdraws_from_in_pre_approval | Auto-withdraw from IN_PRE_APPROVAL to PRE_REVIEWED, then checkout. |
-| test_cr087_workflow.py | test_checkout_auto_withdraws_from_in_post_review | Auto-withdraw from IN_POST_REVIEW to IN_EXECUTION, then checkout. |
-| test_cr087_workflow.py | test_checkout_auto_withdraw_clears_inbox_tasks | Auto-withdraw clears all inbox tasks for assignees. |
-| test_cr087_workflow.py | test_checkout_auto_withdraw_blocked_for_non_owner | Non-owner checkout from active workflow state is rejected. |
-| test_cr087_workflow.py | test_checkout_auto_withdraws_from_non_executable_in_review | Auto-withdraw works for non-executable documents (SOP IN_REVIEW). |
-
----
-
-#### REQ-WF-023: Route Auto-Checkin
-
-**Requirement:** When a checked-out document is routed for review or approval by the responsible user, the CLI shall first check in the document, then proceed with routing. If checked out by a different user, routing shall be rejected.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_cr087_workflow.py | test_route_auto_checkin_for_review | Auto-checkin during route for review, verifies CHECKIN audit event. |
-| test_cr087_workflow.py | test_route_auto_checkin_blocked_for_non_owner | Non-owner cannot route checked-out document. |
-| test_cr087_workflow.py | test_route_auto_checkin_for_sop | Auto-checkin works for non-executable (SOP) documents. |
-| test_cr087_workflow.py | test_route_auto_checkin_workspace_cleaned | Workspace copy removed after auto-checkin during route. |
-
----
-
 ### 5.4 Metadata Architecture (REQ-META)
 
 #### REQ-META-001: Three-Tier Separation
@@ -773,15 +736,14 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-AUDIT-002: Required Event Types
 
-**Requirement:** The CLI shall log all 16 required event types to the audit trail: CREATE, CHECKOUT, CHECKIN, ROUTE_REVIEW, ROUTE_APPROVAL, ASSIGN, REVIEW, APPROVE, REJECT, EFFECTIVE, RELEASE, REVERT, CLOSE, RETIRE, STATUS_CHANGE, WITHDRAW.
+**Requirement:** The CLI shall log all required event types to the audit trail.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_sop_lifecycle.py | test_sop_full_lifecycle | Event types logged during lifecycle. |
 | test_cr_lifecycle.py | test_cr_full_lifecycle | Event types logged during lifecycle. |
 | test_queries.py | test_history_shows_all_event_types | All event types visible in history. |
-| test_audit_completeness.py | test_all_audit_event_types | Comprehensive lifecycle verifying all 16 required audit event types are logged (SOP for EFFECTIVE/RETIRE, CR for ASSIGN/WITHDRAW/REJECT/RELEASE/REVERT/CLOSE). |
-| test_audit_completeness.py | test_audit_event_constants_match_requirement | Verifies qms_audit module defines exactly the 16 EVENT_* constants per REQ-AUDIT-002. |
+| test_cr_lifecycle.py | test_all_audit_event_types | Verifies all 14 required audit event types are logged. |
 
 ---
 
@@ -1507,13 +1469,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v14.0 |
+| Requirements Spec | SDLC-QMS-RS v13.0 |
 | Repository | whharris917/qms-cli |
 | Branch | main |
-| Commit | 572339e |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22075060264 |
-| Total Tests | 416 |
-| Passed | 416 |
+| Commit | dffd56c |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22045228764 |
+| Total Tests | 403 |
+| Passed | 403 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1525,8 +1487,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_sop_lifecycle.py | 15 | 15 | 0 |
 | test_cr_lifecycle.py | 11 | 11 | 0 |
 | test_cr048_workflow.py | 11 | 11 | 0 |
-| test_cr087_workflow.py | 10 | 10 | 0 |
-| test_audit_completeness.py | 2 | 2 | 0 |
 | test_security.py | 19 | 19 | 0 |
 | test_document_types.py | 29 | 29 | 0 |
 | test_queries.py | 16 | 16 | 0 |
@@ -1534,15 +1494,15 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 15 | 15 | 0 |
 | test_mcp.py | 74 | 74 | 0 |
-| **Subtotal** | **218** | **218** | **0** |
+| **Subtotal** | **206** | **206** | **0** |
 
 #### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 218 | 218 | 0 |
-| Unit Tests | 198 | 198 | 0 |
-| **Total** | **416** | **416** | **0** |
+| Qualification Tests | 206 | 206 | 0 |
+| Unit Tests | 197 | 197 | 0 |
+| **Total** | **403** | **403** | **0** |
 
 ### 6.3 Test Environment
 
