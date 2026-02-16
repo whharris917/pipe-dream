@@ -16,6 +16,7 @@ import docker
 from docker.errors import NotFound, APIError
 
 from agent_hub.config import HubConfig
+from agent_hub.services import TMUX_SESSION_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,7 @@ class ContainerManager:
         try:
             proc = await asyncio.create_subprocess_exec(
                 "docker", "exec", name,
-                "tmux", "has-session", "-t", "agent",
+                "tmux", "has-session", "-t", TMUX_SESSION_NAME,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
@@ -281,7 +282,7 @@ class ContainerManager:
         await asyncio.to_thread(
             container.exec_run,
             cmd=[
-                "tmux", "new-session", "-d", "-s", "agent",
+                "tmux", "new-session", "-d", "-s", TMUX_SESSION_NAME,
                 "-x", cols, "-y", rows, "claude",
             ],
             detach=True,
@@ -303,7 +304,7 @@ class ContainerManager:
             try:
                 proc = await asyncio.create_subprocess_exec(
                     "docker", "exec", name,
-                    "tmux", "capture-pane", "-t", "agent", "-p",
+                    "tmux", "capture-pane", "-t", TMUX_SESSION_NAME, "-p",
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )

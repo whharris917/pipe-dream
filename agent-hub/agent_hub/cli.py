@@ -10,7 +10,7 @@ import uvicorn
 from agent_hub.config import HubConfig
 from agent_hub.hub import AgentHub
 from agent_hub.api.server import create_app
-from agent_hub.services import ensure_mcp_servers
+from agent_hub.services import ensure_mcp_servers, TMUX_SESSION_NAME
 
 
 @click.group()
@@ -32,7 +32,7 @@ def start(host: str, port: int, project_root: str | None, log_level: str):
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-        datefmt="%H:%M:%S",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     kwargs = {"host": host, "port": port}
@@ -379,7 +379,7 @@ def attach(agent_id: str, hub_url: str):
 
     result = sp.run(
         ["docker", "exec", "-it", container_name,
-         "tmux", "attach", "-t", "agent"]
+         "tmux", "attach", "-t", TMUX_SESSION_NAME]
     )
 
     if result.returncode != 0:
@@ -482,7 +482,7 @@ def launch(agents: tuple[str, ...], project_root: str | None):
         click.echo()
         sp.run(
             ["docker", "exec", "-it", container_name,
-             "tmux", "attach", "-t", "agent"]
+             "tmux", "attach", "-t", TMUX_SESSION_NAME]
         )
     else:
         # Multiple agents: start each via Hub API, spawn in new terminals
@@ -512,6 +512,70 @@ def launch(agents: tuple[str, ...], project_root: str | None):
         click.echo()
         click.echo(click.style("All agents launched.", fg="green"))
         click.echo("Use 'agent-hub attach <agent>' to connect to an agent.")
+
+
+@cli.command("start-svc")
+@click.argument("name", type=click.Choice(["qms-mcp", "git-mcp", "hub"]))
+@click.option(
+    "--project-root", default=None, type=click.Path(exists=True),
+    help="Project root directory (default: auto-detect)",
+)
+def start_svc(name: str, project_root: str | None):
+    """Start an individual service.
+
+    \b
+    Services: qms-mcp, git-mcp, hub
+    Starting 'hub' auto-starts both MCP servers as dependencies.
+    """
+    from agent_hub.services import start_service
+
+    kwargs = {}
+    if project_root:
+        kwargs["project_root"] = project_root
+    config = HubConfig(**kwargs)
+
+    click.echo()
+    click.echo(click.style(f"=== Start Service: {name} ===", bold=True))
+    click.echo()
+
+    try:
+        start_service(name, config)
+    except SystemExit:
+        click.echo()
+        click.echo(click.style("Service startup failed.", fg="red"))
+        sys.exit(1)
+
+    click.echo()
+    click.echo(click.style("Done.", fg="green"))
+
+
+@cli.command("stop-svc")
+@click.argument("name", type=click.Choice(["qms-mcp", "git-mcp", "hub"]))
+@click.option(
+    "--project-root", default=None, type=click.Path(exists=True),
+    help="Project root directory (default: auto-detect)",
+)
+def stop_svc(name: str, project_root: str | None):
+    """Stop an individual service.
+
+    \b
+    Services: qms-mcp, git-mcp, hub
+    """
+    from agent_hub.services import stop_service
+
+    kwargs = {}
+    if project_root:
+        kwargs["project_root"] = project_root
+    config = HubConfig(**kwargs)
+
+    click.echo()
+    click.echo(click.style(f"=== Stop Service: {name} ===", bold=True))
+    click.echo()
+
+    stop_service(name, config)
+
+    click.echo()
+    click.echo(click.style("Done.", fg="green"))
 
 
 @cli.command("stop-all")

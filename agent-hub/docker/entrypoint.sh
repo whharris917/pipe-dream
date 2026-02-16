@@ -82,12 +82,16 @@ if [ -d "/claude-config" ]; then
     # Surgically clean MCP state from .claude.json while preserving auth
     if [ -f /claude-config/.claude.json ] && command -v jq >/dev/null 2>&1; then
         echo "Cleaning MCP state from .claude.json..."
-        jq 'walk(if type == "object" and has("mcpServers") then .mcpServers = {} else . end)
+        if jq 'walk(if type == "object" and has("mcpServers") then .mcpServers = {} else . end)
             | walk(if type == "object" and has("enabledMcpjsonServers") then .enabledMcpjsonServers = [] else . end)
             | walk(if type == "object" and has("disabledMcpjsonServers") then .disabledMcpjsonServers = [] else . end)' \
             /claude-config/.claude.json > /claude-config/.claude.json.tmp \
-            && mv /claude-config/.claude.json.tmp /claude-config/.claude.json
-        echo "MCP state cleaned from .claude.json"
+            && mv /claude-config/.claude.json.tmp /claude-config/.claude.json; then
+            echo "MCP state cleaned from .claude.json"
+        else
+            echo "WARNING: Failed to clean MCP state from .claude.json (jq error)"
+            rm -f /claude-config/.claude.json.tmp 2>/dev/null
+        fi
     fi
 
     # Recreate directories Claude Code expects to exist

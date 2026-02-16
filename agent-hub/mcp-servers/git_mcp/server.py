@@ -21,7 +21,8 @@ from mcp.server.fastmcp import FastMCP
 # Configure logging to stderr (CRITICAL: never write to stdout for stdio transport)
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     stream=sys.stderr,
 )
 logger = logging.getLogger("git-mcp")

@@ -25,7 +25,8 @@ import httpx
 
 def log(msg):
     """Log to stderr (stdout is reserved for MCP protocol)."""
-    print(f"[mcp-proxy] {msg}", file=sys.stderr, flush=True)
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{ts} [mcp-proxy] INFO: {msg}", file=sys.stderr, flush=True)
 
 
 def parse_args():

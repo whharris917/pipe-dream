@@ -10,6 +10,8 @@ import logging
 import re
 import subprocess
 
+from agent_hub.services import TMUX_SESSION_NAME
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,7 +73,7 @@ async def inject_notification(container_name: str, text: str) -> bool:
         # Send the notification text literally
         proc = await asyncio.create_subprocess_exec(
             "docker", "exec", container_name,
-            "tmux", "send-keys", "-t", "agent", "-l", text,
+            "tmux", "send-keys", "-t", TMUX_SESSION_NAME, "-l", text,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -80,7 +82,7 @@ async def inject_notification(container_name: str, text: str) -> bool:
         # Send Enter to submit
         proc = await asyncio.create_subprocess_exec(
             "docker", "exec", container_name,
-            "tmux", "send-keys", "-t", "agent", "Enter",
+            "tmux", "send-keys", "-t", TMUX_SESSION_NAME, "Enter",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

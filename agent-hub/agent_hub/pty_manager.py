@@ -28,6 +28,7 @@ from typing import Callable, Awaitable
 import docker
 
 from agent_hub.config import HubConfig
+from agent_hub.services import TMUX_SESSION_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ def _encode_send_keys(data: bytes) -> bytes:
     for input b"hello".
     """
     hex_parts = ' '.join(f'{b:02x}' for b in data)
-    return f'send-keys -t agent -H {hex_parts}\n'.encode()
+    return f'send-keys -t {TMUX_SESSION_NAME} -H {hex_parts}\n'.encode()
 
 
 class PTYSession:
@@ -136,7 +137,7 @@ class PTYSession:
         exec_result = await asyncio.to_thread(
             self._client.api.exec_create,
             container.id,
-            cmd=["sh", "-c", "stty raw -echo && exec tmux -CC attach -t agent"],
+            cmd=["sh", "-c", f"stty raw -echo && exec tmux -CC attach -t {TMUX_SESSION_NAME}"],
             stdin=True,
             tty=True,
             stdout=True,

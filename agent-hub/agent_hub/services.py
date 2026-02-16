@@ -6,6 +6,7 @@ orchestration infrastructure.
 
 Translated from the battle-tested bash logic in launch.sh and pd-status.
 CR-069: Agent Hub Consolidation.
+CR-088: Granular Service Control and Observability.
 """
 
 import os
@@ -20,6 +21,14 @@ import click
 import httpx
 
 from agent_hub.config import HubConfig
+
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+TMUX_SESSION_NAME = "agent"
+"""Tmux session name used inside agent containers."""
 
 
 # ---------------------------------------------------------------------------
@@ -44,11 +53,13 @@ class ServiceStatus:
     extra: str = ""
 
 
-SERVICES = [
-    ServiceInfo("QMS MCP", 8000, "/mcp"),
-    ServiceInfo("Git MCP", 8001, "/mcp"),
-    ServiceInfo("Agent Hub", 9000, "/api/health"),
-]
+SERVICE_REGISTRY: dict[str, ServiceInfo] = {
+    "qms-mcp": ServiceInfo("QMS MCP", 8000, "/mcp"),
+    "git-mcp": ServiceInfo("Git MCP", 8001, "/mcp"),
+    "hub": ServiceInfo("Agent Hub", 9000, "/api/health"),
+}
+
+SERVICES = list(SERVICE_REGISTRY.values())
 
 VALID_AGENTS = ["claude", "qa", "tu_ui", "tu_scene", "tu_sketch", "tu_sim", "bu"]
 
@@ -111,12 +122,25 @@ def find_pid_on_port(port: int) -> int | None:
         return None
 
 
+def _health_request(port: int, health_path: str) -> httpx.Response:
+    """Send a health check request using the appropriate HTTP method.
+
+    MCP endpoints (/mcp) require POST to avoid server log noise.
+    Standard health endpoints (/api/health) use GET.
+    """
+    url = f"http://localhost:{port}{health_path}"
+    if health_path == "/mcp":
+        return httpx.post(
+            url, content=b"{}",
+            headers={"Content-Type": "application/json"}, timeout=3,
+        )
+    return httpx.get(url, timeout=3)
+
+
 def is_port_alive(port: int, health_path: str) -> bool:
     """Check if a service is responding on the given port."""
     try:
-        response = httpx.get(
-            f"http://localhost:{port}{health_path}", timeout=3
-        )
+        _health_request(port, health_path)
         return True  # Any HTTP response means the service is up
     except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError):
         return False
@@ -125,9 +149,7 @@ def is_port_alive(port: int, health_path: str) -> bool:
 def health_code(port: int, health_path: str) -> int:
     """Get the HTTP status code from a health endpoint."""
     try:
-        response = httpx.get(
-            f"http://localhost:{port}{health_path}", timeout=3
-        )
+        response = _health_request(port, health_path)
         return response.status_code
     except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError):
         return 0
@@ -146,18 +168,18 @@ def _wait_for_service(port: int, health_path: str, timeout: int = 10) -> bool:
     return False
 
 
-def ensure_mcp_servers(config: HubConfig) -> None:
-    """Start QMS and Git MCP servers if not already running."""
+def _start_qms_mcp(config: HubConfig) -> None:
+    """Start the QMS MCP server if not already running."""
+    if is_port_alive(config.qms_mcp_port, "/mcp"):
+        click.echo(click.style("  + ", fg="green") + "QMS MCP server already running")
+        return
+
+    click.echo("  Starting QMS MCP server...")
     python_exe = str(find_python(config.project_root))
     log_dir = config.log_dir
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # QMS MCP server (port 8000)
-    if is_port_alive(config.qms_mcp_port, "/mcp"):
-        click.echo(click.style("  + ", fg="green") + "QMS MCP server already running")
-    else:
-        click.echo("  Starting QMS MCP server...")
-        log_file = open(log_dir / "qms-mcp-server.log", "w")
+    with open(log_dir / "qms-mcp-server.log", "w") as log_file:
         subprocess.Popen(
             [
                 python_exe, "-m", "qms_mcp",
@@ -169,18 +191,25 @@ def ensure_mcp_servers(config: HubConfig) -> None:
             cwd=str(config.project_root / "qms-cli"),
             stdout=log_file, stderr=log_file,
         )
-        if _wait_for_service(config.qms_mcp_port, "/mcp"):
-            click.echo(click.style("  + ", fg="green") + "QMS MCP server started")
-        else:
-            click.echo(click.style("  x ", fg="red") + "QMS MCP server failed to start")
-            raise SystemExit(1)
+    if _wait_for_service(config.qms_mcp_port, "/mcp"):
+        click.echo(click.style("  + ", fg="green") + "QMS MCP server started")
+    else:
+        click.echo(click.style("  x ", fg="red") + "QMS MCP server failed to start")
+        raise SystemExit(1)
 
-    # Git MCP server (port 8001)
+
+def _start_git_mcp(config: HubConfig) -> None:
+    """Start the Git MCP server if not already running."""
     if is_port_alive(config.git_mcp_port, "/mcp"):
         click.echo(click.style("  + ", fg="green") + "Git MCP server already running")
-    else:
-        click.echo("  Starting Git MCP server...")
-        log_file = open(log_dir / "git-mcp-server.log", "w")
+        return
+
+    click.echo("  Starting Git MCP server...")
+    python_exe = str(find_python(config.project_root))
+    log_dir = config.log_dir
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(log_dir / "git-mcp-server.log", "w") as log_file:
         subprocess.Popen(
             [
                 python_exe, "-m", "git_mcp",
@@ -192,14 +221,14 @@ def ensure_mcp_servers(config: HubConfig) -> None:
             cwd=str(config.mcp_servers_dir),
             stdout=log_file, stderr=log_file,
         )
-        if _wait_for_service(config.git_mcp_port, "/mcp"):
-            click.echo(click.style("  + ", fg="green") + "Git MCP server started")
-        else:
-            click.echo(click.style("  x ", fg="red") + "Git MCP server failed to start")
-            raise SystemExit(1)
+    if _wait_for_service(config.git_mcp_port, "/mcp"):
+        click.echo(click.style("  + ", fg="green") + "Git MCP server started")
+    else:
+        click.echo(click.style("  x ", fg="red") + "Git MCP server failed to start")
+        raise SystemExit(1)
 
 
-def ensure_hub(config: HubConfig) -> None:
+def _start_hub(config: HubConfig) -> None:
     """Start the Agent Hub if not already running."""
     if is_port_alive(config.port, "/api/health"):
         click.echo(click.style("  + ", fg="green") + "Agent Hub already running")
@@ -209,21 +238,77 @@ def ensure_hub(config: HubConfig) -> None:
     python_exe = str(find_python(config.project_root))
     log_dir = config.log_dir
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = open(log_dir / "agent-hub.log", "w")
 
-    subprocess.Popen(
-        [
-            python_exe, "-m", "agent_hub.cli", "start",
-            "--project-root", str(config.project_root),
-        ],
-        cwd=str(config.project_root),
-        stdout=log_file, stderr=log_file,
-    )
+    with open(log_dir / "agent-hub.log", "w") as log_file:
+        subprocess.Popen(
+            [
+                python_exe, "-m", "agent_hub.cli", "start",
+                "--project-root", str(config.project_root),
+            ],
+            cwd=str(config.project_root),
+            stdout=log_file, stderr=log_file,
+        )
     if _wait_for_service(config.port, "/api/health"):
         click.echo(click.style("  + ", fg="green") + "Agent Hub started")
     else:
         click.echo(click.style("  x ", fg="red") + "Agent Hub failed to start")
         raise SystemExit(1)
+
+
+def ensure_mcp_servers(config: HubConfig) -> None:
+    """Start QMS and Git MCP servers if not already running."""
+    _start_qms_mcp(config)
+    _start_git_mcp(config)
+
+
+def ensure_hub(config: HubConfig) -> None:
+    """Start the Agent Hub if not already running."""
+    _start_hub(config)
+
+
+def start_service(name: str, config: HubConfig) -> None:
+    """Start an individual service by registry name.
+
+    Auto-starts dependencies: Hub requires both MCP servers.
+
+    Args:
+        name: Service registry key ("qms-mcp", "git-mcp", "hub")
+        config: Hub configuration
+    """
+    if name not in SERVICE_REGISTRY:
+        raise ValueError(
+            f"Unknown service: {name}. Valid: {', '.join(SERVICE_REGISTRY)}"
+        )
+
+    if name == "qms-mcp":
+        _start_qms_mcp(config)
+    elif name == "git-mcp":
+        _start_git_mcp(config)
+    elif name == "hub":
+        # Hub depends on both MCP servers
+        _start_qms_mcp(config)
+        _start_git_mcp(config)
+        _start_hub(config)
+
+
+def stop_service(name: str, config: HubConfig) -> None:
+    """Stop an individual service by registry name.
+
+    Args:
+        name: Service registry key ("qms-mcp", "git-mcp", "hub")
+        config: Hub configuration
+    """
+    if name not in SERVICE_REGISTRY:
+        raise ValueError(
+            f"Unknown service: {name}. Valid: {', '.join(SERVICE_REGISTRY)}"
+        )
+
+    svc = SERVICE_REGISTRY[name]
+    if not is_port_alive(svc.port, svc.health_path):
+        click.echo(f"  {svc.label} is not running.")
+        return
+
+    stop_service_on_port(svc.port, svc.label)
 
 
 def ensure_docker_image(config: HubConfig) -> None:
