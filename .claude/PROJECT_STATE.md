@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-15-002*
+*Last updated: Session-2026-02-15-003*
 
 ---
 
 ## 1. Where We Are Now
 
-The multi-agent orchestration platform is built and validated. Post-integration hardening is underway. CR-084 codified integration verification as a standard requirement for code CRs and VARs: SOP-002 Section 6.8 now requires code CRs to address both automated and integration verification, TEMPLATE-CR has a new Phase 5 (Integration Verification) and restructured Section 8, TEMPLATE-VAR includes code-related resolution guidance, and SOP-004 Section 9A.3 adds advisory integration verification for VAR resolution.
+The multi-agent orchestration platform is built and validated. QMS process evolution continues. CR-086 corrected CR-085's "QMS repository" language to "project repository and all submodules," repositioned the pre-execution commit from a pre-release prerequisite to the first execution item (EI-1) with the post-execution commit as the final EI, and added rollback procedures to SOP-005 Section 7.1.5.
 
-Prior: CR-082 added the ADD document type (CLI-7.0), CR-083 codified the merge gate and qualified commit convention, INV-011 is CLOSED with all 3 CAPAs complete.
+Prior: CR-084 codified integration verification, CR-085 added the pre-execution commit requirement, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 is CLOSED with all 3 CAPAs complete.
 
 The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B and D cover Git MCP access control and GUI feature completion.
 
@@ -26,7 +26,7 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 
 **Audit, Hardening, and Verification (Feb 14, CR-077 through CR-081).** Code review (27 findings, 4 fixed), Phase A integration testing (2 containerized agents, full QMS lifecycle), GUI terminal hardening (scrollback, control mode, dimensions).
 
-**QMS Process Evolution (Feb 15, CR-082 through CR-083).** ADD document type implemented (CAPA-003 fulfilled). Merge gate gap discovered and closed: merge type, qualified commit convention, and explicit merge gate codified in SOPs.
+**QMS Process Evolution (Feb 15, CR-082 through CR-086).** ADD document type (CAPA-003). Merge gate and qualified commit convention. Integration verification mandate. Pre/post-execution commit as bookend EIs. Rollback procedures for code CRs.
 
 ---
 
@@ -79,8 +79,9 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | | CR-083 | Merge Gate and Qualified Commit Convention | SOP-005/006/TEMPLATE-CR updated, merge type codified |
 | | CR-084 | Integration Verification Mandate | SOP-002/004, TEMPLATE-CR/VAR updated, new Phase 5 |
 | | CR-085 | Pre-Execution Repository Commit | SOP-002/004, TEMPLATE-CR updated, commit before release |
+| | CR-086 | State Preservation, Rollback, CR-085 Fix | Pre/post commits as EIs, SOP-005 rollback, language fix |
 
-*CR-057 predates the orchestration era. All 43 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 44 CRs above are CLOSED.*
 
 ### SDLC Document State
 
@@ -207,7 +208,7 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 |------|---------|
 | ~~Formalize UAT as stage gate for code CRs~~ | **DONE** (CR-084) |
 | Comments visibility restriction during active workflows | Needs design decision |
-| ~~Prerequisite: commit/push pipe-dream as first EI~~ | **DONE** (CR-085) |
+| ~~Prerequisite: commit/push pipe-dream as first EI~~ | **DONE** (CR-085, refined CR-086) |
 
 ### Deferred
 
@@ -219,7 +220,7 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 | "Pass with exception" test outcome type | No test execution exercising this gap |
 | Production/test environment isolation review | Addressed by submodule separation |
 | Proceduralize how to add new documents to QMS | Works well enough |
-| ~~SOP-005 qualification process explanation~~ | **DONE** (CR-083) |
+| ~~SOP-005 qualification process explanation~~ | **DONE** (CR-083, rollback added CR-086) |
 | Owner-initiated withdrawal (`qms withdraw`) | Workaround exists |
 | Stdio proxy for 100% MCP reliability | HTTP at 90% is workable |
 
