@@ -1,0 +1,338 @@
+---
+title: Agent Hub Granular Service Control and Observability
+revision_summary: Initial draft
+---
+
+# CR-088: Agent Hub Granular Service Control and Observability
+
+## 1. Purpose
+
+This CR adds granular service lifecycle commands to the Agent Hub CLI and unifies logging across the MCP infrastructure. Currently, services can only be stopped atomically via `stop-all`; there is no way to start or stop individual services. Logging formats are inconsistent across services, tool invocations are not logged, and several low-severity code review findings (H1, L1, L8, L9) remain unresolved.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Independent improvement combining two to-do items (2026-02-14 and 2026-02-15) with four code review findings from Session-2026-02-14-001.
+
+- **Parent Document:** None
+
+### 2.2 Changes Summary
+
+1. Add `start-svc` and `stop-svc` CLI commands for individual service control (hub, qms-mcp, git-mcp)
+2. Unify log format across QMS MCP, Git MCP, Agent Hub, and stdio proxy
+3. Add tool invocation logging to QMS MCP server
+4. Fix health check protocol (GET to POST for /mcp endpoints)
+5. Fix file handle leaks in service startup (H1)
+6. Extract hardcoded tmux session name to constant (L1)
+7. Reduce identity lock TTL from 300s to 90s (L8)
+8. Fix entrypoint false success message (L9)
+
+### 2.3 Files Affected
+
+- `agent-hub/agent_hub/services.py` - SERVICE_REGISTRY, TMUX_SESSION_NAME, start/stop functions, file handle fix, health check fix
+- `agent-hub/agent_hub/cli.py` - New start-svc/stop-svc commands, log format, tmux constant
+- `agent-hub/agent_hub/container.py` - Tmux constant substitution (3 occurrences)
+- `agent-hub/agent_hub/notifier.py` - Tmux constant substitution (2 occurrences)
+- `agent-hub/agent_hub/pty_manager.py` - Tmux constant substitution (2 occurrences)
+- `agent-hub/mcp-servers/git_mcp/server.py` - Unified log format
+- `agent-hub/docker/scripts/mcp_proxy.py` - Unified log format
+- `agent-hub/docker/entrypoint.sh` - False success message fix
+- `qms-cli/qms_mcp/server.py` - Unified log format, tool invocation logging, TTL reduction
+
+---
+
+## 3. Current State
+
+The Agent Hub CLI provides `stop-all` as the only shutdown mechanism. Individual services (QMS MCP, Git MCP, Hub) cannot be started or stopped independently.
+
+Log formats differ across services:
+- QMS MCP: `"%(asctime)s - %(name)s - %(levelname)s - %(message)s"`
+- Git MCP: Same as QMS MCP
+- Agent Hub: `"%(asctime)s [%(name)s] %(levelname)s: %(message)s"` with time-only datefmt `"%H:%M:%S"`
+- Proxy: Custom `"[mcp-proxy] {msg}"` with no timestamp
+
+Tool invocations through the QMS MCP server are not logged. The health check function uses `httpx.get()` on `/mcp` endpoints, which creates noise in MCP server logs. Three `open()` calls in `services.py` leak file handles. The tmux session name `"agent"` is hardcoded in 7 locations across 4 files. Identity lock TTL is 300 seconds, which is unnecessarily long for crash recovery. The Docker entrypoint prints "MCP state cleaned" even when `jq` fails.
+
+---
+
+## 4. Proposed State
+
+The Agent Hub CLI provides `start-svc` and `stop-svc` commands for individual service control, with automatic dependency resolution (starting Hub auto-starts MCP servers).
+
+All services use a unified log format: `"%(asctime)s [%(name)s] %(levelname)s: %(message)s"` with `datefmt="%Y-%m-%d %H:%M:%S"`. Tool invocations are logged before and after execution in `run_qms_command()`. Health checks use POST for MCP endpoints, eliminating server-side log noise. File handles are properly closed after `Popen`. The tmux session name is a single constant. Identity lock TTL is 90 seconds. The entrypoint only reports success when `jq` actually succeeds.
+
+---
+
+## 5. Change Description
+
+### 5.1 Granular Service Control
+
+Replace the flat `SERVICES` list with a keyed `SERVICE_REGISTRY` dictionary for CLI lookup. Extract the monolithic `ensure_mcp_servers()` and `ensure_hub()` into per-service helper functions (`_start_qms_mcp()`, `_start_git_mcp()`, `_start_hub()`). Add `start_service(name, config)` and `stop_service(name, config)` dispatch functions. `start_service()` auto-starts dependencies (Hub depends on both MCP servers).
+
+New CLI commands `start-svc` and `stop-svc` accept a service name argument (choices: `qms-mcp`, `git-mcp`, `hub`), paralleling the existing `start-agent`/`stop-agent` naming pattern. The existing `stop-all` remains unchanged.
+
+### 5.2 Unified Logging
+
+All services adopt the format `"%(asctime)s [%(name)s] %(levelname)s: %(message)s"` with `datefmt="%Y-%m-%d %H:%M:%S"`. The proxy approximates this with its custom `log()` function, adding a timestamp prefix without importing the `logging` module (the proxy is designed to be lightweight for container use).
+
+### 5.3 Tool Invocation Logging
+
+Two `logger.info()` calls are added to `run_qms_command()` in `qms-cli/qms_mcp/server.py`:
+- Before execution: `"Tool invocation: user=%s, args=%s"`
+- After execution: `"Tool result: user=%s, args=%s, success=%s"`
+
+This provides end-to-end visibility into MCP tool usage without modifying any individual tool definition in `tools.py`.
+
+### 5.4 Health Check Fix
+
+`is_port_alive()` and `health_code()` in `services.py` switch from `httpx.get()` to `httpx.post()` with an empty JSON body for `/mcp` endpoints. GET is retained for `/api/health`. The detection logic (any HTTP response = alive) is unchanged.
+
+### 5.5 Code Review Findings
+
+- **H1 (file handle leak):** Replace `log_file = open(...)` + `Popen(stdout=log_file)` with `with open(...) as f: Popen(stdout=f)`. Popen duplicates fds internally via `os.dup2()`, so closing the parent's copy is safe.
+- **L1 (tmux constant):** Define `TMUX_SESSION_NAME = "agent"` in `services.py`. Update 7 occurrences across `cli.py`, `container.py`, `notifier.py`, `pty_manager.py`.
+- **L8 (TTL reduction):** Change `IDENTITY_LOCK_TTL_SECONDS` from 300.0 to 90.0. Existing tests reference the constant dynamically and require no modification.
+- **L9 (entrypoint fix):** Wrap `jq` pipeline in `if/then/else` so the success message only prints after `mv` succeeds. Add warning and temp file cleanup on failure.
+
+---
+
+## 6. Justification
+
+- **Granular control:** Operators cannot restart a single MCP server without killing everything. This forces full infrastructure teardown and rebuild for a single service issue, increasing downtime and disrupting active agent sessions.
+- **Logging:** Debugging MCP issues requires correlating logs across services. Inconsistent formats make this harder than necessary. Tool invocation logging is essential for understanding what agents are doing through the MCP interface.
+- **Code review debt:** H1, L1, L8, and L9 were identified in the Session-2026-02-14 audit. All four are in files being modified by this CR, making this the natural time to resolve them.
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `agent-hub/agent_hub/services.py` | Modify | SERVICE_REGISTRY, TMUX_SESSION_NAME, start/stop functions, H1, health check |
+| `agent-hub/agent_hub/cli.py` | Modify | New commands, log format, tmux constant |
+| `agent-hub/agent_hub/container.py` | Modify | Tmux constant (3 refs) |
+| `agent-hub/agent_hub/notifier.py` | Modify | Tmux constant (2 refs) |
+| `agent-hub/agent_hub/pty_manager.py` | Modify | Tmux constant (2 refs) |
+| `agent-hub/mcp-servers/git_mcp/server.py` | Modify | Log format |
+| `agent-hub/docker/scripts/mcp_proxy.py` | Modify | Log format |
+| `agent-hub/docker/entrypoint.sh` | Modify | L9 fix |
+| `qms-cli/qms_mcp/server.py` | Modify | Log format, tool logging, TTL |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| SDLC-QMS-RTM | Modify | Update qualified commit hash (new CLI-9.0) |
+
+### 7.3 Other Impacts
+
+None. All changes are backward-compatible. The `stop-all`, `launch`, `start-agent`, and `stop-agent` commands are unaffected.
+
+### 7.4 Development Controls
+
+This CR implements changes to qms-cli, a controlled submodule. Development follows established controls:
+
+1. **Test environment isolation:** Development in the qms-cli submodule directory
+2. **Branch isolation:** All qms-cli development on branch `cr-088-observability`
+3. **Write protection:** `.claude/settings.local.json` blocks direct writes to `qms-cli/`
+4. **Qualification required:** All existing tests must pass before merge
+5. **CI verification:** Tests must pass on GitHub Actions for dev branch
+6. **PR gate:** Changes merge to main only via PR after RTM approval
+7. **Submodule update:** Parent repo updates pointer only after PR merge
+
+Note: agent-hub changes are not SDLC-governed and are made directly in the pipe-dream repository.
+
+### 7.5 Qualified State Continuity
+
+| Phase | main branch | RS/RTM Status | Qualified Release |
+|-------|-------------|---------------|-------------------|
+| Before CR | 572339e | RS v14.0, RTM v17.0 EFFECTIVE | CLI-8.0 |
+| During execution | Unchanged | RTM DRAFT (checked out for hash update) | CLI-8.0 (unchanged) |
+| Post-approval | Merged from cr-088-observability | RTM EFFECTIVE v18.0 | CLI-9.0 |
+
+---
+
+## 8. Testing Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document authoring.
+
+For code CRs, address both categories per SOP-002 Section 6.8:
+1. Automated verification: unit tests, qualification tests, CI
+2. Integration verification: what will be exercised through user-facing levers
+   in a running system to demonstrate the change is effective
+
+For document-only CRs, a description of procedural verification is sufficient.
+Delete the subsections below and use a simple list.
+-->
+
+### Automated Verification
+
+- All 416 existing qms-cli tests pass (no new tests needed; changes are non-functional: TTL constant, log format, logger.info calls)
+- CI verification on GitHub Actions for the qms-cli execution branch
+
+### Integration Verification
+
+- Start individual services via `agent-hub start-svc {name}` and verify each starts correctly
+- Stop individual services via `agent-hub stop-svc {name}` and verify each stops correctly
+- Start Hub and verify both MCP servers auto-start as dependencies
+- Run `agent-hub stop-all -y` and verify all services stop (regression)
+- Run `agent-hub launch claude` and verify full orchestration works (regression)
+- Inspect `agent-hub/logs/*.log` and verify unified format across all services
+- Execute a QMS MCP tool and verify invocation appears in `qms-mcp-server.log`
+- Grep for hardcoded `"agent"` tmux references to verify none remain
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: qms-cli Execution Branch
+
+1. Create branch `cr-088-observability` in qms-cli submodule
+2. Implement TTL reduction, log format unification, and tool invocation logging in `qms_mcp/server.py`
+3. Run full test suite, verify all 416 tests pass
+4. Push to branch, verify CI passes
+
+### 9.2 Phase 2: agent-hub Implementation
+
+1. Refactor `services.py`: SERVICE_REGISTRY, TMUX_SESSION_NAME, extracted start helpers, start/stop dispatch functions, file handle fix, health check fix
+2. Add `start-svc`/`stop-svc` commands to `cli.py`
+3. Replace tmux constant across `container.py`, `notifier.py`, `pty_manager.py`, `cli.py`
+4. Unify log format in `git_mcp/server.py`, `mcp_proxy.py`, `cli.py`
+5. Fix entrypoint false success message
+
+### 9.3 Phase 3: Integration Verification
+
+1. Start/stop individual services, verify behavior
+2. Verify full orchestration regression (`launch`, `stop-all`)
+3. Verify unified log format across all log files
+4. Verify tool invocation logging
+
+### 9.4 Phase 4: RTM Update and Approval
+
+1. Checkout SDLC-QMS-RTM
+2. Update qualified commit hash to the CI-verified commit on `cr-088-observability`
+3. Route RTM for review and approval to EFFECTIVE
+
+### 9.5 Phase 5: Merge and Submodule Update
+
+1. Verify RTM is EFFECTIVE
+2. Create PR to merge `cr-088-observability` to main in qms-cli
+3. Merge PR using merge commit (per SOP-005 Section 7.1.3)
+4. Update submodule pointer in pipe-dream
+
+---
+
+## 10. Execution
+
+<!--
+EXECUTION PHASE INSTRUCTIONS
+============================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+PRE-EXECUTION: After releasing for execution, the first execution item is to
+commit and push the project repository (including all submodules) to capture
+the pre-execution baseline (per SOP-004 Section 5). Record the commit hash
+in EI-1's execution summary.
+
+POST-EXECUTION: The final execution item is to commit and push the project
+repository (including all submodules) to capture the post-execution state
+(per SOP-004 Section 5). Record the commit hash in the final EI's execution
+summary.
+
+- Sections 1-9 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the comment sections below should be edited during execution phase
+
+COLUMNS:
+- EI: Execution item identifier
+- Task Description: What to do (static, from Implementation Plan)
+- Execution Summary: Narrative of what was done, evidence, observations (editable)
+- Task Outcome: Pass or Fail (editable)
+- Performed By - Date: Signature (editable)
+
+TASK OUTCOME:
+- Pass: Task completed as planned
+- Fail: Task could not be completed as planned - attach VAR with explanation
+
+VAR TYPES (see VAR-TEMPLATE):
+- Type 1: Use when the failed task is critical to CR objectives
+- Type 2: Use when impact is contained and CR can conceptually close
+
+EXECUTION SUMMARY EXAMPLES:
+- "Implemented per plan. Commit abc123."
+- "Modified src/module.py:45-67. Unit tests passing."
+- "Created SOP-007 (now EFFECTIVE)."
+-->
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Pre-execution commit: commit and push pipe-dream and all submodules | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | qms-cli: create branch cr-088-observability, implement TTL reduction (300s to 90s), unified log format, tool invocation logging in run_qms_command() | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | agent-hub services.py: refactor to SERVICE_REGISTRY dict, add TMUX_SESSION_NAME constant, extract per-service start helpers, add start_service()/stop_service() dispatch, fix file handle leaks (H1), fix health check GET to POST | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | agent-hub cli.py: add start-svc and stop-svc commands, update log datefmt, use TMUX_SESSION_NAME | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | agent-hub: replace hardcoded tmux "agent" refs with TMUX_SESSION_NAME across container.py, notifier.py, pty_manager.py (L1) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | agent-hub: unify log format in git_mcp/server.py, mcp_proxy.py | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | docker: fix entrypoint false success message (L9) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-8 | qms-cli: run full test suite (416 tests), push to branch, verify CI passes | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-9 | Integration verification: start/stop individual services, check log output, verify regressions | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-10 | RTM: update qualified commit hash, route to EFFECTIVE v18.0 | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-11 | Merge qms-cli execution branch to main via PR, update submodule pointer | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-12 | Post-execution commit: commit and push pipe-dream and all submodules | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual execution item, but apply to the CR as a whole.
+-->
+
+---
+
+## 11. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-004:** Document Execution
+- **SOP-005:** Code Governance
+- **SOP-006:** SDLC Governance
+- **Code Review Findings:** H1, L1, L8, L9 (Session-2026-02-14-001)
+- **To-Do Items:** "Add granular start/stop commands" (2026-02-15), "Unify Agent Hub logging" (2026-02-14)
+
+---
+
+**END OF DOCUMENT**

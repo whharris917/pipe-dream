@@ -6,6 +6,13 @@
 
 ## 2026-02-16
 
+- [ ] Implement session heartbeat mechanism to prevent post-compaction session discontinuities
+  - Add `SESSION_LOCK` file (`.claude/sessions/SESSION_LOCK`) with `session_id` and `last_activity` timestamp
+  - Update `last_activity` periodically during work (e.g., after significant operations)
+  - Decision logic at conversation start: if today's date + activity within threshold (30-60 min) → continuation; otherwise → new session
+  - Update CLAUDE.md Session Start Checklist to use heartbeat instead of heuristic detection
+  - Reference: Session-2026-02-16-003 discussion
+
 - [ ] Discuss automating RTM generation
   - RTM is large, repetitive, and error-prone to maintain manually
   - Consider: Script that reads RS requirements + test docstrings/markers to generate the traceability matrix
@@ -81,20 +88,15 @@
 
 ## 2026-02-10
 
-- [ ] Surface identity mismatch warning to the caller, not just the server log
-  - When a container passes `user="tu_sim"` but its `X-QMS-Identity` header says `tu_ui`, the server silently overrides to `tu_ui`
-  - The caller sees no indication that its `user` parameter was ignored — it believes it queried tu_sim's inbox when it actually got tu_ui's
-  - **Confusion cascade observed in UAT:** tu_ui container tested `user=""`, `user="not_a_real_username"`, and omitted `user` entirely — all returned "Inbox is empty". The agent concluded "the QMS inbox endpoint doesn't validate whether the username exists" which is completely wrong: enforced mode was ignoring the parameter in all cases and always returning tu_ui's inbox. The agent was reasoning about phantom behavior and drawing false conclusions about system capabilities.
-  - This is not just a UX issue — silent identity override causes agents to form incorrect mental models of the system, which could lead to flawed decisions in more consequential operations (e.g., checkout, create, route)
-  - Proposal: Return the resolved identity in the tool response (e.g., `"resolved_as": "tu_ui"`) or include a warning in the result text when a mismatch occurs
-  - Reference: Session-2026-02-10-005 UAT, P1-T3 observation
+- [x] ~~Surface identity mismatch warning to the caller, not just the server log~~ RESOLVED (CR-075/CR-076)
+  - Server now raises `ValueError("IDENTITY MISMATCH: ...")` that stops execution and returns explicit error to caller
+  - Includes authenticated identity, claimed identity, corrective instruction, and QMS violation warning
+  - Tested in test_mcp.py (lines 1534-1707)
 
-- [ ] Investigate whether the defensive fallback in `resolve_identity()` is still needed
-  - After CR-075 (single-authority MCP), all connections go through HTTP — the `except (AttributeError, LookupError)` fallback for "no request context" should never fire in production
-  - Question: Can we remove the fallback entirely, or does it serve a legitimate purpose (e.g., unit testing with mocked contexts)?
-  - If removable: simplify `resolve_identity()` to only handle HTTP paths, remove fallback tests (`test_resolve_identity_no_context_default`, `test_resolve_identity_no_context_custom_user`, `test_resolve_identity_attribute_error_defensive_fallback`, `test_identity_collision_enforced_locks_fallback`)
-  - If keeping: document why in a code comment
-  - Reference: Session-2026-02-10-004, RTM line 1408
+- [x] ~~Investigate whether the defensive fallback in `resolve_identity()` is still needed~~ RESOLVED (CR-075)
+  - Exception-based fallback (`except AttributeError, LookupError`) removed entirely
+  - Replaced with explicit `getattr(..., None)` checks and clean conditional branching
+  - Non-HTTP path retained for legitimate stdio/testing use — explicit logic, not a fallback
 
 ---
 
