@@ -47,3 +47,15 @@
 {"ts": "2026-02-16T01:49:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-16T01:49:35+00:00", "event": "EFFECTIVE", "user": "qa", "version": "5.0", "from_version": "4.1"}
 {"ts": "2026-02-16T01:49:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T02:07:43+00:00", "event": "CHECKOUT", "user": "claude", "version": "5.1", "from_version": "5.0"}
+{"ts": "2026-02-16T02:08:22+00:00", "event": "CHECKIN", "user": "claude", "version": "5.1"}
+{"ts": "2026-02-16T02:08:28+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "5.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T02:08:28+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "5.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T02:09:34+00:00", "event": "REVIEW", "user": "qa", "version": "5.1", "outcome": "RECOMMEND", "comment": "Review complete. COMPLIANT.\n\nFRONTMATTER: title=\"Change Record Template\" (unchanged), revision_summary=\"CR-085: Add pre-execution commit reminder to execution instructions\" (correctly references CR-085 per SOP-002 Section 8).\n\nCHANGE VERIFIED: Two new lines added to the EXECUTION PHASE INSTRUCTIONS comment block in Section 10, between the \"NOTE\" line and the existing bullet points: \"PRE-EXECUTION: Before releasing for execution, commit and push the QMS repository to preserve the pre-execution baseline (per SOP-004 Section 5).\" References SOP-004 Section 5 as required. Matches CR-085 Section 5.3 specification.\n\nNO UNINTENDED CHANGES: All content outside the execution instructions comment block is identical to the effective version (v5.0).\n\nPLACEHOLDER CHECK: Template placeholders ({{...}} and [...]) are intentional template content. No TBD/TODO/FIXME/XXX found.\nFORMATTING: Consistent throughout.\nTYPOS/ERRORS: None found.\n\nRecommend for approval."}
+{"ts": "2026-02-16T02:09:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T02:09:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "5.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T02:09:46+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "5.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T02:10:02+00:00", "event": "APPROVE", "user": "qa", "version": "5.1"}
+{"ts": "2026-02-16T02:10:02+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "6.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T02:10:02+00:00", "event": "EFFECTIVE", "user": "qa", "version": "6.0", "from_version": "5.1"}
+{"ts": "2026-02-16T02:10:02+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "6.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

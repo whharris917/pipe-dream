@@ -59,3 +59,15 @@
 {"ts": "2026-02-16T01:49:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-16T01:49:35+00:00", "event": "EFFECTIVE", "user": "qa", "version": "5.0", "from_version": "4.1"}
 {"ts": "2026-02-16T01:49:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T02:07:42+00:00", "event": "CHECKOUT", "user": "claude", "version": "5.1", "from_version": "5.0"}
+{"ts": "2026-02-16T02:08:21+00:00", "event": "CHECKIN", "user": "claude", "version": "5.1"}
+{"ts": "2026-02-16T02:08:27+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "5.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T02:08:27+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "5.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T02:09:27+00:00", "event": "REVIEW", "user": "qa", "version": "5.1", "outcome": "RECOMMEND", "comment": "Review complete. COMPLIANT.\n\nFRONTMATTER: title=\"Document Execution\" (unchanged), revision_summary=\"CR-085: Add pre-execution repository commit requirement to Section 5\" (correctly references CR-085 per SOP-002 Section 8).\n\nCHANGE VERIFIED: New paragraph added at line 91, after the existing note in Section 5. Content: \"Before releasing an executable document for execution (transitioning from PRE_APPROVED to IN_EXECUTION), the initiator shall commit and push the QMS repository. This preserves the pre-execution baseline -- the pre-approved document content, routing history, and approval records -- in version control before implementation work begins.\" Placement matches CR-085 Section 5.1 specification.\n\nNO UNINTENDED CHANGES: All sections outside Section 5 are identical to the effective version (v5.0). Only the new paragraph was added.\n\nPLACEHOLDER CHECK: No TBD/TODO/FIXME/XXX found.\nFORMATTING: Consistent throughout.\nTYPOS/ERRORS: None found.\n\nRecommend for approval."}
+{"ts": "2026-02-16T02:09:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T02:09:45+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "5.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T02:09:45+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "5.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T02:10:00+00:00", "event": "APPROVE", "user": "qa", "version": "5.1"}
+{"ts": "2026-02-16T02:10:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "6.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T02:10:00+00:00", "event": "EFFECTIVE", "user": "qa", "version": "6.0", "from_version": "5.1"}
+{"ts": "2026-02-16T02:10:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "6.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

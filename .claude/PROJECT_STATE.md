@@ -78,8 +78,9 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | **QMS Process** | CR-082 | ADD (Addendum) Document Type | Post-closure correction mechanism, CLI-7.0 |
 | | CR-083 | Merge Gate and Qualified Commit Convention | SOP-005/006/TEMPLATE-CR updated, merge type codified |
 | | CR-084 | Integration Verification Mandate | SOP-002/004, TEMPLATE-CR/VAR updated, new Phase 5 |
+| | CR-085 | Pre-Execution Repository Commit | SOP-002/004, TEMPLATE-CR updated, commit before release |
 
-*CR-057 predates the orchestration era. All 42 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 43 CRs above are CLOSED.*
 
 ### SDLC Document State
 
@@ -206,7 +207,7 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 |------|---------|
 | ~~Formalize UAT as stage gate for code CRs~~ | **DONE** (CR-084) |
 | Comments visibility restriction during active workflows | Needs design decision |
-| Prerequisite: commit/push pipe-dream as first EI | Needs SOP-002/004 revision |
+| ~~Prerequisite: commit/push pipe-dream as first EI~~ | **DONE** (CR-085) |
 
 ### Deferred
 

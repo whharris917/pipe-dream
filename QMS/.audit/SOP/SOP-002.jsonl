@@ -97,3 +97,15 @@
 {"ts": "2026-02-16T01:49:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-16T01:49:34+00:00", "event": "EFFECTIVE", "user": "qa", "version": "10.0", "from_version": "9.1"}
 {"ts": "2026-02-16T01:49:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T02:07:42+00:00", "event": "CHECKOUT", "user": "claude", "version": "10.1", "from_version": "10.0"}
+{"ts": "2026-02-16T02:08:21+00:00", "event": "CHECKIN", "user": "claude", "version": "10.1"}
+{"ts": "2026-02-16T02:08:27+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "10.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T02:08:27+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "10.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T02:09:30+00:00", "event": "REVIEW", "user": "qa", "version": "10.1", "outcome": "RECOMMEND", "comment": "Review complete. COMPLIANT.\n\nFRONTMATTER: title=\"Change Control\" (unchanged), revision_summary=\"CR-085: Add pre-execution commit step to Section 7.2\" (correctly references CR-085 per SOP-002 Section 8).\n\nCHANGE VERIFIED: Section 7.2 now has 5 steps (was 4). New step 1: \"Commits and pushes the QMS repository to capture the pre-execution state (per SOP-004 Section 5)\". Existing steps correctly renumbered from 1-4 to 2-5. Cross-reference to SOP-004 Section 5 is present. Matches CR-085 Section 5.2 specification exactly.\n\nNO UNINTENDED CHANGES: All sections outside Section 7.2 are identical to the effective version (v10.0).\n\nPLACEHOLDER CHECK: No TBD/TODO/FIXME/XXX found.\nFORMATTING: Consistent throughout.\nTYPOS/ERRORS: None found.\n\nRecommend for approval."}
+{"ts": "2026-02-16T02:09:30+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T02:09:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "10.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T02:09:46+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "10.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T02:10:01+00:00", "event": "APPROVE", "user": "qa", "version": "10.1"}
+{"ts": "2026-02-16T02:10:01+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T02:10:01+00:00", "event": "EFFECTIVE", "user": "qa", "version": "11.0", "from_version": "10.1"}
+{"ts": "2026-02-16T02:10:01+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "11.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
