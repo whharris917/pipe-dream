@@ -6,10 +6,8 @@
 
 ## 2026-02-15
 
-- [ ] Update QMS document creation confirmation message to remind user the document is auto-checked-out to their workspace
-  - Currently `qms create` returns the workspace path but doesn't explicitly remind the user they can start editing immediately
-  - Consider: Add a line like "Document is checked out to your workspace — you can begin editing now."
-  - Location: `qms-cli/qms.py` (create command handler) or MCP server equivalent
+- [x] ~~Update QMS document creation confirmation message to remind user the document is auto-checked-out to their workspace~~ DONE (CR-087)
+  - Added "Document is checked out and ready for editing." to create command output
 
 - [ ] Add granular start/stop commands to agent-hub CLI
   - Currently only `stop-all` exists for shutdown; no way to start/stop individual components
@@ -75,39 +73,29 @@
 
 ## 2026-02-02
 
-- [ ] Investigate why checking out an INV in IN_PRE_REVIEW didn't cancel ongoing workflows and transition back to DRAFT
-  - Expected: Checkout from review status should withdraw/cancel the review workflow
-  - Actual: INV-009 was checked out while IN_PRE_REVIEW, but remained in review status after checkin
-  - May need new requirement or fix to checkout behavior for documents in review states
-  - Reference: INV-009 CAPA editing during Session-2026-02-02-003
+- [x] ~~Investigate why checking out an INV in IN_PRE_REVIEW didn't cancel ongoing workflows and transition back to DRAFT~~ DONE (CR-087)
+  - Implemented REQ-WF-022: checkout from active workflow states now auto-withdraws first
+  - Implemented REQ-WF-023: route while checked out now auto-checks-in first
 
 ---
 
 ## 2026-01-31
 
-- [ ] Fix unit test assertion in test_qms_auth.py for improved error message
-  - Test `test_invalid_user` expects `"not a valid QMS user"` in error output
-  - CLI now provides more helpful error message with instructions for adding users
-  - Update assertion to match new error format: `"User 'unknown_user' not found"`
-  - Location: `qms-cli/tests/test_qms_auth.py`
-  - Reference: CR-041 execution, test run showing 1 failed / 338 passed
+- [x] ~~Fix unit test assertion in test_qms_auth.py for improved error message~~ RESOLVED
+  - Test already asserts `"not found" in captured.out` which matches current CLI output
+  - No action needed — was fixed at some point after the to-do was written
 
 ---
 
 ## 2026-01-26
 
-- [ ] Create CR to add ASSIGN to REQ-AUDIT-002 required event types
-  - RS REQ-AUDIT-002 lists 14 required audit events but does not include ASSIGN
-  - Code now logs ASSIGN event (added by CR-036-VAR-005)
-  - RS should be updated to include ASSIGN as a 15th required event type
-  - Reference: Session-2026-01-26-001 RTM sanity check
+- [x] ~~Create CR to add ASSIGN to REQ-AUDIT-002 required event types~~ DONE (CR-087)
+  - REQ-AUDIT-002 now lists 16 event types (added ASSIGN and WITHDRAW)
+  - test_audit_completeness.py verifies all 16 types are logged
 
-- [ ] Add owner-initiated withdrawal command for documents in review
-  - Currently no way for document owner to recall a document from IN_REVIEW back to DRAFT
-  - Workaround: Have QA reject, then owner checkouts to revert REVIEWED → DRAFT
-  - Proposed: `qms withdraw <DOC_ID>` command for owner to pull back routed document
-  - Would need: New RS requirement, workflow transition, CLI command implementation
-  - Reference: Session-2026-01-26-001 RTM routing discussion
+- [x] ~~Add owner-initiated withdrawal command for documents in review~~ DONE (CR-048 + CR-087)
+  - CR-048: Added `qms withdraw` command (REQ-WF-018)
+  - CR-087: Added auto-withdraw on checkout from active workflows (REQ-WF-022)
 
 - [x] ~~Update SOP-005 (Code Governance) to thoroughly explain qualification process~~ DONE (CR-083, CR-086)
   - CR-083: Codified merge gate, qualified commit convention, merge type requirements (Section 7.1.1-7.1.4)
@@ -141,13 +129,10 @@
 
 ## 2026-01-19
 
-- [ ] Derive TRANSITIONS from WORKFLOW_TRANSITIONS in qms-cli
-  - Currently `qms_config.TRANSITIONS` and `workflow.WORKFLOW_TRANSITIONS` encode the same state machine edges
-  - Risk: If they diverge, transition validation bugs result
-  - Simplification: Generate `TRANSITIONS` dict from `WORKFLOW_TRANSITIONS` list at module load
-  - Location: `qms-cli/qms_config.py` imports from `workflow.py`, or refactor to single source of truth
-  - Priority: Low (code works, but worth doing if workflow engine is touched by future CR)
-  - Reference: Session-2026-01-19-004 formalization analysis
+- [x] ~~Derive TRANSITIONS from WORKFLOW_TRANSITIONS in qms-cli~~ DONE (CR-087)
+  - Consolidated full state machine into workflow.py (WORKFLOW_TRANSITIONS is single source of truth)
+  - TRANSITIONS, WITHDRAW_TRANSITIONS, CHECKOUT_TRANSITIONS all derived via _derive_transitions_dict() and _derive_action_map()
+  - Added CHECKOUT and WITHDRAW to Action enum with 8 new StatusTransition entries
 
 ---
 
@@ -163,13 +148,9 @@
 
 ## 2026-01-11
 
-- [ ] Remove in-memory fallback for inbox prompts in qms-cli
-  - CR-027 added YAML file-based prompts; legacy hard-coded fallback is no longer needed
-  - Remove: DEFAULT_FRONTMATTER_CHECKS, DEFAULT_STRUCTURE_CHECKS, DEFAULT_CONTENT_CHECKS, etc.
-  - Remove: DEFAULT_REVIEW_CONFIG, DEFAULT_APPROVAL_CONFIG, CR_POST_REVIEW_CONFIG, SOP_REVIEW_CONFIG
-  - Remove: _register_defaults() method in PromptRegistry
-  - Update: get_config() to only use file-based loading
-  - Update: Tests that rely on in-memory configs
+- [x] ~~Remove in-memory fallback for inbox prompts in qms-cli~~ DONE (CR-087)
+  - Removed 11 in-memory constants, _register_defaults(), fallback chain from prompts.py
+  - YAML is sole config source; get_config() raises ValueError on lookup failure
 
 ---
 

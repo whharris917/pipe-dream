@@ -1,16 +1,16 @@
 # Project State
 
-*Last updated: Session-2026-02-15-003*
+*Last updated: Session-2026-02-16-002*
 
 ---
 
 ## 1. Where We Are Now
 
-The multi-agent orchestration platform is built and validated. QMS process evolution continues. CR-086 corrected CR-085's "QMS repository" language to "project repository and all submodules," repositioned the pre-execution commit from a pre-release prerequisite to the first execution item (EI-1) with the post-execution commit as the final EI, and added rollback procedures to SOP-005 Section 7.1.5.
+CR-087 closed: QMS CLI Quality, State Machine, and Workflow Enforcement. Five improvements delivered — create confirmation message, YAML-only prompts, consolidated state machine, auto-withdraw on checkout (REQ-WF-022), auto-checkin on route (REQ-WF-023), and audit completeness (16 event types). RS v14.0, RTM v17.0, CLI at 416 tests.
 
-Prior: CR-084 codified integration verification, CR-085 added the pre-execution commit requirement, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 is CLOSED with all 3 CAPAs complete.
+Prior: CR-086 fixed pre/post-execution commits as bookend EIs, CR-085 added pre-execution commit requirement, CR-084 codified integration verification, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 CLOSED with all 3 CAPAs.
 
-The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B and D cover Git MCP access control and GUI feature completion.
+The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. Phases B and D cover Git MCP access control and GUI feature completion.
 
 ---
 
@@ -26,7 +26,7 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 
 **Audit, Hardening, and Verification (Feb 14, CR-077 through CR-081).** Code review (27 findings, 4 fixed), Phase A integration testing (2 containerized agents, full QMS lifecycle), GUI terminal hardening (scrollback, control mode, dimensions).
 
-**QMS Process Evolution (Feb 15, CR-082 through CR-086).** ADD document type (CAPA-003). Merge gate and qualified commit convention. Integration verification mandate. Pre/post-execution commit as bookend EIs. Rollback procedures for code CRs.
+**QMS Process Evolution (Feb 15-16, CR-082 through CR-087).** ADD document type (CAPA-003). Merge gate and qualified commit convention. Integration verification mandate. Pre/post-execution commit as bookend EIs. Rollback procedures for code CRs. CLI quality and workflow enforcement.
 
 ---
 
@@ -80,16 +80,17 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | | CR-084 | Integration Verification Mandate | SOP-002/004, TEMPLATE-CR/VAR updated, new Phase 5 |
 | | CR-085 | Pre-Execution Repository Commit | SOP-002/004, TEMPLATE-CR updated, commit before release |
 | | CR-086 | State Preservation, Rollback, CR-085 Fix | Pre/post commits as EIs, SOP-005 rollback, language fix |
+| | CR-087 | QMS CLI Quality, State Machine, Workflow Enforcement | Consolidated state machine, auto-withdraw/auto-checkin, 416 tests |
 
-*CR-057 predates the orchestration era. All 44 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 45 CRs above are CLOSED.*
 
 ### SDLC Document State
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v13.0 EFFECTIVE | 107 requirements |
-| SDLC-QMS-RTM | v15.0 EFFECTIVE | 403 tests, CI-verified |
-| Qualified Baseline | CLI-7.0 | qms-cli commit dffd56c |
+| SDLC-QMS-RS | v14.0 EFFECTIVE | 109 requirements |
+| SDLC-QMS-RTM | v17.0 EFFECTIVE | 416 tests, CI-verified |
+| Qualified Baseline | CLI-8.0 | qms-cli commit 572339e |
 
 ---
 
@@ -128,8 +129,6 @@ All remaining open documents are legacy from early QMS iterations. A bulk cleanu
 - **D.4:** Identity status visibility in sidebar
 
 ### Phase E: Process Alignment (~1-2 sessions)
-- ~~CR-083: Merge gate and qualified commit convention~~ **DONE**
-- ~~CR-084: Integration verification mandate~~ **DONE**
 - Update SOP-007 and SOP-001 to reflect identity architecture
 - Update agent definitions with "do not modify files" prohibitions
 - Audit and fix CR document path references in SOPs/templates
@@ -166,19 +165,10 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 
 | Item | Effort | Bundle |
 |------|--------|--------|
-| Fix unit test assertion in `test_qms_auth.py` | Trivial | QMS CLI Cleanup |
-| Add ASSIGN to REQ-AUDIT-002 required event types | Small | RS/RTM Update |
 | Correct SOP-001 Section 4.2 `fix` permission | Small | SOP Revision |
-| Remove in-memory fallback for inbox prompts | Small | QMS CLI Cleanup |
 | Audit and fix CR document path references | Small | SOP Revision |
 
 ### Bundleable (natural CR groupings)
-
-**QMS CLI Cleanup** (~1 session)
-- Fix `test_qms_auth.py` assertion
-- Remove in-memory prompt fallback
-- Derive TRANSITIONS from WORKFLOW_TRANSITIONS
-- Investigate checkout-from-review not cancelling workflow
 
 **SOP Revision** (~1 session)
 - SOP-001 Section 4.2 `fix` permission correction
@@ -206,22 +196,17 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 
 | Item | Blocker |
 |------|---------|
-| ~~Formalize UAT as stage gate for code CRs~~ | **DONE** (CR-084) |
 | Comments visibility restriction during active workflows | Needs design decision |
-| ~~Prerequisite: commit/push pipe-dream as first EI~~ | **DONE** (CR-085, refined CR-086) |
 
 ### Deferred
 
 | Item | Rationale |
 |------|-----------|
-| ~~CAPA-003: ADD document type~~ | **DONE** (CR-082) |
 | Remove EFFECTIVE status / rename to APPROVED | High disruption, low value |
 | Metadata injection into viewable rendition | No current pain point |
 | "Pass with exception" test outcome type | No test execution exercising this gap |
 | Production/test environment isolation review | Addressed by submodule separation |
 | Proceduralize how to add new documents to QMS | Works well enough |
-| ~~SOP-005 qualification process explanation~~ | **DONE** (CR-083, rollback added CR-086) |
-| Owner-initiated withdrawal (`qms withdraw`) | Workaround exists |
 | Stdio proxy for 100% MCP reliability | HTTP at 90% is workable |
 
 ---
@@ -232,6 +217,6 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 403.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 416.
 
 **No inter-agent communication.** Phase D.3 addresses this.
