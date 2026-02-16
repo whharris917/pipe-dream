@@ -4,6 +4,43 @@
 
 ---
 
+## 2026-02-16
+
+- [ ] Discuss automating RTM generation
+  - RTM is large, repetitive, and error-prone to maintain manually
+  - Consider: Script that reads RS requirements + test docstrings/markers to generate the traceability matrix
+  - Consider: What remains manual vs. what can be derived from code
+  - Reference: Session-2026-02-16-002 feedback
+
+- [ ] Improve RTM readability: one test per line with row-spanning REQ IDs
+  - Current format flattens all test references into a single row, which is hard to read
+  - Proposed: Each test on its own line, with gaps in the REQ column (gap = same REQ as above)
+  - Similar to the "CR Chain" table in PROJECT_STATE.md
+
+- [ ] Integrate ALCOA+ concepts into QMS execution documentation
+  - EI execution summaries should be recorded contemporaneously, not backfilled
+  - Extend signature format from `performer - date` to `performer - YYYY-MM-DD HH:MM UTC`
+  - Consider: SOP-004, TEMPLATE-CR, TEMPLATE-VAR updates
+  - Reference: Session-2026-02-16-002 feedback on CR-087 execution
+
+- [ ] Update SOPs/templates for branch protection and merge strategy
+  - Document that `gh pr merge --merge --auto` is the standard merge approach
+  - Explicitly prohibit overriding branch protection (`--admin` flag)
+  - Clarify that merge commits always produce a new hash (qualified baseline = branch commit, not merge commit)
+  - Consider: SOP-005, TEMPLATE-CR updates
+
+- [ ] Consider adding a commit column to the EI execution table
+  - Current table has: EI, Task Description, Execution Summary, Task Outcome, Performed By - Date
+  - Proposed: Add a Commit column for traceability
+  - Would reduce the need to embed commit hashes in narrative text
+
+- [ ] Stop tracking total counts of tests, REQs, and other accounting numbers
+  - Maintaining exact counts (e.g., "107 requirements", "403 tests") across documents is a maintenance burden
+  - Numbers drift and cause unnecessary review findings
+  - Consider: Remove hard-coded counts from RTM scope section, rely on automated verification instead
+
+---
+
 ## 2026-02-15
 
 - [x] ~~Update QMS document creation confirmation message to remind user the document is auto-checked-out to their workspace~~ DONE (CR-087)
@@ -138,11 +175,11 @@
 
 ## 2026-01-17
 
-- [ ] Correct SOP-001 Section 4.2 fix permission
-  - Current: Shows "fix (admin): lead only" for Initiators and "Yes" for QA
-  - Should be: fix is Initiators only (not QA)
-  - Update Permission Matrix in SOP-001 Section 4.2
-  - Note: Identified during SDLC-QMS-RS requirements review
+- [x] ~~Correct SOP-001 Section 4.2 fix permission~~ RESOLVED
+  - Permission matrix now correctly shows fix as Administrator-only
+
+- [ ] Fix stale help text in `qms.py:154` — says "(QA/lead only)" but fix is Administrator-only
+  - Cosmetic, low priority
 
 ---
 
