@@ -1,7 +1,7 @@
 ---
 title: Change Record Template
-revision_summary: 'CR-083: Codify merge type and qualified commit convention in CODE
-  CR PATTERNS and Phase 6'
+revision_summary: 'CR-051: Add explicit RTM approval verification in Phases 9.5 and
+  9.6 per SOP-006 Section 7.4'
 ---
 
 <!--
@@ -78,16 +78,13 @@ CODE CR PATTERNS:
 When a CR modifies controlled code (any system with SDLC governance):
 - Include Section 7.4 (Development Controls) and 7.5 (Qualified State Continuity)
 - Use the standardized implementation phases in Section 9
-- RS and RTM must be EFFECTIVE before merging to main (SOP-006 Section 7.4)
-- The qualified commit is the execution branch commit verified by CI (SOP-005 Section 7.1.2)
-- RTM must reference this execution branch commit hash -- not the merge commit
-- Merge type: regular merge commit (--no-ff). Squash merges are prohibited (SOP-005 Section 7.1.3)
-- Qualification happens on the execution branch; main stays qualified throughout
+- RS and RTM must be EFFECTIVE before merging to main
+- RTM must reference the CI-verified commit hash from the dev branch
+- Qualification happens on the dev branch; main stays qualified throughout
 
 The pattern ensures:
 - main branch is always in a qualified state
 - No code merges without approved requirements and passing tests
-- The qualified commit hash in the RTM is reachable on main via merge commit
 - Full traceability from requirements to verified implementation
 
 Delete this comment block after reading.
@@ -289,10 +286,9 @@ Include for code CRs. Delete for document-only CRs.
 1. Verify RS is EFFECTIVE (document status check)
 2. Verify RTM is EFFECTIVE (document status check)
 3. Create PR to merge dev branch to main
-4. Merge PR using merge commit -- not squash (per SOP-005 Section 7.1.3)
-5. Verify qualified commit hash from execution branch is reachable on main
-6. Update submodule pointer in parent repo
-7. Verify functionality in production context
+4. Merge PR
+5. Update submodule pointer in parent repo
+6. Verify functionality in production context
 
 ### 9.7 Phase 7: Documentation (if applicable)
 

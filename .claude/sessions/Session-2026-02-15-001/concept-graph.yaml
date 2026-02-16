@@ -1,0 +1,685 @@
+# Concept Dependency Graph
+# Maps shared concepts to the documents that define and reference them.
+# Enables deterministic impact analysis: "I'm changing X — what needs updating?"
+
+meta:
+  schema_version: "1.0"
+  description: >
+    Prototype concept dependency graph for the Pipe Dream QMS ecosystem.
+    Each concept has an authoritative definition (authority), a list of documents
+    that depend on it (references), and upstream concept dependencies (depends_on).
+    The documents section provides a reverse index from document to subscribed concepts.
+
+# =============================================================================
+# CONCEPTS
+# =============================================================================
+# Each concept entry contains:
+#   description  - what the concept covers
+#   authority    - the document + section that authoritatively defines it
+#   references   - documents that depend on this concept (would need review if it changes)
+#   depends_on   - other concepts this concept builds upon (enables transitive impact analysis)
+
+concepts:
+
+  # ---------------------------------------------------------------------------
+  # SOP-001: Document Control foundations
+  # ---------------------------------------------------------------------------
+
+  document-types:
+    description: >
+      The taxonomy of controlled document types (SOP, CR, INV, TP, ER, VAR, ADD, RS, RTM),
+      their naming conventions, and the executable vs non-executable distinction.
+    authority: "SOP-001 Section 2-3, 6.1"
+    depends_on: []
+    references:
+      - SOP-002
+      - SOP-003
+      - SOP-004
+      - SOP-005
+      - SOP-006
+      - CLAUDE.md
+      - TEMPLATE-SOP
+      - TEMPLATE-CR
+      - TEMPLATE-INV
+      - TEMPLATE-TP
+      - TEMPLATE-TC
+      - TEMPLATE-ER
+      - TEMPLATE-VAR
+      - TEMPLATE-ADD
+
+  document-states:
+    description: >
+      The lifecycle states for non-executable (DRAFT through EFFECTIVE/RETIRED) and
+      executable documents (DRAFT through CLOSED/RETIRED), including terminal states.
+    authority: "SOP-001 Section 8, 10"
+    depends_on:
+      - document-types
+    references:
+      - SOP-002
+      - SOP-004
+      - SOP-007
+      - CLAUDE.md
+      - TEMPLATE-CR
+      - TEMPLATE-INV
+      - TEMPLATE-TP
+      - TEMPLATE-ER
+      - TEMPLATE-VAR
+      - TEMPLATE-ADD
+      - agent-qa
+
+  version-numbering:
+    description: >
+      The N.X versioning scheme, version transitions (create, revise, approve),
+      and archive management for superseded versions.
+    authority: "SOP-001 Section 7"
+    depends_on: []
+    references:
+      - SOP-002
+      - SOP-005
+      - TEMPLATE-CR
+      - agent-qa
+
+  metadata-architecture:
+    description: >
+      The three-tier architecture: Tier 1 (frontmatter), Tier 2 (.meta/ sidecar files),
+      Tier 3 (.audit/ JSONL logs). Includes content standards and responsible user lifecycle.
+    authority: "SOP-001 Section 5"
+    depends_on: []
+    references:
+      - CLAUDE.md
+      - TEMPLATE-SOP
+      - TEMPLATE-CR
+      - TEMPLATE-INV
+      - TEMPLATE-TP
+      - TEMPLATE-TC
+      - TEMPLATE-ER
+      - TEMPLATE-VAR
+      - TEMPLATE-ADD
+      - agent-qa
+
+  user-roles:
+    description: >
+      The four user groups (Administrator, Initiator, Quality, Reviewer)
+      and their responsibilities within the QMS.
+    authority: "SOP-001 Section 4.1, 4.3"
+    depends_on: []
+    references:
+      - SOP-002
+      - SOP-003
+      - SOP-007
+      - CLAUDE.md
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  permissions-model:
+    description: >
+      The permission matrix mapping actions (create, checkout, assign, review,
+      approve, fix, etc.) to user groups.
+    authority: "SOP-001 Section 4.2"
+    depends_on:
+      - user-roles
+    references:
+      - SOP-007
+      - CLAUDE.md
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  cli-commands:
+    description: >
+      The QMS CLI command reference — document management, workflow commands,
+      audit/history commands, user commands, and administrative commands.
+    authority: "SOP-001 Section 13"
+    depends_on:
+      - document-types
+      - document-states
+    references:
+      - CLAUDE.md
+      - SOP-007
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  review-approval-workflow:
+    description: >
+      The review/approval lifecycle: routing, reviewer assignment, review outcomes
+      (recommend/request-updates), approval gate, rejection handling, and automatic transitions.
+    authority: "SOP-001 Section 9.1-9.3"
+    depends_on:
+      - document-states
+      - user-roles
+      - permissions-model
+    references:
+      - SOP-002
+      - SOP-003
+      - SOP-004
+      - SOP-006
+      - SOP-007
+      - CLAUDE.md
+      - TEMPLATE-SOP
+      - TEMPLATE-CR
+      - TEMPLATE-INV
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  # ---------------------------------------------------------------------------
+  # SOP-002: Change Control
+  # ---------------------------------------------------------------------------
+
+  cr-workflow:
+    description: >
+      The Change Record lifecycle: content requirements (Sections 1-12),
+      review team assignment, execution phase, and post-review requirements.
+    authority: "SOP-002 Section 6-7"
+    depends_on:
+      - review-approval-workflow
+      - document-types
+    references:
+      - SOP-003
+      - SOP-005
+      - SOP-006
+      - TEMPLATE-CR
+      - CLAUDE.md
+
+  post-review-prerequisites:
+    description: >
+      The five conditions required before routing for post-review: execution complete,
+      blocking VARs resolved, documentation approved, evidence documented, SDLC prerequisites met.
+    authority: "SOP-002 Section 7.3"
+    depends_on:
+      - cr-workflow
+      - execution-mechanics
+      - var-types
+    references:
+      - SOP-004
+      - SOP-006
+      - TEMPLATE-CR
+      - agent-qa
+
+  # ---------------------------------------------------------------------------
+  # SOP-003: Deviation Management
+  # ---------------------------------------------------------------------------
+
+  deviation-management:
+    description: >
+      When and how to create Investigations (INVs), root cause analysis requirements,
+      and CAPA management as execution items within INVs.
+    authority: "SOP-003 Section 4-6"
+    depends_on:
+      - review-approval-workflow
+      - document-types
+    references:
+      - SOP-004
+      - TEMPLATE-INV
+
+  # ---------------------------------------------------------------------------
+  # SOP-004: Document Execution
+  # ---------------------------------------------------------------------------
+
+  execution-mechanics:
+    description: >
+      The executable block structure (static vs editable fields), execution item tables,
+      task outcomes (Pass/Fail), evidence requirements, and document states during execution.
+    authority: "SOP-004 Section 4-8"
+    depends_on:
+      - document-states
+    references:
+      - SOP-002
+      - SOP-003
+      - TEMPLATE-CR
+      - TEMPLATE-INV
+      - TEMPLATE-TP
+      - TEMPLATE-TC
+      - TEMPLATE-ER
+      - TEMPLATE-VAR
+      - TEMPLATE-ADD
+
+  var-types:
+    description: >
+      Variance Report types (Type 1: full closure required, Type 2: pre-approval sufficient),
+      VAR content requirements, naming convention, and scope handoff.
+    authority: "SOP-004 Section 9A"
+    depends_on:
+      - execution-mechanics
+    references:
+      - SOP-002
+      - TEMPLATE-VAR
+      - TEMPLATE-CR
+      - agent-qa
+
+  addendum-mechanics:
+    description: >
+      Addendum Report (ADD) purpose, parent state requirement (CLOSED only),
+      valid parent types, content requirements, and relationship to VARs and INVs.
+    authority: "SOP-004 Section 9B"
+    depends_on:
+      - execution-mechanics
+      - document-types
+    references:
+      - SOP-001
+      - TEMPLATE-ADD
+
+  test-protocol:
+    description: >
+      Test Protocol structure, Test Case composition, Exception Report workflow,
+      re-execution requirements, and nested ER handling.
+    authority: "SOP-004 Section 9"
+    depends_on:
+      - execution-mechanics
+    references:
+      - SOP-002
+      - SOP-006
+      - TEMPLATE-TP
+      - TEMPLATE-TC
+      - TEMPLATE-ER
+
+  # ---------------------------------------------------------------------------
+  # SOP-005: Code Governance
+  # ---------------------------------------------------------------------------
+
+  code-governance:
+    description: >
+      Separation of code and documents, Execution Branch model, Genesis Sandbox,
+      system release versioning, code reference format, and traceability model.
+    authority: "SOP-005"
+    depends_on:
+      - cr-workflow
+    references:
+      - SOP-006
+      - TEMPLATE-CR
+      - CLAUDE.md
+
+  # ---------------------------------------------------------------------------
+  # SOP-006: SDLC Governance
+  # ---------------------------------------------------------------------------
+
+  sdlc-governance:
+    description: >
+      Requirements Specification (RS) and Requirements Traceability Matrix (RTM),
+      verification types (unit test, qualitative proof), qualification requirements,
+      and CR closure prerequisites for SDLC-governed systems.
+    authority: "SOP-006"
+    depends_on:
+      - code-governance
+      - review-approval-workflow
+    references:
+      - SOP-002
+      - SOP-005
+      - TEMPLATE-CR
+      - TEMPLATE-TP
+
+  # ---------------------------------------------------------------------------
+  # SOP-007: Agent Orchestration
+  # ---------------------------------------------------------------------------
+
+  agent-orchestration:
+    description: >
+      Rules for spawning, managing, and coordinating AI agents: communication boundaries,
+      review independence, agent reuse, identity/integrity, and conflict resolution.
+    authority: "SOP-007"
+    depends_on:
+      - user-roles
+      - permissions-model
+      - review-approval-workflow
+    references:
+      - CLAUDE.md
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  # ---------------------------------------------------------------------------
+  # CLAUDE.md: Technical Architecture
+  # ---------------------------------------------------------------------------
+
+  technical-architecture:
+    description: >
+      High-level project structure: the Scene pattern, Session/Scene split,
+      entry points, and the relationship between subsystems.
+    authority: "CLAUDE.md Section 1-2"
+    depends_on: []
+    references:
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  cad-domain:
+    description: >
+      The Sketch subsystem: geometric entities, constraints, PBD solver,
+      hybrid architecture (legacy/Numba), and the interaction model (servo).
+    authority: "CLAUDE.md Section 5.1, 5.3"
+    depends_on:
+      - technical-architecture
+    references:
+      - agent-tu_sketch
+      - agent-tu_scene
+
+  physics-domain:
+    description: >
+      The Simulation subsystem: particle engine, Verlet integration,
+      spatial hashing, Data-Oriented Design, and Numba optimization.
+    authority: "CLAUDE.md Section 5.2"
+    depends_on:
+      - technical-architecture
+    references:
+      - agent-tu_sim
+      - agent-tu_scene
+
+  compiler-bridge:
+    description: >
+      The one-way Compiler that translates Sketch geometry into Simulation
+      atoms (static particles), and the rebuild trigger mechanism.
+    authority: "CLAUDE.md Section 5.4"
+    depends_on:
+      - cad-domain
+      - physics-domain
+    references:
+      - agent-tu_sim
+      - agent-tu_sketch
+      - agent-tu_scene
+
+  ui-framework:
+    description: >
+      The UI layer: hierarchical widget tree, overlay protocol, input chain
+      of responsibility, ToolContext facade, focus management, and smart batching.
+    authority: "CLAUDE.md Section 5.5, 6"
+    depends_on:
+      - technical-architecture
+    references:
+      - agent-tu_ui
+
+  mcp-tools:
+    description: >
+      MCP server integration for QMS operations — native MCP tool equivalents
+      for CLI commands, remote transport configuration, and container connectivity.
+    authority: "CLAUDE.md QMS Operations via MCP Tools"
+    depends_on:
+      - cli-commands
+    references:
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+  session-management:
+    description: >
+      Session lifecycle (open/close/consolidation), CURRENT_SESSION file,
+      session start checklist, and session ID format.
+    authority: "CLAUDE.md Session Management"
+    depends_on: []
+    references: []
+
+  prohibited-behavior:
+    description: >
+      Explicit prohibitions: no direct .meta/.audit manipulation, no scripting
+      workarounds, no circumvention of document control, report-don't-exploit policy.
+    authority: "CLAUDE.md Prohibited Behavior"
+    depends_on:
+      - permissions-model
+    references:
+      - SOP-007
+      - agent-qa
+      - agent-bu
+      - agent-tu_ui
+      - agent-tu_scene
+      - agent-tu_sketch
+      - agent-tu_sim
+
+# =============================================================================
+# DOCUMENTS (reverse index)
+# =============================================================================
+# Each document lists the concepts it subscribes to (defines or references).
+# Use this to answer: "What concepts does this document touch?"
+
+documents:
+
+  # --- SOPs ---
+
+  SOP-001:
+    path: QMS/SOP/SOP-001.md
+    subscribes_to:
+      - document-types
+      - document-states
+      - version-numbering
+      - metadata-architecture
+      - user-roles
+      - permissions-model
+      - cli-commands
+      - review-approval-workflow
+
+  SOP-002:
+    path: QMS/SOP/SOP-002.md
+    subscribes_to:
+      - cr-workflow
+      - post-review-prerequisites
+      - document-types
+      - review-approval-workflow
+      - test-protocol
+      - var-types
+      - sdlc-governance
+
+  SOP-003:
+    path: QMS/SOP/SOP-003.md
+    subscribes_to:
+      - deviation-management
+      - document-types
+      - review-approval-workflow
+      - execution-mechanics
+      - cr-workflow
+
+  SOP-004:
+    path: QMS/SOP/SOP-004.md
+    subscribes_to:
+      - execution-mechanics
+      - var-types
+      - addendum-mechanics
+      - test-protocol
+      - document-states
+      - post-review-prerequisites
+
+  SOP-005:
+    path: QMS/SOP/SOP-005.md
+    subscribes_to:
+      - code-governance
+      - cr-workflow
+      - document-types
+      - sdlc-governance
+
+  SOP-006:
+    path: QMS/SOP/SOP-006.md
+    subscribes_to:
+      - sdlc-governance
+      - code-governance
+      - review-approval-workflow
+      - post-review-prerequisites
+
+  SOP-007:
+    path: QMS/SOP/SOP-007.md
+    subscribes_to:
+      - agent-orchestration
+      - user-roles
+      - permissions-model
+      - review-approval-workflow
+      - prohibited-behavior
+      - cli-commands
+
+  # --- CLAUDE.md ---
+
+  CLAUDE.md:
+    path: CLAUDE.md
+    subscribes_to:
+      - technical-architecture
+      - cad-domain
+      - physics-domain
+      - compiler-bridge
+      - ui-framework
+      - mcp-tools
+      - session-management
+      - prohibited-behavior
+      - cli-commands
+      - user-roles
+      - permissions-model
+      - agent-orchestration
+      - document-types
+      - code-governance
+      - cr-workflow
+
+  # --- Agent Definitions ---
+
+  agent-qa:
+    path: .claude/agents/qa.md
+    subscribes_to:
+      - user-roles
+      - permissions-model
+      - review-approval-workflow
+      - cli-commands
+      - mcp-tools
+      - prohibited-behavior
+      - document-states
+      - metadata-architecture
+      - agent-orchestration
+      - post-review-prerequisites
+
+  agent-bu:
+    path: .claude/agents/bu.md
+    subscribes_to:
+      - user-roles
+      - review-approval-workflow
+      - cli-commands
+      - mcp-tools
+      - prohibited-behavior
+      - agent-orchestration
+
+  agent-tu_ui:
+    path: .claude/agents/tu_ui.md
+    subscribes_to:
+      - user-roles
+      - review-approval-workflow
+      - cli-commands
+      - mcp-tools
+      - prohibited-behavior
+      - ui-framework
+      - technical-architecture
+      - agent-orchestration
+
+  agent-tu_scene:
+    path: .claude/agents/tu_scene.md
+    subscribes_to:
+      - user-roles
+      - review-approval-workflow
+      - cli-commands
+      - mcp-tools
+      - prohibited-behavior
+      - technical-architecture
+      - cad-domain
+      - physics-domain
+      - compiler-bridge
+      - agent-orchestration
+
+  agent-tu_sketch:
+    path: .claude/agents/tu_sketch.md
+    subscribes_to:
+      - user-roles
+      - review-approval-workflow
+      - cli-commands
+      - mcp-tools
+      - prohibited-behavior
+      - cad-domain
+      - technical-architecture
+      - agent-orchestration
+
+  agent-tu_sim:
+    path: .claude/agents/tu_sim.md
+    subscribes_to:
+      - user-roles
+      - review-approval-workflow
+      - cli-commands
+      - mcp-tools
+      - prohibited-behavior
+      - physics-domain
+      - compiler-bridge
+      - technical-architecture
+      - agent-orchestration
+
+  # --- Templates ---
+
+  TEMPLATE-CR:
+    path: QMS/TEMPLATE/TEMPLATE-CR.md
+    subscribes_to:
+      - cr-workflow
+      - execution-mechanics
+      - metadata-architecture
+      - document-states
+      - code-governance
+      - sdlc-governance
+      - var-types
+      - post-review-prerequisites
+
+  TEMPLATE-SOP:
+    path: QMS/TEMPLATE/TEMPLATE-SOP.md
+    subscribes_to:
+      - metadata-architecture
+      - document-types
+      - review-approval-workflow
+
+  TEMPLATE-INV:
+    path: QMS/TEMPLATE/TEMPLATE-INV.md
+    subscribes_to:
+      - deviation-management
+      - execution-mechanics
+      - metadata-architecture
+      - var-types
+
+  TEMPLATE-TP:
+    path: QMS/TEMPLATE/TEMPLATE-TP.md
+    subscribes_to:
+      - test-protocol
+      - execution-mechanics
+      - metadata-architecture
+      - sdlc-governance
+
+  TEMPLATE-TC:
+    path: QMS/TEMPLATE/TEMPLATE-TC.md
+    subscribes_to:
+      - test-protocol
+      - execution-mechanics
+
+  TEMPLATE-ER:
+    path: QMS/TEMPLATE/TEMPLATE-ER.md
+    subscribes_to:
+      - test-protocol
+      - execution-mechanics
+      - metadata-architecture
+
+  TEMPLATE-VAR:
+    path: QMS/TEMPLATE/TEMPLATE-VAR.md
+    subscribes_to:
+      - var-types
+      - execution-mechanics
+      - metadata-architecture
+
+  TEMPLATE-ADD:
+    path: QMS/TEMPLATE/TEMPLATE-ADD.md
+    subscribes_to:
+      - addendum-mechanics
+      - execution-mechanics
+      - metadata-architecture

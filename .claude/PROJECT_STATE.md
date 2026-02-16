@@ -1,32 +1,32 @@
 # Project State
 
-*Last updated: Session-2026-02-14-005 (continued 2026-02-15)*
+*Last updated: Session-2026-02-15-001*
 
 ---
 
 ## 1. Where We Are Now
 
-The multi-agent orchestration platform is built and validated. Over 44 sessions and 38 Change Records (CR-042 through CR-079), the project evolved from a single Claude instance running locally into a containerized, identity-enforced, GUI-controlled multi-agent ecosystem. Phase A integration testing — the primary success criterion — passed on February 14: two containerized agents (claude and qa) autonomously completed a full QMS document lifecycle (DRAFT through CLOSED) with ten state transitions, four QA actions, and identity enforcement throughout.
+The multi-agent orchestration platform is built and validated. Post-integration hardening is underway. CR-082 closed the ADD (Addendum) document type — the last CAPA from INV-011 — bringing the QMS CLI to 403 tests and CLI-7.0 qualified baseline. The ADD type provides a lightweight post-closure correction mechanism for executable documents, closing a process gap that previously required a full INV/CAPA cycle.
 
-The platform layer is operational: Docker containers with read-only QMS mounts, MCP connectivity (QMS and Git servers), the Agent Hub (lifecycle management, PTY multiplexing, WebSocket streaming), a Tauri desktop GUI with xterm.js terminals, and a four-phase identity system (transport resolution, collision prevention, single-authority MCP, hardened validation) backed by 396 unit tests and 7/7 identity UAT. A comprehensive code review of ~3,600 lines across 40 files produced 27 findings; the four most critical (shell injection, CORS, error boundary, Hub failure propagation) were fixed in CR-077 before integration testing.
+During CR-082 execution, a squash merge on PR #13 revealed an undocumented gap: no SOP specifies the required merge type, the source of the qualified commit, or the explicit merge gate. CR-083 has been drafted to codify these conventions (merge commit required, dev branch commit is the qualified commit, RS/RTM must be EFFECTIVE before merge).
 
-Post-integration, the GUI terminal experience was hardened: CR-080 added scrollback support via escape sequence stripping, CR-081 fixed default terminal dimensions (120x30) and resize-on-subscribe, and CR-081-VAR-001 replaced the PTY manager's normal tmux attach with tmux control mode (`tmux -CC`) — delivering Claude Code's raw PTY bytes directly to xterm.js, bypassing tmux's viewport rendering entirely. This resolved the double-terminal-emulator problem that made scrollback fundamentally impossible with the old approach. A re-render duplication fix (`term.clear()` on first output after resize) completed the picture. 32 new unit tests cover control mode parsing.
-
-What remains is hardening, closing loose ends, and enhancing the GUI. Phases B through E cover Git MCP access control, INV-011 closure, GUI feature completion, and SOP alignment. Estimated 4-6 sessions.
+The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B through E cover Git MCP access control, INV-011 closure, GUI feature completion, and SOP alignment.
 
 ---
 
 ## 2. The Arc
 
-**Foundation (Feb 1-5, CR-042 through CR-055).** The vision began with remote MCP transport for containerized agents. SSE proved buggy in Docker; streamable-HTTP replaced it. Container infrastructure was built and qualified: read-only QMS mounts, workspace airlocks, Claude Code auth persistence, Git authentication via GitHub CLI + PAT. A cascade of debugging revealed that MCP HTTP connections in Docker achieve ~90% reliability (unfixable from the server side). The period also produced significant process improvements — TEMPLATE-CR patterns, SOP-006 CR closure prerequisites, SDLC prerequisite gates — each emerging from investigations of real failures (INV-007 through INV-010).
+**Foundation (Feb 1-5, CR-042 through CR-055).** Remote MCP transport, container infrastructure, streamable-HTTP, process improvements from INV-007 through INV-010.
 
-**Multi-Agent Infrastructure (Feb 6-7, CR-056 through CR-063).** CR-056 closed the container foundation with a unified launcher. The Ouroboros Reactor vision was articulated: Pipe Dream as an exogenic evolution platform where agents evolve their environment (rules, knowledge, tools) rather than their weights. The Agent Hub was born — a Python service replacing shell scripts with proper lifecycle management, inbox monitoring, and a policy engine. Supporting infrastructure followed: port-based process discovery, container readiness checks, agent permissions.
+**Multi-Agent Infrastructure (Feb 6-7, CR-056 through CR-063).** Unified launcher, Agent Hub, port-based discovery, agent permissions.
 
-**Feature Build (Feb 8-9, CR-064 through CR-072).** Rapid feature development delivered the PTY manager (terminal I/O multiplexing with rate-based idle detection), the WebSocket endpoint (real-time broadcasting), and the Tauri GUI scaffold (React + xterm.js). Everything consolidated under `agent-hub/`. Session health detection, status command unification, and demand-driven bootstrap (GUI auto-starts Hub, Hub auto-starts MCP servers) completed the operational stack. Nine CRs closed in four days.
+**Feature Build (Feb 8-9, CR-064 through CR-072).** PTY manager, WebSocket endpoint, Tauri GUI, demand-driven bootstrap.
 
-**Identity and Security (Feb 9-10, CR-073 through CR-076).** A five-phase identity plan was designed and executed in four sessions. Phase 1: proxy-injected `X-QMS-Identity` headers with enforced/trusted modes. Phase 2: in-memory identity registry with TTL and collision detection. Phase 2.5 (emerged from UAT): single-authority MCP eliminating the dual-process registry vulnerability. Phase 3: hardened validation removing all defaults and fallbacks. UAT: 7/7 PASS including cross-transport collision detection and duplicate container blocking. The SDLC grew from RS v8.0/RTM v10.0 to RS v12.0/RTM v14.0 (396 tests).
+**Identity and Security (Feb 9-10, CR-073 through CR-076).** Four-phase identity system, 396 tests, RS v12.0/RTM v14.0.
 
-**Audit, Hardening, and Verification (Feb 14, CR-077 through CR-079).** A deep code review produced 27 findings across three severity tiers. CR-077 bundled the four most urgent fixes (shell injection, CORS restriction, error boundary, Hub failure propagation). Phase A integration testing then validated the full stack in four sub-phases: infrastructure health, GUI revalidation, identity verification, and the crown jewel — a multi-agent QMS workflow where containerized claude and qa completed CR-079 autonomously. Two bugs emerged and were fixed via CR-078 (missing debug directory, bad file descriptor from Tauri process spawn). QA behavioral integrity was confirmed when the qa agent refused the Lead's direct instruction to test identity impersonation, citing CLAUDE.md's prohibition and proposing a proper test protocol instead.
+**Audit, Hardening, and Verification (Feb 14, CR-077 through CR-081).** Code review (27 findings, 4 fixed), Phase A integration testing (2 containerized agents, full QMS lifecycle), GUI terminal hardening (scrollback, control mode, dimensions).
+
+**QMS Process Evolution (Feb 15, CR-082 through CR-083).** ADD document type implemented (CAPA-003 fulfilled). Merge gate gap discovered and CR-083 drafted to codify qualification workflow conventions.
 
 ---
 
@@ -65,7 +65,7 @@ What remains is hardening, closing loose ends, and enhancing the GUI. Phases B t
 | | CR-069 | Hub Consolidation | All tools under `agent-hub/`, CLI commands |
 | | CR-070 | Session Health Detection | STALE state, tmux health check, recovery menu |
 | | CR-071 | Status Command Consolidation | Unified display, duplicate launch prevention |
-| | CR-072 | Demand-Driven Bootstrap | GUI→Hub→MCP auto-start chain |
+| | CR-072 | Demand-Driven Bootstrap | GUI auto-starts Hub, Hub auto-starts MCP |
 | **Identity** | CR-073 | Transport-Based Identity Resolution | Proxy-injected headers, enforced/trusted modes |
 | | CR-074 | Identity Collision Prevention | In-memory registry, TTL, UUID instance tracking |
 | | CR-075 | Single-Authority MCP + HTTP Hardening | Eliminated dual-process vulnerability |
@@ -74,17 +74,18 @@ What remains is hardening, closing loose ends, and enhancing the GUI. Phases B t
 | | CR-078 | Phase A Integration Fixes | Debug dir ENOENT, Tauri bad file descriptor |
 | | CR-079 | Multi-Agent Integration Test | Full QMS lifecycle across 2 containerized agents |
 | **GUI Hardening** | CR-080 | Terminal Scrollback Support | ESC sequence stripping for xterm.js scrollback |
-| | CR-081 | Terminal Dimensions + Control Mode | Default 120x30, tmux -CC for raw PTY bytes, duplication fix |
+| | CR-081 | Terminal Dimensions + Control Mode | Default 120x30, tmux -CC for raw PTY bytes |
+| **QMS Process** | CR-082 | ADD (Addendum) Document Type | Post-closure correction mechanism, CLI-7.0 |
 
-*CR-057 predates the orchestration era. All 39 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 40 CRs above are CLOSED.*
 
 ### SDLC Document State
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v12.0 EFFECTIVE | 98 requirements |
-| SDLC-QMS-RTM | v14.0 EFFECTIVE | 396 tests, CI-verified |
-| Qualified Baseline | CLI-6.0 | qms-cli commit 94345fa |
+| SDLC-QMS-RS | v13.0 EFFECTIVE | 107 requirements |
+| SDLC-QMS-RTM | v15.0 EFFECTIVE | 403 tests, CI-verified |
+| Qualified Baseline | CLI-7.0 | qms-cli commit dffd56c |
 
 ---
 
@@ -92,18 +93,19 @@ What remains is hardening, closing loose ends, and enhancing the GUI. Phases B t
 
 | Document | Status | Context |
 |----------|--------|---------|
-| **INV-011** | IN_EXECUTION v1.2 | CR-075 incomplete execution (`.mcp.json` transport omission). CAPA-001 PASS, CAPA-002 PASS. CAPA-003 (ADD document type) to be deferred via Type 2 VAR. **Closing this is Phase C.** |
-| CR-001 | IN_EXECUTION v1.0 | Legacy workflow test from early QMS iterations. Candidate for cancellation. |
+| **CR-083** | DRAFT v0.1 | Codify merge gate, qualified commit convention, merge type. Ready for pre-review routing. |
+| **INV-011** | IN_EXECUTION v1.2 | CR-075 incomplete execution. CAPA-001 PASS, CAPA-002 PASS, CAPA-003 now fulfilled (CR-082). Ready for post-review. **Closing this is Phase C.** |
+| CR-001 | IN_EXECUTION v1.0 | Legacy workflow test. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Test document. Candidate for cancellation. |
-| INV-002 | IN_EXECUTION v1.0 | SOP-005 missing revision summary. Legacy — from before process stabilization. |
-| INV-003 | PRE_REVIEWED v0.1 | CR-012 workflow deficiencies. Legacy — predates current workflow maturity. |
-| INV-004 | IN_EXECUTION v1.0 | CR-019 template loading. Legacy — template system has since been rebuilt. |
-| INV-005 | IN_EXECUTION v1.0 | Locked section edit during execution. Legacy — editing model redesigned. |
-| INV-006 | IN_EXECUTION v1.0 | Incorrect code modification target. Legacy — predates submodule separation. |
-| CR-036-VAR-002 | IN_EXECUTION v1.0 | Documentation drift and qualification gap. Legacy — from pre-SDLC era. |
-| CR-036-VAR-004 | IN_EXECUTION v1.0 | Partial test coverage pattern analysis. Legacy — test coverage now at 396. |
+| INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
+| INV-003 | PRE_REVIEWED v0.1 | Legacy — CR-012 workflow deficiencies. |
+| INV-004 | IN_EXECUTION v1.0 | Legacy — CR-019 template loading. |
+| INV-005 | IN_EXECUTION v1.0 | Legacy — locked section edit during execution. |
+| INV-006 | IN_EXECUTION v1.0 | Legacy — incorrect code modification target. |
+| CR-036-VAR-002 | IN_EXECUTION v1.0 | Legacy — documentation drift. |
+| CR-036-VAR-004 | IN_EXECUTION v1.0 | Legacy — partial test coverage analysis. |
 
-Legacy documents (all except INV-011) are from early QMS iterations before process stabilization. A bulk cleanup — cancel with rationale or close with retrospective — would reduce cognitive overhead. Consider bundling as a single housekeeping CR.
+Legacy documents (all except CR-083 and INV-011) are from early QMS iterations. A bulk cleanup would reduce cognitive overhead.
 
 ---
 
@@ -116,18 +118,18 @@ Legacy documents (all except INV-011) are from early QMS iterations before proce
 - Can parallel with Phase C
 
 ### Phase C: Close INV-011 (~1 session)
-- Create Type 2 VAR on CAPA-003 (ADD document type deferred — QMS usage patterns not yet stable)
-- Route INV-011 through post-review → post-approval → CLOSED
+- CAPA-003 now fulfilled by CR-082 (ADD document type implemented)
+- Update INV-011 execution record, route through post-review → post-approval → CLOSED
 - Can parallel with Phase B
 
 ### Phase D: GUI Enhancement (~2-3 sessions)
 - **D.1:** MCP health monitoring (replace placeholder panel)
 - **D.2:** QMS status panel (replace placeholder panel)
-- **D.3:** Notification injection API (`POST /api/agents/{id}/notify`) for inter-agent communication
+- **D.3:** Notification injection API for inter-agent communication
 - **D.4:** Identity status visibility in sidebar
-- ~~**D.+:** Terminal scrollback support~~ **DONE** (CR-080 + CR-081 + CR-081-VAR-001)
 
 ### Phase E: Process Alignment (~1-2 sessions)
+- CR-083: Merge gate and qualified commit convention (SOP-005, SOP-006, TEMPLATE-CR)
 - Update SOP-007 and SOP-001 to reflect identity architecture
 - Update agent definitions with "do not modify files" prohibitions
 - Consider formalizing UAT as a stage gate for code CRs
@@ -137,59 +139,25 @@ Legacy documents (all except INV-011) are from early QMS iterations before proce
 
 ## 6. Code Review Status
 
-Comprehensive audit performed Session-2026-02-14-001: ~3,600 lines across 40 files (Hub backend, GUI frontend, infrastructure). 27 findings total.
-
-### Fixed (CR-077)
-
-| ID | Severity | Finding | Fix |
-|----|----------|---------|-----|
-| C1 | CRITICAL | Git MCP shell injection (`shell=True`) | `shlex.split()` + `shell=False`, metacharacter blocking |
-| C2 | CRITICAL | CORS wildcard (`allow_origins=["*"]`) | Restricted to three GUI-specific origins |
-| H2 | HIGH | `ensureHub()` failure not propagated to WebSocket | Return value checked, connection status set to "error" |
-| H3 | HIGH | No React ErrorBoundary | Created ErrorBoundary wrapping root component |
+Comprehensive audit performed Session-2026-02-14-001. 27 findings, 4 fixed (CR-077).
 
 ### Open — Critical (1)
 
-| ID | Finding | File | Bundle |
-|----|---------|------|--------|
-| C3 | Container runs as root (no `USER` directive) | `agent-hub/docker/Dockerfile` | Agent Hub Robustness |
+| ID | Finding | Bundle |
+|----|---------|--------|
+| C3 | Container runs as root | Agent Hub Robustness |
 
 ### Open — High (3)
 
-| ID | Finding | File | Bundle |
-|----|---------|------|--------|
-| H1 | File handle leaks in service startup (3 `open()` never closed) | `services.py:160,183,212` | Agent Hub Robustness |
-| H4 | No Hub shutdown on GUI exit (orphaned processes) | `lib.rs` | Agent Hub Robustness |
-| H6 | Agent action errors only logged to console (no user feedback) | `AgentItem.tsx` | GUI Polish |
-
-### Open — Medium (8 actionable + 2 downgraded)
-
 | ID | Finding | Bundle |
 |----|---------|--------|
-| M3 | ResizeObserver not debounced (floods WebSocket) | GUI Polish |
-| M4 | Context menu viewport bounds not checked | GUI Polish |
-| M5 | Tauri CSP uses `unsafe-inline` for styles | GUI Polish |
-| M6 | WebSocket resize validation weak | Agent Hub Robustness |
-| M7 | No API retry logic in GUI | GUI Polish |
-| M8 | No graceful degradation for missing Docker | Agent Hub Robustness |
-| M9 | No container resource limits | Agent Hub Robustness |
-| M10 | Entrypoint jq failure prints false success | Agent Hub Robustness |
-| ~~M1~~ | ~~Inbox watcher deduplication~~ | *Downgraded to NOTE — count always correct* |
-| ~~M2~~ | ~~`_pty_last_event` never cleaned~~ | *Downgraded to NOTE — bounded to 7 entries* |
+| H1 | File handle leaks in service startup | Agent Hub Robustness |
+| H4 | No Hub shutdown on GUI exit | Agent Hub Robustness |
+| H6 | Agent action errors not surfaced to user | GUI Polish |
 
-### Open — Low/Note (9)
+### Open — Medium/Low/Note (17)
 
-| ID | Finding | Bundle |
-|----|---------|--------|
-| L1 | Hardcoded tmux session name "agent" in 4+ locations | Agent Hub Robustness |
-| L2 | Hub logging inconsistencies | Agent Hub Observability |
-| L3 | `useHubConnection()` hook unused (dead code) | GUI Polish |
-| L4 | Hub URL hardcoded (`localhost:9000`) | GUI Polish |
-| L5 | No GUI test files | GUI Polish |
-| L6 | No lint/format config for GUI | GUI Polish |
-| L7 | Proxy header validation missing | Identity Hardening |
-| L8 | Identity lock TTL (5 min) may be too long for dev | Identity Hardening |
-| L9 | Entrypoint jq failure not handled | Agent Hub Robustness |
+See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness, Agent Hub Observability, GUI Polish, and Identity Hardening bundles.
 
 ---
 
@@ -199,97 +167,76 @@ Comprehensive audit performed Session-2026-02-14-001: ~3,600 lines across 40 fil
 
 | Item | Effort | Bundle |
 |------|--------|--------|
-| Fix unit test assertion in `test_qms_auth.py` for improved error message | Trivial | QMS CLI Cleanup |
-| Add ASSIGN to REQ-AUDIT-002 required event types in RS | Small | RS/RTM Update |
-| Correct SOP-001 Section 4.2 `fix` permission (shows QA, should be Initiators) | Small | SOP Revision |
-| Remove in-memory fallback for inbox prompts in qms-cli | Small | QMS CLI Cleanup |
-| Audit and fix CR document path references (agents use wrong paths) | Small | SOP Revision |
+| Fix unit test assertion in `test_qms_auth.py` | Trivial | QMS CLI Cleanup |
+| Add ASSIGN to REQ-AUDIT-002 required event types | Small | RS/RTM Update |
+| Correct SOP-001 Section 4.2 `fix` permission | Small | SOP Revision |
+| Remove in-memory fallback for inbox prompts | Small | QMS CLI Cleanup |
+| Audit and fix CR document path references | Small | SOP Revision |
 
 ### Bundleable (natural CR groupings)
 
 **QMS CLI Cleanup** (~1 session)
 - Fix `test_qms_auth.py` assertion
-- Remove in-memory prompt fallback (legacy from CR-027)
-- Derive TRANSITIONS from WORKFLOW_TRANSITIONS (single source of truth)
-- Investigate checkout-from-review not cancelling workflow (INV-009 observation)
+- Remove in-memory prompt fallback
+- Derive TRANSITIONS from WORKFLOW_TRANSITIONS
+- Investigate checkout-from-review not cancelling workflow
 
 **SOP Revision** (~1 session)
 - SOP-001 Section 4.2 `fix` permission correction
-- SOP-005 qualification process explanation expansion
 - Audit CR document path references in SOPs/templates
-- Consider simplifying SOPs to behavioral baselines (large scope — may need its own phase)
+- Consider simplifying SOPs to behavioral baselines
 
 **Identity & Access Hardening** (~1 session, overlaps Phase B)
-- Surface identity mismatch warning to callers (not just server log) — INV-011 observation P1-T3
-- Investigate whether `resolve_identity()` defensive fallback is still needed
-- Prevent multiple instances of same QMS user running simultaneously
-- Proxy header validation (L7)
-- Identity lock TTL tuning (L8)
+- Surface identity mismatch warning to callers
+- Investigate `resolve_identity()` defensive fallback
+- Prevent multiple instances of same QMS user
+- Proxy header validation (L7), TTL tuning (L8)
 - Git MCP access control (Phase B)
 
 **Agent Hub Robustness** (~1-2 sessions)
-- C3: Add non-root user to Dockerfile
-- H1: Close file handles in `services.py`
-- H4: Hub shutdown on GUI exit
-- M6, M8, M9, M10, L1, L9: Various hardening
-- Docker graceful degradation for missing Docker
-- Container resource limits
-- Entrypoint jq error handling
+- C3: Non-root user in Dockerfile
+- H1, H4, M6, M8, M9, M10, L1, L9
 
 **Agent Hub Observability** (~1 session)
-- Unify logging across MCP chain (L2)
-- Fix health check protocol mismatch (`GET` vs `POST`)
-- Make identity management logging verbose
-- Consider unified log format
+- Unify logging, fix health check protocol, verbose identity logging
 
 **GUI Polish** (~1-2 sessions, overlaps Phase D)
-- H6: Error toasts for failed agent actions
-- M3: ResizeObserver debounce
-- M4: Context menu viewport bounds
-- M5: Tauri CSP hardening
-- M7: API retry logic
-- L3: Remove dead `useHubConnection()` hook
-- L4: Configurable Hub URL
-- L5, L6: Test infrastructure, lint config
+- H6, M3, M4, M5, M7, L3, L4, L5, L6
 
 ### Blocked
 
 | Item | Blocker |
 |------|---------|
-| Formalize UAT as stage gate for code CRs | Needs process maturity — wait until Phase E |
-| Comments visibility restriction during active workflows | Was REQ-QRY-007, removed from RS. Needs design decision. |
-| Prerequisite: commit/push pipe-dream as first EI of a CR | Needs SOP-002/004 revision — bundle with SOP revision phase |
+| Formalize UAT as stage gate for code CRs | Phase E process maturity |
+| Comments visibility restriction during active workflows | Needs design decision |
+| Prerequisite: commit/push pipe-dream as first EI | Needs SOP-002/004 revision |
 
 ### Deferred
 
 | Item | Rationale |
 |------|-----------|
-| CAPA-003: ADD document type | QMS usage patterns not yet stable enough. Deferred via Type 2 VAR on INV-011 (Phase C). |
-| Remove EFFECTIVE status / rename to APPROVED | Touches every SOP, all CLI code, all metadata. High disruption, low value now. |
-| Metadata injection into viewable rendition | Nice-to-have. No current pain point. |
-| "Pass with exception" test outcome type | No test execution exercising this gap. Revisit when test procedures formalized. |
-| Production/test environment isolation review | Structurally addressed by submodule separation (CR-030). Residual risk low. |
-| Proceduralize how to add new documents to QMS | Works well enough in practice. Formalize when pain emerges. |
-| Owner-initiated withdrawal (`qms withdraw`) | Workaround exists (QA reject + checkout). Low frequency need. |
-| Hide `.claude/agents/` from container mounts | Prevents sub-agent spawning conflicts. Quick win but not urgent. |
-| Add `agent-hub services` deprecation notice | Cosmetic. Low priority. |
-| No TU agent for Agent Hub domain | Gap identified in Phase A. Not blocking anything yet. |
-| Stdio proxy for 100% MCP reliability | HTTP at 90% is workable. Revisit if reliability becomes a friction point. |
+| ~~CAPA-003: ADD document type~~ | **DONE** (CR-082) |
+| Remove EFFECTIVE status / rename to APPROVED | High disruption, low value |
+| Metadata injection into viewable rendition | No current pain point |
+| "Pass with exception" test outcome type | No test execution exercising this gap |
+| Production/test environment isolation review | Addressed by submodule separation |
+| Proceduralize how to add new documents to QMS | Works well enough |
+| ~~SOP-005 qualification process explanation~~ | **CR-083 drafted** |
+| Owner-initiated withdrawal (`qms withdraw`) | Workaround exists |
+| Stdio proxy for 100% MCP reliability | HTTP at 90% is workable |
 
 ---
 
 ## 8. Gaps & Risks
 
-**Legacy QMS debt.** Nine open documents from early iterations accumulate cognitive overhead. A cleanup pass (bulk cancel with rationale) would clear the backlog. Low effort, high clarity return.
+**Merge type convention.** CR-083 drafted but not yet approved. Until SOP-005/006 are updated, the merge type requirement exists only in TEMPLATE-CR comments. Risk: another squash merge before CR-083 closes.
 
-**Container security posture.** C3 (root user) is the last critical code review finding. Combined with the resolved shell injection (C1), the container attack surface is narrowing but not fully hardened.
+**Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
-**Hub/GUI test coverage.** Hub backend growing (10 WebSocket UAT + 32 control mode parsing = 42 tests), GUI 0%. QMS CLI is well-tested (396 tests). The GUI polish bundle should include test infrastructure (L5, L6).
+**Container security.** C3 (root user) remains the last critical code review finding.
 
-**No inter-agent communication.** Containers can't notify each other directly. Phase D.3 (notification API) addresses this, but until then, agents can only coordinate through QMS document routing and inbox polling.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 403.
 
-**Identity lock TTL.** Container shutdown doesn't release identity locks — they expire by TTL only (5 min). Creates a window of inaccessibility after container stop. Workable but could cause friction during rapid iteration.
+**No inter-agent communication.** Phase D.3 addresses this.
 
-**No `unassign` CLI command.** Incorrect reviewer assignment requires withdraw + re-route. Minor friction, low priority.
-
-**MCP reliability.** HTTP transport achieves ~90% connection success. The stdio proxy (deferred) would reach ~100%. Current reliability is workable but occasionally requires manual reconnect.
+**INV-011 closure.** CAPA-003 now fulfilled by CR-082. INV-011 can be closed (Phase C). No longer blocked.

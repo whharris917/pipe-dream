@@ -1,14 +1,14 @@
 {
   "doc_id": "SOP-006",
   "doc_type": "SOP",
-  "version": "3.0",
+  "version": "4.0",
   "status": "EFFECTIVE",
   "executable": false,
   "execution_phase": null,
   "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": "3.0",
+  "effective_version": "4.0",
   "supersedes": null,
   "pending_assignees": [],
   "review_outcomes": {
