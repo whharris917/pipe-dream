@@ -302,3 +302,15 @@
 {"ts": "2026-02-16T19:25:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-16T19:25:38+00:00", "event": "EFFECTIVE", "user": "qa", "version": "17.0", "from_version": "16.1"}
 {"ts": "2026-02-16T19:25:38+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T21:20:06+00:00", "event": "CHECKOUT", "user": "claude", "version": "17.1", "from_version": "17.0"}
+{"ts": "2026-02-16T21:21:34+00:00", "event": "CHECKIN", "user": "claude", "version": "17.1"}
+{"ts": "2026-02-16T21:21:38+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "17.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T21:21:38+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "17.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T21:23:29+00:00", "event": "REVIEW", "user": "qa", "version": "17.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. Verified all critical elements:\n\nFrontmatter:\n- title: \"QMS CLI Requirements Traceability Matrix\" ✓\n- revision_summary: \"CR-088: Agent Hub Granular Service Control and Observability — qualified baseline updated to fe1a681 (cr-088-observability branch, 416 tests)\" ✓\n\nQualified Baseline (Section 6.1):\n- Commit: fe1a681 (actual hash, not placeholder) ✓\n- Branch: cr-088-observability ✓\n- CI Run: https://github.com/whharris917/qms-cli/actions/runs/22077645945 ✓\n- Total Tests: 416 ✓\n- Passed: 416 ✓\n- Failed: 0 ✓\n\nTest Counts Consistency:\n- Qualification Tests: 218/218 passed ✓\n- Unit Tests: 198/198 passed ✓\n- Total: 416/416 passed ✓\n\nAll requirements met. Recommend for approval."}
+{"ts": "2026-02-16T21:23:29+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T21:23:41+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "17.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T21:23:41+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "17.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T21:23:50+00:00", "event": "APPROVE", "user": "qa", "version": "17.1"}
+{"ts": "2026-02-16T21:23:50+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "18.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T21:23:50+00:00", "event": "EFFECTIVE", "user": "qa", "version": "18.0", "from_version": "17.1"}
+{"ts": "2026-02-16T21:23:50+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "18.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

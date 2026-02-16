@@ -1,7 +1,8 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-088: Agent Hub Granular Service Control and Observability —
-  qualified baseline updated to fe1a681 (cr-088-observability branch, 416 tests)'
+revision_summary: 'CR-087: QMS CLI Quality, State Machine, and Workflow Enforcement
+  — REQ-WF-022/023 added, REQ-WF-015/REQ-AUDIT-002 updated; qualified baseline 416
+  tests'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -1508,9 +1509,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|-------|
 | Requirements Spec | SDLC-QMS-RS v14.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-088-observability |
-| Commit | fe1a681 |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22077645945 |
+| Branch | main |
+| Commit | 572339e |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22075060264 |
 | Total Tests | 416 |
 | Passed | 416 |
 | Failed | 0 |
