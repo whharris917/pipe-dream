@@ -11,12 +11,16 @@
   - Consider: Add a line like "Document is checked out to your workspace — you can begin editing now."
   - Location: `qms-cli/qms.py` (create command handler) or MCP server equivalent
 
-- [ ] Update CR and VAR templates to make integration/UAT testing mandatory for code changes
-  - Low-level unit tests are useful but insufficient — integration/UAT testing should be a required EI
-  - Related to existing to-do item from 2026-02-11: "Formalize UAT as a stage gate for CRs that affect code"
-  - Update CR template: add a standard EI for integration/UAT verification
-  - Update VAR template: add similar requirement for resolution work involving code changes
-  - Templates: `QMS/TEMPLATE/TEMPLATE-CR.md`, `QMS/TEMPLATE/TEMPLATE-VAR.md`
+- [ ] Add granular start/stop commands to agent-hub CLI
+  - Currently only `stop-all` exists for shutdown; no way to start/stop individual components
+  - Add commands to start/stop individual MCP servers (QMS, Git) independently
+  - Add command to start/stop the agent-hub server itself without affecting MCP servers
+  - Consider: `agent-hub stop qms-mcp`, `agent-hub stop git-mcp`, `agent-hub stop hub`, `agent-hub start hub`, etc.
+  - Location: `agent-hub/agent_hub/cli.py` or equivalent CLI entry point
+
+- [x] ~~Update CR and VAR templates to make integration/UAT testing mandatory for code changes~~ DONE (CR-084)
+  - SOP-002 v10.0, SOP-004 v5.0, TEMPLATE-CR v5.0, TEMPLATE-VAR v2.0 all EFFECTIVE
+  - Seed copies aligned in qms-cli/seed/templates/
 
 ---
 
@@ -34,11 +38,9 @@
 
 ## 2026-02-11
 
-- [ ] Formalize UAT as a stage gate for CRs that affect code
-  - Currently UATs are performed ad hoc; consider making UAT a required step (e.g., between execution and post-review routing) for any CR that modifies an SDLC-governed system
-  - Would involve updates to SOP-002 and/or SOP-004
-  - Consider: new UAT document type, or a standardized EI in the CR template
-  - Reference: Session-2026-02-11-001
+- [x] ~~Formalize UAT as a stage gate for CRs that affect code~~ DONE (CR-084)
+  - Implemented as integration verification (not formal UAT) — practical demonstration through user-facing levers
+  - SOP-002 Section 6.8, SOP-004 Section 9A.3, TEMPLATE-CR Phase 5 + Section 8, TEMPLATE-VAR Resolution Work Instructions
 
 ---
 

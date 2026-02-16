@@ -85,3 +85,15 @@
 {"ts": "2026-02-03T00:04:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-03T00:04:00+00:00", "event": "EFFECTIVE", "user": "qa", "version": "9.0", "from_version": "8.1"}
 {"ts": "2026-02-03T00:04:00+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T01:44:53+00:00", "event": "CHECKOUT", "user": "claude", "version": "9.1", "from_version": "9.0"}
+{"ts": "2026-02-16T01:46:44+00:00", "event": "CHECKIN", "user": "claude", "version": "9.1"}
+{"ts": "2026-02-16T01:46:50+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "9.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T01:46:50+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "9.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T01:48:36+00:00", "event": "REVIEW", "user": "qa", "version": "9.1", "outcome": "RECOMMEND", "comment": "REVIEW: COMPLIANT. All criteria verified with evidence against CR-084 pre-approved scope.\n\nFRONTMATTER:\n- title: \"Change Control\" -- present, non-empty, unchanged.\n- revision_summary: \"CR-084: Require integration verification for code CRs in Section 6.8\" -- references CR-084 per SOP-002 Section 8.\n\nCHANGES VERIFIED (per CR-084 Section 5.1):\n1. \"Brief\" removed from Section 6.8 opening sentence -- confirmed.\n2. Two verification categories added (Automated verification, Integration verification) -- confirmed.\n3. TP escalation escape hatch preserved (\"This need not be exhaustive...\") -- confirmed.\n4. Examples updated: one document-only, two code CR examples with integration language -- confirmed.\n5. Advisory \"should\" language used (principles-based, not prescriptive) -- confirmed.\n\nSCOPE BOUNDARY: Only Section 6.8 was modified. Sections 1-6.7 and 6.9-11 are identical to effective v9.0. Section 7.3 reference to Section 6.8 remains valid.\n\nNo placeholder content, typos, or formatting issues found."}
+{"ts": "2026-02-16T01:48:37+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "9.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T01:49:04+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "9.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T01:49:04+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "9.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T01:49:34+00:00", "event": "APPROVE", "user": "qa", "version": "9.1"}
+{"ts": "2026-02-16T01:49:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T01:49:34+00:00", "event": "EFFECTIVE", "user": "qa", "version": "10.0", "from_version": "9.1"}
+{"ts": "2026-02-16T01:49:34+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "10.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

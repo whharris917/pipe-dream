@@ -1,16 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-15-001*
+*Last updated: Session-2026-02-15-002*
 
 ---
 
 ## 1. Where We Are Now
 
-The multi-agent orchestration platform is built and validated. Post-integration hardening is underway. CR-082 closed the ADD (Addendum) document type — the last CAPA from INV-011 — bringing the QMS CLI to 403 tests and CLI-7.0 qualified baseline. The ADD type provides a lightweight post-closure correction mechanism for executable documents, closing a process gap that previously required a full INV/CAPA cycle.
+The multi-agent orchestration platform is built and validated. Post-integration hardening is underway. CR-084 codified integration verification as a standard requirement for code CRs and VARs: SOP-002 Section 6.8 now requires code CRs to address both automated and integration verification, TEMPLATE-CR has a new Phase 5 (Integration Verification) and restructured Section 8, TEMPLATE-VAR includes code-related resolution guidance, and SOP-004 Section 9A.3 adds advisory integration verification for VAR resolution.
 
-CR-083 then closed the merge gate gap discovered during CR-082: SOP-005 Section 7.1 now formally defines the qualification workflow, merge type (`--no-ff` required, squash prohibited), qualified commit convention (execution branch commit), and merge gate (RS/RTM EFFECTIVE before merge). SOP-006 Sections 7.2/7.4 and TEMPLATE-CR updated for consistency.
-
-INV-011 (CR-075 incomplete execution) is now CLOSED -- all 3 CAPAs complete, no open investigations remain.
+Prior: CR-082 added the ADD document type (CLI-7.0), CR-083 codified the merge gate and qualified commit convention, INV-011 is CLOSED with all 3 CAPAs complete.
 
 The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B and D cover Git MCP access control and GUI feature completion.
 
@@ -79,8 +77,9 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | | CR-081 | Terminal Dimensions + Control Mode | Default 120x30, tmux -CC for raw PTY bytes |
 | **QMS Process** | CR-082 | ADD (Addendum) Document Type | Post-closure correction mechanism, CLI-7.0 |
 | | CR-083 | Merge Gate and Qualified Commit Convention | SOP-005/006/TEMPLATE-CR updated, merge type codified |
+| | CR-084 | Integration Verification Mandate | SOP-002/004, TEMPLATE-CR/VAR updated, new Phase 5 |
 
-*CR-057 predates the orchestration era. All 41 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 42 CRs above are CLOSED.*
 
 ### SDLC Document State
 
@@ -128,9 +127,9 @@ All remaining open documents are legacy from early QMS iterations. A bulk cleanu
 
 ### Phase E: Process Alignment (~1-2 sessions)
 - ~~CR-083: Merge gate and qualified commit convention~~ **DONE**
+- ~~CR-084: Integration verification mandate~~ **DONE**
 - Update SOP-007 and SOP-001 to reflect identity architecture
 - Update agent definitions with "do not modify files" prohibitions
-- Consider formalizing UAT as a stage gate for code CRs
 - Audit and fix CR document path references in SOPs/templates
 
 ---
@@ -205,7 +204,7 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 
 | Item | Blocker |
 |------|---------|
-| Formalize UAT as stage gate for code CRs | Phase E process maturity |
+| ~~Formalize UAT as stage gate for code CRs~~ | **DONE** (CR-084) |
 | Comments visibility restriction during active workflows | Needs design decision |
 | Prerequisite: commit/push pipe-dream as first EI | Needs SOP-002/004 revision |
 

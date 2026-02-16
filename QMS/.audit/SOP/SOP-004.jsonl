@@ -47,3 +47,15 @@
 {"ts": "2026-02-15T23:36:03+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "4.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-15T23:36:03+00:00", "event": "EFFECTIVE", "user": "qa", "version": "4.0", "from_version": "3.1"}
 {"ts": "2026-02-15T23:36:03+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "4.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-16T01:44:54+00:00", "event": "CHECKOUT", "user": "claude", "version": "4.1", "from_version": "4.0"}
+{"ts": "2026-02-16T01:46:45+00:00", "event": "CHECKIN", "user": "claude", "version": "4.1"}
+{"ts": "2026-02-16T01:46:51+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "4.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-16T01:46:51+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "4.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-16T01:48:39+00:00", "event": "REVIEW", "user": "qa", "version": "4.1", "outcome": "RECOMMEND", "comment": "REVIEW: COMPLIANT. All criteria verified with evidence against CR-084 pre-approved scope.\n\nFRONTMATTER:\n- title: \"Document Execution\" -- present, non-empty, unchanged.\n- revision_summary: \"CR-084: Add integration verification note to Section 9A.3 for code-related VAR resolution\" -- references CR-084 per SOP-002 Section 8.\n\nCHANGES VERIFIED (per CR-084 Section 5.2):\n- One paragraph appended to end of Section 9A.3 VAR Content bullet list -- confirmed.\n- Advisory \"should\" language used (\"resolution work should include integration verification\") -- confirmed per CR-084 specification.\n- Content accurately describes exercising fix through user-facing levers -- confirmed.\n\nSCOPE BOUNDARY: Only Section 9A.3 was modified. Sections 1-9A.2 and 9A.4-11 are identical to effective v4.0.\n\nNo placeholder content, typos, or formatting issues found."}
+{"ts": "2026-02-16T01:48:39+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "4.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-16T01:49:04+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "4.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-16T01:49:04+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "4.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-16T01:49:35+00:00", "event": "APPROVE", "user": "qa", "version": "4.1"}
+{"ts": "2026-02-16T01:49:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-16T01:49:35+00:00", "event": "EFFECTIVE", "user": "qa", "version": "5.0", "from_version": "4.1"}
+{"ts": "2026-02-16T01:49:35+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "5.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
