@@ -1,16 +1,17 @@
 {
   "doc_id": "CR-088",
   "doc_type": "CR",
-  "version": "1.2",
-  "status": "IN_EXECUTION",
+  "version": "2.0",
+  "status": "CLOSED",
   "executable": true,
   "execution_phase": "post_release",
-  "responsible_user": "claude",
+  "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
   "effective_version": null,
   "pending_assignees": [],
   "review_outcomes": {
     "qa": "RECOMMEND"
-  }
+  },
+  "completed_reviewers": []
 }

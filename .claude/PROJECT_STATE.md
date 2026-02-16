@@ -1,12 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-02-16-002*
+*Last updated: Session-2026-02-16-003*
 
 ---
 
 ## 1. Where We Are Now
 
-CR-087 closed: QMS CLI Quality, State Machine, and Workflow Enforcement. Five improvements delivered — create confirmation message, YAML-only prompts, consolidated state machine, auto-withdraw on checkout (REQ-WF-022), auto-checkin on route (REQ-WF-023), and audit completeness (16 event types). RS v14.0, RTM v17.0, CLI at 416 tests.
+CR-088 closed: Agent Hub Granular Service Control and Observability. Added `start-svc`/`stop-svc` CLI commands, unified log format across all services, tool invocation logging, health check fix (POST for /mcp), and resolved 4 code review findings (H1 file handle leaks, L1 tmux constant, L8 TTL reduction, L9 entrypoint fix). RS v14.0, RTM v18.0, CLI at 416 tests.
 
 Prior: CR-086 fixed pre/post-execution commits as bookend EIs, CR-085 added pre-execution commit requirement, CR-084 codified integration verification, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 CLOSED with all 3 CAPAs.
 
@@ -81,16 +81,17 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | | CR-085 | Pre-Execution Repository Commit | SOP-002/004, TEMPLATE-CR updated, commit before release |
 | | CR-086 | State Preservation, Rollback, CR-085 Fix | Pre/post commits as EIs, SOP-005 rollback, language fix |
 | | CR-087 | QMS CLI Quality, State Machine, Workflow Enforcement | Consolidated state machine, auto-withdraw/auto-checkin, 416 tests |
+| | CR-088 | Agent Hub Granular Service Control and Observability | start-svc/stop-svc, unified logging, tool logging, H1/L1/L8/L9 |
 
-*CR-057 predates the orchestration era. All 45 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 46 CRs above are CLOSED.*
 
 ### SDLC Document State
 
 | Document | Version | Tests |
 |----------|---------|-------|
 | SDLC-QMS-RS | v14.0 EFFECTIVE | 109 requirements |
-| SDLC-QMS-RTM | v17.0 EFFECTIVE | 416 tests, CI-verified |
-| Qualified Baseline | CLI-8.0 | qms-cli commit 572339e |
+| SDLC-QMS-RTM | v18.0 EFFECTIVE | 416 tests, CI-verified |
+| Qualified Baseline | CLI-9.0 | qms-cli commit fe1a681 (main: 208da7f) |
 
 ---
 
@@ -137,7 +138,7 @@ All remaining open documents are legacy from early QMS iterations. A bulk cleanu
 
 ## 6. Code Review Status
 
-Comprehensive audit performed Session-2026-02-14-001. 27 findings, 4 fixed (CR-077).
+Comprehensive audit performed Session-2026-02-14-001. 27 findings, 4 fixed (CR-077), 4 fixed (CR-088).
 
 ### Open — Critical (1)
 
@@ -145,17 +146,20 @@ Comprehensive audit performed Session-2026-02-14-001. 27 findings, 4 fixed (CR-0
 |----|---------|--------|
 | C3 | Container runs as root | Agent Hub Robustness |
 
-### Open — High (3)
+### Open — High (2)
 
 | ID | Finding | Bundle |
 |----|---------|--------|
-| H1 | File handle leaks in service startup | Agent Hub Robustness |
 | H4 | No Hub shutdown on GUI exit | Agent Hub Robustness |
 | H6 | Agent action errors not surfaced to user | GUI Polish |
 
-### Open — Medium/Low/Note (17)
+### Resolved by CR-088
 
-See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness, Agent Hub Observability, GUI Polish, and Identity Hardening bundles.
+H1 (file handle leaks), L1 (tmux constant), L8 (TTL reduction), L9 (entrypoint false success).
+
+### Open — Medium/Low/Note (13)
+
+See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness, GUI Polish, and Identity Hardening bundles.
 
 ---
 
@@ -176,18 +180,12 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 - Consider simplifying SOPs to behavioral baselines
 
 **Identity & Access Hardening** (~1 session, overlaps Phase B)
-- Surface identity mismatch warning to callers
-- Investigate `resolve_identity()` defensive fallback
-- Prevent multiple instances of same QMS user
-- Proxy header validation (L7), TTL tuning (L8)
+- Proxy header validation (L7)
 - Git MCP access control (Phase B)
 
 **Agent Hub Robustness** (~1-2 sessions)
 - C3: Non-root user in Dockerfile
-- H1, H4, M6, M8, M9, M10, L1, L9
-
-**Agent Hub Observability** (~1 session)
-- Unify logging, fix health check protocol, verbose identity logging
+- H4, M6, M8, M9, M10
 
 **GUI Polish** (~1-2 sessions, overlaps Phase D)
 - H6, M3, M4, M5, M7, L3, L4, L5, L6

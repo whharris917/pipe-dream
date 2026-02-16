@@ -53,12 +53,9 @@
 - [x] ~~Update QMS document creation confirmation message to remind user the document is auto-checked-out to their workspace~~ DONE (CR-087)
   - Added "Document is checked out and ready for editing." to create command output
 
-- [ ] Add granular start/stop commands to agent-hub CLI
-  - Currently only `stop-all` exists for shutdown; no way to start/stop individual components
-  - Add commands to start/stop individual MCP servers (QMS, Git) independently
-  - Add command to start/stop the agent-hub server itself without affecting MCP servers
-  - Consider: `agent-hub stop qms-mcp`, `agent-hub stop git-mcp`, `agent-hub stop hub`, `agent-hub start hub`, etc.
-  - Location: `agent-hub/agent_hub/cli.py` or equivalent CLI entry point
+- [x] ~~Add granular start/stop commands to agent-hub CLI~~ DONE (CR-088)
+  - Added `start-svc` and `stop-svc` commands with choices: qms-mcp, git-mcp, hub
+  - Hub auto-starts MCP server dependencies
 
 - [x] ~~Update CR and VAR templates to make integration/UAT testing mandatory for code changes~~ DONE (CR-084)
   - SOP-002 v10.0, SOP-004 v5.0, TEMPLATE-CR v5.0, TEMPLATE-VAR v2.0 all EFFECTIVE
@@ -68,13 +65,11 @@
 
 ## 2026-02-14
 
-- [ ] Unify Agent Hub logging and close observability gaps
-  - Ensure every segment of the MCP chain (container -> stdio proxy -> HTTP -> host MCP server -> QMS backend) is observable in persistent log files
-  - Stdio proxy logs currently go to container stderr/tmux scrollback — not persisted
-  - Fix health check protocol mismatch: `agent-hub services` uses GET to probe MCP endpoints, but MCP protocol expects POST — results in `406 Not Acceptable` noise in logs
-  - Make identity management logging verbose: authentication, authorization, identity resolution, collision detection, lock acquisition/release should all be logged at INFO level with clear context
-  - Consider unified log format across all services (QMS MCP, Git MCP, Hub, proxy)
-  - Reference: Session-2026-02-14-002, Phase A.1 integration testing
+- [x] ~~Unify Agent Hub logging and close observability gaps~~ DONE (CR-088)
+  - Unified log format across QMS MCP, Git MCP, Hub, and proxy
+  - Health check fixed: POST for /mcp endpoints, GET for /api/health
+  - Tool invocation logging added to run_qms_command()
+  - Note: stdio proxy logs still go to container stderr (persisting would require volume mount change — deferred)
 
 ---
 
