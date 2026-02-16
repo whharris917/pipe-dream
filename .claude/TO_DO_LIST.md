@@ -100,6 +100,12 @@
 
 ## 2026-02-08
 
+- [x] ~~Prevent multiple instances of the same QMS user running simultaneously~~ DONE (CR-074)
+  - Implemented via identity collision prevention: in-memory registry, TTL-based locks, UUID instance tracking
+  - Reference: Session-2026-02-08-001
+
+---
+
 ## 2026-02-07
 
 - [x] ~~Add prerequisite to always commit and push pipe-dream as the first EI of a CR~~ DONE (CR-085, refined CR-086)
