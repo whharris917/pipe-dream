@@ -67,8 +67,9 @@
 
 ## 2026-02-07
 
-- [x] ~~Add prerequisite to always commit and push pipe-dream as the first EI of a CR~~ DONE (CR-085)
-  - Implemented as procedural requirement in SOP-004 Section 5, SOP-002 Section 7.2 step 1, and TEMPLATE-CR execution instructions note
+- [x] ~~Add prerequisite to always commit and push pipe-dream as the first EI of a CR~~ DONE (CR-085, refined CR-086)
+  - CR-085: Initial implementation as pre-release prerequisite
+  - CR-086: Repositioned as first EI (after release), added post-execution commit as final EI, fixed "QMS repository" language
 
 ---
 
@@ -108,16 +109,9 @@
   - Would need: New RS requirement, workflow transition, CLI command implementation
   - Reference: Session-2026-01-26-001 RTM routing discussion
 
-- [ ] Update SOP-005 (Code Governance) to thoroughly explain qualification process
-  - CI verification in GitHub: dev branch must have passing CI before RTM approval
-  - Development workflow: all code changes in dev branch, not main
-  - Document approval order: RS approved first, then RTM (RTM references RS version)
-  - RTM must reference a specific commit hash in dev branch with all tests passing (CI-verified)
-  - PR to merge dev → main happens AFTER RS and RTM are approved
-  - Merge to main is an execution item in the CR, performed after RS/RTM approval
-  - Rollback procedures: established rollback plan required for all code changes
-  - Covers both dev branch rollback and main branch rollback scenarios
-  - Reference: Session-2026-01-26-001 CR-036 qualification workflow discussion
+- [x] ~~Update SOP-005 (Code Governance) to thoroughly explain qualification process~~ DONE (CR-083, CR-086)
+  - CR-083: Codified merge gate, qualified commit convention, merge type requirements (Section 7.1.1-7.1.4)
+  - CR-086: Added rollback procedures (Section 7.1.5) — execution branch and main branch scenarios, git revert mandated, git reset prohibited
 
 ---
 
