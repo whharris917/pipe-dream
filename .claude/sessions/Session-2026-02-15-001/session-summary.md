@@ -60,6 +60,15 @@ CR-083 closed as v2.0. Parent repo committed as `c1ec504`.
 
 Bundled to-do item from 2026-01-26: "Update SOP-005 to thoroughly explain qualification process."
 
+### INV-011: CR-075 Incomplete Execution -- CLOSED
+
+Closed INV-011 (Phase C). All 3 CAPAs complete:
+- CAPA-001 (Corrective): `.mcp.json` updated to HTTP transport. Verified via UAT (7/7 pass). Done 2026-02-10.
+- CAPA-002 (Preventive): QA post-review prompt strengthened with EI cross-reference check. Done 2026-02-10.
+- CAPA-003 (Preventive): ADD document type implemented via CR-082. Done 2026-02-15.
+
+INV-011 closed as v2.0. Parent repo committed as `e7fcdd1`.
+
 ## Key Decisions
 
 - **Squash merge is a defect, not a preference.** It breaks the traceability chain that SOP-006 Section 7.2 requires.
@@ -72,6 +81,7 @@ Bundled to-do item from 2026-01-26: "Update SOP-005 to thoroughly explain qualif
 |----------|--------|---------|
 | CR-082 | CLOSED | v2.0 |
 | CR-083 | CLOSED | v2.0 |
+| INV-011 | CLOSED | v2.0 |
 | SDLC-QMS-RS | EFFECTIVE | v13.0 |
 | SDLC-QMS-RTM | EFFECTIVE | v15.0 |
 | SOP-001 | EFFECTIVE | v20.0 |

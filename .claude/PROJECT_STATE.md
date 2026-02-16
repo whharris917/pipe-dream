@@ -10,7 +10,9 @@ The multi-agent orchestration platform is built and validated. Post-integration 
 
 CR-083 then closed the merge gate gap discovered during CR-082: SOP-005 Section 7.1 now formally defines the qualification workflow, merge type (`--no-ff` required, squash prohibited), qualified commit convention (execution branch commit), and merge gate (RS/RTM EFFECTIVE before merge). SOP-006 Sections 7.2/7.4 and TEMPLATE-CR updated for consistency.
 
-The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B through D cover Git MCP access control, INV-011 closure, and GUI feature completion.
+INV-011 (CR-075 incomplete execution) is now CLOSED -- all 3 CAPAs complete, no open investigations remain.
+
+The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B and D cover Git MCP access control and GUI feature completion.
 
 ---
 
@@ -94,7 +96,6 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 
 | Document | Status | Context |
 |----------|--------|---------|
-| **INV-011** | IN_EXECUTION v1.2 | CR-075 incomplete execution. CAPA-001 PASS, CAPA-002 PASS, CAPA-003 now fulfilled (CR-082). Ready for post-review. **Closing this is Phase C.** |
 | CR-001 | IN_EXECUTION v1.0 | Legacy workflow test. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Test document. Candidate for cancellation. |
 | INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
@@ -105,7 +106,7 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | CR-036-VAR-002 | IN_EXECUTION v1.0 | Legacy — documentation drift. |
 | CR-036-VAR-004 | IN_EXECUTION v1.0 | Legacy — partial test coverage analysis. |
 
-Legacy documents (all except INV-011) are from early QMS iterations. A bulk cleanup would reduce cognitive overhead.
+All remaining open documents are legacy from early QMS iterations. A bulk cleanup would reduce cognitive overhead.
 
 ---
 
@@ -115,12 +116,9 @@ Legacy documents (all except INV-011) are from early QMS iterations. A bulk clea
 - Add identity resolution to `agent-hub/git_mcp/server.py`
 - Allowlist: `["claude", "lead"]` — other agents blocked from git operations
 - New requirement REQ-MCP-017, RS/RTM updates
-- Can parallel with Phase C
 
-### Phase C: Close INV-011 (~1 session)
-- CAPA-003 now fulfilled by CR-082 (ADD document type implemented)
-- Update INV-011 execution record, route through post-review → post-approval → CLOSED
-- Can parallel with Phase B
+### ~~Phase C: Close INV-011~~ DONE
+- INV-011 CLOSED v2.0. All 3 CAPAs pass.
 
 ### Phase D: GUI Enhancement (~2-3 sessions)
 - **D.1:** MCP health monitoring (replace placeholder panel)
@@ -229,12 +227,10 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 
 ## 8. Gaps & Risks
 
-**Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
+**Legacy QMS debt.** Eight open documents from early iterations. Bulk cleanup recommended.
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
 **Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 403.
 
 **No inter-agent communication.** Phase D.3 addresses this.
-
-**INV-011 closure.** CAPA-003 now fulfilled by CR-082. INV-011 can be closed (Phase C). No longer blocked.
