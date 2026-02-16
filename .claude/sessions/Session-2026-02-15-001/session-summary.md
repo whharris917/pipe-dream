@@ -1,6 +1,6 @@
 # Session-2026-02-15-001 Summary
 
-## Primary Work: CR-082 Closure + CR-083 Draft
+## Primary Work: CR-082 Closure + CR-083 Closure
 
 ### CR-082: Implement ADD (Addendum) Document Type — CLOSED
 
@@ -44,18 +44,21 @@ This led to investigating what the SOPs actually require vs. what's practiced:
 - SOP-006 Section 7.4: Gates post-review but doesn't gate the merge itself
 - TEMPLATE-CR: Has the right guidance in comments but no SOP backing
 
-### CR-083: Codify Merge Gate and Qualified Commit Convention — DRAFTED
+### CR-083: Codify Merge Gate and Qualified Commit Convention — CLOSED
 
-Created CR-083 to close these gaps:
+Created and executed CR-083 to close these gaps:
 1. **Merge type:** Regular merge commit (`--no-ff`) required; squash prohibited
 2. **Qualified commit:** Defined as the dev branch commit verified by CI
 3. **Merge gate:** RS and RTM must be EFFECTIVE before merge (not just before post-review)
 
-Scope: SOP-005 Section 7.1 rewrite, SOP-006 Sections 7.2/7.4 updates, TEMPLATE-CR Phase 6 update.
+**Executed EIs:**
+- EI-1: SOP-005 Section 7.1 rewritten with subsections 7.1.1-7.1.4 (workflow, qualified commit, merge gate/type, rationale). QA caught dash formatting inconsistency, fixed. SOP-005 v4.0 EFFECTIVE.
+- EI-2: SOP-006 Section 7.2 (qualified commit source) and 7.4 (merge gate as requirement 3). SOP-006 v4.0 EFFECTIVE.
+- EI-3: TEMPLATE-CR CODE CR PATTERNS and Phase 6 updated. Seed copy aligned (also brought forward CR-051 improvements). TEMPLATE-CR v4.0 EFFECTIVE.
 
-Bundles to-do item from 2026-01-26: "Update SOP-005 to thoroughly explain qualification process."
+CR-083 closed as v2.0. Parent repo committed as `c1ec504`.
 
-CR-083 is checked in at v0.1 DRAFT, awaiting routing decision.
+Bundled to-do item from 2026-01-26: "Update SOP-005 to thoroughly explain qualification process."
 
 ## Key Decisions
 
@@ -68,12 +71,12 @@ CR-083 is checked in at v0.1 DRAFT, awaiting routing decision.
 | Document | Status | Version |
 |----------|--------|---------|
 | CR-082 | CLOSED | v2.0 |
-| CR-083 | DRAFT | v0.1 |
+| CR-083 | CLOSED | v2.0 |
 | SDLC-QMS-RS | EFFECTIVE | v13.0 |
 | SDLC-QMS-RTM | EFFECTIVE | v15.0 |
 | SOP-001 | EFFECTIVE | v20.0 |
 | SOP-004 | EFFECTIVE | v4.0 |
-| SOP-005 | EFFECTIVE | v4.0 (pending CR-083 update) |
-| SOP-006 | EFFECTIVE | v4.0 (pending CR-083 update) |
+| SOP-005 | EFFECTIVE | v4.0 |
+| SOP-006 | EFFECTIVE | v4.0 |
 | TEMPLATE-ADD | EFFECTIVE | v1.0 |
-| TEMPLATE-CR | EFFECTIVE | v4.0 (pending CR-083 update) |
+| TEMPLATE-CR | EFFECTIVE | v4.0 |

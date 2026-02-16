@@ -8,9 +8,9 @@
 
 The multi-agent orchestration platform is built and validated. Post-integration hardening is underway. CR-082 closed the ADD (Addendum) document type — the last CAPA from INV-011 — bringing the QMS CLI to 403 tests and CLI-7.0 qualified baseline. The ADD type provides a lightweight post-closure correction mechanism for executable documents, closing a process gap that previously required a full INV/CAPA cycle.
 
-During CR-082 execution, a squash merge on PR #13 revealed an undocumented gap: no SOP specifies the required merge type, the source of the qualified commit, or the explicit merge gate. CR-083 has been drafted to codify these conventions (merge commit required, dev branch commit is the qualified commit, RS/RTM must be EFFECTIVE before merge).
+CR-083 then closed the merge gate gap discovered during CR-082: SOP-005 Section 7.1 now formally defines the qualification workflow, merge type (`--no-ff` required, squash prohibited), qualified commit convention (execution branch commit), and merge gate (RS/RTM EFFECTIVE before merge). SOP-006 Sections 7.2/7.4 and TEMPLATE-CR updated for consistency.
 
-The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B through E cover Git MCP access control, INV-011 closure, GUI feature completion, and SOP alignment.
+The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. What remains is hardening, closing loose ends, and enhancing the GUI. Phases B through D cover Git MCP access control, INV-011 closure, and GUI feature completion.
 
 ---
 
@@ -26,7 +26,7 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 
 **Audit, Hardening, and Verification (Feb 14, CR-077 through CR-081).** Code review (27 findings, 4 fixed), Phase A integration testing (2 containerized agents, full QMS lifecycle), GUI terminal hardening (scrollback, control mode, dimensions).
 
-**QMS Process Evolution (Feb 15, CR-082 through CR-083).** ADD document type implemented (CAPA-003 fulfilled). Merge gate gap discovered and CR-083 drafted to codify qualification workflow conventions.
+**QMS Process Evolution (Feb 15, CR-082 through CR-083).** ADD document type implemented (CAPA-003 fulfilled). Merge gate gap discovered and closed: merge type, qualified commit convention, and explicit merge gate codified in SOPs.
 
 ---
 
@@ -76,8 +76,9 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | **GUI Hardening** | CR-080 | Terminal Scrollback Support | ESC sequence stripping for xterm.js scrollback |
 | | CR-081 | Terminal Dimensions + Control Mode | Default 120x30, tmux -CC for raw PTY bytes |
 | **QMS Process** | CR-082 | ADD (Addendum) Document Type | Post-closure correction mechanism, CLI-7.0 |
+| | CR-083 | Merge Gate and Qualified Commit Convention | SOP-005/006/TEMPLATE-CR updated, merge type codified |
 
-*CR-057 predates the orchestration era. All 40 CRs above are CLOSED.*
+*CR-057 predates the orchestration era. All 41 CRs above are CLOSED.*
 
 ### SDLC Document State
 
@@ -93,7 +94,6 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 
 | Document | Status | Context |
 |----------|--------|---------|
-| **CR-083** | DRAFT v0.1 | Codify merge gate, qualified commit convention, merge type. Ready for pre-review routing. |
 | **INV-011** | IN_EXECUTION v1.2 | CR-075 incomplete execution. CAPA-001 PASS, CAPA-002 PASS, CAPA-003 now fulfilled (CR-082). Ready for post-review. **Closing this is Phase C.** |
 | CR-001 | IN_EXECUTION v1.0 | Legacy workflow test. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Test document. Candidate for cancellation. |
@@ -105,7 +105,7 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 | CR-036-VAR-002 | IN_EXECUTION v1.0 | Legacy — documentation drift. |
 | CR-036-VAR-004 | IN_EXECUTION v1.0 | Legacy — partial test coverage analysis. |
 
-Legacy documents (all except CR-083 and INV-011) are from early QMS iterations. A bulk cleanup would reduce cognitive overhead.
+Legacy documents (all except INV-011) are from early QMS iterations. A bulk cleanup would reduce cognitive overhead.
 
 ---
 
@@ -129,7 +129,7 @@ Legacy documents (all except CR-083 and INV-011) are from early QMS iterations. 
 - **D.4:** Identity status visibility in sidebar
 
 ### Phase E: Process Alignment (~1-2 sessions)
-- CR-083: Merge gate and qualified commit convention (SOP-005, SOP-006, TEMPLATE-CR)
+- ~~CR-083: Merge gate and qualified commit convention~~ **DONE**
 - Update SOP-007 and SOP-001 to reflect identity architecture
 - Update agent definitions with "do not modify files" prohibitions
 - Consider formalizing UAT as a stage gate for code CRs
@@ -221,15 +221,13 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 | "Pass with exception" test outcome type | No test execution exercising this gap |
 | Production/test environment isolation review | Addressed by submodule separation |
 | Proceduralize how to add new documents to QMS | Works well enough |
-| ~~SOP-005 qualification process explanation~~ | **CR-083 drafted** |
+| ~~SOP-005 qualification process explanation~~ | **DONE** (CR-083) |
 | Owner-initiated withdrawal (`qms withdraw`) | Workaround exists |
 | Stdio proxy for 100% MCP reliability | HTTP at 90% is workable |
 
 ---
 
 ## 8. Gaps & Risks
-
-**Merge type convention.** CR-083 drafted but not yet approved. Until SOP-005/006 are updated, the merge type requirement exists only in TEMPLATE-CR comments. Risk: another squash merge before CR-083 closes.
 
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
