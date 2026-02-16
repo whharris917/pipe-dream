@@ -1,0 +1,442 @@
+---
+title: QMS CLI Quality, State Machine, and Workflow Enforcement
+revision_summary: Initial draft
+---
+
+# CR-087: QMS CLI Quality, State Machine, and Workflow Enforcement
+
+## 1. Purpose
+
+This CR addresses five related quality and enforcement gaps in the QMS CLI:
+
+1. The `create` command output does not indicate the document is checked out and ready for editing
+2. Dead in-memory prompt configuration fallback masks YAML loading failures
+3. The workflow state machine is scattered across four files with no single authoritative source
+4. Checkout from active workflow states silently creates invalid hybrid states
+5. REQ-AUDIT-002 lists 14 event types but the code logs 16 (ASSIGN and WITHDRAW are missing from the RS)
+
+These items naturally bundle because they all touch `qms-cli`, and items 3-5 share the same SDLC requalification cycle.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Independent improvements identified during to-do triage (Session-2026-02-16-001). Items span multiple to-do entries from 2026-01-11 through 2026-02-15, consolidated into a single CR after analysis showed they share a common requalification boundary.
+
+- **Parent Document:** None
+
+### 2.2 Changes Summary
+
+Five items bundled under one execution:
+
+| Item | Summary |
+|------|---------|
+| 1 | Add "Document is checked out and ready for editing" to `create` output |
+| 2 | Remove in-memory prompt fallback; YAML is the sole config source |
+| 3 | Consolidate the full state machine into `workflow.py` as single authoritative source |
+| 4 | Enforce checkout/workflow mutual exclusivity (auto-withdraw on checkout, auto-checkin on route) |
+| 5 | Add ASSIGN and WITHDRAW to REQ-AUDIT-002 (14 to 16 event types) |
+
+### 2.3 Files Affected
+
+**qms-cli code:**
+
+- `commands/create.py` -- Add confirmation message (Item 1)
+- `prompts.py` -- Remove in-memory fallback constants and methods (Item 2)
+- `tests/test_prompts.py` -- Rewrite tests for YAML-only config (Item 2)
+- `workflow.py` -- Add CHECKOUT/WITHDRAW actions, new StatusTransitions, TRANSITIONS derivation (Item 3)
+- `qms_config.py` -- Replace hand-maintained TRANSITIONS with import from workflow.py (Item 3)
+- `commands/checkout.py` -- Auto-withdraw from active workflows, use central transition lookup (Items 3+4)
+- `commands/withdraw.py` -- Extract reusable `perform_withdraw()`, remove local transition map (Items 3+4)
+- `commands/route.py` -- Auto-checkin when routing a checked-out document (Item 4)
+- `tests/` -- New qualification tests for Items 4+5
+
+**QMS documents:**
+
+- `QMS/SDLC-QMS/SDLC-QMS-RS.md` -- Add REQ-WF-022, REQ-WF-023; update REQ-DOC-007, REQ-WF-015; update REQ-AUDIT-002
+- `QMS/SDLC-QMS/SDLC-QMS-RTM.md` -- New test entries, updated qualified baseline
+
+---
+
+## 3. Current State
+
+1. The `create` command prints workspace path but never explicitly states the document is checked out and ready for editing.
+
+2. `prompts.py` contains 11 in-memory configuration constants (lines 183-337), a `_register_defaults()` method (line 360), and a multi-step fallback chain in `get_config()` (lines 427-441). The YAML files in `qms-cli/prompts/` provide complete coverage, making the in-memory tier dead code that silently masks YAML configuration failures.
+
+3. The workflow state machine is scattered across four files:
+   - `qms_config.py:112-135` -- `TRANSITIONS` dict (19 entries) for low-level validation
+   - `workflow.py:95-280` -- `WORKFLOW_TRANSITIONS` list (30 `StatusTransition` objects) for action-based routing
+   - `checkout.py:77-87` -- Inline if/elif for 2 checkout transitions
+   - `withdraw.py:23-30` -- `WITHDRAW_TRANSITIONS` dict for 6 withdraw transitions
+
+   Neither `TRANSITIONS` nor `WORKFLOW_TRANSITIONS` includes checkout or withdraw edges. An auditor cannot see the complete state machine in one place.
+
+4. Checking out a document from IN_REVIEW, IN_APPROVAL, IN_PRE_REVIEW, IN_PRE_APPROVAL, IN_POST_REVIEW, or IN_POST_APPROVAL succeeds silently without status change, creating an invalid hybrid state (simultaneously in review/approval and checked out). Additionally, routing a checked-out document is rejected, requiring a manual two-step checkin-then-route.
+
+5. REQ-AUDIT-002 lists 14 event types. The code (`qms_audit.py:23-38`) defines 16, including ASSIGN (added by CR-036-VAR-005) and WITHDRAW (added by CR-048). Both are actively logged but not reflected in the RS.
+
+---
+
+## 4. Proposed State
+
+1. The `create` command prints "Document is checked out and ready for editing." after the workspace path line.
+
+2. YAML is the sole prompt configuration source. `get_config()` raises a clear error if YAML lookup fails. All in-memory constants, `_register_defaults()`, and fallback chains are removed.
+
+3. A single authoritative state machine exists in `workflow.py`. All transitions -- including checkout and withdraw -- are defined as `StatusTransition` entries. The `TRANSITIONS` dict in `qms_config.py` is derived automatically from `WORKFLOW_TRANSITIONS`. Local transition maps in command files are removed.
+
+4. Two new workflow invariants are enforced:
+   - **Checkout from active workflow:** Implicitly withdraws first (per REQ-WF-018 transitions), then performs standard checkout. User sees "Withdrew from IN_PRE_REVIEW -> DRAFT, then checked out."
+   - **Route while checked out:** Implicitly checks in first, then routes. User sees "Checked in, then routed for review." Only when the current user is the responsible_user; otherwise, routing is still rejected.
+
+5. REQ-AUDIT-002 lists 16 event types, matching the code. The RTM references a test that verifies all 16 types.
+
+---
+
+## 5. Change Description
+
+### 5.1 Item 1: Create Confirmation Message
+
+Add one print statement at `create.py:183` (between workspace path and responsible user lines):
+
+```
+Document is checked out and ready for editing.
+```
+
+The MCP tool (`qms_mcp/tools.py`) returns CLI stdout, so the message propagates automatically.
+
+### 5.2 Item 2: Remove In-Memory Prompt Fallback
+
+In `prompts.py`:
+- Remove 11 constants: `DEFAULT_FRONTMATTER_CHECKS`, `DEFAULT_STRUCTURE_CHECKS`, `DEFAULT_CONTENT_CHECKS`, `CR_EXECUTION_CHECKS`, `SOP_CHECKS`, `DEFAULT_CRITICAL_REMINDERS`, `APPROVAL_CRITICAL_REMINDERS`, `DEFAULT_REVIEW_CONFIG`, `DEFAULT_APPROVAL_CONFIG`, `CR_POST_REVIEW_CONFIG`, `SOP_REVIEW_CONFIG`
+- Remove `_register_defaults()` method and its call from `__init__`
+- Remove `self._configs` dict and in-memory `register()`/lookup if no longer needed
+- Simplify `get_config()`: YAML lookup only, raise error on failure
+- Remove absolute fallback to `DEFAULT_REVIEW_CONFIG`
+
+In `test_prompts.py`:
+- Remove or rewrite `TestDefaultConfigs` class (lines 312-352)
+- Add tests verifying YAML file completeness (all expected combinations resolve)
+
+### 5.3 Item 3: Consolidate State Machine
+
+In `workflow.py`:
+- Add `CHECKOUT` and `WITHDRAW` to the `Action` enum
+- Add `StatusTransition` entries for checkout (2) and withdraw (6) transitions
+- Add derivation function: generate `TRANSITIONS` dict from `WORKFLOW_TRANSITIONS` by collecting unique (from_status, to_status) pairs
+
+In `qms_config.py`:
+- Replace hand-maintained `TRANSITIONS` dict with import from workflow.py
+
+In `checkout.py`:
+- Remove inline status if/elif; look up from central definition
+- Keep behavioral logic (clear_workflow_tracking, version increment)
+
+In `withdraw.py`:
+- Remove `WITHDRAW_TRANSITIONS` dict; look up from central definition
+- Keep behavioral logic (clear inbox, clear tracking)
+
+Circular import risk between `qms_config.py` and `workflow.py` will be resolved by generating `TRANSITIONS` in `workflow.py` and importing from there, or by using a lazy import.
+
+### 5.4 Item 4: Checkout/Workflow Mutual Exclusivity
+
+**Checkout from active workflow (auto-withdraw):**
+
+In `checkout.py`, after the "already checked out" guard: if current_status is any of the 6 IN_* active workflow states, perform implicit withdraw first by calling a shared `perform_withdraw()` function (extracted from `withdraw.py`). Requires responsible_user ownership check. After withdraw, document is in a non-workflow state; checkout proceeds normally.
+
+**Route while checked out (auto-checkin):**
+
+In `route.py`, replace the checked_out rejection block (lines 79-94) with auto-checkin: if `meta.get("checked_out")` and current user == responsible_user, perform implicit checkin (reuse checkin logic), then proceed with routing. If checked out by a different user, still reject.
+
+**Withdraw refactoring:**
+
+In `withdraw.py`, extract core logic into `perform_withdraw(doc_id, doc_type, user, meta)` that handles status transition, clear tracking fields, clear inbox tasks, and audit log. `cmd_withdraw()` becomes a thin wrapper. `checkout.py` calls `perform_withdraw()` for implicit withdrawal.
+
+### 5.5 Item 5: REQ-AUDIT-002 Update
+
+In `SDLC-QMS-RS.md`:
+- Update REQ-AUDIT-002 to list 16 event types (add ASSIGN and WITHDRAW)
+
+In `qms-cli/tests/`:
+- Create a test verifying all 16 event types are exercised during a comprehensive lifecycle test
+
+In `SDLC-QMS-RTM.md`:
+- Update REQ-AUDIT-002 entry to reference the actual test
+- Update count (14 to 16) and qualified baseline
+
+---
+
+## 6. Justification
+
+- **Item 1:** Users (especially MCP tool consumers) see the workspace path but receive no indication the document is ready for editing. This creates unnecessary confusion, particularly for new users or agents encountering the CLI for the first time.
+
+- **Item 2:** The in-memory fallback silently degrades when YAML files are missing or malformed, masking configuration errors until they manifest as incorrect prompt content. Removing the fallback converts silent degradation to explicit errors, improving reliability.
+
+- **Item 3:** An auditor asking "what are the valid state transitions?" must currently read four separate files and mentally merge them. A consolidated state machine provides a single authoritative source, reducing audit burden and the risk of inconsistency when transitions are added or modified.
+
+- **Item 4:** The current system allows a document to be simultaneously in review and checked out -- an invalid state that no SOP defines. Implicit withdraw-on-checkout and checkin-on-route enforce mutual exclusivity while reducing the number of manual commands users must issue.
+
+- **Item 5:** The RS is the authoritative specification. When it lists 14 event types but the code logs 16, the RS is inaccurate. This undermines confidence in the specification and creates a verification gap in the RTM.
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `qms-cli/commands/create.py` | Modify | Add confirmation message |
+| `qms-cli/prompts.py` | Modify | Remove in-memory fallback |
+| `qms-cli/tests/test_prompts.py` | Modify | Rewrite for YAML-only |
+| `qms-cli/workflow.py` | Modify | Add CHECKOUT/WITHDRAW actions, new transitions, TRANSITIONS derivation |
+| `qms-cli/qms_config.py` | Modify | Replace TRANSITIONS with import |
+| `qms-cli/commands/checkout.py` | Modify | Auto-withdraw, central lookup |
+| `qms-cli/commands/withdraw.py` | Modify | Extract perform_withdraw(), remove local map |
+| `qms-cli/commands/route.py` | Modify | Auto-checkin |
+| `qms-cli/tests/` | Create | New qualification tests |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| SDLC-QMS-RS | Modify | Add REQ-WF-022, REQ-WF-023; update REQ-DOC-007, REQ-WF-015, REQ-AUDIT-002 |
+| SDLC-QMS-RTM | Modify | New test entries, updated qualified baseline |
+
+### 7.3 Other Impacts
+
+- **MCP server:** Returns CLI stdout unchanged; create confirmation message propagates automatically. No MCP code changes needed.
+- **Existing scripts/workflows:** The auto-withdraw and auto-checkin behaviors are additive -- they succeed where the old behavior either silently corrupted state (checkout from workflow) or rejected with an error (route while checked out). No existing correct workflow is broken.
+
+### 7.4 Development Controls
+
+This CR implements changes to qms-cli, a controlled submodule. Development follows established controls:
+
+1. **Test environment isolation:** Development in a non-QMS-controlled directory (e.g., `.test-env/` or other gitignored location)
+2. **Branch isolation:** All development on branch `cr-087-cli-quality-workflow`
+3. **Write protection:** `.claude/settings.local.json` blocks direct writes to `qms-cli/`
+4. **Qualification required:** All new/modified requirements must have passing tests before merge
+5. **CI verification:** Tests must pass on GitHub Actions for dev branch
+6. **PR gate:** Changes merge to main only via PR after RS/RTM approval
+7. **Submodule update:** Parent repo updates pointer only after PR merge
+
+### 7.5 Qualified State Continuity
+
+| Phase | main branch | RS/RTM Status | Qualified Baseline |
+|-------|-------------|---------------|-------------------|
+| Before CR | Commit dffd56c | EFFECTIVE RS v13.0 / RTM v15.0 | 403 tests passing |
+| During execution | Unchanged | DRAFT (checked out) | 403 tests (unchanged) |
+| Post-approval | Merged from cr-087-cli-quality-workflow | EFFECTIVE RS v14.0 / RTM v16.0 | 403+ tests passing |
+
+---
+
+## 8. Testing Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document authoring.
+
+For code CRs, address both categories per SOP-002 Section 6.8:
+1. Automated verification: unit tests, qualification tests, CI
+2. Integration verification: what will be exercised through user-facing levers
+   in a running system to demonstrate the change is effective
+
+For document-only CRs, a description of procedural verification is sufficient.
+Delete the subsections below and use a simple list.
+-->
+
+### Automated Verification
+
+- Existing test suite (403 tests) must continue to pass
+- New tests for REQ-WF-022 (checkout auto-withdraw from each of the 6 IN_* states)
+- New tests for REQ-WF-023 (route auto-checkin for review and approval)
+- New test for REQ-AUDIT-002 (verify all 16 event types are logged in a lifecycle test)
+- Updated `test_prompts.py` verifying YAML completeness and error-on-failure behavior
+
+### Integration Verification
+
+- Run `qms create CR --title "Test"` and verify the output includes the new checkout confirmation message
+- Run `qms route` on a checked-out document and verify auto-checkin occurs with informative message
+- Place a document in IN_PRE_REVIEW via `qms route --review`, then `qms checkout` and verify auto-withdraw message and correct final state (DRAFT, checked out)
+- Verify that `get_config()` raises an error when a YAML file is missing (by temporarily renaming one)
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: Test Environment Setup
+
+1. Verify/create a non-QMS-controlled working directory
+2. Clone/update qms-cli from GitHub
+3. Create and checkout branch `cr-087-cli-quality-workflow`
+4. Verify clean test environment (all 403 tests passing)
+
+### 9.2 Phase 2: Requirements (RS Update)
+
+1. Checkout SDLC-QMS-RS in production QMS
+2. Add REQ-WF-022 (Checkout Auto-Withdraw) and REQ-WF-023 (Route Auto-Checkin)
+3. Update REQ-DOC-007 (reference REQ-WF-022 for workflow-state handling on checkout)
+4. Update REQ-WF-015 (auto-checkin behavior replaces rejection when responsible_user matches)
+5. Update REQ-AUDIT-002 (14 to 16 event types: add ASSIGN, WITHDRAW)
+6. Checkin RS, route for review and approval
+
+### 9.3 Phase 3: Implementation
+
+1. Item 1: Add create confirmation message (`create.py`)
+2. Item 2: Remove in-memory prompt fallback (`prompts.py`, `test_prompts.py`)
+3. Item 3: Consolidate state machine (`workflow.py`, `qms_config.py`, `checkout.py`, `withdraw.py`)
+4. Item 4: Implement checkout auto-withdraw and route auto-checkin (`checkout.py`, `route.py`, `withdraw.py`)
+5. Item 5: Create audit event type verification test
+
+### 9.4 Phase 4: Qualification
+
+1. Add qualification tests for REQ-WF-022 and REQ-WF-023
+2. Run full test suite, verify all tests pass
+3. Push to dev branch
+4. Verify GitHub Actions CI passes
+5. Document qualified commit hash
+
+### 9.5 Phase 5: Integration Verification
+
+1. Exercise `qms create` and verify confirmation message
+2. Exercise checkout from IN_PRE_REVIEW and verify auto-withdraw
+3. Exercise route while checked out and verify auto-checkin
+4. Verify YAML error propagation (temporary rename test)
+5. Document what was exercised and observed
+
+### 9.6 Phase 6: RTM Update and Approval
+
+1. Checkout SDLC-QMS-RTM in production QMS
+2. Add verification evidence for REQ-WF-022, REQ-WF-023, updated REQ-AUDIT-002
+3. Update qualified baseline (commit hash, test count)
+4. Checkin RTM, route for review and approval
+5. **Verify RTM reaches EFFECTIVE status before proceeding to Phase 7**
+
+### 9.7 Phase 7: Merge and Submodule Update
+
+**Prerequisite:** RS and RTM must both be EFFECTIVE before proceeding (per SOP-006 Section 7.4).
+
+1. Verify RS is EFFECTIVE (document status check)
+2. Verify RTM is EFFECTIVE (document status check)
+3. Create PR to merge `cr-087-cli-quality-workflow` to main
+4. Merge PR using merge commit -- not squash (per SOP-005 Section 7.1.3)
+5. Verify qualified commit hash from execution branch is reachable on main
+6. Update submodule pointer in parent repo
+7. Verify functionality in production context
+
+---
+
+## 10. Execution
+
+<!--
+EXECUTION PHASE INSTRUCTIONS
+============================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+PRE-EXECUTION: After releasing for execution, the first execution item is to
+commit and push the project repository (including all submodules) to capture
+the pre-execution baseline (per SOP-004 Section 5). Record the commit hash
+in EI-1's execution summary.
+
+POST-EXECUTION: The final execution item is to commit and push the project
+repository (including all submodules) to capture the post-execution state
+(per SOP-004 Section 5). Record the commit hash in the final EI's execution
+summary.
+
+- Sections 1-9 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the comment sections below should be edited during execution phase
+
+COLUMNS:
+- EI: Execution item identifier
+- Task Description: What to do (static, from Implementation Plan)
+- Execution Summary: Narrative of what was done, evidence, observations (editable)
+- Task Outcome: Pass or Fail (editable)
+- Performed By - Date: Signature (editable)
+
+TASK OUTCOME:
+- Pass: Task completed as planned
+- Fail: Task could not be completed as planned - attach VAR with explanation
+
+VAR TYPES (see VAR-TEMPLATE):
+- Type 1: Use when the failed task is critical to CR objectives
+- Type 2: Use when impact is contained and CR can conceptually close
+
+EXECUTION SUMMARY EXAMPLES:
+- "Implemented per plan. Commit abc123."
+- "Modified src/module.py:45-67. Unit tests passing."
+- "Created SOP-007 (now EFFECTIVE)."
+-->
+
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | Pre-execution commit: commit and push project repository and all submodules to capture pre-execution baseline (SOP-004 Section 5) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | RS update: add REQ-WF-022, REQ-WF-023; update REQ-DOC-007, REQ-WF-015, REQ-AUDIT-002. Route for review/approval to EFFECTIVE. | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Create execution branch `cr-087-cli-quality-workflow` in qms-cli | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Implement Item 1: add create confirmation message (`create.py`) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Implement Item 2: remove in-memory prompt fallback (`prompts.py`, `test_prompts.py`) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Implement Item 3: consolidate state machine (`workflow.py`, `qms_config.py`, `checkout.py`, `withdraw.py`) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Implement Item 4: checkout auto-withdraw + route auto-checkin (`checkout.py`, `route.py`, `withdraw.py`) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-8 | Implement Item 5: create test verifying all 16 audit event types | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-9 | Add qualification tests for REQ-WF-022 and REQ-WF-023 | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-10 | Run full test suite, verify CI passes, record qualified commit | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-11 | Integration verification: exercise create, checkout-from-workflow, route-while-checked-out, YAML error propagation | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-12 | RTM update: add new test entries, update qualified baseline. Route for review/approval to EFFECTIVE. | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-13 | Merge gate: verify RS + RTM EFFECTIVE, create PR, merge to main (--no-ff), update submodule pointer | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-14 | Post-execution commit: commit and push project repository and all submodules to capture post-execution state (SOP-004 Section 5) | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual execution item, but apply to the CR as a whole.
+-->
+
+---
+
+## 11. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-004:** Document Execution
+- **SOP-005:** Code Governance
+- **SOP-006:** SDLC Governance
+- **SDLC-QMS-RS:** QMS CLI Requirements Specification (v13.0 EFFECTIVE)
+- **SDLC-QMS-RTM:** QMS CLI Requirements Traceability Matrix (v15.0 EFFECTIVE)
+- **CR-036-VAR-005:** Added ASSIGN audit event type
+- **CR-048:** Added withdraw command and REQ-WF-018
+
+---
+
+**END OF DOCUMENT**
