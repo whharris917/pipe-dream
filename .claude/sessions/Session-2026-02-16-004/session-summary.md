@@ -7,7 +7,7 @@
 
 ## Summary
 
-Extended design discussion establishing the concept of Verification Records (VRs) as a new QMS document type, plus related concepts including testing taxonomy, signature types, periodic reviews, and a grab bag of future QMS improvements. No implementation work — this session was pure design and documentation.
+Extended design discussion establishing the concept of Verification Records (VRs) as a new QMS document type, plus related concepts including testing taxonomy, signature types, periodic reviews, and a grab bag of future QMS improvements. Concluded with a draft TEMPLATE-VR implementing the design decisions.
 
 ---
 
@@ -60,6 +60,19 @@ Extended design discussion establishing the concept of Verification Records (VRs
 
 ---
 
+## TEMPLATE-VR Draft
+
+Drafted `TEMPLATE-VR-draft.md` implementing all 13 design decisions. Key structural choices:
+
+- **Section 4 (Procedure):** Table format with step/action/detail columns, pushing toward granular step-by-step recording
+- **Section 5 (Observations):** One subsection per step with code blocks for pasted output — makes it impossible to just write "looked good"
+- **Section 6 (Outcome):** Split into positive verification (expected vs actual), negative verification (side effects/regressions), and overall pass/fail
+- **Procedure/observation split:** Mirrors GMP distinction between "what you did" and "what you saw," recorded in parallel but structured separately for independent Reviewer evaluation
+- **Section 7 (Signature):** Single Performer row by default with commented guidance for Witness/Verifier rows
+- **No EI sub-table:** The VR is the evidence itself, not a container for further sub-tasks
+
+---
+
 ## Additional Concepts Discussed
 
 ### Periodic Reviews
@@ -85,6 +98,7 @@ Extended design discussion establishing the concept of Verification Records (VRs
 ## Files Created
 
 - `.claude/sessions/Session-2026-02-16-004/discussion-verification-records.md` — Full design discussion
+- `.claude/sessions/Session-2026-02-16-004/TEMPLATE-VR-draft.md` — Draft VR template
 - `.claude/sessions/Session-2026-02-16-004/session-summary.md` — This file
 
 ## Files Modified
@@ -96,8 +110,9 @@ None. This was a design discussion session with no code or QMS document changes.
 ## Next Steps
 
 Implementation of VRs will require a CR covering:
-- TEMPLATE-VR design and creation
-- QMS CLI support for VR document type
-- SOP updates (SOP-002, SOP-004, SOP-006)
+- TEMPLATE-VR finalization and creation as a QMS-controlled template
+- QMS CLI support for VR document type (simplified lifecycle)
+- SOP updates (SOP-002, SOP-004, SOP-006) to reference VRs
 - Template updates (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD — VR column in EI tables)
 - RTM structure update (third verification type)
+- SOP-002 Section 6.8 simplification (replace integration verification prose with VR reference)
