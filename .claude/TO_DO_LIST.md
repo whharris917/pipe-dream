@@ -6,6 +6,17 @@
 
 ## 2026-02-16
 
+- [ ] Switch MCP health check from HTTP to TCP connect
+  - Current POST with empty JSON still produces 406 noise in MCP server logs
+  - Use raw `socket.create_connection()` for `/mcp` endpoints, keep HTTP GET for `/api/health`
+  - Location: `agent-hub/agent_hub/services.py` (`is_port_alive`, `health_code`)
+
+- [ ] Remove stdio transport option from both MCP servers
+  - Neither QMS MCP nor Git MCP uses stdio in any current scenario
+  - Remove `--transport stdio` CLI option and stdio code path from `qms_mcp/server.py` and `git_mcp/server.py`
+  - Default to `streamable-http` instead
+  - qms-cli change requires execution branch + RTM update
+
 - [ ] Implement session heartbeat mechanism to prevent post-compaction session discontinuities
   - Add `SESSION_LOCK` file (`.claude/sessions/SESSION_LOCK`) with `session_id` and `last_activity` timestamp
   - Update `last_activity` periodically during work (e.g., after significant operations)
