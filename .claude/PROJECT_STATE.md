@@ -1,18 +1,20 @@
 # Project State
 
-*Last updated: Session-2026-02-16-003*
+*Last updated: Session-2026-02-16-004*
 
 ---
 
 ## 1. Where We Are Now
 
-CR-088 closed: Agent Hub Granular Service Control and Observability. Added `start-svc`/`stop-svc` CLI commands, unified log format across all services, tool invocation logging, and resolved 4 code review findings (H1 file handle leaks, L1 tmux constant, L8 TTL reduction, L9 entrypoint fix). RS v14.0, RTM v18.0, CLI at 416 tests.
+**Verification Records (VR) design complete.** Session-2026-02-16-004 produced a comprehensive design for VRs — a new QMS document type for unscripted behavioral testing. VRs are pre-approved evidence forms (batch record model) that serve as the primary mechanism for integration verification. TEMPLATE-VR draft complete. Implementation requires a CR covering: CLI support, SOP updates, template updates (VR column in EI tables), and RTM structure update (VR as third verification type).
 
-**Known deficiency from CR-088:** The health check fix (GET→POST for /mcp) did not eliminate server log noise — POST with empty JSON produces 406 instead of 405. Needs a follow-up CR to switch to TCP connect. Root cause: integration verification was structural, not behavioral. The containerization infrastructure that enables real behavioral testing was not in use during execution.
+The design also established a testing taxonomy (scripted/unscripted/exploratory), GMP signature types (Performer/Witness/Verifier/Reviewer), the concept of periodic reviews (blind independent verification of existing claims), and identified the "mandate escalation cycle" as a recurring QMS anti-pattern that VRs break by providing form instead of mandate.
 
-Prior: CR-087 consolidated state machine, CR-086 fixed pre/post-execution commits as bookend EIs, CR-085 added pre-execution commit requirement, CR-084 codified integration verification, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 CLOSED with all 3 CAPAs.
+**Known deficiency from CR-088:** The health check fix (GET→POST for /mcp) did not eliminate server log noise — POST with empty JSON produces 406 instead of 405. Needs a follow-up CR to switch to TCP connect. This deficiency directly motivated the VR design work: integration verification was structural, not behavioral.
 
-The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. Phases B and D cover Git MCP access control and GUI feature completion.
+Prior: CR-088 closed (Agent Hub observability), CR-087 consolidated state machine, CR-086 pre/post-execution commits, CR-085 pre-execution commit requirement, CR-084 integration verification mandate, CR-083 merge gate, CR-082 ADD document type. RS v14.0, RTM v18.0, CLI-9.0 at 416 tests. INV-011 CLOSED with all 3 CAPAs.
+
+The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement.
 
 ---
 
@@ -28,7 +30,9 @@ The platform layer remains operational: Docker containers, MCP connectivity, Age
 
 **Audit, Hardening, and Verification (Feb 14, CR-077 through CR-081).** Code review (27 findings, 4 fixed), Phase A integration testing (2 containerized agents, full QMS lifecycle), GUI terminal hardening (scrollback, control mode, dimensions).
 
-**QMS Process Evolution (Feb 15-16, CR-082 through CR-087).** ADD document type (CAPA-003). Merge gate and qualified commit convention. Integration verification mandate. Pre/post-execution commit as bookend EIs. Rollback procedures for code CRs. CLI quality and workflow enforcement.
+**QMS Process Evolution (Feb 15-16, CR-082 through CR-088).** ADD document type (CAPA-003). Merge gate and qualified commit convention. Integration verification mandate. Pre/post-execution commit as bookend EIs. Rollback procedures for code CRs. CLI quality and workflow enforcement. Agent Hub observability and granular service control.
+
+**Testing & Evidence Framework (Feb 16, design).** Verification Records (VR) as pre-approved evidence forms for unscripted testing. Testing taxonomy, GMP signature types, periodic reviews. TEMPLATE-VR drafted.
 
 ---
 
@@ -115,7 +119,15 @@ All remaining open documents are legacy from early QMS iterations. A bulk cleanu
 
 ---
 
-## 5. Forward Plan (Phases B-E)
+## 5. Forward Plan
+
+### Phase VR: Verification Records Implementation (~1-2 sessions)
+- TEMPLATE-VR finalization and creation as QMS-controlled template
+- QMS CLI support for VR document type (simplified lifecycle — no own workflow)
+- SOP updates: SOP-002 (Section 6.8 simplification), SOP-004 (VR as evidence type, signature types), SOP-006 (VR as third RTM verification type)
+- Template updates: TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD (add VR column to EI tables)
+- RTM structure update (VR as third verification type alongside Unit Test and Qualitative Proof)
+- Design artifacts: `Session-2026-02-16-004/discussion-verification-records.md`, `TEMPLATE-VR-draft.md`
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
@@ -212,6 +224,8 @@ See Session-2026-02-14 notes for full details. Grouped into Agent Hub Robustness
 ---
 
 ## 8. Gaps & Risks
+
+**Integration verification quality.** CR-088 demonstrated that mandated integration verification can be satisfied with structural checks that miss behavioral failures. Phase VR addresses this with structured evidence forms.
 
 **Legacy QMS debt.** Eight open documents from early iterations. Bulk cleanup recommended.
 
