@@ -6,9 +6,11 @@
 
 ## 1. Where We Are Now
 
-CR-088 closed: Agent Hub Granular Service Control and Observability. Added `start-svc`/`stop-svc` CLI commands, unified log format across all services, tool invocation logging, health check fix (POST for /mcp), and resolved 4 code review findings (H1 file handle leaks, L1 tmux constant, L8 TTL reduction, L9 entrypoint fix). RS v14.0, RTM v18.0, CLI at 416 tests.
+CR-088 closed: Agent Hub Granular Service Control and Observability. Added `start-svc`/`stop-svc` CLI commands, unified log format across all services, tool invocation logging, and resolved 4 code review findings (H1 file handle leaks, L1 tmux constant, L8 TTL reduction, L9 entrypoint fix). RS v14.0, RTM v18.0, CLI at 416 tests.
 
-Prior: CR-086 fixed pre/post-execution commits as bookend EIs, CR-085 added pre-execution commit requirement, CR-084 codified integration verification, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 CLOSED with all 3 CAPAs.
+**Known deficiency from CR-088:** The health check fix (GET→POST for /mcp) did not eliminate server log noise — POST with empty JSON produces 406 instead of 405. Needs a follow-up CR to switch to TCP connect. Root cause: integration verification was structural, not behavioral. The containerization infrastructure that enables real behavioral testing was not in use during execution.
+
+Prior: CR-087 consolidated state machine, CR-086 fixed pre/post-execution commits as bookend EIs, CR-085 added pre-execution commit requirement, CR-084 codified integration verification, CR-083 codified the merge gate, CR-082 added the ADD document type (CLI-7.0), INV-011 CLOSED with all 3 CAPAs.
 
 The platform layer remains operational: Docker containers, MCP connectivity, Agent Hub, Tauri GUI, and identity enforcement. Phases B and D cover Git MCP access control and GUI feature completion.
 
