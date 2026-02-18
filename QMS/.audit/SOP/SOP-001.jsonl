@@ -196,3 +196,15 @@
 {"ts": "2026-02-15T23:35:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "20.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-15T23:35:59+00:00", "event": "EFFECTIVE", "user": "qa", "version": "20.0", "from_version": "19.1"}
 {"ts": "2026-02-15T23:35:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "20.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-18T22:11:17+00:00", "event": "CHECKOUT", "user": "claude", "version": "20.1", "from_version": "20.0"}
+{"ts": "2026-02-18T22:15:38+00:00", "event": "CHECKIN", "user": "claude", "version": "20.1"}
+{"ts": "2026-02-18T22:15:41+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "20.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-18T22:15:41+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "20.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-18T22:16:47+00:00", "event": "REVIEW", "user": "qa", "version": "20.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. All verification items pass. Frontmatter: title is \"Quality Management System - Document Control\" (unchanged, present). revision_summary is \"CR-089: Add VR (Verification Record) document type to Sections 2, 3, 6.1, 8.2\" (references authorizing CR, accurately describes scope). No TBD/TODO/FIXME/XXX. No typographical errors. Formatting consistent. Change-by-change verification against v20.0 effective: (1) Section 2 -- VR added to scope list after ADD, before SDLC. (2) Section 3 -- VR added to Executable Document parenthetical; new VR definition row with accurate description (\"Pre-approved evidence form for structured behavioral verification; child of CR, VAR, or ADD; born IN_EXECUTION (see SOP-004 Section 9C)\") matching CR-089 Sections 5.1-5.2. (3) Section 6.1 -- New naming convention row \"{PARENT}-VR-NNN\" with example CR-089-VR-001, parent types CR/VAR/ADD consistent with CR-089. (4) Section 8.2 -- VR appended to executable documents header parenthetical. All sections outside declared scope (1, 4, 5, 6.2, 7, 8.1, 8.3, 9-14) verified unchanged. CR-089 EI-11 authorizes these changes. Recommend for approval."}
+{"ts": "2026-02-18T22:16:47+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "20.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-18T22:18:29+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "20.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-18T22:18:29+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "20.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-18T22:19:10+00:00", "event": "APPROVE", "user": "qa", "version": "20.1"}
+{"ts": "2026-02-18T22:19:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "21.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-18T22:19:10+00:00", "event": "EFFECTIVE", "user": "qa", "version": "21.0", "from_version": "20.1"}
+{"ts": "2026-02-18T22:19:10+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "21.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

@@ -1,1 +1,12 @@
 {"ts": "2026-02-18T03:14:05+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Verification Record Template"}
+{"ts": "2026-02-18T21:35:42+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-18T21:35:46+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-18T21:35:46+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-18T22:10:17+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. All verification items pass. Frontmatter: title is \"Verification Record Template\" (present, non-empty). revision_summary is \"Initial draft\" (acceptable for v0.1 per SOP-001 Section 5.1). Document structure follows established two-block template pattern consistent with TEMPLATE-CR and TEMPLATE-TP. Section numbering is sequential (1-8, with 6.1/6.2/6.3 subsections). No TBD, TODO, FIXME, or XXX found. Template placeholders use the standard {{DOUBLE_CURLY}} and [BRACKET] conventions. No typographical errors. Formatting is consistent throughout. Template content aligns with CR-089 Section 5.1 VR lifecycle (born IN_EXECUTION, no pre-review/pre-approval phases) and Section 5.6 template structure. Evidence standards (observational, contemporaneous, reproducible) are well-defined. References section correctly cites parent document and SOP-004. Recommend for approval."}
+{"ts": "2026-02-18T22:10:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-18T22:10:29+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-18T22:10:29+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-18T22:10:52+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-18T22:10:52+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-18T22:10:52+00:00", "event": "EFFECTIVE", "user": "qa", "version": "1.0", "from_version": "0.1"}
+{"ts": "2026-02-18T22:10:52+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

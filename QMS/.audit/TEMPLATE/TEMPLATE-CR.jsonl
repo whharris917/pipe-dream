@@ -71,3 +71,15 @@
 {"ts": "2026-02-16T02:54:29+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "7.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-16T02:54:29+00:00", "event": "EFFECTIVE", "user": "qa", "version": "7.0", "from_version": "6.1"}
 {"ts": "2026-02-16T02:54:29+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "7.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-18T22:18:55+00:00", "event": "CHECKOUT", "user": "claude", "version": "7.1", "from_version": "7.0"}
+{"ts": "2026-02-18T22:19:57+00:00", "event": "CHECKIN", "user": "claude", "version": "7.1"}
+{"ts": "2026-02-18T22:20:02+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "7.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-18T22:20:02+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "7.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-18T22:23:17+00:00", "event": "REVIEW", "user": "qa", "version": "7.1", "outcome": "RECOMMEND", "comment": "COMPLIANT. All verification items pass. Frontmatter: title is \"Change Record Template\" (unchanged, present). revision_summary is \"CR-089: Add VR column to EI table and update execution guidance\" (references CR-089, accurate). Change-by-change verification against v7.0: (1) Execution Phase Instructions comment -- new VR column description added to COLUMNS guidance between Task Description and Execution Summary, with correct Static/Editable explanation and SOP-004 Section 9C cross-reference. (2) EI table header and rows -- VR column added in correct position, blank by default per SOP-004 Section 4.2. (3) Author note comment -- column numbering updated (1-2 design-time, 3 VR dual-nature, 4-6 run-time). All sections outside EI table area verified unchanged. No TBD/TODO/FIXME/XXX. No typographical errors. Formatting consistent. CR-089 EI-15 authorizes these changes. Recommend for approval."}
+{"ts": "2026-02-18T22:23:17+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "7.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-18T22:23:49+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "7.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-18T22:23:49+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "7.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-18T22:24:21+00:00", "event": "APPROVE", "user": "qa", "version": "7.1"}
+{"ts": "2026-02-18T22:24:21+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "8.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-18T22:24:21+00:00", "event": "EFFECTIVE", "user": "qa", "version": "8.0", "from_version": "7.1"}
+{"ts": "2026-02-18T22:24:21+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "8.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

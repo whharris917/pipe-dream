@@ -1,6 +1,7 @@
 ---
 title: Change Record Template
-revision_summary: 'CR-089: Add VR column to EI table and update execution guidance'
+revision_summary: 'CR-086: Update execution instructions with pre/post-execution commit
+  guidance and fix repository language'
 ---
 
 <!--
@@ -363,9 +364,6 @@ summary.
 COLUMNS:
 - EI: Execution item identifier
 - Task Description: What to do (static, from Implementation Plan)
-- VR: "Yes" if integration verification required (static, set during planning);
-  replaced with VR ID during execution (editable). Blank if no VR needed.
-  See SOP-004 Section 9C.
 - Execution Summary: Narrative of what was done, evidence, observations (editable)
 - Task Outcome: Pass or Fail (editable)
 - Performed By - Date: Signature (editable)
@@ -384,19 +382,18 @@ EXECUTION SUMMARY EXAMPLES:
 - "Created SOP-007 (now EFFECTIVE)."
 -->
 
-| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
-|----|------------------|----|-------------------|--------------|---------------------|
-| EI-1 | {{DESCRIPTION}} | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-2 | {{DESCRIPTION}} | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-3 | {{DESCRIPTION}} | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI | Task Description | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|-------------------|--------------|---------------------|
+| EI-1 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | {{DESCRIPTION}} | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 
 <!--
 AUTHOR NOTE: Delete this comment after reading.
 
 Each EI row has design-time and run-time columns:
 - Columns 1-2 (EI, Task Description): Fill during drafting
-- Column 3 (VR): Set to "Yes" during drafting if VR required; replaced with VR ID during execution
-- Columns 4-6 (Execution Summary, Task Outcome, Performed By): Left for executor
+- Columns 3-5 (Execution Summary, Task Outcome, Performed By): Left for executor
 -->
 
 <!--

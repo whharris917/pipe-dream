@@ -73,7 +73,8 @@
       "Bash(docker-compose config:*)",
       "Bash(wc:*)",
       "Bash(find:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(git log:*)"
     ],
     "deny": [
       "Edit(QMS/**)",
