@@ -1,23 +1,23 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-089: Add VR document type — REQ-DOC-016, REQ-DOC-017 test entries;
-  qualified baseline updated to c79e2df (feature/vr-document-type branch, 424 tests)'
+revision_summary: 'CR-088: Agent Hub Granular Service Control and Observability —
+  qualified baseline updated to fe1a681 (cr-088-observability branch, 416 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v15.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v14.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 111 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 109 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
-- REQ-DOC (Document Management): 17 requirements
+- REQ-DOC (Document Management): 15 requirements
 - REQ-WF (Workflow): 23 requirements
 - REQ-META (Metadata): 4 requirements
 - REQ-AUDIT (Audit Trail): 4 requirements
@@ -79,11 +79,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-SEC-006 | Unknown User Rejection | test_security::test_unknown_user_rejection | PASS |
 | REQ-SEC-007 | Assignment Validation | test_security::test_assignment_validation_review, test_assignment_validation_approval | PASS |
 | REQ-SEC-008 | Workspace/Inbox Isolation | test_security::test_workspace_isolation, test_inbox_isolation | PASS |
-| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp, test_create_add_under_cr, test_create_vr_under_cr | PASS |
-| REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr, test_create_var_under_cr, test_create_var_under_inv, test_create_add_under_inv, test_create_add_under_var, test_create_add_requires_parent, test_create_add_rejects_invalid_parent_type, test_create_vr_under_cr, test_create_vr_under_var, test_create_vr_under_add, test_vr_requires_parent, test_vr_rejects_invalid_parent_type | PASS |
+| REQ-DOC-001 | Supported Document Types | test_document_types::test_create_sop, test_create_cr, test_create_inv, test_create_er_under_tp, test_create_add_under_cr | PASS |
+| REQ-DOC-002 | Child Document Relationships | test_document_types::test_create_tp_under_cr, test_create_var_under_cr, test_create_var_under_inv, test_create_add_under_inv, test_create_add_under_var, test_create_add_requires_parent, test_create_add_rejects_invalid_parent_type | PASS |
 | REQ-DOC-003 | QMS Folder Structure | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-004 | Sequential ID Generation | test_document_types::test_sequential_id_generation | PASS |
-| REQ-DOC-005 | Child Document ID Generation | test_document_types::test_create_var_under_cr, test_child_id_generation, test_add_sequential_id_generation, test_create_vr_under_var, test_create_vr_under_add, test_vr_sequential_id_generation | PASS |
+| REQ-DOC-005 | Child Document ID Generation | test_document_types::test_create_var_under_cr, test_child_id_generation, test_add_sequential_id_generation | PASS |
 | REQ-DOC-006 | Version Format | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-DOC-007 | Checkout Behavior | test_sop_lifecycle::test_sop_full_lifecycle, test_document_types::test_checkout_effective_creates_archive | PASS |
 | REQ-DOC-008 | Checkin Updates QMS | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
@@ -94,11 +94,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-DOC-013 | SDLC Namespace Registration | test_document_types::test_sdlc_namespace_registration, test_sdlc_namespace_list | PASS |
 | REQ-DOC-014 | SDLC Document Identification | test_document_types::test_sdlc_document_identification | PASS |
 | REQ-DOC-015 | Addendum Parent State | test_document_types::test_create_add_requires_closed_parent, test_create_add_under_cr | PASS |
-| REQ-DOC-016 | VR Parent State | test_document_types::test_create_vr_under_cr, test_vr_requires_in_execution_parent | PASS |
-| REQ-DOC-017 | VR Initial Status | test_document_types::test_vr_born_in_execution | PASS |
 | REQ-WF-001 | Status Transition Validation | test_sop_lifecycle::test_invalid_transition, test_invalid_transitions_comprehensive | PASS |
 | REQ-WF-002 | Non-Executable Document Lifecycle | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
-| REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle::test_cr_full_lifecycle, test_document_types::test_vr_born_in_execution | PASS |
+| REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle::test_cr_full_lifecycle | PASS |
 | REQ-WF-004 | Review Completion Gate | test_sop_lifecycle::test_multi_reviewer_gate | PASS |
 | REQ-WF-005 | Approval Gate | test_sop_lifecycle::test_approval_gate_blocking, test_approval_gate_requires_quality_review | PASS |
 | REQ-WF-006 | Approval Version Bump | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
@@ -293,13 +291,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_inv | Create INV document type (executable, folder-per-doc). |
 | test_document_types.py | test_create_er_under_tp | Create ER document type as child of TP. |
 | test_document_types.py | test_create_add_under_cr | Create ADD document type as child of CLOSED CR. |
-| test_document_types.py | test_create_vr_under_cr | Create VR document type as child of IN_EXECUTION CR. |
 
 ---
 
 #### REQ-DOC-002: Child Document Relationships
 
-**Requirement:** The CLI shall enforce parent-child relationships: TP is a child of CR; ER is a child of TP; VAR is a child of CR or INV; ADD is a child of CR, INV, VAR, or ADD; VR is a child of CR, VAR, or ADD.
+**Requirement:** The CLI shall enforce parent-child relationships: TP is a child of CR; ER is a child of TP; VAR is a child of CR or INV.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
@@ -310,11 +307,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_add_under_var | ADD is created as a child of CLOSED VAR. |
 | test_document_types.py | test_create_add_requires_parent | ADD creation requires --parent flag. |
 | test_document_types.py | test_create_add_rejects_invalid_parent_type | ADD rejects invalid parent types (e.g., TP). |
-| test_document_types.py | test_create_vr_under_cr | VR is created as a child of IN_EXECUTION CR. |
-| test_document_types.py | test_create_vr_under_var | VR is created as a child of IN_EXECUTION VAR. |
-| test_document_types.py | test_create_vr_under_add | VR is created as a child of IN_EXECUTION ADD. |
-| test_document_types.py | test_vr_requires_parent | VR creation requires --parent flag. |
-| test_document_types.py | test_vr_rejects_invalid_parent_type | VR rejects invalid parent types (e.g., TP). |
 
 ---
 
@@ -347,9 +339,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_document_types.py | test_create_var_under_cr | VAR ID follows {PARENT}-VAR-NNN format. |
 | test_document_types.py | test_child_id_generation | Child document IDs follow format {PARENT}-{TYPE}-NNN. |
 | test_document_types.py | test_add_sequential_id_generation | ADD IDs generated sequentially (ADD-001, ADD-002, ADD-003). |
-| test_document_types.py | test_create_vr_under_var | VR ID follows nested format (CR-001-VAR-001-VR-001). |
-| test_document_types.py | test_create_vr_under_add | VR ID follows nested format (CR-001-ADD-001-VR-001). |
-| test_document_types.py | test_vr_sequential_id_generation | VR IDs generated sequentially (VR-001, VR-002, VR-003). |
 
 ---
 
@@ -464,27 +453,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-DOC-016: VR Parent State
-
-**Requirement:** VR documents shall only be created against parents in IN_EXECUTION state. The CLI shall reject VR creation when the parent is not IN_EXECUTION.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_document_types.py | test_create_vr_under_cr | VR successfully created when parent CR is IN_EXECUTION. |
-| test_document_types.py | test_vr_requires_in_execution_parent | VR creation rejected when parent is not IN_EXECUTION. |
-
----
-
-#### REQ-DOC-017: VR Initial Status
-
-**Requirement:** VR documents shall be created with initial status IN_EXECUTION at version 1.0 with execution_phase set to post_release. The approved VR template serves as the pre-approval authority (batch record model).
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_document_types.py | test_vr_born_in_execution | VR created with status IN_EXECUTION, version 1.0, execution_phase post_release, checked out. |
-
----
-
 ### 5.3 Workflow State Machine (REQ-WF)
 
 #### REQ-WF-001: Status Transition Validation
@@ -510,12 +478,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-WF-003: Executable Document Lifecycle
 
-**Requirement:** Executable documents (CR, INV, TP, ER, VAR, ADD, VR) shall follow the dual review/approval cycle with execution phase. VR documents enter at IN_EXECUTION per REQ-DOC-017.
+**Requirement:** Executable documents shall follow the dual review/approval cycle with execution phase.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_cr_lifecycle.py | test_cr_full_lifecycle | Complete executable lifecycle verification. |
-| test_document_types.py | test_vr_born_in_execution | VR enters executable lifecycle at IN_EXECUTION v1.0. |
 
 ---
 
@@ -1539,13 +1506,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v15.0 |
+| Requirements Spec | SDLC-QMS-RS v14.0 |
 | Repository | whharris917/qms-cli |
-| Branch | feature/vr-document-type |
-| Commit | c79e2df |
-| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22124307466 |
-| Total Tests | 424 |
-| Passed | 424 |
+| Branch | cr-088-observability |
+| Commit | fe1a681 |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22077645945 |
+| Total Tests | 416 |
+| Passed | 416 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1560,21 +1527,21 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_cr087_workflow.py | 10 | 10 | 0 |
 | test_audit_completeness.py | 2 | 2 | 0 |
 | test_security.py | 19 | 19 | 0 |
-| test_document_types.py | 37 | 37 | 0 |
+| test_document_types.py | 29 | 29 | 0 |
 | test_queries.py | 16 | 16 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
 | test_init.py | 15 | 15 | 0 |
 | test_mcp.py | 74 | 74 | 0 |
-| **Subtotal** | **226** | **226** | **0** |
+| **Subtotal** | **218** | **218** | **0** |
 
 #### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 226 | 226 | 0 |
+| Qualification Tests | 218 | 218 | 0 |
 | Unit Tests | 198 | 198 | 0 |
-| **Total** | **424** | **424** | **0** |
+| **Total** | **416** | **416** | **0** |
 
 ### 6.3 Test Environment
 

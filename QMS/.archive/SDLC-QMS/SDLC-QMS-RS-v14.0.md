@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-089: Add VR document type — REQ-DOC-016 (parent state), REQ-DOC-017
-  (born IN_EXECUTION); update REQ-DOC-001, REQ-DOC-002, REQ-DOC-005, REQ-WF-003'
+revision_summary: 'CR-087: Add REQ-WF-022 (Checkout Auto-Withdraw), REQ-WF-023 (Route
+  Auto-Checkin); update REQ-DOC-007, REQ-WF-015, REQ-AUDIT-002'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -73,8 +73,7 @@ User identity is determined by: (1) hardcoded administrators (`lead` and `claude
 
 **Workflows** are state machines that documents traverse:
 - **Non-executable** (SOP, RS, RTM): DRAFT → review → approval → EFFECTIVE
-- **Executable** (CR, INV, VAR, ADD, VR): DRAFT → pre-review → pre-approval → EXECUTION → post-review → post-approval → CLOSED
-- **VR exception**: VR documents are born IN_EXECUTION at v1.0 (template serves as pre-approval authority), then follow the standard post-execution workflow
+- **Executable** (CR, INV, VAR, ADD): DRAFT → pre-review → pre-approval → EXECUTION → post-review → post-approval → CLOSED
 
 ### 3.3 The Command Model
 
@@ -125,7 +124,7 @@ DRAFT ──route──▶ IN_REVIEW ──all reviewed──▶ REVIEWED ──
                      └────────────────────────────┴───────reject───────┘
 ```
 
-**Executable (CR, INV, TP, ER, VAR, ADD, VR):**
+**Executable (CR, INV, TP, ER, VAR, ADD):**
 ```
 DRAFT ──▶ IN_PRE_REVIEW ──▶ PRE_REVIEWED ──▶ IN_PRE_APPROVAL ──▶ PRE_APPROVED
                                                                       │
@@ -218,7 +217,6 @@ The CLI ships with **standard document types** based on existing quality managem
 | **ER** | Exception Report | Variance for TPs; enables re-execution with modified test design |
 | **VAR** | Variance | Non-conformance documentation |
 | **ADD** | Addendum Report | Post-closure corrections to executable documents |
-| **VR** | Verification Record | Structured behavioral verification evidence |
 
 These document types are defined in the `DOCUMENT_TYPES` registry in the source code. Adding new types or modifying existing ones requires changes to the codebase, not runtime configuration.
 
@@ -339,11 +337,11 @@ This returns a chronological record of every action taken on the document, by wh
 
 | REQ ID | Requirement |
 |--------|-------------|
-| REQ-DOC-001 | **Supported Document Types.** The CLI shall only support creation and management of the following document types: Core types (SOP, CR, INV, TP, ER, VAR, ADD, VR, TEMPLATE) and SDLC types (RS, RTM, available per registered SDLC namespace). The CLI shall reject create commands for undefined document types. |
-| REQ-DOC-002 | **Child Document Relationships.** The CLI shall enforce parent-child relationships: TP is a child of CR; ER is a child of TP; VAR is a child of CR or INV; ADD is a child of CR, INV, VAR, or ADD; VR is a child of CR, VAR, or ADD. Child documents shall be stored within their parent's folder. |
+| REQ-DOC-001 | **Supported Document Types.** The CLI shall only support creation and management of the following document types: Core types (SOP, CR, INV, TP, ER, VAR, ADD, TEMPLATE) and SDLC types (RS, RTM, available per registered SDLC namespace). The CLI shall reject create commands for undefined document types. |
+| REQ-DOC-002 | **Child Document Relationships.** The CLI shall enforce parent-child relationships: TP is a child of CR; ER is a child of TP; VAR is a child of CR or INV; ADD is a child of CR, INV, VAR, or ADD. Child documents shall be stored within their parent's folder. |
 | REQ-DOC-003 | **QMS Folder Structure.** The CLI shall maintain the following folder structure: QMS/ for controlled documents organized by type; QMS/.meta/ for workflow state sidecar files; QMS/.audit/ for audit trail logs; QMS/.archive/ for archived versions; and per-user workspace and inbox directories. The CLI shall reject operations that would store controlled documents outside this structure. |
 | REQ-DOC-004 | **Sequential ID Generation.** The CLI shall generate document IDs sequentially within each document type (e.g., CR-001, CR-002, SOP-001, SOP-002). The next available number shall be determined by scanning existing documents. |
-| REQ-DOC-005 | **Child Document ID Generation.** For child document types, the CLI shall generate IDs in the format `{PARENT}-{TYPE}-NNN` where NNN is sequential within that parent (e.g., CR-005-TP-001, CR-005-VAR-001, CR-005-VAR-002, CR-005-ADD-001, CR-005-VAR-001-ADD-001, CR-005-VR-001, CR-005-VAR-001-VR-001). |
+| REQ-DOC-005 | **Child Document ID Generation.** For child document types, the CLI shall generate IDs in the format `{PARENT}-{TYPE}-NNN` where NNN is sequential within that parent (e.g., CR-005-TP-001, CR-005-VAR-001, CR-005-VAR-002, CR-005-ADD-001, CR-005-VAR-001-ADD-001). |
 | REQ-DOC-006 | **Version Format.** The CLI shall enforce version numbers in the format `N.X` where N = approval number (major version) and X = revision number within approval cycle (minor version). Initial documents shall start at version 0.1. |
 | REQ-DOC-007 | **Checkout Behavior.** The CLI shall permit checkout of any document not currently checked out by another user. On checkout, the CLI shall: (1) if the document is in an active workflow state (IN_REVIEW, IN_APPROVAL, IN_PRE_REVIEW, IN_PRE_APPROVAL, IN_POST_REVIEW, IN_POST_APPROVAL), perform auto-withdraw per REQ-WF-022 before proceeding; (2) copy the document to the user's workspace, (3) set the user as responsible_user, (4) mark the document as checked_out, and (5) if the document is EFFECTIVE, archive the current effective version and create a new draft version at N.1. |
 | REQ-DOC-008 | **Checkin Updates QMS.** When a user checks in a document, the CLI shall: (1) copy the document from workspace to QMS working directory, (2) remove the workspace copy, and (3) maintain the user as responsible_user. |
@@ -354,8 +352,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-DOC-013 | **SDLC Namespace Registration.** The CLI shall support SDLC namespace registration via the `namespace add` command. Registration creates the `QMS/SDLC-{NAME}/` directory structure and enables RS and RTM document types for that namespace (e.g., SDLC-MYPROJ-RS, SDLC-MYPROJ-RTM). Registered namespaces shall be persisted in configuration. |
 | REQ-DOC-014 | **SDLC Document Identification.** SDLC documents shall be identified by the pattern `SDLC-{NAMESPACE}-{TYPE}` where NAMESPACE is a registered SDLC namespace and TYPE is RS or RTM. The CLI shall resolve document type and path dynamically from the namespace registry. |
 | REQ-DOC-015 | **Addendum Parent State.** ADD documents shall only be created against parents in CLOSED state. The CLI shall reject ADD creation when the parent document status is not CLOSED. |
-| REQ-DOC-016 | **VR Parent State.** VR documents shall only be created against parents in IN_EXECUTION state. The CLI shall reject VR creation when the parent document status is not IN_EXECUTION. |
-| REQ-DOC-017 | **VR Initial Status.** VR documents shall be created with initial status IN_EXECUTION at version 1.0 with execution_phase set to post_release. The approved VR template serves as the pre-approval authority (batch record model). VR documents are checked out at creation, ready for the performer to fill in. |
 
 ---
 
@@ -365,7 +361,7 @@ This returns a chronological record of every action taken on the document, by wh
 |--------|-------------|
 | REQ-WF-001 | **Status Transition Validation.** The CLI shall reject any status transition not defined in the workflow state machine. Invalid transitions shall produce an error without modifying document state. |
 | REQ-WF-002 | **Non-Executable Document Lifecycle.** Non-executable documents shall follow this status progression: DRAFT → IN_REVIEW → REVIEWED → IN_APPROVAL → APPROVED → EFFECTIVE. RETIRED is a terminal state. |
-| REQ-WF-003 | **Executable Document Lifecycle.** Executable documents (CR, INV, TP, ER, VAR, ADD, VR) shall follow this status progression: DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL → POST_APPROVED → CLOSED. VR documents enter this progression at IN_EXECUTION per REQ-DOC-017. RETIRED is a terminal state. |
+| REQ-WF-003 | **Executable Document Lifecycle.** Executable documents (CR, INV, TP, ER, VAR, ADD) shall follow this status progression: DRAFT → IN_PRE_REVIEW → PRE_REVIEWED → IN_PRE_APPROVAL → PRE_APPROVED → IN_EXECUTION → IN_POST_REVIEW → POST_REVIEWED → IN_POST_APPROVAL → POST_APPROVED → CLOSED. RETIRED is a terminal state. |
 | REQ-WF-004 | **Review Completion Gate.** The CLI shall automatically transition a document from IN_REVIEW to REVIEWED (or equivalent pre/post states) only when all users in pending_assignees have submitted reviews. |
 | REQ-WF-005 | **Approval Gate.** The CLI shall block routing for approval unless: (1) all submitted reviews have `recommend` outcome (no `request-updates`), AND (2) at least one review was submitted by a quality group member. This ensures both unanimous recommendation and mandatory quality oversight before approval. |
 | REQ-WF-006 | **Approval Version Bump.** Upon successful approval (all approvers complete), the CLI shall: (1) increment the major version (N.X → N+1.0), (2) archive the previous version, (3) transition to EFFECTIVE (non-executable) or PRE_APPROVED/POST_APPROVED (executable), and (4) for non-executable documents, clear the responsible_user. |
