@@ -177,8 +177,8 @@ EXECUTION SUMMARY EXAMPLES:
 
 | EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
 |----|------------------|----|-------------------|--------------|---------------------|
-| EI-1 | Commit and push pre-execution baseline | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-2 | Implement TCP connect health checks in services.py | Yes | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-1 | Commit and push pre-execution baseline | | Committed at a0c856c. CR-090 IN_EXECUTION v1.0 with pre-approved plan. | Pass | claude - 2026-02-19 |
+| EI-2 | Implement TCP connect health checks in services.py | CR-090-VR-001 | Added `_tcp_alive()` using `socket.create_connection()`. Modified `is_port_alive()` and `health_code()` to route MCP endpoints (`/mcp`) through TCP. Simplified `_health_request()` to HTTP GET only. Committed at c1477f8. Integration verified per CR-090-VR-001: TCP correctly detects running/stopped MCP servers, no HTTP 406 log noise, Hub HTTP checks unaffected. | Pass | claude - 2026-02-19 |
 | EI-3 | Commit and push post-execution state | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 
 <!--
@@ -193,7 +193,7 @@ Add rows as needed. When adding rows, fill columns 3-5 during execution.
 
 | Comment | Performed By - Date |
 |---------|---------------------|
-| [COMMENT] | [PERFORMER] - [DATE] |
+| No deviations from plan. All execution items completed as described. | claude - 2026-02-19 |
 
 <!--
 NOTE: Do NOT delete this comment. It provides guidance during document execution.
@@ -216,7 +216,7 @@ Complete this section after all EIs are executed.
 Summarize the overall outcome and any deviations from the plan.
 -->
 
-[EXECUTION_SUMMARY]
+All execution items completed as planned. TCP connect health checks implemented in `agent-hub/agent_hub/services.py` at commit c1477f8. MCP server health checks now use raw TCP connect instead of HTTP POST, eliminating the 406 log noise that was the known deficiency from CR-088. Agent Hub HTTP health checks remain unchanged. Integration verification documented in CR-090-VR-001.
 
 ---
 
