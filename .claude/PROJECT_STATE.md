@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-02-18-001*
+*Last updated: Session-2026-02-19-001*
 
 ---
 
@@ -90,7 +90,6 @@
 ### Phase E: Process Alignment (~1-2 sessions)
 - SOP-007 and SOP-001 identity architecture updates
 - Agent definition prohibitions
-- CR document path reference audit
 
 ---
 
@@ -118,17 +117,30 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 ### Ready (no blockers)
 
-| Item | Effort | Bundle |
+| Item | Effort | Source |
 |------|--------|--------|
-| Correct SOP-001 Section 4.2 `fix` permission | Small | SOP Revision |
-| Audit and fix CR document path references | Small | SOP Revision |
+| Fix stale help text in `qms.py:154` ("QA/lead only" → "administrators only") | Trivial | To-do 2026-01-17 |
+| Switch MCP health check from HTTP to TCP connect | Small | To-do 2026-02-16 |
+| Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
+| Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 
 ### Bundleable (natural CR groupings)
 
-**SOP Revision** (~1 session) — fix permission, path references, simplification
 **Identity & Access Hardening** (~1 session) — proxy header validation (L7), Git MCP access control
 **Agent Hub Robustness** (~1-2 sessions) — C3, H4, M6, M8, M9, M10
 **GUI Polish** (~1-2 sessions) — H6, M3, M4, M5, M7, L3, L4, L5, L6
+**Process Refinement** (~1-2 sessions) — branch protection/merge strategy in SOPs, ALCOA+ concepts (contemporaneous recording, timestamps), commit column in EI table
+**QMS Workflow** — proceduralize adding new documents, comments visibility restriction during active workflows
+
+### Discussion / Design Needed
+
+| Item | Context |
+|------|---------|
+| Automate RTM generation | RTM is large, repetitive, error-prone to maintain manually |
+| Improve RTM readability | One test per line with row-spanning REQ IDs |
+| Session heartbeat mechanism | Prevent post-compaction session discontinuities |
+| Simplify SOPs to behavioral baselines | Review for tooling-dependent language |
+| Production/test environment isolation | Programmatic separation between production and test environments |
 
 ### Deferred
 
@@ -136,7 +148,6 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 |------|-----------|
 | Remove EFFECTIVE status / rename to APPROVED | High disruption, low value |
 | Metadata injection into viewable rendition | No current pain point |
-| Stdio proxy for 100% MCP reliability | HTTP at 90% is workable |
 
 ---
 

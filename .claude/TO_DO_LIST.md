@@ -212,10 +212,9 @@
   - SOP-001 v17.0, SOP-002 v7.0 now EFFECTIVE with relaxed requirement
   - Updated QA agent definition and 5 review/approval prompt files
 
-- [ ] Audit and fix CR document path references
-  - Agents often attempt `QMS/CR/CR-XYZ.md` instead of correct `QMS/CR/CR-XYZ/CR-XYZ.md`
-  - Check SOPs, CLAUDE.md, agent definition files, and templates for incorrect path examples
-  - Consider: If no other document types will live in `QMS/CR/CR-XYZ/`, simplify to flat structure `QMS/CR/CR-XYZ.md`
+- [x] ~~Audit and fix CR document path references~~ RESOLVED
+  - No erroneous path references found in SOPs, templates, or CLAUDE.md
+  - Root cause is behavioral (reading files directly instead of using `qms read`)
 
 ---
 
@@ -232,9 +231,8 @@
 
 ## 2026-01-08
 
-- [ ] Figure out a way to remind Claude to spawn and reuse/resume agents
-  - Currently spinning up completely new agents each time instead of resuming existing ones
-  - Consider: CLAUDE.md instruction, hook reminder, or agent ID tracking mechanism
+- [x] ~~Figure out a way to remind Claude to spawn and reuse/resume agents~~ RESOLVED
+  - CLAUDE.md already contains agent reuse instructions; SOP-007 Section 4.4 codifies the requirement
 
 - [ ] Proceduralize how to add new documents to the QMS
   - Problem: Can't check out a document that doesn't exist yet
@@ -263,20 +261,9 @@
 
 ## 2026-01-06
 
-### Handle "pass with exception" scenario
+### ~~Handle "pass with exception" scenario~~ RESOLVED
 
-**Context:** During TC/ER template development, identified a scenario not explicitly covered:
-
-> If the Actual Results match the Expected Results, but at the time of testing a problem is discovered with the system or the expected results, then the test step passes with exception.
-
-**Current state:** TC Instructions and SOP-004 only trigger ER workflow when a step fails. A passing step with a discovered problem isn't explicitly handled.
-
-**Possible approaches:**
-1. Codify in SOP-004 as a distinct outcome type
-2. Handle via Test Execution Comments + protocol-level ER (per existing note)
-3. Add "Pass with Exception" as a valid Pass/Fail value in TC template
-
-**Action:** Revisit when codifying test execution procedures more formally.
+Not needed as a formal mechanism; existing VAR/ER workflows cover edge cases adequately.
 
 ---
 
