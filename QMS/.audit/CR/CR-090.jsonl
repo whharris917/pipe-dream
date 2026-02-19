@@ -1,0 +1,13 @@
+{"ts": "2026-02-19T23:37:18+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Switch MCP health checks from HTTP to TCP connect"}
+{"ts": "2026-02-19T23:39:05+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-19T23:39:10+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "IN_PRE_REVIEW"}
+{"ts": "2026-02-19T23:39:10+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "0.1", "assignees": ["qa"], "review_type": "PRE_REVIEW"}
+{"ts": "2026-02-19T23:40:16+00:00", "event": "REVIEW", "user": "qa", "version": "0.1", "outcome": "RECOMMEND", "comment": "PRE-REVIEW: COMPLIANT. All 12 required CR sections present and substantive. Frontmatter verified: title=\"Switch MCP health checks from HTTP to TCP connect\", revision_summary=\"Initial draft\" (acceptable for v0.1 executable document). No placeholder content in pre-approved sections (1-9). Execution sections (10-11) contain expected execution-phase placeholders. No typos, formatting errors, or TBD/TODO/FIXME markers found. Traceability to CR-088 and governing SOPs confirmed. EI table correctly structured with pre/post baseline commits per SOP-004 Section 5, and VR flag on EI-2 for integration verification. SDLC prerequisites N/A (Agent Hub is not SDLC-governed). No TU assignment required -- affected domain (Agent Hub service management) is outside all TU specializations (tu_ui, tu_scene, tu_sketch, tu_sim). Recommend for pre-approval."}
+{"ts": "2026-02-19T23:40:16+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "0.1", "from_status": "IN_PRE_REVIEW", "to_status": "PRE_REVIEWED"}
+{"ts": "2026-02-19T23:40:29+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "PRE_REVIEWED", "to_status": "IN_PRE_APPROVAL"}
+{"ts": "2026-02-19T23:40:29+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "0.1", "assignees": ["qa"], "approval_type": "PRE_APPROVAL"}
+{"ts": "2026-02-19T23:40:49+00:00", "event": "APPROVE", "user": "qa", "version": "0.1"}
+{"ts": "2026-02-19T23:40:49+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
+{"ts": "2026-02-19T23:40:57+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-19T23:40:57+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-19T23:41:01+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}

@@ -1,0 +1,232 @@
+---
+title: Switch MCP health checks from HTTP to TCP connect
+revision_summary: Initial draft
+---
+
+# CR-090: Switch MCP health checks from HTTP to TCP connect
+
+## 1. Purpose
+
+Eliminate MCP server log noise caused by health check probes. The current HTTP-based health checks produce HTTP 406 (Not Acceptable) responses on every poll because FastMCP's Starlette layer rejects POST requests with empty JSON that lack proper MCP protocol headers. Switching to TCP connect checks whether the port is listening without triggering any HTTP processing.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Known deficiency from CR-088: the GET-to-POST fix for `/mcp` health checks did not eliminate server log noise. POST with empty JSON produces 406 instead of the previous 405, but both generate unwanted log entries in the MCP server stderr.
+
+- **Parent Document:** None (follow-up to CR-088 known deficiency)
+
+### 2.2 Changes Summary
+
+Replace HTTP POST-based health checks for MCP server endpoints with raw TCP connect checks. The Agent Hub's `/api/health` HTTP check remains unchanged.
+
+### 2.3 Files Affected
+
+- `agent-hub/agent_hub/services.py` - Replace HTTP health checks for MCP endpoints with TCP connect; clean up `_health_request` to only handle HTTP endpoints
+
+---
+
+## 3. Current State
+
+MCP health checks in `services.py` send HTTP POST requests with empty JSON body `b"{}"` to `/mcp` endpoints. FastMCP rejects these with HTTP 406 (Not Acceptable) because the request lacks proper MCP protocol compliance (Accept header, valid JSON-RPC payload). The `is_port_alive()` function treats any HTTP response as "alive," so the check works functionally but generates 406 error entries in server logs on every poll.
+
+---
+
+## 4. Proposed State
+
+MCP health checks use raw TCP connect (`socket.create_connection`). If the socket connects, the service is listening. No HTTP request is sent, so no protocol-level errors appear in server logs. The Agent Hub's `/api/health` endpoint continues to use HTTP GET.
+
+---
+
+## 5. Change Description
+
+### 5.1 New TCP connect helper
+
+Add `_tcp_alive(port, timeout)` function using `socket.create_connection()`. Returns `True` if TCP connection succeeds, `False` otherwise. Uses context manager for automatic socket cleanup.
+
+### 5.2 Modified `is_port_alive()`
+
+Route MCP endpoints (`health_path == "/mcp"`) through `_tcp_alive()` instead of `_health_request()`. Non-MCP endpoints continue through the existing HTTP path.
+
+### 5.3 Modified `health_code()`
+
+For MCP endpoints, return synthetic values (200 if alive, 0 if not) since there is no real HTTP response. Non-MCP endpoints continue to return actual HTTP status codes. Note: `health_code()` is currently unused by any caller outside its own module, but is maintained for API completeness.
+
+### 5.4 Simplified `_health_request()`
+
+Remove the `/mcp` POST branch. The function now only handles HTTP GET requests for endpoints that have real HTTP health endpoints (currently only the Agent Hub's `/api/health`).
+
+---
+
+## 6. Justification
+
+- **Problem:** Every health check poll to MCP servers generates a 406 error log entry, creating noise that obscures real errors
+- **Impact of not making this change:** Continued log noise on MCP servers whenever Agent Hub services are running; difficulty distinguishing real errors from health check artifacts
+- **How TCP connect addresses root cause:** TCP connect operates below the HTTP layer entirely. It verifies port liveness without triggering any application-level request processing, eliminating the source of log entries
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `agent-hub/agent_hub/services.py` | Modify | Add TCP connect helper; modify health check routing for MCP endpoints |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| None | - | No controlled documents affected |
+
+### 7.3 Other Impacts
+
+None. The Agent Hub is not SDLC-governed (no RS/RTM). The change is internal to the service management layer and does not affect MCP server functionality, QMS operations, or container infrastructure.
+
+---
+
+## 8. Testing Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document authoring.
+
+For code CRs, address both categories per SOP-002 Section 6.8:
+1. Automated verification: unit tests, qualification tests, CI
+2. Integration verification: what will be exercised through user-facing levers
+   in a running system to demonstrate the change is effective
+
+For document-only CRs, a description of procedural verification is sufficient.
+Delete the subsections below and use a simple list.
+-->
+
+### Automated Verification
+
+The Agent Hub has no CI pipeline or qualification tests for `services.py`. Verification is manual and integration-based.
+
+### Integration Verification
+
+- Start MCP servers via `agent-hub start qms-mcp` and `agent-hub start git-mcp` — verify both report as alive
+- Run `agent-hub status` — verify MCP servers show correct status
+- Inspect MCP server logs — verify no 406 entries from health check probes
+- Stop and restart a service — verify `_wait_for_service` polling detects the service coming up
+- Run `agent-hub stop --all` — verify clean shutdown
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Implementation
+
+1. Edit `agent-hub/agent_hub/services.py`:
+   - Add `import socket` to imports
+   - Add `_tcp_alive(port, timeout)` function
+   - Modify `is_port_alive()` to route MCP endpoints through `_tcp_alive()`
+   - Modify `health_code()` to return synthetic values for MCP endpoints
+   - Simplify `_health_request()` to remove the `/mcp` POST branch
+2. Manually verify per integration verification steps above
+
+---
+
+## 10. Execution
+
+<!--
+EXECUTION PHASE INSTRUCTIONS
+============================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+PRE-EXECUTION: After releasing for execution, the first execution item is to
+commit and push the project repository (including all submodules) to capture
+the pre-execution baseline (per SOP-004 Section 5). Record the commit hash
+in EI-1's execution summary.
+
+POST-EXECUTION: The final execution item is to commit and push the project
+repository (including all submodules) to capture the post-execution state
+(per SOP-004 Section 5). Record the commit hash in the final EI's execution
+summary.
+
+- Sections 1-9 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the comment sections below should be edited during execution phase
+
+COLUMNS:
+- EI: Execution item identifier
+- Task Description: What to do (static, from Implementation Plan)
+- VR: "Yes" if integration verification required (static, set during planning);
+  replaced with VR ID during execution (editable). Blank if no VR needed.
+  See SOP-004 Section 9C.
+- Execution Summary: Narrative of what was done, evidence, observations (editable)
+- Task Outcome: Pass or Fail (editable)
+- Performed By - Date: Signature (editable)
+
+TASK OUTCOME:
+- Pass: Task completed as planned
+- Fail: Task could not be completed as planned - attach VAR with explanation
+
+VAR TYPES (see VAR-TEMPLATE):
+- Type 1: Use when the failed task is critical to CR objectives
+- Type 2: Use when impact is contained and CR can conceptually close
+
+EXECUTION SUMMARY EXAMPLES:
+- "Implemented per plan. Commit abc123."
+- "Modified src/module.py:45-67. Unit tests passing."
+- "Created SOP-007 (now EFFECTIVE)."
+-->
+
+| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|----|-------------------|--------------|---------------------|
+| EI-1 | Commit and push pre-execution baseline | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Implement TCP connect health checks in services.py | Yes | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Commit and push post-execution state | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual execution item, but apply to the CR as a whole.
+-->
+
+---
+
+## 11. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-004:** Document Execution
+- **CR-088:** Agent Hub observability and service control (origin of known deficiency)
+
+---
+
+**END OF DOCUMENT**
