@@ -11,6 +11,7 @@ CR-088: Granular Service Control and Observability.
 
 import os
 import platform
+import socket
 import subprocess
 import sys
 import time
@@ -122,23 +123,31 @@ def find_pid_on_port(port: int) -> int | None:
         return None
 
 
-def _health_request(port: int, health_path: str) -> httpx.Response:
-    """Send a health check request using the appropriate HTTP method.
+def _tcp_alive(port: int, timeout: float = 3) -> bool:
+    """Check if a service is listening via TCP connect.
 
-    MCP endpoints (/mcp) require POST to avoid server log noise.
-    Standard health endpoints (/api/health) use GET.
+    Used for MCP endpoints where HTTP probes cause server log noise (406).
+    """
+    try:
+        with socket.create_connection(("localhost", port), timeout=timeout):
+            return True
+    except (ConnectionRefusedError, TimeoutError, OSError):
+        return False
+
+
+def _health_request(port: int, health_path: str) -> httpx.Response:
+    """Send an HTTP GET health check request.
+
+    Used for endpoints with real HTTP health responses (e.g., /api/health).
     """
     url = f"http://localhost:{port}{health_path}"
-    if health_path == "/mcp":
-        return httpx.post(
-            url, content=b"{}",
-            headers={"Content-Type": "application/json"}, timeout=3,
-        )
     return httpx.get(url, timeout=3)
 
 
 def is_port_alive(port: int, health_path: str) -> bool:
     """Check if a service is responding on the given port."""
+    if health_path == "/mcp":
+        return _tcp_alive(port)
     try:
         _health_request(port, health_path)
         return True  # Any HTTP response means the service is up
@@ -148,6 +157,8 @@ def is_port_alive(port: int, health_path: str) -> bool:
 
 def health_code(port: int, health_path: str) -> int:
     """Get the HTTP status code from a health endpoint."""
+    if health_path == "/mcp":
+        return 200 if _tcp_alive(port) else 0
     try:
         response = _health_request(port, health_path)
         return response.status_code
