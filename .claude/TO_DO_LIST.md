@@ -6,10 +6,25 @@
 
 ## 2026-02-16
 
-- [ ] Switch MCP health check from HTTP to TCP connect
-  - Current POST with empty JSON still produces 406 noise in MCP server logs
-  - Use raw `socket.create_connection()` for `/mcp` endpoints, keep HTTP GET for `/api/health`
-  - Location: `agent-hub/agent_hub/services.py` (`is_port_alive`, `health_code`)
+- [x] ~~Switch MCP health check from HTTP to TCP connect~~ DONE (CR-090)
+  - Replaced HTTP POST with `socket.create_connection()` for MCP endpoints
+  - Hub `/api/health` unchanged
+
+- [ ] Introduce Protocol / Attachment document taxonomy and auto-close cascade
+  - Current "executable document" category conflates two distinct lifecycle types
+  - **Three-tier taxonomy:**
+    - **Non-executable** — SOP, RS, RTM (define requirements/specifications)
+    - **Executable**
+      - **Protocol** — CR, INV, TP, ER, VAR, ADD (full lifecycle, self-governing, independently authorized)
+      - **Attachment** — subordinate lifecycle, auto-closes when parent protocol closes
+        - **Record** (subtype) — VR (pre-approved evidence form, born IN_EXECUTION, template is approval authority)
+        - Future non-record attachment types anticipated
+  - GMP analogy: protocols authorize work; attachments capture evidence or support execution
+  - **Key property:** "attachment" defines the lifecycle relationship (subordinate, auto-close). "Record" defines document purpose (structured evidence). Orthogonal concerns.
+  - **Behavioral change:** when a protocol closes, all its child attachments auto-close. Falls naturally out of the type system.
+  - **SOP impact:** SOP-001 (taxonomy in Section 3 definitions, Section 8 statuses), SOP-004 (distinguish protocol vs attachment execution)
+  - **CLI impact:** close command cascades to child attachments; metadata field `executable` → `protocol` / `attachment`; attachment subtype field (e.g., `record`)
+  - Requires CR with SOP updates + qms-cli execution branch + tests + RTM update
 
 - [ ] Remove stdio transport option from both MCP servers
   - Neither QMS MCP nor Git MCP uses stdio in any current scenario
