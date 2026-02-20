@@ -335,3 +335,66 @@ qms --user claude interact CR-090-VR-001 --compile
 Every --respond output contains the next prompt. The agent reads what
 the system presents, then responds to it. No skipping forward. Help
 footer on every output.
+
+## Help Output
+
+```
+$ qms --user claude interact --help
+
+Usage: qms --user USER interact DOC_ID [OPTIONS]
+
+  Guided form-fill for incrementally-built documents. The bare command
+  shows the current prompt. Each --respond records an answer and presents
+  the next prompt. The document tracks its own progress — call bare at
+  any time to re-orient.
+
+Arguments:
+  DOC_ID                     Document to interact with (must be IN_EXECUTION)
+
+Responding:
+  --respond VALUE            Respond to the current prompt
+  --respond --file PATH      Respond with file contents (for multi-line output)
+  --accept                   Accept default value for current prompt
+  --reason TEXT              Required with --respond during amendments
+
+Navigation:
+  --goto PROMPT_ID           Amend a previous response (detour + return)
+  --cancel-goto              Cancel an amendment detour without changes
+  --reopen LOOP --reason WHY Re-enter a closed loop to add iterations
+
+Status:
+  --progress                 Show all prompts with fill status
+  --compile                  Generate compiled document from responses
+
+Rules:
+  - A prompt must be presented before it can be responded to
+  - Forward progress is sequential — no skipping prompts
+  - Amendments append (original preserved with strikethrough)
+  - All responses are timestamped with author identity
+
+Examples:
+  # Start or re-orient
+  qms --user claude interact CR-090-VR-001
+
+  # Respond to current prompt
+  qms --user claude interact CR-090-VR-001 --respond "Pass"
+
+  # Respond with terminal output from file
+  qms --user claude interact CR-090-VR-001 --respond --file /tmp/output.txt
+
+  # Accept a default (e.g., today's date)
+  qms --user claude interact CR-090-VR-001 --accept
+
+  # Amend a previous response
+  qms --user claude interact CR-090-VR-001 --goto objective
+  qms --user claude interact CR-090-VR-001 --respond "new value" --reason "why"
+
+  # Add more steps to a closed loop
+  qms --user claude interact CR-090-VR-001 --reopen steps --reason "why"
+
+  # View progress
+  qms --user claude interact CR-090-VR-001 --progress
+
+  # Compile final document
+  qms --user claude interact CR-090-VR-001 --compile
+```
