@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-02-19-002*
+*Last updated: Session-2026-02-20-001*
 
 ---
 
@@ -27,6 +27,8 @@
 **Testing & Evidence Framework (Feb 16-18, CR-089).** VR document type — CLI support (424 tests), SDLC docs (RS v15.0, RTM v19.0), TEMPLATE-VR, 4 SOP updates, 3 template updates.
 
 **Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect, eliminating 406 log noise.
+
+**Incremental Document Building Design (Feb 19-20).** Three design sessions (002, 003, 001) producing the vision, data model exploration, and final design: embedded state machine tags in templates, `qms interact` CLI command, GMP-style amendment trail, prompt-before-response enforcement.
 
 ---
 
@@ -75,6 +77,13 @@
 ---
 
 ## 5. Forward Plan
+
+### Incremental Document Building (~2-3 sessions, design complete)
+- Implement `qms interact` command and template parser in qms-cli
+- Adopt restructured TEMPLATE-VR as first incrementally-built document type
+- Design artifacts in Session-2026-02-20-001 session notes
+- Open questions: storage location for response lists, tag syntax stability review
+- Connects to: ALCOA+ (contemporaneous recording), RTM automation, session context management
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
@@ -129,7 +138,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 **Identity & Access Hardening** (~1 session) — proxy header validation (L7), Git MCP access control
 **Agent Hub Robustness** (~1-2 sessions) — C3, H4, M6, M8, M9, M10
 **GUI Polish** (~1-2 sessions) — H6, M3, M4, M5, M7, L3, L4, L5, L6
-**Process Refinement** (~1-2 sessions) — branch protection/merge strategy in SOPs, ALCOA+ concepts (contemporaneous recording, timestamps), commit column in EI table
+**Process Refinement** (~1-2 sessions) — branch protection/merge strategy in SOPs, commit column in EI table
 **QMS Workflow** — proceduralize adding new documents, comments visibility restriction during active workflows
 
 ### Discussion / Design Needed
@@ -141,6 +150,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Session heartbeat mechanism | Prevent post-compaction session discontinuities |
 | Simplify SOPs to behavioral baselines | Review for tooling-dependent language |
 | Production/test environment isolation | Programmatic separation between production and test environments |
+| Subconscious agent | Design discussion complete (discussion-subconscious-agent.md); implementation design pending |
 
 ### Deferred
 
