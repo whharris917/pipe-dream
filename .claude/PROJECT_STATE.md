@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-02-20-001*
+*Last updated: Session-2026-02-20-002*
 
 ---
 
@@ -28,7 +28,7 @@
 
 **Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect, eliminating 406 log noise.
 
-**Incremental Document Building Design (Feb 19-20).** Three design sessions (002, 003, 001) producing the vision, data model exploration, and final design: embedded state machine tags in templates, `qms interact` CLI command, GMP-style amendment trail, prompt-before-response enforcement.
+**Incremental Document Building Design (Feb 19-20).** Three design sessions (002, 003, 001) producing the interaction protocol: embedded state machine tags in templates, `qms interact` CLI command, GMP-style amendment trail, prompt-before-response enforcement. Session 002 expanded the vision: interact as the canonical AI-QMS write interface, engine-managed atomic commits, primary data attachment.
 
 ---
 
@@ -78,12 +78,14 @@
 
 ## 5. Forward Plan
 
-### Incremental Document Building (~2-3 sessions, design complete)
-- Implement `qms interact` command and template parser in qms-cli
-- Adopt restructured TEMPLATE-VR as first incrementally-built document type
-- Design artifacts in Session-2026-02-20-001 session notes
-- Open questions: storage location for response lists, tag syntax stability review
-- Connects to: ALCOA+ (contemporaneous recording), RTM automation, session context management
+### Interaction System — Canonical QMS Interface (~4-5 sessions, design complete)
+- **Phase 1:** Implement `qms interact` engine and template parser in qms-cli; adopt TEMPLATE-VR as first document type
+- **Phase 2:** Atomic commits — engine-managed git commits on `commit: true` prompts, commit hash as response metadata
+- **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD)
+- **Phase 4+:** Non-executable documents, intent decomposition layer
+- Design artifacts: Session-2026-02-20-001 (interact command, restructured TEMPLATE-VR), Session-2026-02-20-002 (vision document)
+- Open questions: response store location, tag syntax stability review, commit scope policy, SOP-004 evolution
+- Strategic direction: the QMS governs interactions and produces documents as a byproduct
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
