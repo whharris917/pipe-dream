@@ -1,14 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-02-19-001*
+*Last updated: Session-2026-02-19-002*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-089 CLOSED.** VR document type fully integrated. 47 CRs CLOSED (CR-042 through CR-089). All controlled documents updated and EFFECTIVE.
-
-**Known deficiency from CR-088:** Health check fix (GET→POST for /mcp) did not eliminate server log noise — POST with empty JSON produces 406 instead of 405. Needs a follow-up CR to switch to TCP connect.
+**CR-090 CLOSED.** MCP health checks switched from HTTP to TCP connect, resolving the CR-088 known deficiency (406 log noise). 48 CRs CLOSED (CR-042 through CR-090). All controlled documents EFFECTIVE.
 
 ---
 
@@ -27,6 +25,8 @@
 **QMS Process Evolution (Feb 15-16, CR-082 through CR-088).** ADD document type. Merge gate. Integration verification mandate. Pre/post-execution commits. Rollback procedures. CLI quality and workflow enforcement. Agent Hub observability.
 
 **Testing & Evidence Framework (Feb 16-18, CR-089).** VR document type — CLI support (424 tests), SDLC docs (RS v15.0, RTM v19.0), TEMPLATE-VR, 4 SOP updates, 3 template updates.
+
+**Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect, eliminating 406 log noise.
 
 ---
 
@@ -120,7 +120,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Item | Effort | Source |
 |------|--------|--------|
 | Fix stale help text in `qms.py:154` ("QA/lead only" → "administrators only") | Trivial | To-do 2026-01-17 |
-| Switch MCP health check from HTTP to TCP connect | Small | To-do 2026-02-16 |
+
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 
