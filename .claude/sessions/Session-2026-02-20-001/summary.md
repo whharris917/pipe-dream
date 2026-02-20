@@ -43,9 +43,21 @@ Two cursor movement primitives:
 
 Single CLI entry point for incrementally-built documents. Bare command emits status + current prompt + available actions. Flags perform actions.
 
-**Flags:** `--respond`, `--respond --file`, `--accept` (defaults), `--progress`, `--goto`, `--reopen`, `--compile`
+**Flags:** `--respond`, `--respond --file`, `--accept` (defaults), `--progress`, `--goto`, `--reopen`, `--compile`, `--cancel-goto`
 
-**Agent workflow:** Stateless loop — call interact to orient, call interact --respond to answer, repeat. 23 commands for a complete 2-step VR.
+**Agent workflow:** Stateless loop — call interact to orient, each --respond records answer AND presents next prompt. 24 commands for a complete 2-step VR.
+
+### Prompt-Before-Response Enforcement
+
+Identified risk: agents habituate to prompt sequences and go on autopilot, defeating the purpose of guided form-fill. Solution: the system will not accept a response to a prompt it hasn't presented. Each `--respond` output includes the next prompt inline, creating a forced dialogue — the agent must read the system's output to know what to respond to next.
+
+### Contextual Prompt Interpolation
+
+Prompts can reference previous responses to make autopilot harder. Example: `step_expected` prompt says "You said you're about to: '{{step_action}}'. Before you execute — what do you expect to observe?" The prompt changes based on what was answered, so the agent can't template its responses.
+
+### Persistent Help Footer
+
+Every output ends with a reminder of available commands — respond, file, amend, reopen, progress, compile. The agent never needs to recall syntax from memory. System is self-documenting at every interaction point.
 
 ## Design Principles Established
 
@@ -53,6 +65,8 @@ Single CLI entry point for incrementally-built documents. Bare command emits sta
 - **Every invocation is stateless.** Document tracks its own cursor and progress. Context loss is recoverable by calling `interact` bare.
 - **Append-only response model.** Nothing is deleted. History is the audit trail.
 - **Guidance is the prompt, not a hidden comment.** The author sees exactly what they need at each step.
+- **Forced dialogue.** The system always has the last word (the next prompt). The agent always responds to what it just read, not what it remembers.
+- **Self-documenting.** Help footer on every output. No memorization required.
 
 ## Open Questions (carried forward)
 
