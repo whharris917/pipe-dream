@@ -68,10 +68,18 @@ Every output ends with a reminder of available commands — respond, file, amend
 - **Forced dialogue.** The system always has the last word (the next prompt). The agent always responds to what it just read, not what it remembers.
 - **Self-documenting.** Help footer on every output. No memorization required.
 
+## Design Maturity
+
+This session produced a surprisingly complete design in one pass — tag system, response model, navigation, enforcement rules, CLI command with help output, and a concrete agent workflow. The design is **template-agnostic**: while VR was the example, the tag system and `interact` command are generic infrastructure that any structured document type could adopt.
+
+The design is ready for implementation consideration. The next concrete step would be a CR to implement `interact` and the template parser in `qms-cli`, with TEMPLATE-VR as the first adopter.
+
+**Caution:** TEMPLATE-VR is a controlled document. Once we implement against this tag syntax, changing the syntax requires a CR to update the template. The tag vocabulary (`@prompt`, `@gate`, `@loop`, `@end-loop`, `@end`) and attribute format should be considered stable before implementation begins.
+
 ## Open Questions (carried forward)
 
-- **Schema format in templates:** The tag system is designed; how it gets embedded in controlled markdown templates (TEMPLATE-VR is a QMS-controlled document) needs consideration
-- **Storage location:** Where do prompt/response lists live? Sidecar JSON in `.meta/`? Inline in the document?
+- **Storage location:** Where do prompt/response lists live? Sidecar JSON in `.meta/`? Inline in the document? A new tier?
 - **Compile timing:** Preview at any point (proposed), partial compilation for unfilled docs
 - **Validation enforcement:** Advisory-first with `--strict` option (proposed from Session-003)
 - **Implementation phasing:** VRs first, then evaluate expansion to EI tables and other document types
+- **Tag syntax stability:** Review the tag vocabulary and attribute format before committing to implementation
