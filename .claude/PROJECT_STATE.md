@@ -1,12 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-20-003*
+*Last updated: Session-2026-02-21-001*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-090 CLOSED.** MCP health checks switched from HTTP to TCP connect, resolving the CR-088 known deficiency (406 log noise). 48 CRs CLOSED (CR-042 through CR-090). All controlled documents EFFECTIVE.
+**CR-091 CLOSED.** Interaction system engine implemented — template-driven interactive authoring for VR documents. 5 new modules, 182 new tests, 22 new requirements (REQ-INT). All controlled documents EFFECTIVE. 49 CRs CLOSED (CR-042 through CR-091).
+
+**Pending:** CR-091-VR-001 is inadequate (freehand, not interactive). Next session creates CR-091-ADD-001 with a proper VR authored through the interaction system.
 
 ---
 
@@ -28,7 +30,7 @@
 
 **Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect, eliminating 406 log noise.
 
-**Interaction System Design (Feb 19-20).** Five design sessions producing the complete interaction system architecture. Protocol design (tags, state machine, amendment trail, prompt-before-response enforcement), CLI command design (`qms interact`), strategic vision (interact as canonical AI-QMS write interface, engine-managed atomic commits, primary data attachment), and consolidated design (source files, skill framing, VR template v3, checkout/checkin semantics, file system lifecycle).
+**Interaction System (Feb 19-21, CR-091).** Design across five sessions (Feb 19-20), implementation and execution (Feb 21). Template parser, source data model, interaction engine, compilation engine, CLI command, MCP tool. 22 requirements (REQ-INT-001 through REQ-INT-022), 611 tests. SOP-004 Section 11 (Interactive Document Authoring), TEMPLATE-VR v2.0 (interactive v3).
 
 ---
 
@@ -38,9 +40,9 @@
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v15.0 EFFECTIVE | 111 requirements |
-| SDLC-QMS-RTM | v19.0 EFFECTIVE | 424 tests, CI-verified |
-| Qualified Baseline | CLI-10.0 | qms-cli commit c79e2df (main: 2c6b826) |
+| SDLC-QMS-RS | v16.0 EFFECTIVE | 133 requirements |
+| SDLC-QMS-RTM | v20.0 EFFECTIVE | 611 tests, qualified commit 7e708fc |
+| Qualified Baseline | CLI-11.0 | qms-cli commit 7e708fc (main: c83dda0) |
 
 ### Controlled Document State
 
@@ -49,14 +51,14 @@
 | SOP-001 | v21.0 EFFECTIVE |
 | SOP-002 | v13.0 EFFECTIVE |
 | SOP-003 | v3.0 EFFECTIVE |
-| SOP-004 | v8.0 EFFECTIVE |
+| SOP-004 | v9.0 EFFECTIVE |
 | SOP-005 | v5.0 EFFECTIVE |
 | SOP-006 | v5.0 EFFECTIVE |
 | SOP-007 | v2.0 EFFECTIVE |
 | TEMPLATE-CR | v8.0 EFFECTIVE |
 | TEMPLATE-VAR | v3.0 EFFECTIVE |
 | TEMPLATE-ADD | v2.0 EFFECTIVE |
-| TEMPLATE-VR | v1.0 EFFECTIVE |
+| TEMPLATE-VR | v2.0 EFFECTIVE |
 
 ---
 
@@ -64,6 +66,7 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
+| CR-091-VR-001 | IN_EXECUTION v1.0 | Inadequate — freehand, not interactive. To be superseded by CR-091-ADD-001-VR-001. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
 | INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
@@ -78,14 +81,15 @@
 
 ## 5. Forward Plan
 
-### Interaction System — Canonical QMS Interface (design complete, ready for implementation)
-- **Phase 1:** Implement `qms interact` engine and template parser in qms-cli; source file data model (`.interact` session, `.source.json` permanent); compilation; checkout/checkin for interactive documents; adopt TEMPLATE-VR v3 as first interactive template
-- **Phase 2:** Atomic commits — engine-managed git commits on `commit: true` prompts, commit hash as response metadata
+### Next Session: CR-091-ADD-001 (Interaction System VR Remediation)
+
+CR-091-VR-001 was authored as freehand markdown, bypassing the interaction system. Create an addendum (CR-091-ADD-001) to produce CR-091-ADD-001-VR-001 — a VR authored *through* the interaction engine via `qms interact` CLI, proving complete system functionality. The ADD should document the inadequacy of CR-091-VR-001 and establish CR-091-ADD-001-VR-001 as the true evidence.
+
+**Prerequisite:** Restart MCP server to pick up the new `qms_interact` tool, or use CLI directly.
+
+### Interaction System Phase 2+ (future)
 - **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD) — likely hybrid interactive/freehand
 - **Phase 4+:** Non-executable documents, intent decomposition layer
-- Consolidated design: `Session-2026-02-20-003/interaction-system-design.md`
-- Open questions: tag syntax stability review, commit scope policy, SOP-004 evolution, hybrid document mechanism
-- Resolved: source file naming (`.source.json`), workspace artifact (`.interact`), checkout semantics (no editable markdown), `qms read` behavior (always compiles from source)
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
@@ -130,8 +134,8 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 | Item | Effort | Source |
 |------|--------|--------|
-| Fix stale help text in `qms.py:154` ("QA/lead only" → "administrators only") | Trivial | To-do 2026-01-17 |
-
+| Interactive document write protection (REQ-INT-023) | Medium | Session-2026-02-21-001 defect |
+| Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 
@@ -165,8 +169,10 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 ## 8. Gaps & Risks
 
+**CR-091-VR-001 inadequacy.** Freehand VR bypassed the interaction system. Remediation via CR-091-ADD-001 is the immediate next step.
+
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 424.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 611.
