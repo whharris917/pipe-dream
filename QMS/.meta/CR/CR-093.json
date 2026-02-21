@@ -1,0 +1,16 @@
+{
+  "doc_id": "CR-093",
+  "doc_type": "CR",
+  "version": "1.0",
+  "status": "IN_EXECUTION",
+  "executable": true,
+  "execution_phase": "post_release",
+  "responsible_user": "claude",
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "pending_assignees": [],
+  "review_outcomes": {
+    "qa": "RECOMMEND"
+  }
+}
