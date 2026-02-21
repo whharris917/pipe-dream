@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-21-001*
+*Last updated: Session-2026-02-21-002*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-091 CLOSED.** Interaction system engine implemented — template-driven interactive authoring for VR documents. 5 new modules, 182 new tests, 22 new requirements (REQ-INT). All controlled documents EFFECTIVE. 49 CRs CLOSED (CR-042 through CR-091).
+**INV-012 CLOSED.** Governance failure investigation complete — CR-091 code was never propagated to the production `qms-cli` submodule. Root cause: SOP-005 lacked submodule workflow step, SOP-002 QA checklist lacked submodule verification. Three CAPAs executed: CR-092 (corrective — code merge + submodule pointer), CR-093 (preventive — SOP-005 v6.0 + SOP-002 v14.0). Bug fix: `checkin.py` UnboundLocalError in interactive checkin path (commit `532e630`).
 
-**Pending:** CR-091-VR-001 is inadequate (freehand, not interactive). Next session creates CR-091-ADD-001 with a proper VR authored through the interaction system.
+**CR-091-ADD-001 IN_EXECUTION.** VR evidence remediation was halted when `qms interact` was found missing from production. Now unblocked — ready to resume. 51 CRs CLOSED (CR-042 through CR-093).
 
 ---
 
@@ -32,6 +32,8 @@
 
 **Interaction System (Feb 19-21, CR-091).** Design across five sessions (Feb 19-20), implementation and execution (Feb 21). Template parser, source data model, interaction engine, compilation engine, CLI command, MCP tool. 22 requirements (REQ-INT-001 through REQ-INT-022), 611 tests. SOP-004 Section 11 (Interactive Document Authoring), TEMPLATE-VR v2.0 (interactive v3).
 
+**Governance Failure Investigation (Feb 21, INV-012).** CR-091 code never propagated to production submodule. Four deviations documented. CR-092 (corrective: submodule merge) and CR-093 (preventive: SOP-005 v6.0, SOP-002 v14.0) both CLOSED. Bug fix: `checkin.py` interactive checkin `UnboundLocalError`.
+
 ---
 
 ## 3. What's Built
@@ -49,10 +51,10 @@
 | Document | Version |
 |----------|---------|
 | SOP-001 | v21.0 EFFECTIVE |
-| SOP-002 | v13.0 EFFECTIVE |
+| SOP-002 | v14.0 EFFECTIVE |
 | SOP-003 | v3.0 EFFECTIVE |
 | SOP-004 | v9.0 EFFECTIVE |
-| SOP-005 | v5.0 EFFECTIVE |
+| SOP-005 | v6.0 EFFECTIVE |
 | SOP-006 | v5.0 EFFECTIVE |
 | SOP-007 | v2.0 EFFECTIVE |
 | TEMPLATE-CR | v8.0 EFFECTIVE |
@@ -66,6 +68,7 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
+| CR-091-ADD-001 | IN_EXECUTION v1.0 | VR evidence remediation. Unblocked now that submodule is updated. |
 | CR-091-VR-001 | IN_EXECUTION v1.0 | Inadequate — freehand, not interactive. To be superseded by CR-091-ADD-001-VR-001. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
@@ -81,11 +84,9 @@
 
 ## 5. Forward Plan
 
-### Next Session: CR-091-ADD-001 (Interaction System VR Remediation)
+### Next Session: Resume CR-091-ADD-001 (Interaction System VR Remediation)
 
-CR-091-VR-001 was authored as freehand markdown, bypassing the interaction system. Create an addendum (CR-091-ADD-001) to produce CR-091-ADD-001-VR-001 — a VR authored *through* the interaction engine via `qms interact` CLI, proving complete system functionality. The ADD should document the inadequacy of CR-091-VR-001 and establish CR-091-ADD-001-VR-001 as the true evidence.
-
-**Prerequisite:** Restart MCP server to pick up the new `qms_interact` tool, or use CLI directly.
+CR-091-ADD-001 is IN_EXECUTION (baseline at `885a405`). It was halted when `qms interact` was found missing from production — now unblocked by INV-012/CR-092. Resume execution: author CR-091-ADD-001-VR-001 via `qms interact`, complete remaining EIs, route for post-review.
 
 ### Interaction System Phase 2+ (future)
 - **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD) — likely hybrid interactive/freehand
@@ -134,6 +135,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 | Item | Effort | Source |
 |------|--------|--------|
+| Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 / Session-2026-02-21-002 |
 | Interactive document write protection (REQ-INT-023) | Medium | Session-2026-02-21-001 defect |
 | Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
@@ -169,7 +171,9 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 ## 8. Gaps & Risks
 
-**CR-091-VR-001 inadequacy.** Freehand VR bypassed the interaction system. Remediation via CR-091-ADD-001 is the immediate next step.
+**checkin.py bug fix needs governance.** Commit `532e630` fixed an `UnboundLocalError` in interactive checkin (dead `version` parameter). Fix was applied directly during INV-012 execution — needs a proper CR for traceability.
+
+**CR-091-VR-001 inadequacy.** Freehand VR bypassed the interaction system. Remediation via CR-091-ADD-001 in progress (unblocked).
 
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
