@@ -1,0 +1,112 @@
+{
+  "doc_id": "CR-094-ADD-001-VR-001",
+  "template": "VR",
+  "template_version": 4,
+  "cursor": "__end__",
+  "cursor_context": {},
+  "metadata": {
+    "parent_doc_id": "CR-094-ADD-001",
+    "vr_id": "CR-094-ADD-001-VR-001",
+    "title": "CR-094 EI-12 Recompilation Verification"
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-1",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:47:24Z"
+      }
+    ],
+    "date": [
+      {
+        "value": "2026-02-21",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:47:40Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that the CR-094 compilation defect fixes (D1-D4) produce correct output when recompiling CR-092-VR-001 against the updated template and compiler",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:47:53Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "pipe-dream repository on main branch at commit e833b99. qms-cli submodule updated to 2c61af2 (CR-094 merge commit, includes qualified commit c676b61). CR-092-VR-001 exists with source data from prior interactive authoring. Windows 11, Python 3.12, Git Bash shell.",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:48:07Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Compile CR-092-VR-001 using the updated compiler and verify the output. Command: python qms-cli/qms.py --user claude interact CR-092-VR-001 --compile",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:48:21Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "D1: Exactly one frontmatter block (no template FM or notice comment). D2: Table rows are valid single-line markdown with no attribution in cells; step attributions on separate lines with bold markers intact; attribution outside code fences. D3: No guidance text or @end-prompt tags in output. D4: Free-text responses (pre_conditions, summary) wrapped in blockquote (> prefix).",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:48:37Z"
+      }
+    ],
+    "step_actual.1": [
+      {
+        "value": "Compiled output from `qms read CR-092-VR-001` (which compiles from stored .source.json):\n\nD1 VERIFIED - Single frontmatter block:\n- Output starts with `---\\ntitle: 'CR-092 Integration Verification...'\\n---`\n- No template frontmatter (no `template_name:`, `template_version:`, `revision_summary:` from template FM)\n- No `<!-- @template` notice comment\n\nD2 VERIFIED - Table and attribution formatting:\n- Identification table row: `| CR-092 | EI-5 | 2026-02-21 |` — single line, no attribution in cells\n- Step attributions on separate lines after bold markers:\n  `**Verify qms interact command...**`\n  `*-- claude, 2026-02-21 20:55:16*`\n  (bold closes before attribution, not broken)\n- Code fence in Step 1 actual: attribution `*-- claude, 2026-02-21 20:55:43 | commit: 77c1e50*` appears AFTER the closing ``` fence\n\nD3 VERIFIED - No guidance or @end-prompt tags:\n- No `<!-- @prompt`, `<!-- @gate`, `<!-- @end-prompt` tags in output\n- No guidance text (e.g., \"State what CAPABILITY is being verified\") in output\n- Only structural HTML comments (execution guidance notes) preserved\n\nD4 VERIFIED - Blockquote wrapping:\n- Pre-conditions wrapped: `> pipe-dream repository on main branch at commit 73f69cf...`\n- Summary wrapped: `> Verified three aspects of the CR-092 corrective action...`\n- Label-context responses (Objective, Expected, Outcome) rendered inline, not blockquoted\n\nAll six acceptance criteria from CR-094 Section 8 confirmed.",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:49:39Z",
+        "commit": "0282a83"
+      }
+    ],
+    "step_outcome.1": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:49:53Z"
+      }
+    ],
+    "summary_outcome": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:50:17Z"
+      }
+    ],
+    "summary_narrative": [
+      {
+        "value": "Recompiled CR-092-VR-001 (the first production VR) against the CR-094-updated compiler and template. Verified all four defect fixes: D1 (single frontmatter), D2 (clean table rows and separated attributions), D3 (no guidance leak or @end-prompt tags), D4 (blockquoted free-text responses). The compiled output is structurally valid markdown with clear visual distinction between author content and template structure.",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:50:34Z"
+      }
+    ],
+    "performer": [
+      {
+        "value": "claude",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:50:45Z"
+      }
+    ],
+    "performed_date": [
+      {
+        "value": "2026-02-21",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:50:58Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": true,
+      "reopenings": []
+    }
+  },
+  "gates": {
+    "more_steps.1": {
+      "value": "no",
+      "timestamp": "2026-02-21T23:50:05Z"
+    }
+  }
+}
