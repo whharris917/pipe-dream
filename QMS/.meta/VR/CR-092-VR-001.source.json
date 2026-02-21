@@ -2,11 +2,8 @@
   "doc_id": "CR-092-VR-001",
   "template": "VR",
   "template_version": 3,
-  "cursor": "step_actual",
-  "cursor_context": {
-    "loop": "steps",
-    "iteration": 3
-  },
+  "cursor": "__end__",
+  "cursor_context": {},
   "metadata": {
     "parent_doc_id": "CR-092",
     "vr_id": "CR-092-VR-001",
@@ -112,12 +109,55 @@
         "author": "claude",
         "timestamp": "2026-02-21T20:57:20Z"
       }
+    ],
+    "step_actual.3": [
+      {
+        "value": "$ git submodule status qms-cli\n c83dda08dbf5a984672c74478d8f32902fd47bdc qms-cli (heads/main)\n\nNo '+' prefix. Submodule pointer committed and matches CR-091 merge commit c83dda0.",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:57:32Z",
+        "commit": "fdf95b2"
+      }
+    ],
+    "step_outcome.3": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:57:42Z"
+      }
+    ],
+    "summary_outcome": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:58:03Z"
+      }
+    ],
+    "summary_narrative": [
+      {
+        "value": "Verified three aspects of the CR-092 corrective action: (1) qms interact command availability in the production CLI, (2) qualified commit 7e708fc reachability from the production main branch, (3) submodule pointer update to c83dda0. All three pass. The production qms-cli submodule is now aligned with the RTM v20.0 qualified baseline.",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:58:15Z"
+      }
+    ],
+    "performer": [
+      {
+        "value": "claude",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:58:26Z"
+      }
+    ],
+    "performed_date": [
+      {
+        "value": "2026-02-21",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:58:37Z"
+      }
     ]
   },
   "loops": {
     "steps": {
       "iterations": 3,
-      "closed": false,
+      "closed": true,
       "reopenings": []
     }
   },
@@ -129,6 +169,10 @@
     "more_steps.2": {
       "value": "yes",
       "timestamp": "2026-02-21T20:57:00Z"
+    },
+    "more_steps.3": {
+      "value": "no",
+      "timestamp": "2026-02-21T20:57:53Z"
     }
   }
 }

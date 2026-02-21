@@ -1,128 +1,160 @@
 ---
-title: 'CR-092 Integration Verification: Production CLI and Commit Reachability'
-revision_summary: Initial draft
+title: Verification Record Template
+revision_summary: 'CR-091: Interactive VR template v3'
 ---
 
-# {{vr_id}}: {{title}}
+<!--
+================================================================================
+TEMPLATE DOCUMENT NOTICE
+================================================================================
+This template is a QMS-controlled document. The frontmatter contains only:
+- title: Document title
+- revision_summary: Description of changes in this revision
+
+All other metadata (version, status, responsible_user, dates) is managed
+automatically by the QMS CLI in sidecar files (.meta/) per SOP-001 Section 5.
+
+When creating a VR from this template, the interaction engine handles
+instantiation. VRs are authored via `qms interact`, not freehand editing.
+================================================================================
+-->
+
+---
+title: 'CR-092 Integration Verification: Production CLI and Commit Reachability'
+revision_summary: 'Initial draft'
+---
+
+# CR-092-VR-001: CR-092 Integration Verification: Production CLI and Commit Reachability
 
 ## 1. Verification Identification
 
-<!-- @prompt: related_eis | next: date -->
-
-Which execution item(s) in the parent document does this VR verify? (e.g., EI-3, or EI-3 and EI-4)
-
-<!-- @prompt: date | next: objective | default: today -->
-
 | Parent Document | Related EI(s) | Date |
 |-----------------|---------------|------|
-| {{parent_doc_id}} | {{related_eis}} | {{date}} |
+| CR-092 | EI-5
+*-- claude, 2026-02-21 20:54:29* | 2026-02-21
+*-- claude, 2026-02-21 20:54:40* |
 
 ---
 
 ## 2. Verification Objective
 
-<!-- @prompt: objective | next: pre_conditions -->
-
-State what CAPABILITY is being verified -- not what specific mechanism is being tested. Frame the objective broadly enough that you naturally check adjacent behavior during the procedure.
-
-Good: "Verify that service health monitoring detects running and stopped services correctly"
-Avoid: "Verify the health check endpoint returns 200"
-
-**Objective:** {{objective}}
+**Objective:** Verify that the CR-091 interaction system code is available and functional in the production qms-cli submodule, and that the RTM qualified baseline commit is reachable from the production main branch
+*-- claude, 2026-02-21 20:54:51*
 
 ---
 
 ## 3. Pre-Conditions
 
-<!-- @prompt: pre_conditions | next: step_instructions -->
-
-Describe the state of the system BEFORE verification begins. A person with terminal access but no knowledge of this project must be able to reproduce these conditions.
-
-Include as applicable: branch and commit checked out, services running (which, what ports), container state, non-default configuration, data state, relevant environment details (OS, Python version, etc.).
-
-{{pre_conditions}}
+pipe-dream repository on main branch at commit 73f69cf. qms-cli submodule updated to c83dda0 (CR-091 merge commit). Windows 11, Python 3.12, Git Bash shell. No services running.
+*-- claude, 2026-02-21 20:55:03*
 
 ---
 
 ## 4. Verification Steps
 
-<!-- @loop: steps -->
+### Step 1
 
-### Step {{_n}}
+**Verify qms interact command exists in production CLI. Command: python qms-cli/qms.py --user claude interact --help
+*-- claude, 2026-02-21 20:55:16***
 
-<!-- @prompt: step_instructions | next: step_expected -->
-
-What are you about to do? Describe the action and provide the exact command, click target, or navigation path. Commands must be copy-pasteable -- not retyped or abbreviated.
-
-**{{step_instructions}}**
-
-<!-- @prompt: step_expected | next: step_actual -->
-
-What do you expect to observe? State this BEFORE executing -- not after. Good verification covers both sides: confirming what should be present and confirming what should be absent. A step might check that a service responds correctly, or that an error no longer appears, or that an unrelated subsystem remains unaffected. All of these are evidence.
-
-**Expected:** {{step_expected}}
-
-<!-- @prompt: step_actual | next: step_outcome | commit: true -->
-
-What did you observe? Reference primary evidence: paste actual terminal output, or attach raw output via --respond --file. Do not summarize or paraphrase. If the output is long, paste the relevant portion and note what was omitted.
-
-The commit hash recorded on this response pins the project state at the moment of observation. A verifier can checkout this commit to see the exact code, configuration, and any output files referenced below.
+**Expected:** Help text showing interact subcommand with its arguments (--respond, --file, --reason, --goto, --cancel-goto, --reopen, --progress, --compile). No 'unrecognized arguments' or 'invalid choice' errors.
+*-- claude, 2026-02-21 20:55:27*
 
 **Actual:**
 
 ```
-{{step_actual}}
+$ python qms-cli/qms.py --user claude interact --help
+usage: qms.py interact [-h] [--respond [RESPOND]] [--file FILE]
+                       [--reason REASON] [--goto GOTO] [--cancel-goto]
+                       [--reopen REOPEN] [--progress] [--compile]
+                       doc_id
+
+positional arguments:
+  doc_id               Document ID
+
+options:
+  -h, --help           show this help message and exit
+  --respond [RESPOND]  Response value
+  --file FILE          Read response from file
+  --reason REASON      Reason for amendment or loop reopen
+  --goto GOTO          Navigate to a prompt for amendment
+  --cancel-goto        Cancel goto and return
+  --reopen REOPEN      Reopen a closed loop
+  --progress           Show progress
+  --compile            Preview compiled output
+
+All expected arguments present. No errors.
+*-- claude, 2026-02-21 20:55:43 | commit: 77c1e50*
 ```
 
-<!-- @prompt: step_outcome | next: more_steps -->
+**Outcome:** Pass
+*-- claude, 2026-02-21 20:55:54*
 
-Did the observed output match your expectation? Pass or Fail. If Fail, note the discrepancy.
+### Step 2
 
-**Outcome:** {{step_outcome}}
+**Verify qualified commit 7e708fc is reachable from production qms-cli main branch. Command: git -C qms-cli log --oneline | grep 7e708fc
+*-- claude, 2026-02-21 20:56:16***
 
-<!-- @gate: more_steps | type: yesno | yes: step_instructions | no: summary_outcome -->
+**Expected:** One line showing commit 7e708fc with its message about qualification tests. Exit code 0 (grep found a match).
+*-- claude, 2026-02-21 20:56:27*
 
-Do you have additional verification steps to record?
+**Actual:**
 
-<!-- @end-loop: steps -->
+```
+$ git -C qms-cli log --oneline | grep 7e708fc
+7e708fc Add qualification tests for REQ-INT-001 through REQ-INT-022 (CR-091 EI-11)
 
----
+Exit code 0. Qualified commit reachable from production main.
+*-- claude, 2026-02-21 20:56:40 | commit: 3a68f99*
+```
+
+**Outcome:** Pass
+*-- claude, 2026-02-21 20:56:49*
+
+### Step 3
+
+**Verify submodule pointer in pipe-dream points to CR-091 merge commit. Command: git submodule status qms-cli
+*-- claude, 2026-02-21 20:57:09***
+
+**Expected:** Output showing commit hash c83dda0 (full 40-char) for qms-cli submodule. No '+' prefix (which would indicate uncommitted pointer change).
+*-- claude, 2026-02-21 20:57:20*
+
+**Actual:**
+
+```
+$ git submodule status qms-cli
+ c83dda08dbf5a984672c74478d8f32902fd47bdc qms-cli (heads/main)
+
+No '+' prefix. Submodule pointer committed and matches CR-091 merge commit c83dda0.
+*-- claude, 2026-02-21 20:57:32 | commit: fdf95b2*
+```
+
+**Outcome:** Pass
+*-- claude, 2026-02-21 20:57:42*
 
 ## 5. Summary
 
-<!-- @prompt: summary_outcome | next: summary_narrative -->
+**Overall Outcome:** Pass
+*-- claude, 2026-02-21 20:58:03*
 
-Considering all steps above, what is the overall outcome? Pass if all steps passed and nothing unexpected was observed. Fail if any step failed or if unexpected behavior was discovered.
-
-**Overall Outcome:** {{summary_outcome}}
-
-<!-- @prompt: summary_narrative | next: performer -->
-
-Brief narrative overview of the verification: what was tested, the general approach, and any notable observations -- even if they don't affect the outcome. If any step failed, reference the discrepancy and any VAR created.
-
-{{summary_narrative}}
+Verified three aspects of the CR-092 corrective action: (1) qms interact command availability in the production CLI, (2) qualified commit 7e708fc reachability from the production main branch, (3) submodule pointer update to c83dda0. All three pass. The production qms-cli submodule is now aligned with the RTM v20.0 qualified baseline.
+*-- claude, 2026-02-21 20:58:15*
 
 ---
 
 ## 6. Signature
 
-<!-- @prompt: performer | next: performed_date | default: current_user -->
-
-Who performed this verification?
-
-<!-- @prompt: performed_date | next: end | default: today -->
-
 | Role | Identity | Date |
 |------|----------|------|
-| Performed By | {{performer}} | {{performed_date}} |
-
-<!-- @end -->
+| Performed By | claude
+*-- claude, 2026-02-21 20:58:26* | 2026-02-21
+*-- claude, 2026-02-21 20:58:37* |
 
 ---
 
 ## 7. References
 
-- **{{parent_doc_id}}:** Parent document
+- **CR-092:** Parent document
 - **SOP-004:** Document Execution
 
 ---
