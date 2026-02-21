@@ -1,21 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-091: Interaction system engine — add REQ-INT traceability (22
-  requirements); qualified baseline updated to 7e708fc (cr-091-interaction-system
-  branch, 611 tests)'
+revision_summary: 'CR-089: Add VR document type — REQ-DOC-016, REQ-DOC-017 test entries;
+  qualified baseline updated to c79e2df (feature/vr-document-type branch, 424 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v16.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v15.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 133 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 111 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 17 requirements
@@ -30,7 +29,6 @@ This RTM covers all 133 requirements defined in SDLC-QMS-RS across the following
 - REQ-INIT (Project Initialization): 8 requirements
 - REQ-USER (User Management): 5 requirements
 - REQ-MCP (MCP Server): 16 requirements
-- REQ-INT (Interaction System): 22 requirements
 
 ---
 
@@ -62,11 +60,6 @@ Tests are organized by workflow scenario rather than individual requirement. Eac
 | CR-087 Workflow | `qualification/test_cr087_workflow.py` | Checkout auto-withdraw (REQ-WF-022), route auto-checkin (REQ-WF-023) |
 | Audit Completeness | `qualification/test_audit_completeness.py` | All 16 audit event types (REQ-AUDIT-002) |
 | MCP | `qualification/test_mcp.py` | MCP server tools and functional equivalence |
-| Interaction Parser | `test_interact_parser.py` | Template tag parsing, header, prompts, gates, loops |
-| Interaction Source | `test_interact_source.py` | Source data model, session/source files, append-only responses |
-| Interaction Engine | `test_interact_engine.py` | Engine behavior, cursor, sequential enforcement, interpolation |
-| Interaction Compiler | `test_interact_compiler.py` | Compilation, tag stripping, amendment rendering |
-| Interaction Integration | `test_interact_integration.py` | Checkout/checkin/read integration, atomic commits, MCP parity |
 
 ### 3.4 Traceability Convention
 
@@ -189,28 +182,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-014 | Streamable-HTTP Transport | test_mcp::test_mcp_streamable_http_transport_configuration, test_mcp_streamable_http_transport_security_allows_docker, test_mcp_streamable_http_cli_args, test_mcp_streamable_http_is_recommended_over_sse | PASS |
 | REQ-MCP-015 | Header-Based Identity Resolution | test_mcp::test_resolve_identity_missing_user_raises_error, test_resolve_identity_empty_user_raises_error, test_resolve_identity_stdio_mode_custom_user, test_resolve_identity_http_header_enforced, test_resolve_identity_enforced_mode_mismatch_raises_error, test_resolve_identity_enforced_mode_match_succeeds, test_resolve_identity_mismatch_error_message_helpful, test_resolve_identity_http_no_header_trusted_mode, test_resolve_identity_unknown_agent_still_resolves, test_known_agents_set, test_resolve_identity_non_starlette_context_uses_trusted_mode, test_resolve_identity_tools_receive_resolved_identity | PASS |
 | REQ-MCP-016 | Identity Collision Prevention | test_mcp::test_identity_collision_exception_class, test_identity_lock_ttl_constant, test_identity_collision_enforced_locks_trusted, test_identity_collision_enforced_locks_stdio_mode, test_identity_collision_error_message_terminal, test_identity_lock_ttl_expiry, test_identity_lock_heartbeat_refreshes, test_identity_collision_different_identities_ok, test_identity_collision_trusted_mode_does_not_lock, test_identity_collision_duplicate_container, test_identity_collision_same_instance_heartbeat, test_identity_collision_duplicate_after_ttl, test_identity_registry_cleanup, test_identity_lock_empty_instance_id, test_identity_collision_tool_returns_error | PASS |
-| REQ-INT-001 | Tag Vocabulary | test_interact_parser::test_recognizes_prompt_tag, test_recognizes_gate_tag, test_recognizes_loop_tags, test_recognizes_end_tag, test_tags_must_be_html_comments, test_all_five_tags_in_one_template | PASS |
-| REQ-INT-002 | Template Header | test_interact_parser::test_parses_template_name, test_parses_template_version, test_parses_start_prompt, test_missing_name_raises, test_missing_start_raises, test_missing_header_raises, test_multiline_header_comment | PASS |
-| REQ-INT-003 | Prompt Attributes | test_interact_parser::test_prompt_has_id, test_prompt_has_next, test_prompt_commit_defaults_false, test_prompt_commit_true, test_prompt_missing_id_raises, test_prompt_missing_next_raises, test_prompt_has_guidance | PASS |
-| REQ-INT-004 | Gate Attributes | test_interact_parser::test_gate_has_id, test_gate_has_type, test_gate_has_yes_target, test_gate_has_no_target, test_gate_missing_targets_raises, test_gate_missing_id_raises | PASS |
-| REQ-INT-005 | Loop Semantics | test_interact_parser::test_loop_defined_by_pair, test_loop_tracks_first_prompt, test_prompts_inside_loop_marked, test_prompts_outside_loop_not_marked, test_gate_inside_loop_marked, test_unclosed_loop_raises, test_mismatched_end_loop_raises | PASS |
-| REQ-INT-006 | Source File Structure | test_interact_source::test_create_source_has_doc_id, test_create_source_has_template_reference, test_create_source_has_cursor, test_create_source_has_responses, test_create_source_has_loops, test_create_source_has_gates, test_create_source_has_metadata, test_create_source_default_metadata, test_source_serializes_to_json | PASS |
-| REQ-INT-007 | Session File Lifecycle | test_interact_source::test_save_and_load_session, test_save_and_load_source, test_load_nonexistent_session_returns_none, test_load_nonexistent_source_returns_none, test_session_creates_parent_dirs, test_source_creates_parent_dirs, test_session_file_is_valid_json; test_interact_integration::test_checkout_creates_interact_session, test_checkin_stores_source_json, test_checkin_removes_interact_session | PASS |
-| REQ-INT-008 | Append-Only Responses | test_interact_source::test_response_entry_has_value, test_response_entry_has_author, test_response_entry_has_timestamp, test_response_entry_optional_reason, test_response_entry_no_reason_by_default, test_response_entry_optional_commit, test_response_entry_no_commit_by_default, test_responses_stored_as_list, test_append_only_multiple_entries, test_get_active_response_returns_last | PASS |
-| REQ-INT-009 | Amendment Trail | test_interact_source::test_amendment_preserves_original, test_amendment_has_reason, test_original_entry_has_no_reason, test_multiple_amendments_all_preserved; test_interact_compiler::test_amendment_shows_strikethrough_on_original, test_multiple_amendments_all_superseded_struck, test_compiled_document_shows_amendments | PASS |
-| REQ-INT-010 | Interact Entry Point | test_interact_engine::test_shows_current_prompt_id, test_shows_guidance_text, test_shows_awaiting_response_status, test_shows_complete_when_done, test_shows_commit_flag, test_shows_gate_type, test_shows_loop_context | PASS |
-| REQ-INT-011 | Response Flags | test_interact_engine::test_respond_records_value, test_respond_advances_cursor, test_respond_returns_next_prompt_info, test_respond_on_complete_raises; test_interact_integration::test_cli_interact_has_all_flags | PASS |
-| REQ-INT-012 | Navigation Flags | test_interact_engine::test_goto_navigates_to_previous_prompt, test_goto_requires_reason, test_goto_to_unanswered_raises, test_goto_amendment_mode, test_goto_amendment_returns_to_original, test_cancel_goto, test_cancel_goto_no_active_raises, test_reopen_loop, test_reopen_requires_reason, test_reopen_nonclosed_raises | PASS |
-| REQ-INT-013 | Query Flags | test_interact_engine::test_progress_shows_all_prompts, test_progress_shows_filled_status, test_progress_shows_commit_prompts, test_progress_shows_loop_iterations; test_interact_compiler::test_compile_preview_matches_compile_document | PASS |
-| REQ-INT-014 | Sequential Enforcement | test_interact_engine::test_cannot_skip_prompts, test_cursor_at_correct_start, test_cursor_advances_sequentially, test_respond_on_gate_raises_if_not_gate, test_respond_on_prompt_raises_if_gate | PASS |
-| REQ-INT-015 | Contextual Interpolation | test_interact_engine::test_interpolates_previous_response, test_unresolved_placeholder_left_intact, test_interpolates_metadata, test_interpolates_loop_counter | PASS |
-| REQ-INT-016 | Compilation | test_interact_compiler::test_strips_template_header, test_strips_prompt_tags, test_strips_guidance_text, test_substitutes_placeholders, test_preserves_markdown_structure, test_substitutes_metadata, test_empty_responses_leave_blank, test_vr_compiles_with_filled_responses, test_vr_compiles_empty_gracefully | PASS |
-| REQ-INT-017 | Interactive Checkout | test_interact_integration::test_checkout_creates_interact_session, test_checkout_seeds_from_source_json, test_checkout_creates_placeholder_md | PASS |
-| REQ-INT-018 | Interactive Checkin | test_interact_integration::test_checkin_compiles_to_markdown, test_checkin_stores_source_json, test_checkin_removes_interact_session | PASS |
-| REQ-INT-019 | Source-Aware Read | test_interact_integration::test_read_compiles_from_session, test_read_compiles_from_source_json, test_read_falls_back_to_standard_for_non_interactive | PASS |
-| REQ-INT-020 | Engine-Managed Commits | test_interact_integration::test_commit_message_format, test_commit_hash_recorded_in_response, test_engine_commit_function_exists, test_engine_commit_returns_empty_on_no_project_root, test_engine_commit_in_git_repo | PASS |
-| REQ-INT-021 | Commit Staging Scope | test_interact_integration::test_stages_all_changes, test_no_commit_when_no_changes | PASS |
-| REQ-INT-022 | MCP Interact Tool | test_interact_integration::test_mcp_tools_module_has_qms_interact, test_mcp_interact_has_respond_param, test_mcp_interact_has_file_param, test_mcp_interact_has_reason_param, test_mcp_interact_has_goto_param, test_mcp_interact_has_cancel_goto_param, test_mcp_interact_has_reopen_param, test_mcp_interact_has_progress_param, test_mcp_interact_has_compile_param, test_mcp_interact_calls_interact_command, test_cli_interact_command_registered, test_cli_interact_has_all_flags, test_interact_registered_in_command_registry, test_interact_requires_doc_id, test_new_modules_import_cleanly | PASS |
 
 ---
 
@@ -1562,363 +1533,19 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-### 5.15 Interaction System (REQ-INT-001 through REQ-INT-022)
-
-#### REQ-INT-001: Tag Vocabulary
-
-**Requirement:** The system shall recognize @prompt, @gate, @loop, @end-loop, and @end tags in HTML comment syntax within templates.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_parser.py | test_recognizes_prompt_tag | Verifies @prompt tag is recognized and parsed. |
-| test_interact_parser.py | test_recognizes_gate_tag | Verifies @gate tag is recognized and parsed. |
-| test_interact_parser.py | test_recognizes_loop_tags | Verifies @loop and @end-loop tags are recognized. |
-| test_interact_parser.py | test_recognizes_end_tag | Verifies @end tag is recognized. |
-| test_interact_parser.py | test_tags_must_be_html_comments | Verifies tags must be in HTML comment syntax. |
-| test_interact_parser.py | test_all_five_tags_in_one_template | Verifies all five tag types coexist in a single template. |
-
----
-
-#### REQ-INT-002: Template Header
-
-**Requirement:** The system shall parse @template header tags specifying template name, version, and start prompt.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_parser.py | test_parses_template_name | Verifies template name is extracted from header. |
-| test_interact_parser.py | test_parses_template_version | Verifies template version is extracted from header. |
-| test_interact_parser.py | test_parses_start_prompt | Verifies start prompt ID is extracted from header. |
-| test_interact_parser.py | test_missing_name_raises | Verifies error when template name is missing. |
-| test_interact_parser.py | test_missing_start_raises | Verifies error when start prompt is missing. |
-| test_interact_parser.py | test_missing_header_raises | Verifies error when no @template header exists. |
-| test_interact_parser.py | test_multiline_header_comment | Verifies multi-line header comments are parsed. |
-
----
-
-#### REQ-INT-003: Prompt Attributes
-
-**Requirement:** @prompt tags shall support id, next, and commit attributes.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_parser.py | test_prompt_has_id | Verifies prompt node has id attribute. |
-| test_interact_parser.py | test_prompt_has_next | Verifies prompt node has next attribute. |
-| test_interact_parser.py | test_prompt_commit_defaults_false | Verifies commit defaults to false. |
-| test_interact_parser.py | test_prompt_commit_true | Verifies commit: true is parsed. |
-| test_interact_parser.py | test_prompt_missing_id_raises | Verifies error when id is missing. |
-| test_interact_parser.py | test_prompt_missing_next_raises | Verifies error when next is missing. |
-| test_interact_parser.py | test_prompt_has_guidance | Verifies guidance text is captured between tags. |
-
----
-
-#### REQ-INT-004: Gate Attributes
-
-**Requirement:** @gate tags shall support id, type, yes, and no attributes; type: yesno gates accept yes/no decisions.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_parser.py | test_gate_has_id | Verifies gate node has id attribute. |
-| test_interact_parser.py | test_gate_has_type | Verifies gate node has type attribute. |
-| test_interact_parser.py | test_gate_has_yes_target | Verifies gate has yes target. |
-| test_interact_parser.py | test_gate_has_no_target | Verifies gate has no target. |
-| test_interact_parser.py | test_gate_missing_targets_raises | Verifies error when yes/no targets missing. |
-| test_interact_parser.py | test_gate_missing_id_raises | Verifies error when gate id is missing. |
-
----
-
-#### REQ-INT-005: Loop Semantics
-
-**Requirement:** @loop/@end-loop pairs shall define repeating blocks with an iteration counter; loops close via gate decision.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_parser.py | test_loop_defined_by_pair | Verifies loop is defined by @loop/@end-loop pair. |
-| test_interact_parser.py | test_loop_tracks_first_prompt | Verifies loop records its first prompt ID. |
-| test_interact_parser.py | test_prompts_inside_loop_marked | Verifies prompts inside loop have loop_name set. |
-| test_interact_parser.py | test_prompts_outside_loop_not_marked | Verifies prompts outside loop have no loop_name. |
-| test_interact_parser.py | test_gate_inside_loop_marked | Verifies gate inside loop has loop_name set. |
-| test_interact_parser.py | test_unclosed_loop_raises | Verifies error on unclosed loop. |
-| test_interact_parser.py | test_mismatched_end_loop_raises | Verifies error on mismatched end-loop name. |
-
----
-
-#### REQ-INT-006: Source File Structure
-
-**Requirement:** Interactive documents shall produce .source.json files containing doc_id, template reference, cursor state, responses, loop state, gate decisions, and metadata.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_source.py | test_create_source_has_doc_id | Verifies source contains doc_id field. |
-| test_interact_source.py | test_create_source_has_template_reference | Verifies source contains template reference. |
-| test_interact_source.py | test_create_source_has_cursor | Verifies source contains cursor state. |
-| test_interact_source.py | test_create_source_has_responses | Verifies source contains responses dict. |
-| test_interact_source.py | test_create_source_has_loops | Verifies source contains loops dict. |
-| test_interact_source.py | test_create_source_has_gates | Verifies source contains gates dict. |
-| test_interact_source.py | test_create_source_has_metadata | Verifies source contains metadata dict. |
-| test_interact_source.py | test_create_source_default_metadata | Verifies default metadata values. |
-| test_interact_source.py | test_source_serializes_to_json | Verifies source is valid JSON. |
-
----
-
-#### REQ-INT-007: Session File Lifecycle
-
-**Requirement:** Checkout of interactive documents shall produce .interact session files in the workspace; checkin moves session data to .source.json in .meta/.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_source.py | test_save_and_load_session | Verifies session round-trip save/load. |
-| test_interact_source.py | test_save_and_load_source | Verifies source round-trip save/load. |
-| test_interact_source.py | test_load_nonexistent_session_returns_none | Verifies graceful handling of missing session. |
-| test_interact_source.py | test_load_nonexistent_source_returns_none | Verifies graceful handling of missing source. |
-| test_interact_source.py | test_session_creates_parent_dirs | Verifies parent directories are created. |
-| test_interact_source.py | test_source_creates_parent_dirs | Verifies parent directories are created. |
-| test_interact_source.py | test_session_file_is_valid_json | Verifies session file is valid JSON on disk. |
-| test_interact_integration.py | test_checkout_creates_interact_session | Verifies checkout creates .interact file. |
-| test_interact_integration.py | test_checkin_stores_source_json | Verifies checkin stores .source.json in .meta/. |
-| test_interact_integration.py | test_checkin_removes_interact_session | Verifies checkin removes .interact file. |
-
----
-
-#### REQ-INT-008: Append-Only Responses
-
-**Requirement:** Each response shall be stored as a list of entries with value, author, timestamp, and optional reason and commit fields; amendments append (never replace or delete).
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_source.py | test_response_entry_has_value | Verifies entry contains value field. |
-| test_interact_source.py | test_response_entry_has_author | Verifies entry contains author field. |
-| test_interact_source.py | test_response_entry_has_timestamp | Verifies entry contains timestamp field. |
-| test_interact_source.py | test_response_entry_optional_reason | Verifies entry supports optional reason. |
-| test_interact_source.py | test_response_entry_no_reason_by_default | Verifies no reason by default. |
-| test_interact_source.py | test_response_entry_optional_commit | Verifies entry supports optional commit. |
-| test_interact_source.py | test_response_entry_no_commit_by_default | Verifies no commit by default. |
-| test_interact_source.py | test_responses_stored_as_list | Verifies responses are stored as list of entries. |
-| test_interact_source.py | test_append_only_multiple_entries | Verifies multiple entries append without replacing. |
-| test_interact_source.py | test_get_active_response_returns_last | Verifies active response is the last entry. |
-
----
-
-#### REQ-INT-009: Amendment Trail
-
-**Requirement:** Amendments to completed prompts shall require a reason; original entries are preserved; compiled output renders superseded entries with strikethrough.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_source.py | test_amendment_preserves_original | Verifies original entry is preserved after amendment. |
-| test_interact_source.py | test_amendment_has_reason | Verifies amendment entry includes reason. |
-| test_interact_source.py | test_original_entry_has_no_reason | Verifies original entry has no reason field. |
-| test_interact_source.py | test_multiple_amendments_all_preserved | Verifies all amendment entries are preserved. |
-| test_interact_compiler.py | test_amendment_shows_strikethrough_on_original | Verifies superseded entries render with strikethrough. |
-| test_interact_compiler.py | test_multiple_amendments_all_superseded_struck | Verifies all superseded entries have strikethrough. |
-| test_interact_compiler.py | test_compiled_document_shows_amendments | End-to-end amendment rendering in compiled output. |
-
----
-
-#### REQ-INT-010: Interact Entry Point
-
-**Requirement:** `qms interact DOC_ID` with no flags shall display document status and current prompt with guidance text.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_engine.py | test_shows_current_prompt_id | Verifies current prompt ID is shown. |
-| test_interact_engine.py | test_shows_guidance_text | Verifies guidance text is displayed. |
-| test_interact_engine.py | test_shows_awaiting_response_status | Verifies awaiting response status shown. |
-| test_interact_engine.py | test_shows_complete_when_done | Verifies complete status when all prompts answered. |
-| test_interact_engine.py | test_shows_commit_flag | Verifies commit flag is indicated. |
-| test_interact_engine.py | test_shows_gate_type | Verifies gate type is shown. |
-| test_interact_engine.py | test_shows_loop_context | Verifies loop context is shown. |
-
----
-
-#### REQ-INT-011: Response Flags
-
-**Requirement:** The interact command shall support --respond "value" and --respond --file path; all prompts require an explicit response (no default values).
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_engine.py | test_respond_records_value | Verifies response value is recorded. |
-| test_interact_engine.py | test_respond_advances_cursor | Verifies cursor advances after response. |
-| test_interact_engine.py | test_respond_returns_next_prompt_info | Verifies next prompt info returned. |
-| test_interact_engine.py | test_respond_on_complete_raises | Verifies error when responding after completion. |
-| test_interact_integration.py | test_cli_interact_has_all_flags | Verifies --respond and --file flags exist. |
-
----
-
-#### REQ-INT-012: Navigation Flags
-
-**Requirement:** The interact command shall support --goto prompt_id, --cancel-goto, and --reopen loop_name; --goto and --reopen require --reason.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_engine.py | test_goto_navigates_to_previous_prompt | Verifies goto navigates to a previously answered prompt. |
-| test_interact_engine.py | test_goto_requires_reason | Verifies goto requires a reason. |
-| test_interact_engine.py | test_goto_to_unanswered_raises | Verifies goto to unanswered prompt raises error. |
-| test_interact_engine.py | test_goto_amendment_mode | Verifies engine enters amendment mode on goto. |
-| test_interact_engine.py | test_goto_amendment_returns_to_original | Verifies engine returns to original cursor after amendment. |
-| test_interact_engine.py | test_cancel_goto | Verifies cancel-goto returns to original position. |
-| test_interact_engine.py | test_cancel_goto_no_active_raises | Verifies error when no active goto to cancel. |
-| test_interact_engine.py | test_reopen_loop | Verifies reopen re-enters a closed loop. |
-| test_interact_engine.py | test_reopen_requires_reason | Verifies reopen requires a reason. |
-| test_interact_engine.py | test_reopen_nonclosed_raises | Verifies error when reopening a non-closed loop. |
-
----
-
-#### REQ-INT-013: Query Flags
-
-**Requirement:** The interact command shall support --progress and --compile (output compiled markdown preview to stdout).
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_engine.py | test_progress_shows_all_prompts | Verifies progress shows all prompt IDs. |
-| test_interact_engine.py | test_progress_shows_filled_status | Verifies progress shows filled/empty status. |
-| test_interact_engine.py | test_progress_shows_commit_prompts | Verifies progress marks commit-enabled prompts. |
-| test_interact_engine.py | test_progress_shows_loop_iterations | Verifies progress shows loop iteration details. |
-| test_interact_compiler.py | test_compile_preview_matches_compile_document | Verifies compile_preview output matches compile_document. |
-
----
-
-#### REQ-INT-014: Sequential Enforcement
-
-**Requirement:** The engine shall not accept responses to prompts that have not been presented; prompts must be answered in template-defined order.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_engine.py | test_cannot_skip_prompts | Verifies engine rejects responses to future prompts. |
-| test_interact_engine.py | test_cursor_at_correct_start | Verifies cursor starts at template-defined start prompt. |
-| test_interact_engine.py | test_cursor_advances_sequentially | Verifies cursor advances through prompts in order. |
-| test_interact_engine.py | test_respond_on_gate_raises_if_not_gate | Verifies gate response rejected on non-gate prompt. |
-| test_interact_engine.py | test_respond_on_prompt_raises_if_gate | Verifies regular response rejected on gate prompt. |
-
----
-
-#### REQ-INT-015: Contextual Interpolation
-
-**Requirement:** Prompt guidance text may reference previous responses using {{id}} syntax; the engine shall substitute known values before presenting.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_engine.py | test_interpolates_previous_response | Verifies previous response values are substituted. |
-| test_interact_engine.py | test_unresolved_placeholder_left_intact | Verifies unresolved placeholders remain as-is. |
-| test_interact_engine.py | test_interpolates_metadata | Verifies metadata values are substituted. |
-| test_interact_engine.py | test_interpolates_loop_counter | Verifies loop counter {{_n}} is substituted. |
-
----
-
-#### REQ-INT-016: Compilation
-
-**Requirement:** The system shall compile source files into markdown by stripping tags and guidance, substituting placeholders with active responses, and rendering amendment trails.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_compiler.py | test_strips_template_header | Verifies @template header is stripped from output. |
-| test_interact_compiler.py | test_strips_prompt_tags | Verifies @prompt tags are stripped from output. |
-| test_interact_compiler.py | test_strips_guidance_text | Verifies guidance prose is stripped from output. |
-| test_interact_compiler.py | test_substitutes_placeholders | Verifies {{placeholder}} values are substituted. |
-| test_interact_compiler.py | test_preserves_markdown_structure | Verifies headings, tables, code blocks preserved. |
-| test_interact_compiler.py | test_substitutes_metadata | Verifies metadata placeholders are substituted. |
-| test_interact_compiler.py | test_empty_responses_leave_blank | Verifies unfilled placeholders render as empty. |
-| test_interact_compiler.py | test_vr_compiles_with_filled_responses | End-to-end VR template compilation with data. |
-| test_interact_compiler.py | test_vr_compiles_empty_gracefully | VR template compiles gracefully with no responses. |
-
----
-
-#### REQ-INT-017: Interactive Checkout
-
-**Requirement:** Checkout of interactive documents shall initialize a .interact session file; if a .source.json exists, it seeds the session.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_integration.py | test_checkout_creates_interact_session | Verifies checkout creates .interact session file. |
-| test_interact_integration.py | test_checkout_seeds_from_source_json | Verifies checkout seeds from existing .source.json. |
-| test_interact_integration.py | test_checkout_creates_placeholder_md | Verifies checkout creates placeholder markdown. |
-
----
-
-#### REQ-INT-018: Interactive Checkin
-
-**Requirement:** Checkin of interactive documents shall compile to markdown, store .source.json in .meta/, and remove the .interact session.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_integration.py | test_checkin_compiles_to_markdown | Verifies checkin compiles source to markdown. |
-| test_interact_integration.py | test_checkin_stores_source_json | Verifies checkin stores .source.json in .meta/. |
-| test_interact_integration.py | test_checkin_removes_interact_session | Verifies checkin removes .interact file from workspace. |
-
----
-
-#### REQ-INT-019: Source-Aware Read
-
-**Requirement:** qms read shall compile from .interact (if checked out) or .source.json (if checked in) when available, falling back to standard markdown.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_integration.py | test_read_compiles_from_session | Verifies read compiles from active .interact session. |
-| test_interact_integration.py | test_read_compiles_from_source_json | Verifies read compiles from stored .source.json. |
-| test_interact_integration.py | test_read_falls_back_to_standard_for_non_interactive | Verifies read falls back to standard for non-interactive docs. |
-
----
-
-#### REQ-INT-020: Engine-Managed Commits
-
-**Requirement:** On prompts with commit: true, the engine shall stage changes, commit with a system-generated message, and record the resulting commit hash.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_integration.py | test_commit_message_format | Verifies commit message format: [QMS] {DOC_ID} | {context} | {prompt_id}. |
-| test_interact_integration.py | test_commit_hash_recorded_in_response | Verifies commit hash is recorded in response entry. |
-| test_interact_integration.py | test_engine_commit_function_exists | Verifies _do_engine_commit function exists. |
-| test_interact_integration.py | test_engine_commit_returns_empty_on_no_project_root | Verifies graceful handling when no project root. |
-| test_interact_integration.py | test_engine_commit_in_git_repo | End-to-end: commit in real git repo records hash. |
-
----
-
-#### REQ-INT-021: Commit Staging Scope
-
-**Requirement:** Engine-managed commits shall stage changes scoped to the project working tree.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_integration.py | test_stages_all_changes | Verifies all working tree changes are staged. |
-| test_interact_integration.py | test_no_commit_when_no_changes | Verifies no commit created when no changes exist. |
-
----
-
-#### REQ-INT-022: MCP Interact Tool
-
-**Requirement:** The MCP server shall expose a qms_interact tool functionally equivalent to the qms interact CLI command.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_integration.py | test_mcp_tools_module_has_qms_interact | Verifies qms_interact function exists in MCP tools. |
-| test_interact_integration.py | test_mcp_interact_has_respond_param | Verifies respond parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_file_param | Verifies file parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_reason_param | Verifies reason parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_goto_param | Verifies goto parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_cancel_goto_param | Verifies cancel_goto parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_reopen_param | Verifies reopen parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_progress_param | Verifies progress parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_has_compile_param | Verifies compile parameter in MCP tool. |
-| test_interact_integration.py | test_mcp_interact_calls_interact_command | Verifies MCP tool delegates to CLI interact command. |
-| test_interact_integration.py | test_cli_interact_command_registered | Verifies interact command is registered in CLI. |
-| test_interact_integration.py | test_cli_interact_has_all_flags | Verifies CLI interact has all required flags. |
-| test_interact_integration.py | test_interact_registered_in_command_registry | Verifies interact in CommandRegistry. |
-| test_interact_integration.py | test_interact_requires_doc_id | Verifies interact command requires doc_id. |
-| test_interact_integration.py | test_new_modules_import_cleanly | Verifies all new interaction modules import without error. |
-
----
-
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v16.0 |
+| Requirements Spec | SDLC-QMS-RS v15.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-091-interaction-system |
-| Commit | 7e708fc |
-| Total Tests | 611 |
-| Passed | 611 |
+| Branch | feature/vr-document-type |
+| Commit | c79e2df |
+| CI Run | https://github.com/whharris917/qms-cli/actions/runs/22124307466 |
+| Total Tests | 424 |
+| Passed | 424 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1941,25 +1568,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_mcp.py | 74 | 74 | 0 |
 | **Subtotal** | **226** | **226** | **0** |
 
-#### 6.2.2 Unit Tests (tests/)
-
-| Test File | Tests | Passed | Failed |
-|-----------|-------|--------|--------|
-| test_interact_parser.py | 43 | 43 | 0 |
-| test_interact_source.py | 46 | 46 | 0 |
-| test_interact_engine.py | 44 | 44 | 0 |
-| test_interact_compiler.py | 18 | 18 | 0 |
-| test_interact_integration.py | 31 | 31 | 0 |
-| Other unit tests | 203 | 203 | 0 |
-| **Subtotal** | **385** | **385** | **0** |
-
-#### 6.2.3 Full Test Suite Summary
+#### 6.2.2 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
 | Qualification Tests | 226 | 226 | 0 |
-| Unit Tests | 385 | 385 | 0 |
-| **Total** | **611** | **611** | **0** |
+| Unit Tests | 198 | 198 | 0 |
+| **Total** | **424** | **424** | **0** |
 
 ### 6.3 Test Environment
 

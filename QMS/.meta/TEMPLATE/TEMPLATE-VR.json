@@ -1,14 +1,14 @@
 {
   "doc_id": "TEMPLATE-VR",
   "doc_type": "TEMPLATE",
-  "version": "1.0",
+  "version": "2.0",
   "status": "EFFECTIVE",
   "executable": false,
   "execution_phase": null,
   "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": "1.0",
+  "effective_version": "2.0",
   "pending_assignees": [],
   "review_outcomes": {
     "qa": "RECOMMEND"

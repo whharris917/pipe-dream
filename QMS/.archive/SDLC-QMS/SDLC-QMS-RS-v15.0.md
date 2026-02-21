@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-091: Interaction system engine — add REQ-INT section (22 requirements
-  for template-driven interactive authoring of VR documents)'
+revision_summary: 'CR-089: Add VR document type — REQ-DOC-016 (parent state), REQ-DOC-017
+  (born IN_EXECUTION); update REQ-DOC-001, REQ-DOC-002, REQ-DOC-005, REQ-WF-003'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -31,7 +31,6 @@ This specification covers:
 - Prompt generation for review and approval tasks
 - Document template scaffolding
 - MCP server for programmatic tool access
-- Interactive document authoring (template-driven prompting for VR documents)
 
 This specification does not cover:
 
@@ -520,69 +519,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-MCP-014 | **Streamable-HTTP Transport.** When configured for streamable-http transport, the MCP server shall: (1) bind to the specified host and port, (2) expose the MCP endpoint at `/mcp`, (3) allow connections from `host.docker.internal` for Docker container access, and (4) support the standard MCP streamable-http protocol as the recommended transport for all connections. |
 | REQ-MCP-015 | **Header-Based Identity Resolution.** The MCP server shall resolve caller identity based on the presence of the `X-QMS-Identity` HTTP request header. All MCP tools SHALL require a `user` parameter with no default value; calls omitting the parameter or providing an empty value SHALL be rejected with a helpful error. When the header is present (enforced mode): the `user` parameter SHALL match the header value; a mismatch SHALL return an error identifying the caller's authenticated identity and instructing them to use it, with a warning that impersonation is a QMS violation. When the header is absent (trusted mode): identity shall be read from the `user` tool parameter. The `resolve_identity` function SHALL NOT silently fall back when request context is unavailable; non-HTTP contexts (e.g., stdio) SHALL be handled as an explicit trusted-mode path. All MCP tools shall accept a `ctx: Context` parameter for request context access. |
 | REQ-MCP-016 | **Identity Collision Prevention.** The MCP server shall prevent identity collisions between concurrent callers. When an identity is active in enforced mode (request with `X-QMS-Identity` header), the server shall: (1) reject trusted-mode requests (no `X-QMS-Identity` header) attempting to use the same identity with a terminal error message, (2) reject enforced-mode requests from a different container instance claiming the same identity (using `X-QMS-Instance` header for disambiguation), and (3) maintain identity locks with TTL-based expiry for crash recovery. The proxy shall inject a unique instance identifier (`X-QMS-Instance` header) per proxy lifecycle for duplicate container detection. Error messages shall be unambiguous and instruct the caller not to attempt troubleshooting. |
-
----
-
-### 4.14 Interaction System (REQ-INT)
-
-The interaction system provides template-driven interactive authoring for VR documents. Instead of freehand markdown editing, interactive templates define a state machine of prompts; the engine presents prompts in sequence, records responses with per-entry attribution, and compiles source data into markdown.
-
-#### 4.14.1 Template Parser
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-001 | **Tag Vocabulary.** The system shall recognize `@prompt`, `@gate`, `@loop`, `@end-loop`, and `@end` tags in HTML comment syntax (`<!-- @tag -->`) within templates. |
-| REQ-INT-002 | **Template Header.** The system shall parse `@template` header tags specifying template name, version, and start prompt. |
-| REQ-INT-003 | **Prompt Attributes.** `@prompt` tags shall support `id`, `next`, and `commit` attributes. |
-| REQ-INT-004 | **Gate Attributes.** `@gate` tags shall support `id`, `type`, `yes`, and `no` attributes; `type: yesno` gates accept yes/no decisions. |
-| REQ-INT-005 | **Loop Semantics.** `@loop`/`@end-loop` pairs shall define repeating blocks with an iteration counter (`{{_n}}`); loops close via gate decision. |
-
-#### 4.14.2 Source Data Model
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-006 | **Source File Structure.** Interactive documents shall produce `.source.json` files containing doc_id, template reference, cursor state, responses, loop state, gate decisions, and metadata. |
-| REQ-INT-007 | **Session File Lifecycle.** Checkout of interactive documents shall produce `.interact` session files in the workspace; checkin moves session data to `.source.json` in `.meta/`. |
-| REQ-INT-008 | **Append-Only Responses.** Each response shall be stored as a list of entries with value, author, timestamp, and optional reason and commit fields; amendments append (never replace or delete). |
-| REQ-INT-009 | **Amendment Trail.** Amendments to completed prompts shall require a reason; original entries are preserved; compiled output renders superseded entries with strikethrough. |
-
-#### 4.14.3 Interact Command
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-010 | **Interact Entry Point.** `qms interact DOC_ID` with no flags shall display document status and current prompt with guidance text. |
-| REQ-INT-011 | **Response Flags.** The interact command shall support `--respond "value"` and `--respond --file path`; all prompts require an explicit response (no default values). |
-| REQ-INT-012 | **Navigation Flags.** The interact command shall support `--goto prompt_id` (amend previous response), `--cancel-goto`, and `--reopen loop_name` (re-enter closed loop); `--goto` and `--reopen` require `--reason`. |
-| REQ-INT-013 | **Query Flags.** The interact command shall support `--progress` (show all prompts with fill status) and `--compile` (output compiled markdown preview to stdout; does not write to workspace or QMS). |
-
-#### 4.14.4 Engine Behavior
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-014 | **Sequential Enforcement.** The engine shall not accept responses to prompts that have not been presented; prompts must be answered in template-defined order. |
-| REQ-INT-015 | **Contextual Interpolation.** Prompt guidance text may reference previous responses using `{{id}}` syntax; the engine shall substitute known values before presenting. |
-| REQ-INT-016 | **Compilation.** The system shall compile source files into markdown by stripping tags and guidance, substituting placeholders with active responses, and rendering amendment trails. |
-
-#### 4.14.5 Document Integration
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-017 | **Interactive Checkout.** Checkout of interactive documents shall initialize a `.interact` session file (not editable markdown); if a `.source.json` exists, it seeds the session. |
-| REQ-INT-018 | **Interactive Checkin.** Checkin of interactive documents shall compile to markdown, store `.source.json` in `.meta/`, and remove the `.interact` session. |
-| REQ-INT-019 | **Source-Aware Read.** `qms read` shall compile from `.interact` (if checked out) or `.source.json` (if checked in) when available, falling back to standard markdown for non-interactive documents. |
-
-#### 4.14.6 Atomic Commits
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-020 | **Engine-Managed Commits.** On prompts with `commit: true`, the engine shall stage changes, commit with a system-generated message in the format `[QMS] {DOC_ID} | {context} | {prompt_id}`, and record the resulting commit hash in the response entry. |
-| REQ-INT-021 | **Commit Staging Scope.** Engine-managed commits shall stage changes scoped to the project working tree. |
-
-#### 4.14.7 MCP Parity
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-022 | **MCP Interact Tool.** The MCP server shall expose a `qms_interact` tool that is functionally equivalent to the `qms interact` CLI command, consistent with REQ-MCP-007 (functional equivalence). |
 
 ---
 
