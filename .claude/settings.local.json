@@ -74,7 +74,8 @@
       "Bash(wc:*)",
       "Bash(find:*)",
       "Bash(done)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(cd:*)"
     ],
     "deny": [
       "Edit(QMS/**)",

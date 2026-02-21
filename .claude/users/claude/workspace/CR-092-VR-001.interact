@@ -1,0 +1,67 @@
+{
+  "doc_id": "CR-092-VR-001",
+  "template": "VR",
+  "template_version": 3,
+  "cursor": "step_actual",
+  "cursor_context": {
+    "loop": "steps",
+    "iteration": 1
+  },
+  "metadata": {
+    "parent_doc_id": "CR-092",
+    "vr_id": "CR-092-VR-001",
+    "title": "CR-092 Integration Verification: Production CLI and Commit Reachability"
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-5",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:54:29Z"
+      }
+    ],
+    "date": [
+      {
+        "value": "2026-02-21",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:54:40Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that the CR-091 interaction system code is available and functional in the production qms-cli submodule, and that the RTM qualified baseline commit is reachable from the production main branch",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:54:51Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "pipe-dream repository on main branch at commit 73f69cf. qms-cli submodule updated to c83dda0 (CR-091 merge commit). Windows 11, Python 3.12, Git Bash shell. No services running.",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:55:03Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Verify qms interact command exists in production CLI. Command: python qms-cli/qms.py --user claude interact --help",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:55:16Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "Help text showing interact subcommand with its arguments (--respond, --file, --reason, --goto, --cancel-goto, --reopen, --progress, --compile). No 'unrecognized arguments' or 'invalid choice' errors.",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:55:27Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": false,
+      "reopenings": []
+    }
+  },
+  "gates": {}
+}

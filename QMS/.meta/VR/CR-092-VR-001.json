@@ -1,7 +1,7 @@
 {
-  "doc_id": "CR-092",
-  "doc_type": "CR",
-  "version": "1.1",
+  "doc_id": "CR-092-VR-001",
+  "doc_type": "VR",
+  "version": "1.0",
   "status": "IN_EXECUTION",
   "executable": true,
   "execution_phase": "post_release",
@@ -9,8 +9,5 @@
   "checked_out": true,
   "checked_out_date": "2026-02-21",
   "effective_version": null,
-  "pending_assignees": [],
-  "review_outcomes": {
-    "qa": "RECOMMEND"
-  }
+  "pending_assignees": []
 }
