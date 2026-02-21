@@ -1,0 +1,67 @@
+{
+  "doc_id": "CR-094-ADD-001-VR-001",
+  "template": "VR",
+  "template_version": 4,
+  "cursor": "step_actual",
+  "cursor_context": {
+    "loop": "steps",
+    "iteration": 1
+  },
+  "metadata": {
+    "parent_doc_id": "CR-094-ADD-001",
+    "vr_id": "CR-094-ADD-001-VR-001",
+    "title": "CR-094 EI-12 Recompilation Verification"
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-1",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:47:24Z"
+      }
+    ],
+    "date": [
+      {
+        "value": "2026-02-21",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:47:40Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that the CR-094 compilation defect fixes (D1-D4) produce correct output when recompiling CR-092-VR-001 against the updated template and compiler",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:47:53Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "pipe-dream repository on main branch at commit e833b99. qms-cli submodule updated to 2c61af2 (CR-094 merge commit, includes qualified commit c676b61). CR-092-VR-001 exists with source data from prior interactive authoring. Windows 11, Python 3.12, Git Bash shell.",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:48:07Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Compile CR-092-VR-001 using the updated compiler and verify the output. Command: python qms-cli/qms.py --user claude interact CR-092-VR-001 --compile",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:48:21Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "D1: Exactly one frontmatter block (no template FM or notice comment). D2: Table rows are valid single-line markdown with no attribution in cells; step attributions on separate lines with bold markers intact; attribution outside code fences. D3: No guidance text or @end-prompt tags in output. D4: Free-text responses (pre_conditions, summary) wrapped in blockquote (> prefix).",
+        "author": "claude",
+        "timestamp": "2026-02-21T23:48:37Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": false,
+      "reopenings": []
+    }
+  },
+  "gates": {}
+}

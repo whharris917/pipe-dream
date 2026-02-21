@@ -1,0 +1,112 @@
+---
+title: CR-094 EI-12 Missing Verification Record
+revision_summary: Initial draft
+---
+
+# CR-094-ADD-001: CR-094 EI-12 Missing Verification Record
+
+## 1. Addendum Identification
+
+| Parent Document | Discovery Context | ADD Scope |
+|-----------------|-------------------|-----------|
+| CR-094 | Post-closure review of EI table | Create the VR required by CR-094 EI-12 |
+
+---
+
+## 2. Description of Omission
+
+CR-094 EI-12 ("Recompile CR-092-VR-001") has "Yes" in its VR column, indicating that a Verification Record is required per SOP-004 Section 9C. During execution, the recompilation was performed and the results were documented in the EI execution summary, but no formal VR document was created.
+
+Per SOP-004 Section 9C.3: "During execution, the initiator creates a VR as a child of the parent document. The VR ID is recorded in the VR column of the EI table (replacing 'Yes')." This step was not performed — the VR column still reads "Yes" rather than a VR document ID.
+
+The verification work itself was done (CR-092-VR-001 was recompiled and all six acceptance criteria confirmed), but the evidence was recorded only in the EI execution summary rather than in a formal VR.
+
+---
+
+## 3. Impact Assessment
+
+- **Parent objectives:** CR-094's core objectives (fix D1-D4 defects) were fully met. The recompilation confirmed all fixes work correctly.
+- **Evidence gap:** The informal evidence in EI-12's execution summary is substantively complete but lacks the structured VR format required by SOP-004.
+- **Downstream impact:** None. The defect fixes are merged and working. The gap is purely documentary.
+- **QA post-review:** SOP-002 Section 7.3 item 6 requires "All VR-flagged execution items have an attached VR that is checked in." This condition was not verified during CR-094's post-review.
+
+---
+
+## 4. Correction Plan
+
+Create the missing VR and record its ID.
+
+| EI | Task Description |
+|----|------------------|
+| EI-1 | Create CR-094-ADD-001-VR-001 documenting the EI-12 recompilation verification |
+
+---
+
+## 5. Execution
+
+| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By — Date |
+|----|------------------|----|-------------------|--------------|---------------------|
+| EI-1 | Create CR-094-ADD-001-VR-001 documenting the EI-12 recompilation verification | Yes | [SUMMARY] | [Pass/Fail] | [PERFORMER] — [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By — Date |
+|---------|---------------------|
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+-->
+
+---
+
+## 6. Scope Handoff
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section to confirm nothing was lost between the parent and this ADD.
+-->
+
+| Item | Status |
+|------|--------|
+| What the parent accomplished | CR-094 fixed four compilation defects (D1-D4), merged to qms-cli main at qualified commit c676b61 (643 tests), RS v17.0 and RTM v21.0 EFFECTIVE. EI-12 recompilation was performed and verified informally. |
+| What this ADD corrects or supplements | Creates the formal VR document that EI-12's "Yes" VR column required but was never produced. |
+| Confirmation no scope items were lost | Yes — all CR-094 scope items were completed. This ADD addresses only the missing documentary artifact. |
+
+---
+
+## 7. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 8. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control (Section 7.3: Post-Review Requirements)
+- **SOP-004:** Document Execution (Section 9B: Addendum Reports, Section 9C: Verification Records)
+- **CR-094:** Parent document (Interactive Compilation Defects)
+- **CR-092-VR-001:** VR that was recompiled in EI-12
+
+---
+
+**END OF ADDENDUM REPORT**

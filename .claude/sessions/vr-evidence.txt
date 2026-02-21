@@ -1,0 +1,26 @@
+Compiled output from `qms read CR-092-VR-001` (which compiles from stored .source.json):
+
+D1 VERIFIED - Single frontmatter block:
+- Output starts with `---\ntitle: 'CR-092 Integration Verification...'\n---`
+- No template frontmatter (no `template_name:`, `template_version:`, `revision_summary:` from template FM)
+- No `<!-- @template` notice comment
+
+D2 VERIFIED - Table and attribution formatting:
+- Identification table row: `| CR-092 | EI-5 | 2026-02-21 |` — single line, no attribution in cells
+- Step attributions on separate lines after bold markers:
+  `**Verify qms interact command...**`
+  `*-- claude, 2026-02-21 20:55:16*`
+  (bold closes before attribution, not broken)
+- Code fence in Step 1 actual: attribution `*-- claude, 2026-02-21 20:55:43 | commit: 77c1e50*` appears AFTER the closing ``` fence
+
+D3 VERIFIED - No guidance or @end-prompt tags:
+- No `<!-- @prompt`, `<!-- @gate`, `<!-- @end-prompt` tags in output
+- No guidance text (e.g., "State what CAPABILITY is being verified") in output
+- Only structural HTML comments (execution guidance notes) preserved
+
+D4 VERIFIED - Blockquote wrapping:
+- Pre-conditions wrapped: `> pipe-dream repository on main branch at commit 73f69cf...`
+- Summary wrapped: `> Verified three aspects of the CR-092 corrective action...`
+- Label-context responses (Objective, Expected, Outcome) rendered inline, not blockquoted
+
+All six acceptance criteria from CR-094 Section 8 confirmed.
