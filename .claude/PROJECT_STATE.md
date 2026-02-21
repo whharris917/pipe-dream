@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-02-20-002*
+*Last updated: Session-2026-02-20-003*
 
 ---
 
@@ -28,7 +28,7 @@
 
 **Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect, eliminating 406 log noise.
 
-**Incremental Document Building Design (Feb 19-20).** Three design sessions (002, 003, 001) producing the interaction protocol: embedded state machine tags in templates, `qms interact` CLI command, GMP-style amendment trail, prompt-before-response enforcement. Session 002 expanded the vision: interact as the canonical AI-QMS write interface, engine-managed atomic commits, primary data attachment.
+**Interaction System Design (Feb 19-20).** Five design sessions producing the complete interaction system architecture. Protocol design (tags, state machine, amendment trail, prompt-before-response enforcement), CLI command design (`qms interact`), strategic vision (interact as canonical AI-QMS write interface, engine-managed atomic commits, primary data attachment), and consolidated design (source files, skill framing, VR template v3, checkout/checkin semantics, file system lifecycle).
 
 ---
 
@@ -78,14 +78,14 @@
 
 ## 5. Forward Plan
 
-### Interaction System — Canonical QMS Interface (~4-5 sessions, design complete)
-- **Phase 1:** Implement `qms interact` engine and template parser in qms-cli; adopt TEMPLATE-VR as first document type
+### Interaction System — Canonical QMS Interface (design complete, ready for implementation)
+- **Phase 1:** Implement `qms interact` engine and template parser in qms-cli; source file data model (`.interact` session, `.source.json` permanent); compilation; checkout/checkin for interactive documents; adopt TEMPLATE-VR v3 as first interactive template
 - **Phase 2:** Atomic commits — engine-managed git commits on `commit: true` prompts, commit hash as response metadata
-- **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD)
+- **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD) — likely hybrid interactive/freehand
 - **Phase 4+:** Non-executable documents, intent decomposition layer
-- Design artifacts: Session-2026-02-20-001 (interact command, restructured TEMPLATE-VR), Session-2026-02-20-002 (vision document)
-- Open questions: response store location, tag syntax stability review, commit scope policy, SOP-004 evolution
-- Strategic direction: the QMS governs interactions and produces documents as a byproduct
+- Consolidated design: `Session-2026-02-20-003/interaction-system-design.md`
+- Open questions: tag syntax stability review, commit scope policy, SOP-004 evolution, hybrid document mechanism
+- Resolved: source file naming (`.source.json`), workspace artifact (`.interact`), checkout semantics (no editable markdown), `qms read` behavior (always compiles from source)
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
