@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 1
+    "iteration": 2
   },
   "metadata": {
     "parent_doc_id": "CR-092",
@@ -54,14 +54,48 @@
         "author": "claude",
         "timestamp": "2026-02-21T20:55:27Z"
       }
+    ],
+    "step_actual.1": [
+      {
+        "value": "$ python qms-cli/qms.py --user claude interact --help\nusage: qms.py interact [-h] [--respond [RESPOND]] [--file FILE]\n                       [--reason REASON] [--goto GOTO] [--cancel-goto]\n                       [--reopen REOPEN] [--progress] [--compile]\n                       doc_id\n\npositional arguments:\n  doc_id               Document ID\n\noptions:\n  -h, --help           show this help message and exit\n  --respond [RESPOND]  Response value\n  --file FILE          Read response from file\n  --reason REASON      Reason for amendment or loop reopen\n  --goto GOTO          Navigate to a prompt for amendment\n  --cancel-goto        Cancel goto and return\n  --reopen REOPEN      Reopen a closed loop\n  --progress           Show progress\n  --compile            Preview compiled output\n\nAll expected arguments present. No errors.",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:55:43Z",
+        "commit": "77c1e50"
+      }
+    ],
+    "step_outcome.1": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:55:54Z"
+      }
+    ],
+    "step_instructions.2": [
+      {
+        "value": "Verify qualified commit 7e708fc is reachable from production qms-cli main branch. Command: git -C qms-cli log --oneline | grep 7e708fc",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:56:16Z"
+      }
+    ],
+    "step_expected.2": [
+      {
+        "value": "One line showing commit 7e708fc with its message about qualification tests. Exit code 0 (grep found a match).",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:56:27Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 1,
+      "iterations": 2,
       "closed": false,
       "reopenings": []
     }
   },
-  "gates": {}
+  "gates": {
+    "more_steps.1": {
+      "value": "yes",
+      "timestamp": "2026-02-21T20:56:05Z"
+    }
+  }
 }
