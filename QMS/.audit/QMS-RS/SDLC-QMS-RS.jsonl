@@ -274,3 +274,15 @@
 {"ts": "2026-02-21T18:27:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
 {"ts": "2026-02-21T18:27:59+00:00", "event": "EFFECTIVE", "user": "qa", "version": "16.0", "from_version": "15.1"}
 {"ts": "2026-02-21T18:27:59+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}
+{"ts": "2026-02-21T23:09:53+00:00", "event": "CHECKOUT", "user": "claude", "version": "16.1", "from_version": "16.0"}
+{"ts": "2026-02-21T23:20:33+00:00", "event": "CHECKIN", "user": "claude", "version": "16.1"}
+{"ts": "2026-02-21T23:26:58+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "16.1", "from_status": "DRAFT", "to_status": "IN_REVIEW"}
+{"ts": "2026-02-21T23:26:58+00:00", "event": "ROUTE_REVIEW", "user": "claude", "version": "16.1", "assignees": ["qa"], "review_type": "REVIEW"}
+{"ts": "2026-02-21T23:29:49+00:00", "event": "REVIEW", "user": "qa", "version": "16.1", "outcome": "RECOMMEND", "comment": "QA Review of SDLC-QMS-RS v16.1 -- COMPLIANT.\n\nVerification:\n- Frontmatter title: \"QMS CLI Requirements Specification\" -- present and non-empty\n- Frontmatter revision_summary: \"CR-094: Add @end-prompt to REQ-INT-001 tag vocabulary\" -- present, descriptive, references authorizing CR\n- Document structure: Sections 1-5 (Purpose, Scope, System Overview, Requirements, Environmental Assumptions) all present per RS template\n- All 14 requirement subsections (4.1 through 4.14, covering 133 requirements) present\n- Placeholder content: None found (no TBD, TODO, FIXME, XXX)\n- Formatting: Consistent markdown tables, headers, and code blocks throughout\n\nChange scope: REQ-INT-001 (line 533) updated to add @end-prompt to the recognized tag vocabulary. The addition is clear, well-scoped, and consistent with the existing tag vocabulary pattern. The explanatory text (\"@end-prompt marks the end of guidance text after a @prompt or @gate tag\") provides adequate context.\n\nNo deficiencies identified. Recommend for approval."}
+{"ts": "2026-02-21T23:29:49+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "16.1", "from_status": "IN_REVIEW", "to_status": "REVIEWED"}
+{"ts": "2026-02-21T23:30:25+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "16.1", "from_status": "REVIEWED", "to_status": "IN_APPROVAL"}
+{"ts": "2026-02-21T23:30:25+00:00", "event": "ROUTE_APPROVAL", "user": "claude", "version": "16.1", "assignees": ["qa"], "approval_type": "APPROVAL"}
+{"ts": "2026-02-21T23:33:15+00:00", "event": "APPROVE", "user": "qa", "version": "16.1"}
+{"ts": "2026-02-21T23:33:15+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "IN_APPROVAL", "to_status": "APPROVED"}
+{"ts": "2026-02-21T23:33:15+00:00", "event": "EFFECTIVE", "user": "qa", "version": "17.0", "from_version": "16.1"}
+{"ts": "2026-02-21T23:33:15+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "17.0", "from_status": "APPROVED", "to_status": "EFFECTIVE"}

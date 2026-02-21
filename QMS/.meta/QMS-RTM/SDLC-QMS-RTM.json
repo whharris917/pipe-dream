@@ -1,14 +1,14 @@
 {
   "doc_id": "SDLC-QMS-RTM",
   "doc_type": "QMS-RTM",
-  "version": "20.0",
+  "version": "21.0",
   "status": "EFFECTIVE",
   "executable": false,
   "execution_phase": null,
   "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": "20.0",
+  "effective_version": "21.0",
   "supersedes": null,
   "pending_assignees": [],
   "review_outcomes": {

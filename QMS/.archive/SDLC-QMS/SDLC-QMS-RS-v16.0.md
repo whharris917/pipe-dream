@@ -1,6 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-094: Add @end-prompt to REQ-INT-001 tag vocabulary'
+revision_summary: 'CR-091: Interaction system engine — add REQ-INT section (22 requirements
+  for template-driven interactive authoring of VR documents)'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -530,7 +531,7 @@ The interaction system provides template-driven interactive authoring for VR doc
 
 | REQ ID | Requirement |
 |--------|-------------|
-| REQ-INT-001 | **Tag Vocabulary.** The system shall recognize `@prompt`, `@gate`, `@loop`, `@end-loop`, `@end-prompt`, and `@end` tags in HTML comment syntax (`<!-- @tag -->`) within templates. `@end-prompt` marks the end of guidance text after a `@prompt` or `@gate` tag. |
+| REQ-INT-001 | **Tag Vocabulary.** The system shall recognize `@prompt`, `@gate`, `@loop`, `@end-loop`, and `@end` tags in HTML comment syntax (`<!-- @tag -->`) within templates. |
 | REQ-INT-002 | **Template Header.** The system shall parse `@template` header tags specifying template name, version, and start prompt. |
 | REQ-INT-003 | **Prompt Attributes.** `@prompt` tags shall support `id`, `next`, and `commit` attributes. |
 | REQ-INT-004 | **Gate Attributes.** `@gate` tags shall support `id`, `type`, `yes`, and `no` attributes; `type: yesno` gates accept yes/no decisions. |

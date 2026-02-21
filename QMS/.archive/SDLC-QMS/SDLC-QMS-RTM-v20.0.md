@@ -1,15 +1,15 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-094: Add @end-prompt tests to REQ-INT-001, compilation defect
-  tests to REQ-INT-016; qualified baseline updated to c676b61 (cr-094 branch, 643
-  tests)'
+revision_summary: 'CR-091: Interaction system engine — add REQ-INT traceability (22
+  requirements); qualified baseline updated to 7e708fc (cr-091-interaction-system
+  branch, 611 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v17.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v16.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
@@ -189,7 +189,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-MCP-014 | Streamable-HTTP Transport | test_mcp::test_mcp_streamable_http_transport_configuration, test_mcp_streamable_http_transport_security_allows_docker, test_mcp_streamable_http_cli_args, test_mcp_streamable_http_is_recommended_over_sse | PASS |
 | REQ-MCP-015 | Header-Based Identity Resolution | test_mcp::test_resolve_identity_missing_user_raises_error, test_resolve_identity_empty_user_raises_error, test_resolve_identity_stdio_mode_custom_user, test_resolve_identity_http_header_enforced, test_resolve_identity_enforced_mode_mismatch_raises_error, test_resolve_identity_enforced_mode_match_succeeds, test_resolve_identity_mismatch_error_message_helpful, test_resolve_identity_http_no_header_trusted_mode, test_resolve_identity_unknown_agent_still_resolves, test_known_agents_set, test_resolve_identity_non_starlette_context_uses_trusted_mode, test_resolve_identity_tools_receive_resolved_identity | PASS |
 | REQ-MCP-016 | Identity Collision Prevention | test_mcp::test_identity_collision_exception_class, test_identity_lock_ttl_constant, test_identity_collision_enforced_locks_trusted, test_identity_collision_enforced_locks_stdio_mode, test_identity_collision_error_message_terminal, test_identity_lock_ttl_expiry, test_identity_lock_heartbeat_refreshes, test_identity_collision_different_identities_ok, test_identity_collision_trusted_mode_does_not_lock, test_identity_collision_duplicate_container, test_identity_collision_same_instance_heartbeat, test_identity_collision_duplicate_after_ttl, test_identity_registry_cleanup, test_identity_lock_empty_instance_id, test_identity_collision_tool_returns_error | PASS |
-| REQ-INT-001 | Tag Vocabulary | test_interact_parser::test_recognizes_prompt_tag, test_recognizes_gate_tag, test_recognizes_loop_tags, test_recognizes_end_tag, test_tags_must_be_html_comments, test_all_five_tags_in_one_template, test_end_prompt_recognized_as_tag, test_guidance_stops_at_end_prompt, test_guidance_without_end_prompt_includes_scaffold, test_end_prompt_with_gate, test_end_prompt_stripped_from_vr_template, test_all_vr_prompts_have_guidance | PASS |
+| REQ-INT-001 | Tag Vocabulary | test_interact_parser::test_recognizes_prompt_tag, test_recognizes_gate_tag, test_recognizes_loop_tags, test_recognizes_end_tag, test_tags_must_be_html_comments, test_all_five_tags_in_one_template | PASS |
 | REQ-INT-002 | Template Header | test_interact_parser::test_parses_template_name, test_parses_template_version, test_parses_start_prompt, test_missing_name_raises, test_missing_start_raises, test_missing_header_raises, test_multiline_header_comment | PASS |
 | REQ-INT-003 | Prompt Attributes | test_interact_parser::test_prompt_has_id, test_prompt_has_next, test_prompt_commit_defaults_false, test_prompt_commit_true, test_prompt_missing_id_raises, test_prompt_missing_next_raises, test_prompt_has_guidance | PASS |
 | REQ-INT-004 | Gate Attributes | test_interact_parser::test_gate_has_id, test_gate_has_type, test_gate_has_yes_target, test_gate_has_no_target, test_gate_missing_targets_raises, test_gate_missing_id_raises | PASS |
@@ -204,7 +204,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INT-013 | Query Flags | test_interact_engine::test_progress_shows_all_prompts, test_progress_shows_filled_status, test_progress_shows_commit_prompts, test_progress_shows_loop_iterations; test_interact_compiler::test_compile_preview_matches_compile_document | PASS |
 | REQ-INT-014 | Sequential Enforcement | test_interact_engine::test_cannot_skip_prompts, test_cursor_at_correct_start, test_cursor_advances_sequentially, test_respond_on_gate_raises_if_not_gate, test_respond_on_prompt_raises_if_gate | PASS |
 | REQ-INT-015 | Contextual Interpolation | test_interact_engine::test_interpolates_previous_response, test_unresolved_placeholder_left_intact, test_interpolates_metadata, test_interpolates_loop_counter | PASS |
-| REQ-INT-016 | Compilation | test_interact_compiler::test_strips_template_header, test_strips_prompt_tags, test_strips_guidance_text, test_substitutes_placeholders, test_preserves_markdown_structure, test_substitutes_metadata, test_empty_responses_leave_blank, test_vr_compiles_with_filled_responses, test_vr_compiles_empty_gracefully, test_template_fm_removed, test_document_fm_kept, test_notice_stripped, test_single_fm_preserved, test_compiled_output_has_one_fm, test_real_template_preamble_stripped, test_table_rows_no_attribution, test_table_row_single_line, test_table_amendment_active_only, test_loop_bold_not_broken, test_loop_attribution_outside_code_fence, test_guidance_stripped_before_end_prompt, test_scaffold_preserved_after_end_prompt, test_end_prompt_tag_stripped_from_output, test_fallback_without_end_prompt, test_block_context_wrapped, test_block_context_attribution_in_blockquote, test_label_context_not_wrapped, test_table_context_not_wrapped, test_empty_block_not_wrapped | PASS |
+| REQ-INT-016 | Compilation | test_interact_compiler::test_strips_template_header, test_strips_prompt_tags, test_strips_guidance_text, test_substitutes_placeholders, test_preserves_markdown_structure, test_substitutes_metadata, test_empty_responses_leave_blank, test_vr_compiles_with_filled_responses, test_vr_compiles_empty_gracefully | PASS |
 | REQ-INT-017 | Interactive Checkout | test_interact_integration::test_checkout_creates_interact_session, test_checkout_seeds_from_source_json, test_checkout_creates_placeholder_md | PASS |
 | REQ-INT-018 | Interactive Checkin | test_interact_integration::test_checkin_compiles_to_markdown, test_checkin_stores_source_json, test_checkin_removes_interact_session | PASS |
 | REQ-INT-019 | Source-Aware Read | test_interact_integration::test_read_compiles_from_session, test_read_compiles_from_source_json, test_read_falls_back_to_standard_for_non_interactive | PASS |
@@ -1566,7 +1566,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-INT-001: Tag Vocabulary
 
-**Requirement:** The system shall recognize @prompt, @gate, @loop, @end-loop, @end, and @end-prompt tags in HTML comment syntax within templates.
+**Requirement:** The system shall recognize @prompt, @gate, @loop, @end-loop, and @end tags in HTML comment syntax within templates.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
@@ -1576,12 +1576,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_interact_parser.py | test_recognizes_end_tag | Verifies @end tag is recognized. |
 | test_interact_parser.py | test_tags_must_be_html_comments | Verifies tags must be in HTML comment syntax. |
 | test_interact_parser.py | test_all_five_tags_in_one_template | Verifies all five tag types coexist in a single template. |
-| test_interact_parser.py | test_end_prompt_recognized_as_tag | Verifies @end-prompt is recognized as a valid tag. |
-| test_interact_parser.py | test_guidance_stops_at_end_prompt | Verifies guidance extraction stops at @end-prompt boundary. |
-| test_interact_parser.py | test_guidance_without_end_prompt_includes_scaffold | Verifies fallback behavior without @end-prompt includes scaffold. |
-| test_interact_parser.py | test_end_prompt_with_gate | Verifies @end-prompt works with @gate tags. |
-| test_interact_parser.py | test_end_prompt_stripped_from_vr_template | Verifies @end-prompt stripped from VR template output. |
-| test_interact_parser.py | test_all_vr_prompts_have_guidance | Verifies all VR prompts have guidance text. |
 
 ---
 
@@ -1825,26 +1819,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_interact_compiler.py | test_empty_responses_leave_blank | Verifies unfilled placeholders render as empty. |
 | test_interact_compiler.py | test_vr_compiles_with_filled_responses | End-to-end VR template compilation with data. |
 | test_interact_compiler.py | test_vr_compiles_empty_gracefully | VR template compiles gracefully with no responses. |
-| test_interact_compiler.py | test_template_fm_removed | D1: Template's own frontmatter stripped from output. |
-| test_interact_compiler.py | test_document_fm_kept | D1: Document frontmatter with placeholders preserved. |
-| test_interact_compiler.py | test_notice_stripped | D1: Template notice comment stripped from output. |
-| test_interact_compiler.py | test_single_fm_preserved | D1: Single FM block kept as-is. |
-| test_interact_compiler.py | test_compiled_output_has_one_fm | D1: Full compilation produces exactly one FM block. |
-| test_interact_compiler.py | test_real_template_preamble_stripped | D1: TEMPLATE-VR preamble stripped in compilation. |
-| test_interact_compiler.py | test_table_rows_no_attribution | D2: Table cell substitution omits attribution. |
-| test_interact_compiler.py | test_table_row_single_line | D2: Table row remains single line after substitution. |
-| test_interact_compiler.py | test_table_amendment_active_only | D2: Table cell shows only active value. |
-| test_interact_compiler.py | test_loop_bold_not_broken | D2: Bold markers wrap only value, not attribution. |
-| test_interact_compiler.py | test_loop_attribution_outside_code_fence | D2: Attribution outside code fences in step_actual. |
-| test_interact_compiler.py | test_guidance_stripped_before_end_prompt | D3: Guidance between @prompt and @end-prompt stripped. |
-| test_interact_compiler.py | test_scaffold_preserved_after_end_prompt | D3: Scaffold after @end-prompt preserved. |
-| test_interact_compiler.py | test_end_prompt_tag_stripped_from_output | D3: @end-prompt tag itself not in output. |
-| test_interact_compiler.py | test_fallback_without_end_prompt | D3: Without @end-prompt, guidance skipped until structural. |
-| test_interact_compiler.py | test_block_context_wrapped | D4: Block-context response in blockquote. |
-| test_interact_compiler.py | test_block_context_attribution_in_blockquote | D4: Attribution inside blockquote for block context. |
-| test_interact_compiler.py | test_label_context_not_wrapped | D4: Label-context response not blockquoted. |
-| test_interact_compiler.py | test_table_context_not_wrapped | D4: Table-context response not blockquoted. |
-| test_interact_compiler.py | test_empty_block_not_wrapped | D4: Empty block context not wrapped. |
 
 ---
 
@@ -1939,12 +1913,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v17.0 |
+| Requirements Spec | SDLC-QMS-RS v16.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-094 |
-| Commit | c676b61 |
-| Total Tests | 643 |
-| Passed | 643 |
+| Branch | cr-091-interaction-system |
+| Commit | 7e708fc |
+| Total Tests | 611 |
+| Passed | 611 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -1971,21 +1945,21 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Tests | Passed | Failed |
 |-----------|-------|--------|--------|
-| test_interact_parser.py | 49 | 49 | 0 |
+| test_interact_parser.py | 43 | 43 | 0 |
 | test_interact_source.py | 46 | 46 | 0 |
 | test_interact_engine.py | 44 | 44 | 0 |
-| test_interact_compiler.py | 44 | 44 | 0 |
+| test_interact_compiler.py | 18 | 18 | 0 |
 | test_interact_integration.py | 31 | 31 | 0 |
 | Other unit tests | 203 | 203 | 0 |
-| **Subtotal** | **417** | **417** | **0** |
+| **Subtotal** | **385** | **385** | **0** |
 
 #### 6.2.3 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
 | Qualification Tests | 226 | 226 | 0 |
-| Unit Tests | 417 | 417 | 0 |
-| **Total** | **643** | **643** | **0** |
+| Unit Tests | 385 | 385 | 0 |
+| **Total** | **611** | **611** | **0** |
 
 ### 6.3 Test Environment
 
