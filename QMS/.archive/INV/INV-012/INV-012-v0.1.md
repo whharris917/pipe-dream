@@ -1,0 +1,253 @@
+---
+title: 'CR-091 Governance Failure: Code Not Propagated to Production Submodule'
+revision_summary: Initial draft
+---
+
+# INV-012: CR-091 Governance Failure: Code Not Propagated to Production Submodule
+
+## 1. Purpose
+
+This investigation examines a governance failure in which CR-091 (Interaction System Engine) completed its full lifecycle — execution, post-review, post-approval, and closure — while the code it implemented was never propagated to the production `qms-cli` submodule. The merge occurred only in the `.test-env/qms-cli/` test environment. The submodule pointer in `pipe-dream` still references `2c6b826` (CR-089 state), and the qualified commit `7e708fc` referenced in RTM v20.0 is unreachable from the production main branch.
+
+This deviation was discovered when CR-091-ADD-001 attempted to exercise `qms interact` and found the command does not exist in the production CLI.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+CR-091-ADD-001 was released for execution to produce a VR using the interactive authoring system implemented by CR-091. The first execution item (EI-1, pre-execution baseline) was committed at `885a405`. When attempting to run `qms interact`, the command was not found — the interaction system modules exist only in `.test-env/qms-cli/`, not in the production `qms-cli/` submodule.
+
+- **Triggering Event:** CR-091-ADD-001 execution failure — `qms interact` command not found in production CLI
+- **Related Document:** CR-091, CR-091-ADD-001, SDLC-QMS-RTM v20.0
+
+### 2.2 Deviation Type
+
+Multiple related procedural deviations. The code itself is correct (all 611 tests pass in the test environment); the failure is in the governance process that should have ensured production propagation.
+
+- **Type:** Procedural
+
+### 2.3 Systems/Documents Affected
+
+- `qms-cli/` — Production submodule, missing 5 modules (~4,500 lines) from CR-091
+- `.test-env/qms-cli/` — Test environment, contains the code but is not production
+- `QMS/SDLC-QMS/SDLC-QMS-RTM.md` — RTM v20.0 references qualified commit `7e708fc` which is unreachable from production main
+- `QMS/SOP/SOP-005.md` — Code Governance, lacks explicit submodule workflow step
+- `QMS/SOP/SOP-002.md` — Change Control, QA post-review checklist does not include submodule state verification
+- `CR-091` — Closed CR with governance claims that were not fully met
+- `CR-091-ADD-001` — Halted in execution, blocked by missing production code
+
+---
+
+## 3. Background
+
+### 3.1 Expected Behavior
+
+When a CR modifying SDLC-governed code completes its lifecycle, the code changes should be reachable from the production main branch. Per SOP-005 Section 7.1.3 (Merge Gate) and SOP-006 Section 7.2 (Single Commit Requirement), the qualified commit must be reachable via `git log` on main. For submodule-based systems like `qms-cli`, this requires updating the parent repository's submodule pointer after merging code into the submodule's main branch.
+
+Previous CRs (CR-088, CR-089) followed this pattern:
+- `b4aa12b Update qms-cli submodule to CLI-9.0 (CR-088 merged)`
+- `bb0cd27 Update qms-cli: VR document type (CR-089)`
+
+### 3.2 Actual Behavior
+
+CR-091 executed its code changes in `.test-env/qms-cli/` throughout execution. EI-2 explicitly states work was done "in .test-env/qms-cli". EI-15 records "Merge commit c83dda0" without specifying this was a merge in the test environment only. EI-19 committed "all QMS document changes" but did not include a submodule pointer update. The CR completed post-review, post-approval, and closure without the production submodule ever being updated.
+
+The production submodule pointer remains at `2c6b826` (CR-089 state).
+
+### 3.3 Discovery
+
+Discovered on 2026-02-21 during Session-2026-02-21-002 when CR-091-ADD-001 was released for execution. The first substantive task — running `qms interact` to produce a VR through interactive authoring — failed because the command does not exist in the production CLI.
+
+### 3.4 Timeline
+
+| Date | Event |
+|------|-------|
+| 2026-02-19 | CR-091 design begins (Session-2026-02-19-001) |
+| 2026-02-21 | CR-091 execution begins; all code work in `.test-env/qms-cli/` |
+| 2026-02-21 | CR-091 EI-15: merge commit `c83dda0` in test environment |
+| 2026-02-21 | CR-091 EI-19: final commit, no submodule pointer update |
+| 2026-02-21 | CR-091 post-reviewed, post-approved, CLOSED |
+| 2026-02-21 | CR-091-ADD-001 created, pre-reviewed, pre-approved, released |
+| 2026-02-21 | CR-091-ADD-001 EI-1: pre-execution baseline committed at `885a405` |
+| 2026-02-21 | Discovery: `qms interact` not found in production CLI |
+
+---
+
+## 4. Description of Deviation(s)
+
+Four related deviations were identified, forming a chain of missed checkpoints:
+
+### 4.1 Deviation 1: Code Not Propagated to Production
+
+The five interaction system modules implemented by CR-091 (~4,500 lines) exist only in `.test-env/qms-cli/`. The production `qms-cli/` submodule pointer was never updated. No commit in `pipe-dream` updates the submodule pointer for CR-091, unlike previous CRs (CR-088: `b4aa12b`, CR-089: `bb0cd27`).
+
+**Evidence:**
+- `git submodule status qms-cli` returns `2c6b826` (CR-089 state)
+- `git log --oneline -- qms-cli` shows last update is `bb0cd27 Update qms-cli: VR document type (CR-089)`
+- `python qms-cli/qms.py --user claude interact --help` fails (command not found)
+
+### 4.2 Deviation 2: RTM References Unreachable Commit
+
+SDLC-QMS-RTM v20.0 records qualified commit `7e708fc` and merge commit `c83dda0` in its Qualified Baseline section. These commits exist only in the test environment branch history. They are not reachable from the production `qms-cli` main branch.
+
+This violates SOP-006 Section 7.2: "The qualified state must be demonstrable at a single git commit" and "An auditor must be able to ask: 'At commit X, did the system meet all requirements simultaneously?'"
+
+**Evidence:**
+- RTM Qualified Baseline references `7e708fc` and `c83dda0`
+- These commits are not reachable from `qms-cli` HEAD (`2c6b826`)
+
+### 4.3 Deviation 3: QA Post-Review Missed Code Availability
+
+QA post-review (v1.1 and v1.2) was thorough in document verification — checking all 19 EIs, verifying controlled documents reached EFFECTIVE status, and catching the missing VR (which led to CR-091-ADD-001). However, QA did not verify that the implemented code was reachable from the production submodule.
+
+SOP-002 Section 7.3 requires "Evidence Documented" and SOP-006 Section 7.4 requires RS/RTM to be EFFECTIVE. Neither SOP explicitly requires verification that the qualified commit is reachable from the production branch of the submodule, creating a gap that QA's thorough review could not have been expected to catch through existing checklist items alone.
+
+### 4.4 Deviation 4: SOP-005 Lacks Submodule Workflow
+
+SOP-005 Section 7.1.3 (Merge Gate) defines prerequisites for merging to main and specifies the required merge type (`--no-ff`). However, it does not address the submodule workflow: after merging code into a submodule's main branch, the parent repository's submodule pointer must also be updated. This step was performed correctly in CR-088 and CR-089 through ad hoc practice, but was never codified as a procedural requirement.
+
+**Evidence:**
+- SOP-005 Section 7.1.3 covers merge prerequisites and merge type only
+- No section of SOP-005 mentions submodule pointers, `.gitmodules`, or parent repository updates
+- CR-088 commit `b4aa12b` and CR-089 commit `bb0cd27` demonstrate the correct practice existed but was informal
+
+---
+
+## 5. Impact Assessment
+
+### 5.1 Systems Affected
+
+| System | Impact | Description |
+|--------|--------|-------------|
+| qms-cli (production) | High | Missing 5 modules (~4,500 lines); `qms interact` command unavailable |
+| SDLC-QMS-RTM | High | Qualified baseline references unreachable commit; qualification evidence broken |
+
+### 5.2 Documents Affected
+
+| Document | Impact | Description |
+|----------|--------|-------------|
+| CR-091 | Medium | Closed with governance claims not fully met; claims are accurate for test environment but not production |
+| CR-091-ADD-001 | High | Halted in execution; cannot proceed until production code is available |
+| SOP-005 | Medium | Procedural gap: no submodule workflow step |
+| SOP-002 | Low | QA checklist gap: no submodule state verification |
+
+### 5.3 Other Impacts
+
+**Trust impact:** The QMS certified CR-091 as complete through its full lifecycle (pre-review, pre-approval, execution, post-review, post-approval, closure) when a fundamental gate — code availability in production — was not met. This is the first instance of the QMS closing a CR where the primary deliverable (code) was not propagated. The recursive governance loop requires that such failures be investigated and the process improved.
+
+**Downstream work blocked:** CR-091-ADD-001 is halted in IN_EXECUTION. It cannot resume until the interaction system code exists in the production CLI.
+
+---
+
+## 6. Root Cause Analysis
+
+### 6.1 Contributing Factors
+
+1. **Test environment divergence:** CR-091 executed entirely in `.test-env/qms-cli/`, which was intentional for development isolation. However, this created a separate code path that diverged from production without a formalized reconciliation step.
+
+2. **Implicit knowledge vs. explicit procedure:** Previous CRs (CR-088, CR-089) updated the submodule pointer as an informal practice, not because a procedure required it. When CR-091's execution was more complex (22 EIs, 5 modules, interaction across multiple sessions), the informal practice was missed.
+
+3. **SOP-005 gap:** The Merge Gate (Section 7.1.3) covers merging to the submodule's main branch but does not address the parent repository's submodule pointer. This creates a structural blind spot: the merge gate can be "passed" while the code remains unreachable from the parent repo.
+
+4. **QA checklist scope:** SOP-002's post-review requirements verify documents, execution outcomes, and SDLC prerequisites. They do not require verification that code is reachable from the production branch. QA cannot be expected to catch what the checklist doesn't cover.
+
+5. **RTM verification gap:** The RTM Qualified Baseline references a commit hash, but no verification step confirms the hash is reachable from the production main branch of the submodule. The hash could be from any branch or environment.
+
+### 6.2 Root Cause(s)
+
+**Primary root cause:** SOP-005 does not include a submodule pointer update step in the execution branch workflow. The procedure ends at "Merge to main" (step 6 of Section 7.1.1) without addressing that for submodule-based systems, merging to the submodule's main branch is necessary but not sufficient — the parent repository must also be updated.
+
+**Contributing root cause:** SOP-002's QA post-review checklist does not include submodule state verification. Even if the SOP-005 gap were addressed, a missing execution step would go undetected by QA if the checklist doesn't cover it.
+
+Both root causes are procedural gaps, not failures of judgment or execution. The people and agents involved followed the procedures as written; the procedures were incomplete.
+
+---
+
+## 7. Remediation Plan (CAPAs)
+
+<!--
+CAPA EXECUTION INSTRUCTIONS
+===========================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+- Sections 1-6 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the sections below should be edited during execution phase
+
+CAPA TYPES (per SOP-003 Section 6):
+- Corrective Action: Eliminate cause of existing deviation and/or remediate consequences
+- Preventive Action: Eliminate cause of potential future deviation; continuous improvement
+
+COLUMNS:
+- CAPA: CAPA identifier (e.g., INV-001-CAPA-001)
+- Type: Corrective or Preventive
+- Description: What the CAPA accomplishes (static)
+- Implementation: How it will be implemented, child CR references (editable)
+- Outcome: Pass or Fail (editable)
+- Verified By - Date: Signature (editable)
+
+CHILD CRs:
+CAPAs may spawn child CRs. Reference them in the Implementation column.
+All child CRs must be CLOSED before the INV can be closed.
+-->
+
+| CAPA | Type | Description | Implementation | Outcome | Verified By - Date |
+|------|------|-------------|----------------|---------|---------------------|
+| INV-012-CAPA-001 | Corrective | Merge interaction system code to production qms-cli submodule, update submodule pointer in pipe-dream, and re-verify RTM qualified baseline | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-012-CAPA-002 | Preventive | Update SOP-005 to include explicit submodule workflow steps in the execution branch model (Section 7.1) | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-012-CAPA-003 | Preventive | Update SOP-002 QA post-review checklist (Section 7.3) to include submodule state verification for CRs affecting submodule-based systems | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 4-6 during execution.
+-->
+
+---
+
+## 8. Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during CAPA execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual CAPA, but apply to the INV as a whole.
+-->
+
+---
+
+## 9. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all CAPAs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 10. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control (Section 7.3 — QA post-review requirements)
+- **SOP-003:** Deviation Management
+- **SOP-005:** Code Governance (Section 7.1.3 — Merge Gate)
+- **SOP-006:** SDLC Governance (Section 7.2 — Single Commit Requirement)
+- **CR-091:** Interaction System Engine (CLOSED — the CR with the governance failure)
+- **CR-091-ADD-001:** Interaction System VR Remediation (IN_EXECUTION — halted, blocked by this INV's CAPA-1)
+- **SDLC-QMS-RTM v20.0:** RTM referencing unreachable qualified commit `7e708fc`
+
+---
+
+**END OF DOCUMENT**
