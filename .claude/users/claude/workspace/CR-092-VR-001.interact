@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 2
+    "iteration": 3
   },
   "metadata": {
     "parent_doc_id": "CR-092",
@@ -83,11 +83,40 @@
         "author": "claude",
         "timestamp": "2026-02-21T20:56:27Z"
       }
+    ],
+    "step_actual.2": [
+      {
+        "value": "$ git -C qms-cli log --oneline | grep 7e708fc\n7e708fc Add qualification tests for REQ-INT-001 through REQ-INT-022 (CR-091 EI-11)\n\nExit code 0. Qualified commit reachable from production main.",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:56:40Z",
+        "commit": "3a68f99"
+      }
+    ],
+    "step_outcome.2": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:56:49Z"
+      }
+    ],
+    "step_instructions.3": [
+      {
+        "value": "Verify submodule pointer in pipe-dream points to CR-091 merge commit. Command: git submodule status qms-cli",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:57:09Z"
+      }
+    ],
+    "step_expected.3": [
+      {
+        "value": "Output showing commit hash c83dda0 (full 40-char) for qms-cli submodule. No '+' prefix (which would indicate uncommitted pointer change).",
+        "author": "claude",
+        "timestamp": "2026-02-21T20:57:20Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 2,
+      "iterations": 3,
       "closed": false,
       "reopenings": []
     }
@@ -96,6 +125,10 @@
     "more_steps.1": {
       "value": "yes",
       "timestamp": "2026-02-21T20:56:05Z"
+    },
+    "more_steps.2": {
+      "value": "yes",
+      "timestamp": "2026-02-21T20:57:00Z"
     }
   }
 }
