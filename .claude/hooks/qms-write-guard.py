@@ -49,6 +49,11 @@ def main():
     # Normalize path for comparison
     normalized_path = os.path.normpath(file_path).replace("\\", "/")
 
+    # Allow writes to designated development directories
+    # .test-env/ is the permitted local development location per SOP-005 Section 7.1
+    if "/.test-env/" in normalized_path or normalized_path.startswith(".test-env/"):
+        sys.exit(0)
+
     for dir_name, reason in PROTECTED_DIRS.items():
         # Match both absolute paths (containing /dir_name/) and relative paths
         pattern_in_path = f"/{dir_name}/"

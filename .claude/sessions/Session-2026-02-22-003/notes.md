@@ -1,10 +1,10 @@
 # Session-2026-02-22-003
 
-## Current State (last updated: INV-014 IN_EXECUTION)
-- **Active documents:** INV-014 (IN_EXECUTION v1.0)
-- **Current EI:** Starting CAPA-001 execution (fix deny rules)
-- **Blocking on:** Nothing
-- **Next:** CAPA-001 → CAPA-002 → child CR for CAPA-003/004
+## Current State (last updated: CR-100 EI-10)
+- **Active documents:** INV-014 (IN_EXECUTION v1.1), CR-100 (IN_EXECUTION v1.0)
+- **Current EI:** CR-100 EI-10 (test suite running on cr-100 branch)
+- **Blocking on:** pytest completion
+- **Next:** EI-10 push/CI → EI-11 PR/merge → EI-12 alignment → EI-13 submodule → EI-14 baseline
 - **Subagent IDs:** qa=a31e09eaea08d2504
 
 ## Progress Log
@@ -66,6 +66,21 @@
 - Checked in (v0.1), routed for pre-review → QA recommended
 - Routed for pre-approval → QA approved (v1.0)
 - Released for execution → IN_EXECUTION
+
+### CR-100 Execution: INV-014 CAPA-003/004
+- Created CR-100, authored (hybrid: QMS docs + seed code), checked in (v0.1)
+- QA reviewed → RECOMMEND, no TUs needed
+- QA approved (v1.0) → Released for execution
+- EI-1: Pre-execution baseline at `6673e10`
+- EI-2: SOP-005 checked out, 4 changes applied, checked in (v6.1)
+- EI-3: SOP-005 v7.0 EFFECTIVE (dev environment, PR mandate, file scope, direct commit prohibition)
+- EI-4: TEMPLATE-CR checked out, 4 changes applied, checked in (v9.1)
+- EI-5: TEMPLATE-CR v10.0 EFFECTIVE (explicit locations, SOP-005 workflow ref, PR enforcement)
+- EI-6: SOP-002 checked out, PR verification bullet added, checked in (v15.1)
+- EI-7: SOP-002 v16.0 EFFECTIVE (PR merge verification in QA post-review)
+- EI-8: .test-env/qms-cli/ branch cr-100 created from main (5124b4a)
+- EI-9: Seed TEMPLATE-CR changes applied in .test-env/. Hook .test-env/ exception added.
+- EI-10: Tests running...
 
 ### Key Commits
 - `bcc5375` — Pre-execution baseline
