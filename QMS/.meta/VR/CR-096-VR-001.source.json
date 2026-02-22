@@ -2,15 +2,15 @@
   "doc_id": "CR-096-VR-001",
   "template": "VR",
   "template_version": 5,
-  "cursor": "step_actual",
-  "cursor_context": {
-    "loop": "steps",
-    "iteration": 3
-  },
+  "cursor": "__end__",
+  "cursor_context": {},
   "metadata": {
     "parent_doc_id": "CR-096",
     "vr_id": "CR-096-VR-001",
-    "title": "CR-096 EI-8: Hook Integration Test"
+    "title": "CR-096 EI-8: Hook Integration Test",
+    "date": "2026-02-22",
+    "performer": "claude",
+    "performed_date": "2026-02-22"
   },
   "responses": {
     "related_eis": [
@@ -105,12 +105,41 @@
         "author": "claude",
         "timestamp": "2026-02-22T17:24:57Z"
       }
+    ],
+    "step_actual.3": [
+      {
+        "value": "Script exited with code 0. Full stdout:\n\n=== POST-COMPACTION NOTICE ===\nSession: Session-2026-02-22-001\nContext compaction occurred. No session notes found.\nRead .claude/PROJECT_STATE.md and .claude/sessions/CURRENT_SESSION for context.\n=== END NOTICE ===\n\nFallback banner correctly displayed with NOTICE (not RECOVERY). notes.md restored after test.",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:25:39Z",
+        "commit": "73ff287"
+      }
+    ],
+    "step_outcome.3": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:25:51Z"
+      }
+    ],
+    "summary_outcome": [
+      {
+        "value": "Pass. All 3 verification steps passed:\n1. PreCompact hook correctly logs compaction events with timestamp, trigger type, and transcript path\n2. Post-compaction recovery hook correctly outputs session notes with recovery banner\n3. Post-compaction recovery hook correctly falls back to notice banner when no notes exist\n\nNote: These tests verify the hook scripts themselves via simulated stdin. Live integration (hooks fired by Claude Code during actual compaction) will be validated organically during subsequent sessions.",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:26:17Z"
+      }
+    ],
+    "summary_narrative": [
+      {
+        "value": "Verified both compaction resilience hook scripts by simulating their expected stdin JSON payloads. The PreCompact hook (pre-compact.py) was tested by providing a manual trigger event and confirming it created a correctly-formatted compaction log entry. The post-compaction recovery hook (post-compact-recovery.py) was tested in both the happy path (session notes exist, full recovery banner with notes content output) and fallback path (no notes, notice banner directing to PROJECT_STATE.md). Both scripts handle their inputs correctly, exit cleanly, and produce the expected stdout for context injection.",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:26:34Z"
+      }
     ]
   },
   "loops": {
     "steps": {
       "iterations": 3,
-      "closed": false,
+      "closed": true,
       "reopenings": []
     }
   },
@@ -122,6 +151,10 @@
     "more_steps.2": {
       "value": "yes",
       "timestamp": "2026-02-22T17:24:31Z"
+    },
+    "more_steps.3": {
+      "value": "no",
+      "timestamp": "2026-02-22T17:26:03Z"
     }
   }
 }
