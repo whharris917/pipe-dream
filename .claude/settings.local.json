@@ -75,7 +75,8 @@
       "Bash(find:*)",
       "Bash(done)",
       "Bash(git log:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "mcp__qms__qms_withdraw"
     ],
     "deny": [
       "Edit(QMS/**)",

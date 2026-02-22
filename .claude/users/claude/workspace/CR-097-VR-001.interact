@@ -1,0 +1,60 @@
+{
+  "doc_id": "CR-097-VR-001",
+  "template": "VR",
+  "template_version": 5,
+  "cursor": "step_actual",
+  "cursor_context": {
+    "loop": "steps",
+    "iteration": 1
+  },
+  "metadata": {
+    "parent_doc_id": "CR-097",
+    "vr_id": "CR-097-VR-001",
+    "title": "CR-097 Integration Verification"
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-4",
+        "author": "claude",
+        "timestamp": "2026-02-22T18:51:39Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that compiled VR output renders step subsections with labeled sections, blockquoted instructions, and consistent formatting across all response types",
+        "author": "claude",
+        "timestamp": "2026-02-22T18:51:51Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "qms-cli branch cr-097 checked out at commit d73f154 in .test-env/qms-cli/. TEMPLATE-VR.md present in seed/templates/. Python 3.x with pytest available.",
+        "author": "claude",
+        "timestamp": "2026-02-22T18:52:03Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Compile a sample VR with 2 steps using the execution branch code and inspect the step subsection output for labels, blockquote instructions, and consistent formatting. Run: cd .test-env/qms-cli && python -c \"<compilation script>\"",
+        "author": "claude",
+        "timestamp": "2026-02-22T18:52:16Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "Each step subsection should have four labeled sections: **Instructions:**, **Expected:**, **Actual:**, **Outcome:**. Instructions content should be blockquoted (> prefix), not bold-wrapped. Attribution lines should appear on separate lines below blockquotes, not inside them. No **Do thing** bold-wrapped instructions should appear.",
+        "author": "claude",
+        "timestamp": "2026-02-22T18:52:28Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": false,
+      "reopenings": []
+    }
+  },
+  "gates": {}
+}
