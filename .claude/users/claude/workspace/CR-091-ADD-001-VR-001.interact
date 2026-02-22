@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 2
+    "iteration": 3
   },
   "metadata": {
     "parent_doc_id": "CR-091-ADD-001",
@@ -18,6 +18,12 @@
         "value": "EI-2",
         "author": "claude",
         "timestamp": "2026-02-22T22:34:52Z"
+      },
+      {
+        "value": "EI-2 (VR column)",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:39:55Z",
+        "reason": "Adding VR column reference for traceability"
       }
     ],
     "objective": [
@@ -76,11 +82,40 @@
         "author": "claude",
         "timestamp": "2026-02-22T22:37:39Z"
       }
+    ],
+    "step_actual.2": [
+      {
+        "value": "Compiled output from: python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --compile\n\nObservations:\n1. YAML frontmatter present with title and revision_summary fields\n2. Section headings: Verification Identification (1), Verification Objective (2), Prerequisites (3), Verification Steps (4), Summary (5)\n3. Response values correctly substituted for all filled prompts\n4. Per-response attribution on every response: author (claude), timestamp, format \"*-- claude, YYYY-MM-DD HH:MM:SS*\"\n5. Commit hash 134c3d6 embedded on step_actual.1: \"*-- claude, 2026-02-22 22:36:41 | commit: 134c3d6*\"\n6. No raw template tags (<!-- @prompt... -->) in output — all stripped\n7. No guidance text between tags in output — all stripped\n8. Step 1 fully rendered (instructions, expected, actual with commit, outcome)\n9. Step 2 partially rendered (instructions and expected only — actual/outcome not yet filled)\n10. Summary section present but empty (not yet filled)\n11. Title field in frontmatter is empty (metadata.title was not populated at VR creation) — cosmetic issue, does not affect VR validity\n\nKey evidence: the compilation engine (REQ-INT-017) correctly transforms source responses into structured markdown. Attribution (REQ-INT-010) is present on every response. Atomic commit hash (REQ-INT-013) is embedded in commit-enabled responses. Template tags and guidance text are fully stripped.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:38:24Z",
+        "commit": "0f2b01f"
+      }
+    ],
+    "step_outcome.2": [
+      {
+        "value": "Pass. All seven expected characteristics confirmed: frontmatter present, section headings correct, response values substituted, attribution on every response, commit hash 134c3d6 embedded on commit-enabled response, no raw template tags, no guidance text. Minor note: title field is empty in frontmatter (metadata not populated at creation), but this is cosmetic and does not affect VR content or compilation correctness.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:38:38Z"
+      }
+    ],
+    "step_instructions.3": [
+      {
+        "value": "Verify the amendment (goto) workflow by navigating to a previously answered prompt, amending the response with a reason, and returning to the current position. This tests REQ-INT-012 (amendment trail) and REQ-INT-016 (navigation). Commands: (1) python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --goto related_eis --reason 'Adding VR column reference for traceability' (2) python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --respond 'EI-2 (VR column)' (3) python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --progress",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:39:04Z"
+      }
+    ],
+    "step_expected.3": [
+      {
+        "value": "Command 1 (--goto): Engine confirms navigation to related_eis prompt, shows its guidance text, and indicates this is an amendment (not a fresh response). Command 2 (--respond): Engine records the amendment with the reason, then automatically returns cursor to the original position (step_instructions.3 area). Command 3 (--progress): The related_eis prompt shows [x] with an amendment indicator. All other prompts unchanged. The amended value should be visible in compiled output with the original entry struck through and the new entry shown with its reason.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:39:18Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 2,
+      "iterations": 3,
       "closed": false,
       "reopenings": []
     }
@@ -89,6 +124,10 @@
     "more_steps.1": {
       "value": "yes",
       "timestamp": "2026-02-22T22:37:05Z"
+    },
+    "more_steps.2": {
+      "value": "yes",
+      "timestamp": "2026-02-22T22:38:49Z"
     }
   }
 }
