@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-02-21
+
+- [ ] Remove "-draft" from VR filenames when parent closes, and lock closed documents from checkout
+  - VR drafts retain `-draft` suffix even after parent closure (e.g., `CR-094-ADD-001-VR-001-draft.md`)
+  - Rename to final filename (drop `-draft`) when parent protocol closes and cascades closure to child VRs
+  - Closed documents should reject checkout attempts (currently not enforced)
+  - Relates to: Protocol/Attachment taxonomy (auto-close cascade item below)
+
+---
+
 ## 2026-02-16
 
 - [x] ~~Switch MCP health check from HTTP to TCP connect~~ DONE (CR-090)

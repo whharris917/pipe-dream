@@ -1,14 +1,18 @@
 # Project State
 
-*Last updated: Session-2026-02-21-002*
+*Last updated: Session-2026-02-21-003*
 
 ---
 
 ## 1. Where We Are Now
 
-**INV-012 CLOSED.** Governance failure investigation complete — CR-091 code was never propagated to the production `qms-cli` submodule. Root cause: SOP-005 lacked submodule workflow step, SOP-002 QA checklist lacked submodule verification. Three CAPAs executed: CR-092 (corrective — code merge + submodule pointer), CR-093 (preventive — SOP-005 v6.0 + SOP-002 v14.0). Bug fix: `checkin.py` UnboundLocalError in interactive checkin path (commit `532e630`).
+**CR-094 CLOSED.** Four compilation defects (D1-D4) fixed in `interact_compiler.py` and `interact_parser.py`. TEMPLATE-VR v4 with `@end-prompt` boundaries. 32 new tests (643 total). RS v17.0, RTM v21.0 EFFECTIVE. Merged to qms-cli main at qualified commit `c676b61`.
 
-**CR-091-ADD-001 IN_EXECUTION.** VR evidence remediation was halted when `qms interact` was found missing from production. Now unblocked — ready to resume. 51 CRs CLOSED (CR-042 through CR-093).
+**CR-094-ADD-001 CLOSED.** Post-closure addendum created the missing VR for CR-094 EI-12 (VR column said "Yes" but no formal VR was produced). CR-094-ADD-001-VR-001 documents the recompilation verification with structured evidence.
+
+**VR template improvements identified.** Lead review of the ADD-001-VR-001 output revealed further deficiencies in the VR template and compiler: redundant author-provided fields, unnecessary sections, and inconsistent attribution placement. These form the scope of the next CR.
+
+52 CRs CLOSED (CR-042 through CR-094).
 
 ---
 
@@ -28,11 +32,13 @@
 
 **Testing & Evidence Framework (Feb 16-18, CR-089).** VR document type — CLI support (424 tests), SDLC docs (RS v15.0, RTM v19.0), TEMPLATE-VR, 4 SOP updates, 3 template updates.
 
-**Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect, eliminating 406 log noise.
+**Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect.
 
-**Interaction System (Feb 19-21, CR-091).** Design across five sessions (Feb 19-20), implementation and execution (Feb 21). Template parser, source data model, interaction engine, compilation engine, CLI command, MCP tool. 22 requirements (REQ-INT-001 through REQ-INT-022), 611 tests. SOP-004 Section 11 (Interactive Document Authoring), TEMPLATE-VR v2.0 (interactive v3).
+**Interaction System (Feb 19-21, CR-091).** Template parser, source data model, interaction engine, compilation engine, CLI command, MCP tool. 22 requirements (REQ-INT-001 through REQ-INT-022), 611 tests. SOP-004 Section 11, TEMPLATE-VR v3 (interactive).
 
-**Governance Failure Investigation (Feb 21, INV-012).** CR-091 code never propagated to production submodule. Four deviations documented. CR-092 (corrective: submodule merge) and CR-093 (preventive: SOP-005 v6.0, SOP-002 v14.0) both CLOSED. Bug fix: `checkin.py` interactive checkin `UnboundLocalError`.
+**Governance Failure Investigation (Feb 21, INV-012).** CR-091 code never propagated to production submodule. CR-092 (corrective: submodule merge) and CR-093 (preventive: SOP-005 v6.0, SOP-002 v14.0) both CLOSED.
+
+**Compilation Defects (Feb 21, CR-094).** Four defects in compiled VR output fixed: duplicate frontmatter, broken tables, guidance leak, no visual distinction. TEMPLATE-VR v4 with `@end-prompt`. 643 tests.
 
 ---
 
@@ -42,9 +48,9 @@
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v16.0 EFFECTIVE | 133 requirements |
-| SDLC-QMS-RTM | v20.0 EFFECTIVE | 611 tests, qualified commit 7e708fc |
-| Qualified Baseline | CLI-11.0 | qms-cli commit 7e708fc (main: c83dda0) |
+| SDLC-QMS-RS | v17.0 EFFECTIVE | 133+ requirements |
+| SDLC-QMS-RTM | v21.0 EFFECTIVE | 643 tests, qualified commit c676b61 |
+| Qualified Baseline | CLI-12.0 | qms-cli commit c676b61 (main: 2c61af2) |
 
 ### Controlled Document State
 
@@ -70,6 +76,7 @@
 |----------|--------|---------|
 | CR-091-ADD-001 | IN_EXECUTION v1.0 | VR evidence remediation. Unblocked now that submodule is updated. |
 | CR-091-VR-001 | IN_EXECUTION v1.0 | Inadequate — freehand, not interactive. To be superseded by CR-091-ADD-001-VR-001. |
+| CR-094-ADD-001-VR-001 | IN_EXECUTION v1.1 | Child of closed ADD. Needs draft rename + auto-close (to-do item). |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
 | INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
@@ -84,28 +91,37 @@
 
 ## 5. Forward Plan
 
-### Next Session: Resume CR-091-ADD-001 (Interaction System VR Remediation)
+### Next CR: VR Template and Compiler Refinements
 
-CR-091-ADD-001 is IN_EXECUTION (baseline at `885a405`). It was halted when `qms interact` was found missing from production — now unblocked by INV-012/CR-092. Resume execution: author CR-091-ADD-001-VR-001 via `qms interact`, complete remaining EIs, route for post-review.
+Lead-identified improvements from reviewing CR-094-ADD-001-VR-001 output:
+
+**Template changes (TEMPLATE-VR):**
+1. Remove `date` prompt — derivable from response timestamps
+2. Remove `performer` and `performed_date` prompts; eliminate Signature section — performer is the responsible user
+3. Remove References section — no value for VRs
+4. Rename "Pre-Conditions" to "Prerequisites"
+
+**Compiler changes (interact_compiler.py):**
+5. Fix blockquote attribution placement — attribution should render BELOW the blockquote, not inside it
+6. Auto-generate document metadata (date, performer) from source data instead of author-provided fields
+
+### Then: Resume CR-091-ADD-001
+
+CR-091-ADD-001 is IN_EXECUTION. Author CR-091-ADD-001-VR-001 via `qms interact`, complete remaining EIs, route for post-review.
 
 ### Interaction System Phase 2+ (future)
-- **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD) — likely hybrid interactive/freehand
+- **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD)
 - **Phase 4+:** Non-executable documents, intent decomposition layer
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
 - Allowlist: `["claude", "lead"]` — other agents blocked
-- New requirement REQ-MCP-017, RS/RTM updates
 
 ### Phase D: GUI Enhancement (~2-3 sessions)
 - D.1: MCP health monitoring
 - D.2: QMS status panel
 - D.3: Notification injection API
 - D.4: Identity status visibility
-
-### Phase E: Process Alignment (~1-2 sessions)
-- SOP-007 and SOP-001 identity architecture updates
-- Agent definition prohibitions
 
 ---
 
@@ -140,6 +156,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
+| Remove "-draft" from VR filenames on parent close; lock closed docs from checkout | Small | To-do 2026-02-21 |
 
 ### Bundleable (natural CR groupings)
 
@@ -158,7 +175,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Session heartbeat mechanism | Prevent post-compaction session discontinuities |
 | Simplify SOPs to behavioral baselines | Review for tooling-dependent language |
 | Production/test environment isolation | Programmatic separation between production and test environments |
-| Subconscious agent | Design discussion complete (discussion-subconscious-agent.md); implementation design pending |
+| Subconscious agent | Design discussion complete; implementation design pending |
 
 ### Deferred
 
@@ -171,7 +188,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 ## 8. Gaps & Risks
 
-**checkin.py bug fix needs governance.** Commit `532e630` fixed an `UnboundLocalError` in interactive checkin (dead `version` parameter). Fix was applied directly during INV-012 execution — needs a proper CR for traceability.
+**checkin.py bug fix needs governance.** Commit `532e630` fixed an `UnboundLocalError` in interactive checkin. Needs a proper CR for traceability.
 
 **CR-091-VR-001 inadequacy.** Freehand VR bypassed the interaction system. Remediation via CR-091-ADD-001 in progress (unblocked).
 
@@ -179,4 +196,4 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 611.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 643.
