@@ -1,18 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-21-003*
+*Last updated: Session-2026-02-21-004*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-094 CLOSED.** Four compilation defects (D1-D4) fixed in `interact_compiler.py` and `interact_parser.py`. TEMPLATE-VR v4 with `@end-prompt` boundaries. 32 new tests (643 total). RS v17.0, RTM v21.0 EFFECTIVE. Merged to qms-cli main at qualified commit `c676b61`.
+**CR-095 CLOSED.** Attachment auto-close + VR template/compiler refinements. VR classified as attachment type with cascade close on parent closure, terminal state checkout guard, auto-compile for interactive attachments. TEMPLATE-VR v5 with auto-metadata, block rendering, attribution below blockquotes, step subsection numbering. 30 new tests (673 total). RS v18.0, RTM v22.0 EFFECTIVE. Merged to qms-cli main at `f0cd391`.
 
-**CR-094-ADD-001 CLOSED.** Post-closure addendum created the missing VR for CR-094 EI-12 (VR column said "Yes" but no formal VR was produced). CR-094-ADD-001-VR-001 documents the recompilation verification with structured evidence.
-
-**VR template improvements identified.** Lead review of the ADD-001-VR-001 output revealed further deficiencies in the VR template and compiler: redundant author-provided fields, unnecessary sections, and inconsistent attribution placement. These form the scope of the next CR.
-
-52 CRs CLOSED (CR-042 through CR-094).
+53 CRs CLOSED (CR-042 through CR-095).
 
 ---
 
@@ -40,6 +36,8 @@
 
 **Compilation Defects (Feb 21, CR-094).** Four defects in compiled VR output fixed: duplicate frontmatter, broken tables, guidance leak, no visual distinction. TEMPLATE-VR v4 with `@end-prompt`. 643 tests.
 
+**Attachment Lifecycle + Compiler Refinements (Feb 22, CR-095).** Attachment document classification, cascade close, terminal state checkout guard. TEMPLATE-VR v5, auto-metadata, block rendering, step subsection numbering. 673 tests.
+
 ---
 
 ## 3. What's Built
@@ -48,9 +46,9 @@
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v17.0 EFFECTIVE | 133+ requirements |
-| SDLC-QMS-RTM | v21.0 EFFECTIVE | 643 tests, qualified commit c676b61 |
-| Qualified Baseline | CLI-12.0 | qms-cli commit c676b61 (main: 2c61af2) |
+| SDLC-QMS-RS | v18.0 EFFECTIVE | 139 requirements |
+| SDLC-QMS-RTM | v22.0 EFFECTIVE | 673 tests, qualified commit 31f8306 |
+| Qualified Baseline | CLI-13.0 | qms-cli commit 31f8306 (main: f0cd391) |
 
 ### Controlled Document State
 
@@ -76,7 +74,6 @@
 |----------|--------|---------|
 | CR-091-ADD-001 | IN_EXECUTION v1.0 | VR evidence remediation. Unblocked now that submodule is updated. |
 | CR-091-VR-001 | IN_EXECUTION v1.0 | Inadequate — freehand, not interactive. To be superseded by CR-091-ADD-001-VR-001. |
-| CR-094-ADD-001-VR-001 | IN_EXECUTION v1.1 | Child of closed ADD. Needs draft rename + auto-close (to-do item). |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
 | INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
@@ -87,21 +84,13 @@
 | CR-036-VAR-002 | IN_EXECUTION v1.0 | Legacy — documentation drift. |
 | CR-036-VAR-004 | IN_EXECUTION v1.0 | Legacy — partial test coverage analysis. |
 
+*Note: CR-094-ADD-001-VR-001 was auto-closed by CR-095's cascade close feature (previously listed as needing manual draft rename).*
+
 ---
 
 ## 5. Forward Plan
 
-### Next CR: VR Template and Compiler Refinements
-
-Lead-identified improvements from reviewing CR-094-ADD-001-VR-001 output:
-
-**Core principle:** All author responses (outside tables) rendered as blockquotes or code fences, with attribution BELOW the block. No inline rendering. No "label context." Redundant labels stripped.
-
-**Template (TEMPLATE-VR):** Remove `date`, `performer`, `performed_date` prompts. Eliminate Signature and References sections. Rename "Pre-Conditions" to "Prerequisites". Strip redundant labels where placeholder is sole section content (e.g., `**Objective:**`). Verification steps as subsections (4.1 Step 1, 4.2 Step 2, etc.).
-
-**Compiler (interact_compiler.py):** Fix blockquote attribution placement (below block, not inside). All non-table responses block-rendered. Auto-generate metadata (date, performer) from source data.
-
-### Then: Resume CR-091-ADD-001
+### Next: Resume CR-091-ADD-001
 
 CR-091-ADD-001 is IN_EXECUTION. Author CR-091-ADD-001-VR-001 via `qms interact`, complete remaining EIs, route for post-review.
 
@@ -152,7 +141,6 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
-| Remove "-draft" from VR filenames on parent close; lock closed docs from checkout | Small | To-do 2026-02-21 |
 
 ### Bundleable (natural CR groupings)
 
@@ -192,4 +180,4 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 643.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 673.
