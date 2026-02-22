@@ -1,0 +1,60 @@
+{
+  "doc_id": "CR-096-VR-001",
+  "template": "VR",
+  "template_version": 5,
+  "cursor": "step_actual",
+  "cursor_context": {
+    "loop": "steps",
+    "iteration": 1
+  },
+  "metadata": {
+    "parent_doc_id": "CR-096",
+    "vr_id": "CR-096-VR-001",
+    "title": "CR-096 EI-8: Hook Integration Test"
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-8",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:21:51Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that compaction resilience hooks correctly capture compaction events and recover session state for post-compaction context injection",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:22:03Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "1. Windows 11, Python 3.x, Git Bash shell\n2. pipe-dream repository on main branch\n3. .claude/hooks/pre-compact.py and .claude/hooks/post-compact-recovery.py exist\n4. .claude/settings.local.json contains PreCompact and SessionStart hook configurations\n5. .claude/sessions/CURRENT_SESSION contains 'Session-2026-02-22-001'\n6. .claude/sessions/Session-2026-02-22-001/notes.md exists with session notes content\n7. No prior compaction-log.txt exists in the session directory",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:22:17Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Test PreCompact hook by simulating compaction event via stdin JSON:\n\necho '{\"trigger\": \"manual\", \"transcript_path\": \"/test/transcript.jsonl\", \"cwd\": \"C:/Users/wilha/projects/pipe-dream\"}' | python .claude/hooks/pre-compact.py",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:22:30Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "1. Script exits with code 0 (no error)\n2. File .claude/sessions/Session-2026-02-22-001/compaction-log.txt is created\n3. The log file contains a single line with ISO timestamp, 'COMPACTION (manual)', and the transcript path\n4. No other files in the session directory are modified",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:22:42Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": false,
+      "reopenings": []
+    }
+  },
+  "gates": {}
+}

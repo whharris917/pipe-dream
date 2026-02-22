@@ -107,6 +107,7 @@ git commit -m "Update flow-state submodule"
 - **Opening Claude Code** = New session starts
 - **Closing Claude Code** = Session ends
 - **Context consolidation** = Same session continues
+- **Context compaction** = Same session continues; read session notes to recover state
 - **Multiple sessions per day** are normal (001, 002, etc.)
 
 ### CURRENT_SESSION File
@@ -130,8 +131,19 @@ Before proceeding, determine whether this is:
   you received a system-generated summary of previous conversation, references to
   ongoing work, or context that clearly came from a prior conversation in this session.
 
+- **Continuation after compaction**: Context was compacted to free space. Indicators:
+  you received a compaction summary and/or the SessionStart hook injected recovery
+  context with a `=== POST-COMPACTION RECOVERY ===` banner.
+
 **If new session:** Proceed with steps 1-4 below.
-**If continuation:** Read CURRENT_SESSION, confirm the session ID, and continue working.
+**If continuation after consolidation:** Read CURRENT_SESSION, confirm the session ID, and continue working.
+Do NOT create a new session or overwrite CURRENT_SESSION.
+**If continuation after compaction:**
+1. Read CURRENT_SESSION to confirm the session ID
+2. Read session notes from `.claude/sessions/{SESSION_ID}/notes.md`
+3. Compare compaction summary against session notes for consistency
+4. Announce: "Context compaction occurred. Recovered state from session notes. Resuming [task]."
+5. Resume work from where the session notes indicate
 Do NOT create a new session or overwrite CURRENT_SESSION.
 
 ### 1. Determine Session ID
@@ -166,6 +178,58 @@ This provides continuity from the last session's discussions and decisions.
 ### 4. Read All SOPs
 
 Read all Standard Operating Procedures in `QMS/SOP/`.
+
+### Incremental Session Notes
+
+Write session notes **incrementally** as work progresses — do not wait until session end. This creates a durable on-disk record that survives compaction.
+
+**When to update** `.claude/sessions/{SESSION_ID}/notes.md`:
+- After completing each execution item (EI)
+- After any QMS routing event (review, approval, etc.)
+- After any commit
+- After any significant decision or discovery
+- Before starting a long autonomous sequence
+
+**Format:**
+```markdown
+# Session-YYYY-MM-DD-NNN
+
+## Current State (last updated: [timestamp])
+- **Active document:** CR-NNN (STATUS)
+- **Current EI:** EI-N (description)
+- **Blocking on:** Nothing / [description]
+- **Next:** EI-N+1 (description)
+- **Subagent IDs:** qa=ID, tu_ui=ID
+
+## Progress Log
+
+### [HH:MM] EI-N: Description
+- What was done
+- Key artifacts (commits, document versions)
+```
+
+The **Current State** block at the top is the recovery target — it should always reflect where work stands RIGHT NOW. The Progress Log below provides audit trail.
+
+---
+
+## Compact Instructions
+
+When summarizing this conversation for context compaction, preserve:
+
+1. **Session identity:** The current session ID (from CURRENT_SESSION file)
+2. **Active QMS document:** Document ID, status, current execution item number
+3. **Work completed this session:** List of EIs completed, commits made, documents routed
+4. **Work in progress:** What was actively being done when compaction occurred
+5. **Pending decisions:** Any unresolved questions or choices awaiting user input
+6. **Agent state:** IDs of any spawned subagents that should be resumed
+7. **Key file paths:** Files currently being edited or recently created
+
+Do NOT spend summary space on:
+- SOP content (available on disk via `QMS/SOP/`)
+- CLAUDE.md content (re-injected automatically)
+- Historical project context (available in `.claude/PROJECT_STATE.md`)
+- Full code snippets (available via file reads)
+- Tool output contents (available via re-reading files)
 
 ---
 
