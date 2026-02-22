@@ -83,8 +83,10 @@
       "Write(QMS/**)",
       "Edit(**/QMS/**)",
       "Write(**/QMS/**)",
-      "Edit(pipe-dream/qms-cli/**)",
-      "Write(pipe-dream/qms-cli/**)"
+      "Edit(qms-cli/**)",
+      "Write(qms-cli/**)",
+      "Edit(flow-state/**)",
+      "Write(flow-state/**)"
     ],
     "defaultMode": "acceptEdits"
   },
@@ -92,6 +94,17 @@
     "qms"
   ],
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/qms-write-guard.py\""
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [

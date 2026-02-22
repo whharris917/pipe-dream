@@ -1,0 +1,17 @@
+{
+  "doc_id": "INV-014",
+  "doc_type": "INV",
+  "version": "1.1",
+  "status": "IN_EXECUTION",
+  "executable": true,
+  "execution_phase": "post_release",
+  "responsible_user": "claude",
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": null,
+  "pending_assignees": [],
+  "completed_reviewers": [],
+  "review_outcomes": {
+    "qa": "RECOMMEND"
+  }
+}

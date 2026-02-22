@@ -1,0 +1,343 @@
+---
+title: 'CR-098 Direct Submodule Edit: SDLC Governance Bypass During INV-013 CAPA Execution'
+revision_summary: Initial draft
+---
+
+# INV-014: CR-098 Direct Submodule Edit: SDLC Governance Bypass During INV-013 CAPA Execution
+
+## 1. Purpose
+
+This investigation examines a procedural deviation in which CR-098 (INV-013 CAPA-001: template alignment) committed code changes directly to the `main` branch of the `qms-cli` submodule without following the execution branch workflow mandated by SOP-005 Section 7.1. No execution branch was created, no CI verification was performed, no pull request was opened, and no merge gate was passed. The changes were then pushed directly to origin/main, bypassing branch protection (GitHub reported "Required status check 'test' is expected"). This is the same class of governance failure investigated by INV-012, occurring despite the preventive controls added by INV-012's CAPAs (SOP-005 v6.0, SOP-002 v14.0).
+
+Subsequent investigation revealed that the `.claude/settings.local.json` deny rules intended to prevent direct writes to `qms-cli/` were misconfigured and never functional, removing a technical guardrail that was assumed to be in place.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+The deviation was discovered on 2026-02-22 during the same session (Session-2026-02-22-003) that executed INV-013's CAPAs. After closing INV-013, CR-098, and CR-099, the Lead asked to push qms-cli and then questioned whether the seed template changes had been made via direct edits to the controlled submodule. They had. Subsequent investigation into the write protection deny rules revealed they were misconfigured and ineffective.
+
+- **Triggering Event:** Lead identified direct submodule edits after push to origin/main
+- **Related Document:** CR-098, INV-013, INV-012
+
+### 2.2 Deviation Type
+
+Procedural deviation. The seed template changes themselves are correct (verified by CR-098 EI-7, diff confirmed all 9 pairs aligned). The deviation is the complete bypass of the SDLC governance workflow for a controlled codebase, compounded by the discovery that the technical write protection intended to prevent such bypasses was never functional.
+
+- **Type:** Procedural
+
+### 2.3 Systems/Documents Affected
+
+- `qms-cli/seed/templates/TEMPLATE-CR.md` — Edited directly on main
+- `qms-cli/seed/templates/TEMPLATE-ADD.md` — Edited directly on main
+- `qms-cli/seed/templates/TEMPLATE-VAR.md` — Edited directly on main
+- `qms-cli/seed/templates/TEMPLATE-ER.md` — Edited directly on main
+- `qms-cli/seed/templates/TEMPLATE-INV.md` — Edited directly on main
+- `qms-cli/seed/templates/TEMPLATE-SOP.md` — Edited directly on main
+- `qms-cli/seed/templates/TEMPLATE-TP.md` — Edited directly on main
+- `.claude/settings.local.json` — Deny rules for qms-cli are misconfigured; flow-state rules absent
+- `SOP-005` — Code Governance: does not specify `.test-env/` as required development location; does not mandate PRs as the only merge method; does not state all file types are subject to the workflow
+- `SOP-002` — Change Control: QA post-review checklist does not verify that code was integrated via PR
+- `TEMPLATE-CR` — Uses vague language ("or other gitignored location", "commit in qms-cli submodule") that enabled the bypass
+
+---
+
+## 3. Background
+
+### 3.1 Expected Behavior
+
+Per SOP-005 Section 7.1.1 (Execution Branch Workflow), all code changes to governed systems follow this sequence:
+
+1. Create execution branch from main
+2. Implement code changes
+3. Run tests — all must pass (CI-verified)
+4. Record the qualified commit
+5. Update RS and RTM, route to EFFECTIVE
+6. Merge to main (via `--no-ff`)
+7. Update parent repo submodule pointer
+
+The `qms-cli` repository is explicitly within SOP-005 scope ("QMS infrastructure code (e.g., QMS CLI)"). Seed templates in `qms-cli/seed/templates/` are part of this governed codebase.
+
+Additionally, `.claude/settings.local.json` contains deny rules intended to block direct Edit/Write operations to `qms-cli/`:
+
+```json
+"deny": [
+    "Edit(pipe-dream/qms-cli/**)",
+    "Write(pipe-dream/qms-cli/**)"
+]
+```
+
+These rules were expected to provide a technical enforcement layer — even if the agent forgot to follow SOP-005, the tooling would block the direct edits.
+
+### 3.2 Actual Behavior
+
+CR-098 EIs 3-7 edited 7 seed template files directly on the `main` branch of `qms-cli`. The changes were committed as `5124b4a` directly to main. No execution branch was created. No tests were run. No PR was opened. The submodule pointer in pipe-dream was updated correctly (this step, added by INV-012 CAPA-002, was followed). The commit was subsequently pushed to origin/main, with GitHub branch protection reporting the bypass: "Required status check 'test' is expected."
+
+The deny rules in `settings.local.json` did not block the edits because the patterns are misconfigured. Claude Code evaluates deny patterns relative to the working directory using gitignore-style matching. The pattern `pipe-dream/qms-cli/**` resolves to `{cwd}/pipe-dream/qms-cli/**`, which is `pipe-dream/pipe-dream/qms-cli/**` — a path that does not exist. The correct pattern would be `qms-cli/**` (relative to the working directory). This means the write protection has been non-functional since it was configured, and every direct edit to `qms-cli/` has silently bypassed it.
+
+### 3.3 Discovery
+
+Discovered on 2026-02-22 when the Lead asked about the qms-cli push and questioned whether direct edits had been made to the controlled submodule. The deny rule misconfiguration was discovered during subsequent investigation of why the write protection did not trigger.
+
+### 3.4 Timeline
+
+| Date | Event |
+|------|-------|
+| 2026-02-21 | INV-012 CLOSED: SOP-005 v6.0 adds submodule workflow steps, SOP-002 v14.0 adds submodule verification |
+| 2026-02-22 | INV-013 created for template divergence investigation |
+| 2026-02-22 | CR-098 pre-approved: implementation plan says "Commit seed template changes in qms-cli submodule" (no mention of branching or CI) |
+| 2026-02-22 | CR-098 EIs 3-7: seed templates edited directly on main, committed as `5124b4a` — deny rules do not fire |
+| 2026-02-22 | CR-098 post-approved and CLOSED; INV-013 CLOSED |
+| 2026-02-22 | Push to origin/main: branch protection bypass warning |
+| 2026-02-22 | Lead identifies the governance violation |
+| 2026-02-22 | Investigation reveals deny rules are misconfigured (path double-nests `pipe-dream/`) |
+
+---
+
+## 4. Description of Deviation(s)
+
+### 4.1 Facts and Observations
+
+**Deviation 1: The full SOP-005 Section 7.1.1 workflow was skipped.** Not a single step of the 7-step execution branch workflow was followed for the qms-cli code changes:
+
+| SOP-005 Step | Required | Actual |
+|--------------|----------|--------|
+| 1. Create execution branch | Yes | Skipped — committed directly to main |
+| 2. Implement code changes | Yes | Done (on main) |
+| 3. Run tests (CI-verified) | Yes | Skipped — no tests run |
+| 4. Record qualified commit | Yes | Skipped — no SDLC update |
+| 5. Update RS and RTM | Yes | Skipped — no SDLC update |
+| 6. Merge to main (--no-ff) | Yes | Skipped — already on main |
+| 7. Update submodule pointer | Yes | Done |
+
+Only steps 2 and 7 were performed. Steps 1, 3, 4, 5, and 6 were entirely skipped.
+
+This is a repeat of the INV-012 pattern, but worse. INV-012 investigated a governance failure where code was developed on a branch and merged, but the submodule pointer wasn't updated. In INV-014, the entire branching and CI workflow was bypassed — the code was committed directly to main without any intermediate governance.
+
+**Deviation 2: Write protection deny rules are misconfigured and non-functional.**
+
+The `settings.local.json` deny rules use the pattern `pipe-dream/qms-cli/**`. Claude Code uses gitignore-style path matching, where bare paths (without a leading `/` or `//`) are evaluated relative to the current working directory. Since the working directory is `pipe-dream/`, the pattern resolves to `pipe-dream/pipe-dream/qms-cli/**` — a path that never exists.
+
+The correct patterns should be:
+- `qms-cli/**` (bare path, resolved relative to cwd)
+- Or `/qms-cli/**` (leading `/`, resolved relative to settings file location)
+
+Additionally, no deny rules exist for the `flow-state/` submodule, leaving the entire application codebase unprotected.
+
+The QMS deny rules (`Edit(QMS/**)`, `Write(QMS/**)`) use the correct pattern format — they don't include the project directory prefix — so those rules appear functional.
+
+**Deviation 3: SOP-005 gaps enable the bypass.**
+
+The following specific gaps in SOP-005 v6.0 contributed to the deviation:
+
+| Gap | Location | Current Text | Problem |
+|-----|----------|-------------|---------|
+| No development location specified | Section 7.1.1, line 139 | "Create execution branch from main" | Does not say WHERE — no mention of `.test-env/` |
+| No PR requirement | Section 7.1.3, lines 175-178 | "Code shall not be merged to main until: [prerequisites]" | Specifies merge prerequisites and merge type but not merge METHOD — does not say "via PR" |
+| File type scope ambiguous | Section 7.1.1, lines 161-165 | "Used for: Adding features, Bug fixes, Refactoring, Any modification to existing code" | Says "code" — does not explicitly include templates, configuration, and documentation within the governed codebase |
+| No prohibition on direct commits | Section 7.1.3 (entire) | N/A | No statement prohibiting direct commits to main, force-push, or local merge + push |
+
+**Deviation 4: TEMPLATE-CR uses vague language in multiple locations.**
+
+| Gap | Location | Current Text | Problem |
+|-----|----------|-------------|---------|
+| Vague development location | Section 7.4, line 205 | "e.g., `.test-env/`, `/projects/` for containerized agents, or other gitignored location" | "or other gitignored location" provides no enforceable constraint |
+| Vague development location | Section 9.1, line 273 | "e.g., `.test-env/`, `/projects/`, or other appropriate location" | "or other appropriate location" is subjective and undefined |
+| Vague seed workflow | TEMPLATE CR PATTERNS, line 104 | "Seed copy: commit in qms-cli submodule, update submodule pointer" | "commit in qms-cli submodule" implies direct commit; does not reference SOP-005 execution branch workflow |
+| No enforcement language | Section 9.7, line 345 | "Create PR to merge dev branch to main" | Says "Create PR" but does not state it is mandatory, does not mention CI checks must pass, does not prohibit alternatives |
+
+**Deviation 5: SOP-002 Section 7.3 does not verify PR workflow was used.**
+
+SOP-002 Section 7.3 QA Post-Review Verification (lines 218-229) verifies execution outcomes, document status, SDLC prerequisites, submodule reachability, and template alignment. It does NOT verify:
+- That code was integrated via GitHub PR merge (not direct commit)
+- That no direct commits to main occurred during CR execution
+- That a PR exists and contains CI verification evidence
+
+An agent could bypass the entire PR workflow, and QA post-review would not detect the violation because the checklist does not cover it.
+
+### 4.2 Evidence
+
+- `qms-cli` git log: commit `5124b4a` is on `main` with no merge commit, no branch history
+- GitHub push output: "Bypassed rule violations for refs/heads/main: Required status check 'test' is expected"
+- `.claude/settings.local.json` lines 86-87: `"Edit(pipe-dream/qms-cli/**)"`, `"Write(pipe-dream/qms-cli/**)"`
+- Claude Code documentation: deny patterns with bare paths are evaluated relative to the current working directory
+- CR-098 Section 9.3: "Commit seed template changes in qms-cli submodule" (no branching language)
+- TEMPLATE-CR line 104: "Seed copy: commit in qms-cli submodule" (no branching language)
+- TEMPLATE-CR line 205: "or other gitignored location" (vague)
+- TEMPLATE-CR line 273: "or other appropriate location" (vague)
+- SOP-005 Section 7.1.1 line 139: "Create execution branch from main" (no location specified)
+- SOP-005 Section 7.1.3 lines 175-178: merge prerequisites without PR requirement
+- SOP-005 Section 7.1.1 lines 161-165: "Used for" list says "code" without explicit mention of templates/config/docs
+- SOP-002 Section 7.3 lines 218-229: no PR verification bullet
+- No execution branch exists in qms-cli for CR-098
+- No PR exists in qms-cli for CR-098
+- No CI run exists for commit `5124b4a`
+
+---
+
+## 5. Impact Assessment
+
+### 5.1 Systems Affected
+
+| System | Impact | Description |
+|--------|--------|-------------|
+| qms-cli | Low | The changes are correct (verified by CR-098 EI-7) but were not CI-verified. Tests may or may not pass at `5124b4a`. |
+| Write protection | High | Deny rules for qms-cli have been non-functional since configured. No deny rules exist for flow-state. Both submodules are unprotected. |
+| SDLC-QMS-RTM | None | No SDLC version increment was planned for CR-098 (template-only changes, no functional code) |
+
+### 5.2 Documents Affected
+
+| Document | Impact | Description |
+|----------|--------|-------------|
+| CR-098 | Medium | CLOSED with governance bypass |
+| SOP-005 | Medium | Missing development location, PR mandate, and file type scope — four specific gaps identified in Section 4.1 |
+| TEMPLATE-CR | Medium | Vague language in four locations enables bypass — specific text identified in Section 4.1 |
+| SOP-002 | Low | Missing PR verification bullet in QA post-review checklist |
+
+### 5.3 Other Impacts
+
+**Governance credibility:** This is the second investigation into SDLC governance bypass for qms-cli within the same day. INV-012's CAPAs were insufficient to prevent recurrence because they addressed specific failure modes (missing submodule pointer) rather than the systemic issue (complete SDLC bypass).
+
+**Pattern recognition:** Both INV-012 and INV-014 share a common pattern — the agent treats qms-cli changes as "simple" operations that don't warrant the full SDLC workflow. The underlying behavior is a failure to recognize that ALL changes to qms-cli, regardless of file type, are SDLC-governed code changes requiring the full SOP-005 workflow.
+
+**Containerization as a mitigating architecture:** The containerization framework (`agent-hub/docker/`) largely prevents this failure mode by design: containers mount `pipe-dream/` as read-only (including submodules), and all code development occurs in `/projects/` within the container. Changes can only reach the production repository through the Git MCP server, which blocks destructive operations. The current deviation occurred because the Lead has not been using Claude in containers recently. Nonetheless, the procedural and technical controls must be strengthened for local (non-containerized) development to provide equivalent protection.
+
+---
+
+## 6. Root Cause Analysis
+
+### 6.1 Contributing Factors
+
+1. **Template changes perceived as "document-like":** Seed templates are markdown files that define document structure. The agent categorized them as document-like edits rather than SDLC-governed code changes, leading to a direct-edit approach rather than the execution branch workflow.
+
+2. **CR implementation plan did not specify workflow:** CR-098 Section 9.3 describes what to change but not how to govern the change. It says "Commit seed template changes" without specifying "in `.test-env/`, on an execution branch, with CI, via PR." The plan was pre-approved without this gap being caught.
+
+3. **TEMPLATE-CR uses enabling language in multiple locations:** The TEMPLATE CR PATTERNS section says "commit in qms-cli submodule" (implies direct commit is acceptable). Section 7.4 says "or other gitignored location" and Section 9.1 says "or other appropriate location" (no enforceable constraint on development location).
+
+4. **SOP-005 does not specify development location, PR requirement, or file type scope:** The execution branch workflow (Section 7.1.1) says "Create execution branch from main" without specifying where development occurs. The merge gate (Section 7.1.3) specifies merge prerequisites and merge type but not merge method (PR). The "Used for" list says "code" without explicitly including templates, configuration, and documentation.
+
+5. **Write protection deny rules were never functional:** The deny patterns in `settings.local.json` use `pipe-dream/qms-cli/**` which double-nests the project directory and never matches. This technical guardrail, which was assumed to be in place, has been silently non-functional since configuration. No deny rules exist for `flow-state/` at all.
+
+6. **SOP-002 QA post-review does not verify PR workflow:** The QA post-review checklist (Section 7.3) verifies submodule reachability and template alignment, but does not verify that code changes were integrated via PR. This means QA cannot detect direct commits to main during post-review even with a thorough review.
+
+7. **INV-012 CAPAs addressed a symptom, not the disease:** INV-012's preventive actions focused on the specific failure mode (missing submodule pointer) rather than the systemic issue (agent does not reliably apply SOP-005 to qms-cli changes).
+
+8. **Velocity pressure from compound task:** The agent was executing INV-013's three CAPAs across two CRs in a single session, managing QMS document workflows for 9 templates. The cognitive load may have displaced attention from the parallel SDLC governance requirement.
+
+### 6.2 Root Cause(s)
+
+**Primary root cause:** Multiple layers of defense that should have prevented this deviation were either absent, misconfigured, or too vague to be effective:
+
+- SOP-005 does not specify `.test-env/` as the required development location, does not mandate PRs as the only merge method, and does not state that all file types within governed systems are subject to the workflow
+- TEMPLATE-CR uses vague language ("or other gitignored location", "commit in qms-cli submodule") that permits direct commits without the execution branch workflow
+- SOP-002 QA post-review checklist does not include PR verification, so governance bypasses are not detected during review
+- The deny rules in `settings.local.json` are misconfigured (path double-nesting) and non-functional, and `flow-state/` has no deny rules at all
+
+**Contributing root cause:** The agent does not have a reliable trigger to recognize when file edits constitute SDLC-governed code changes. The QMS document control workflow (checkout/checkin) provides explicit procedural guardrails enforced by tooling; the SDLC workflow depends on voluntary compliance with no enforcement mechanism when working outside containers.
+
+---
+
+## 7. Remediation Plan (CAPAs)
+
+<!--
+CAPA EXECUTION INSTRUCTIONS
+===========================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+- Sections 1-6 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the sections below should be edited during execution phase
+
+CAPA TYPES (per SOP-003 Section 6):
+- Corrective Action: Eliminate cause of existing deviation and/or remediate consequences
+- Preventive Action: Eliminate cause of potential future deviation; continuous improvement
+
+COLUMNS:
+- CAPA: CAPA identifier (e.g., INV-001-CAPA-001)
+- Type: Corrective or Preventive
+- Description: What the CAPA accomplishes (static)
+- Implementation: How it will be implemented, child CR references (editable)
+- Outcome: Pass or Fail (editable)
+- Verified By - Date: Signature (editable)
+
+CHILD CRs:
+CAPAs may spawn child CRs. Reference them in the Implementation column.
+All child CRs must be CLOSED before the INV can be closed.
+
+EXECUTION ORDER:
+CAPA-001 (deny rule fix) must be completed BEFORE the child CR begins execution.
+This validates that the deny rules block direct writes to qms-cli/ during the
+child CR's seed template work, which must occur in .test-env/.
+
+CAPA-002 (test verification) should be completed BEFORE the child CR begins
+execution to resolve the open question about commit 5124b4a's safety.
+
+Within the child CR, SOP-005 must reach EFFECTIVE status BEFORE the seed
+template work begins (EI-3 before EI-8), because the seed changes must
+follow the very rules being established.
+-->
+
+| CAPA | Type | Description | Implementation | Outcome | Verified By - Date |
+|------|------|-------------|----------------|---------|---------------------|
+| INV-014-CAPA-001 | Corrective | Fix deny rules in `.claude/settings.local.json`: correct the qms-cli patterns from `pipe-dream/qms-cli/**` to `qms-cli/**`, and add equivalent deny rules for `flow-state/**`. Verify both sets of rules block Edit/Write operations. Direct INV execution (not a controlled document). | Corrected deny patterns and added flow-state rules. During verification, discovered that **all Claude Code deny rules are non-functional** due to a known platform bug (GitHub issues #8961, #6699, #6631). Both old QMS deny rules and new qms-cli/flow-state rules silently pass. Implemented a PreToolUse hook (`qms-write-guard.py`) as the actual enforcement mechanism — extended the existing QMS write guard to also protect `qms-cli/` and `flow-state/`. Wired hook into `settings.local.json` as a `PreToolUse` handler matching `Edit\|Write`. Verified all three directories are blocked: `qms-cli/` (blocked), `flow-state/` (blocked), `QMS/` (blocked). Deny rules retained as defense-in-depth for when platform bug is fixed. | Pass | claude - 2026-02-22 |
+| INV-014-CAPA-002 | Corrective | Retroactively verify the ungoverned commit: run qms-cli test suite against `5124b4a` in `.test-env/qms-cli/` to confirm no regressions. Document CI-equivalent evidence. Direct INV execution. | Checked out commit `5124b4a` in `.test-env/qms-cli/`. Ran `python -m pytest tests/ -v --tb=short`. Result: **673 passed in 324.15s (0:05:24)**. Zero failures. CI-equivalent evidence confirms the ungoverned commit introduced no regressions. | Pass | claude - 2026-02-22 |
+| INV-014-CAPA-003 | Preventive | Update SOP-005 Section 7.1 to: (a) add a "Development Environment" subsection specifying `.test-env/{system}/` as the only permitted local development location and `/projects/{system}/` as the only permitted container location, stating that production submodule copies must never be edited directly and that all file types within a governed system are subject to the workflow; (b) add a "Merge method" paragraph to Section 7.1.3 mandating PRs as the exclusive merge method and prohibiting direct commits, force-push, and local merge + push; (c) append to the existing submodule pointer paragraph in Section 7.1.3 that the pointer update must occur only after PR merge; (d) add "templates, configuration, and documentation" to the "Used for" list. Also update SOP-002 Section 7.3 QA Post-Review Verification to add a bullet requiring QA to verify code was integrated via GitHub PR merge. Via child CR (bundled with CAPA-004). | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-014-CAPA-004 | Preventive | Update TEMPLATE-CR to align with SOP-005 changes: (a) Section 7.4 Development Controls line 205: replace "Development in a non-QMS-controlled directory (e.g., `.test-env/`, `/projects/` for containerized agents, or other gitignored location)" with "Development in `.test-env/` (local) or `/projects/` (containerized agents). No other locations are permitted."; (b) Section 9.1 Phase 1 line 273: replace "Verify/create a non-QMS-controlled working directory (e.g., `.test-env/`, `/projects/`, or other appropriate location)" with "Verify/create the required development directory: `.test-env/` (local) or `/projects/` (containerized agents)"; (c) TEMPLATE CR PATTERNS line 104: replace "Seed copy: commit in qms-cli submodule, update submodule pointer" with "Seed copy: follow the SOP-005 Section 7.1 execution branch workflow — develop in `.test-env/`, create execution branch, run CI, merge via PR, then update submodule pointer in parent repo"; (d) Section 9.7 Phase 7 line 345: add enforcement language stating PR must pass all CI checks before merge and direct commits to main are prohibited; (e) update seed copy of TEMPLATE-CR in `qms-cli/seed/templates/` to match, following the SOP-005 execution branch workflow for the seed change itself. Via child CR (bundled with CAPA-003). | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 4-6 during execution.
+-->
+
+---
+
+## 8. Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| CAPA-001 executed. Deny rules corrected + flow-state added. | claude - 2026-02-22 |
+| **Critical finding during CAPA-001:** All Claude Code deny rules in settings.local.json are non-functional due to a known platform bug (GitHub #8961, #6699, #6631). This affects all platforms. The existing QMS deny rules (`Edit(QMS/**)`) have been silently non-functional since configured — QMS write protection was actually provided by the PreToolUse hook in `qms-write-guard.py`, not by deny rules. Extended the hook to cover `qms-cli/` and `flow-state/`. The deny rules are retained as defense-in-depth. | claude - 2026-02-22 |
+| CAPA-002 executed. 673 tests passed at commit `5124b4a` in 324.15s. No regressions. | claude - 2026-02-22 |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during CAPA execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual CAPA, but apply to the INV as a whole.
+-->
+
+---
+
+## 9. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all CAPAs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 10. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control (Section 7.3 — QA post-review requirements; gap: no PR verification)
+- **SOP-003:** Deviation Management
+- **SOP-005:** Code Governance (Section 7.1 — Execution Branch Workflow; gaps: no development location, no PR mandate, no file type scope, no direct commit prohibition)
+- **TEMPLATE-CR:** Change Record Template (Section 7.4, 9.1, 9.7, TEMPLATE CR PATTERNS; gaps: vague location language, vague seed workflow, no enforcement language)
+- **INV-012:** CR-091 Governance Failure (predecessor investigation, same class of deviation)
+- **INV-013:** Seed-QMS Template Divergence (parent investigation whose CAPA execution triggered this deviation)
+- **CR-098:** CAPA-001 child CR (CLOSED — the CR with the governance bypass)
+- **CR-099:** CAPA-002/003 child CR (CLOSED — authored the vague TEMPLATE CR PATTERNS language)
+
+---
+
+**END OF DOCUMENT**

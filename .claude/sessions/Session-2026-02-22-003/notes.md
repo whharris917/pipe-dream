@@ -1,11 +1,11 @@
 # Session-2026-02-22-003
 
-## Current State (last updated: INV-013 CLOSED)
-- **Active documents:** None from this session — all CLOSED
-- **Current EI:** N/A — all complete
+## Current State (last updated: INV-014 IN_EXECUTION)
+- **Active documents:** INV-014 (IN_EXECUTION v1.0)
+- **Current EI:** Starting CAPA-001 execution (fix deny rules)
 - **Blocking on:** Nothing
-- **Next:** Update PROJECT_STATE.md, then session complete
-- **Subagent IDs:** qa=a64d7bf284f125ea7
+- **Next:** CAPA-001 → CAPA-002 → child CR for CAPA-003/004
+- **Subagent IDs:** qa=a31e09eaea08d2504
 
 ## Progress Log
 
@@ -54,6 +54,18 @@
 - INV-013: updated CAPA table + execution summary, checked in (v1.2)
 - INV-013: post-reviewed → recommended → post-approved → CLOSED (v2.0)
 - Closure commit `2f53fc4`
+
+### INV-014: CR-098 Direct Submodule Edit Governance Bypass
+- Created INV-014, authored 10 sections (5 deviations, 4 CAPAs)
+- First draft had 2 CAPAs — user requested deeper investigation
+- Discovered broken deny rules in settings.local.json (double-nesting paths)
+- Rewrote with 4 CAPAs: deny rule fix, retroactive testing, SOP-005/SOP-002 tightening, TEMPLATE-CR tightening
+- User requested plan mode audit — comprehensive plan written and approved
+- User requested INV withdrawal + rewrite to match plan detail level
+- Withdrew, rewrote with full gap tables (exact lines, exact text), precise from/to changes
+- Checked in (v0.1), routed for pre-review → QA recommended
+- Routed for pre-approval → QA approved (v1.0)
+- Released for execution → IN_EXECUTION
 
 ### Key Commits
 - `bcc5375` — Pre-execution baseline
