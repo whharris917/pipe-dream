@@ -1,0 +1,60 @@
+{
+  "doc_id": "CR-091-ADD-001-VR-001",
+  "template": "VR",
+  "template_version": 5,
+  "cursor": "step_actual",
+  "cursor_context": {
+    "loop": "steps",
+    "iteration": 1
+  },
+  "metadata": {
+    "parent_doc_id": "CR-091-ADD-001",
+    "vr_id": "CR-091-ADD-001-VR-001",
+    "title": ""
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-2",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:34:52Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that the interactive document authoring system correctly walks an author through a structured VR template, records responses with per-entry attribution, handles the verification step loop (including atomic commits on evidence capture), and compiles the source into a well-formed VR markdown document at checkin.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:35:04Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "Repository: pipe-dream on main branch at commit fa3f698. qms-cli submodule at d73f154 (CLI-14.0, 673 tests). Python 3.11.14. Windows 11 Home, Git Bash. QMS MCP server running on port 8000. CR-091-ADD-001-VR-001 checked out with interactive session initialized (template VR v5). TEMPLATE-VR v5 (interactive) deployed as seed template.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:35:31Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Verify that the --progress flag displays all template prompts with correct fill status. This tests REQ-INT-015 (progress tracking). Command: python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --progress",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:35:45Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "A list of all prompts in the VR template. The first three (related_eis, objective, pre_conditions) should show [x] (filled). step_instructions.1 should show [x] (just recorded). step_expected.1 should show [ ] (current prompt, not yet filled). All subsequent prompts in the steps loop should not appear yet (loop iteration 1 is active). No error messages.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:35:58Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": false,
+      "reopenings": []
+    }
+  },
+  "gates": {}
+}
