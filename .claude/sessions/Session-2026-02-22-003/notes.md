@@ -1,10 +1,10 @@
 # Session-2026-02-22-003
 
-## Current State (last updated: CR-100 EI-10)
-- **Active documents:** INV-014 (IN_EXECUTION v1.1), CR-100 (IN_EXECUTION v1.0)
-- **Current EI:** CR-100 EI-10 (test suite running on cr-100 branch)
-- **Blocking on:** pytest completion
-- **Next:** EI-10 push/CI → EI-11 PR/merge → EI-12 alignment → EI-13 submodule → EI-14 baseline
+## Current State (last updated: INV-014 POST_REVIEWED)
+- **Active documents:** INV-014 (POST_REVIEWED v1.2) — QA recommended, ready for post-approval
+- **CR-100:** CLOSED (v2.0) — child CR complete
+- **Blocking on:** Nothing
+- **Next:** Route INV-014 for post-approval → QA approve → CLOSE → commit → update PROJECT_STATE
 - **Subagent IDs:** qa=a31e09eaea08d2504
 
 ## Progress Log
@@ -80,10 +80,30 @@
 - EI-7: SOP-002 v16.0 EFFECTIVE (PR merge verification in QA post-review)
 - EI-8: .test-env/qms-cli/ branch cr-100 created from main (5124b4a)
 - EI-9: Seed TEMPLATE-CR changes applied in .test-env/. Hook .test-env/ exception added.
-- EI-10: Tests running...
+- EI-10: 673 tests pass (356.92s), pushed to origin/cr-100, CI passed
+- EI-11: PR #18 created and merged as `2a32576`
+- EI-12: Seed/QMS alignment verified (identical from example frontmatter)
+- EI-13: Submodule pointer updated 5124b4a → 2a32576
+- EI-14: Post-execution baseline at `f40d773`
+- QA post-reviewed → request-updates (missing execution summary)
+- Added execution summary, re-routed → QA recommended
+- QA post-approved (v2.0) → CLOSED
+
+### INV-014 CAPA Execution Results
+- CAPA-001: Pass — deny rules fixed + PreToolUse hook (platform bug discovery)
+- CAPA-002: Pass — 673 tests pass at 5124b4a
+- CAPA-003: Pass — SOP-005 v7.0, SOP-002 v16.0 EFFECTIVE (via CR-100)
+- CAPA-004: Pass — TEMPLATE-CR v10.0 EFFECTIVE, seed aligned via PR #18 (via CR-100)
+- INV-014 updated with all CAPA results + execution summary
+- INV-014 post-reviewed → QA recommended
+- **NEXT:** Route for post-approval → approve → close
 
 ### Key Commits
-- `bcc5375` — Pre-execution baseline
-- `5124b4a` — Seed template changes (qms-cli submodule)
-- `323640d` — Post-execution state (EI tables, INV-013 CAPAs)
+- `bcc5375` — Pre-execution baseline (INV-013 CAPAs)
+- `5124b4a` — Seed template changes (qms-cli submodule, the governed bypass)
+- `323640d` — Post-execution state (INV-013 CAPAs)
 - `2f53fc4` — INV-013 CLOSED with both child CRs
+- `5a5a4d2` — INV-014 CAPA-001/002 executed (deny rules + retroactive tests)
+- `6673e10` — CR-100 pre-execution baseline
+- `2a32576` — Seed TEMPLATE-CR merged via PR #18 (qms-cli)
+- `f40d773` — CR-100 post-execution baseline
