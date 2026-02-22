@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 1
+    "iteration": 2
   },
   "metadata": {
     "parent_doc_id": "CR-096",
@@ -47,14 +47,48 @@
         "author": "claude",
         "timestamp": "2026-02-22T17:22:42Z"
       }
+    ],
+    "step_actual.1": [
+      {
+        "value": "Script exited with code 0. compaction-log.txt created with content:\n\n2026-02-22T12:20:50 | COMPACTION (manual) | transcript: /test/transcript.jsonl\n\nSingle line as expected. No other session files modified. Observation matches expected behavior.",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:22:55Z",
+        "commit": "fa515d7"
+      }
+    ],
+    "step_outcome.1": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:23:07Z"
+      }
+    ],
+    "step_instructions.2": [
+      {
+        "value": "Test post-compaction recovery hook by simulating SessionStart event via stdin JSON:\n\necho '{\"cwd\": \"C:/Users/wilha/projects/pipe-dream\"}' | python .claude/hooks/post-compact-recovery.py",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:23:31Z"
+      }
+    ],
+    "step_expected.2": [
+      {
+        "value": "1. Script exits with code 0\n2. stdout contains '=== POST-COMPACTION RECOVERY ===' banner\n3. stdout contains 'Session: Session-2026-02-22-001'\n4. stdout contains the full content of notes.md (Current State block and Progress Log)\n5. stdout ends with '=== END RECOVERY CONTEXT ==='\n6. No files are created or modified by the script (output-only)",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:23:45Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 1,
+      "iterations": 2,
       "closed": false,
       "reopenings": []
     }
   },
-  "gates": {}
+  "gates": {
+    "more_steps.1": {
+      "value": "yes",
+      "timestamp": "2026-02-22T17:23:19Z"
+    }
+  }
 }
