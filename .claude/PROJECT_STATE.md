@@ -95,15 +95,11 @@
 
 Lead-identified improvements from reviewing CR-094-ADD-001-VR-001 output:
 
-**Template changes (TEMPLATE-VR):**
-1. Remove `date` prompt — derivable from response timestamps
-2. Remove `performer` and `performed_date` prompts; eliminate Signature section — performer is the responsible user
-3. Remove References section — no value for VRs
-4. Rename "Pre-Conditions" to "Prerequisites"
+**Core principle:** All author responses (outside tables) rendered as blockquotes or code fences, with attribution BELOW the block. No inline rendering. No "label context." Redundant labels stripped.
 
-**Compiler changes (interact_compiler.py):**
-5. Fix blockquote attribution placement — attribution should render BELOW the blockquote, not inside it
-6. Auto-generate document metadata (date, performer) from source data instead of author-provided fields
+**Template (TEMPLATE-VR):** Remove `date`, `performer`, `performed_date` prompts. Eliminate Signature and References sections. Rename "Pre-Conditions" to "Prerequisites". Strip redundant labels where placeholder is sole section content (e.g., `**Objective:**`).
+
+**Compiler (interact_compiler.py):** Fix blockquote attribution placement (below block, not inside). All non-table responses block-rendered. Auto-generate metadata (date, performer) from source data.
 
 ### Then: Resume CR-091-ADD-001
 

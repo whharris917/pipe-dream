@@ -55,28 +55,46 @@ Lead identified that EI-12's VR column said "Yes" but no formal VR was ever crea
 
 The Lead reviewed the VR output from CR-094-ADD-001-VR-001 and identified several template and compiler improvements needed. These form the scope of a next CR:
 
+### Design Principle: Author Content Must Be Visually Distinct
+
+The compiled VR should make it immediately obvious what the author wrote versus what the template provided. The rendering rule is simple:
+
+- **Table context:** Value only, no attribution, no wrapping. (Already correct from CR-094.)
+- **Everything else:** Author responses rendered as blockquotes (`> `) or code fences, with attribution BELOW the block — never inside it, never inline.
+
+There is no "label context" category. A response is either in a table cell or it's in a block. Labels like `**Objective:**` that merely repeat the section heading are removed from the template entirely — the heading already provides context.
+
 ### Template Changes (TEMPLATE-VR)
 
-1. **Remove `date` prompt entirely.** The date is already captured programmatically in response timestamps. Asking the author to type "2026-02-21" is redundant busywork. The compiled output should derive the date from the first response timestamp or from document metadata.
+1. **Remove `date` prompt.** Derivable from response timestamps / document metadata. Redundant busywork.
 
-2. **Remove `performer` and `performed_date` prompts; eliminate Section 6 (Signature).** The performer is the document's responsible user (known from QMS metadata). The date is derivable as above. The Signature section is ceremony with no informational value beyond what's already in the attribution lines.
+2. **Remove `performer` and `performed_date` prompts; eliminate Signature section.** The performer is the document's responsible user (QMS metadata). Dates are in every attribution line.
 
-3. **Remove Section 7 (References).** Parent document is already in the Identification table. SOP-004 is always the governing SOP. This section adds no value for VRs.
+3. **Remove References section.** Parent document is in the Identification table. SOP-004 is always the governing SOP. No value added.
 
-4. **Rename "Pre-Conditions" to "Prerequisites"** throughout the template.
+4. **Rename "Pre-Conditions" to "Prerequisites"** throughout.
+
+5. **Remove redundant labels.** Where a `{{placeholder}}` is the sole content of a section, strip the label (e.g., `**Objective:** {{objective}}` becomes just `{{objective}}`). The section heading already names the content. Applies to: Objective, Pre-Conditions/Prerequisites, Summary Narrative, and likely others.
 
 ### Compiler Changes (interact_compiler.py)
 
-5. **Fix attribution placement for all response contexts.** Currently only `step_actual` (code-fenced) is properly formatted. The pattern should be:
+6. **Blockquote attribution goes BELOW the block, not inside it.** Currently `_substitute_line()` wraps the entire result (value + attribution) in `> ` prefix. The fix: blockquote the value only, then render attribution on a separate line after the closing blockquote.
 
-   - **Block context** (standalone `{{placeholder}}`): Response in blockquote, attribution BELOW the blockquote (not inside it). Currently attribution is inside the `> ` block.
+   Current (wrong):
+   ```
+   > Response text here.
+   > *-- claude, 2026-02-21 23:48:07*
+   ```
 
-   - **Label context** (`**Label:** {{placeholder}}`): Response inline after label, attribution on next line below. Currently this works but should be verified after the block context fix.
+   Target:
+   ```
+   > Response text here.
 
-   - **Table context**: Value only, no attribution. (Already correct from CR-094.)
+   *-- claude, 2026-02-21 23:48:07*
+   ```
 
-   The core issue: Section 2 (Objective) renders as label context with attribution on the same conceptual level. Section 3 (Pre-Conditions) renders as block context but puts attribution inside the blockquote. The "Actual" field in steps renders correctly because code fences naturally separate content from attribution. The fix is to ensure blockquote attribution goes BELOW the closing `> ` line, not inside it.
+7. **All non-table responses are block-rendered.** No inline rendering. If a line has `**Label:** {{placeholder}}`, the compiled output should be the label on one line, then the response as a blockquote below it, then attribution below that. (Or, per item 5, the label may be removed entirely if redundant with the heading.)
 
 ### Programmatic Metadata
 
-6. **Auto-generate document metadata in compiled output.** The Identification table's Date column, and the removed Signature section, should be replaced by metadata derived from the source file: responsible user, first/last response timestamps, parent document ID. This keeps the VR self-documenting without requiring the author to manually enter derivable facts.
+8. **Auto-generate document metadata in compiled output.** The Identification table's Date column and the removed Signature section should be replaced by metadata derived from the source file: responsible user, first/last response timestamps, parent document ID.
