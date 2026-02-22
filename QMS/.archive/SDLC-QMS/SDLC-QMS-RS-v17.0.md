@@ -1,6 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-095: Attachment auto-close, VR template v5, compiler refinements'
+revision_summary: 'CR-094: Add @end-prompt to REQ-INT-001 tag vocabulary'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -356,9 +356,6 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-DOC-015 | **Addendum Parent State.** ADD documents shall only be created against parents in CLOSED state. The CLI shall reject ADD creation when the parent document status is not CLOSED. |
 | REQ-DOC-016 | **VR Parent State.** VR documents shall only be created against parents in IN_EXECUTION state. The CLI shall reject VR creation when the parent document status is not IN_EXECUTION. |
 | REQ-DOC-017 | **VR Initial Status.** VR documents shall be created with initial status IN_EXECUTION at version 1.0 with execution_phase set to post_release. The approved VR template serves as the pre-approval authority (batch record model). VR documents are checked out at creation, ready for the performer to fill in. |
-| REQ-DOC-018 | **Attachment Document Classification.** Document types may be classified as attachments via the `attachment` property in the DOCUMENT_TYPES registry. Attachment documents are subsidiary to their parent and follow simplified lifecycle rules (REQ-DOC-019, REQ-DOC-020). VR is an attachment type. |
-| REQ-DOC-019 | **Terminal State Checkout Guard.** The CLI shall reject checkout of documents in terminal states (CLOSED, RETIRED) with an informative error message. This guard applies to all document types. |
-| REQ-DOC-020 | **Cascade Close of Attachments.** When a parent document is closed, the CLI shall automatically close all child attachment documents that are not already in a terminal state. For each attachment: (1) if checked out with an interactive session or stored source data, auto-compile before closing; (2) if a draft file exists, promote it to effective; (3) update metadata to CLOSED status, clear ownership and checkout fields; (4) log CLOSE and STATUS_CHANGE audit events; (5) clean up workspace files. Attachments may be closed from any non-terminal status (the parent's post-approval validates attachment content). |
 
 ---
 
@@ -585,14 +582,6 @@ The interaction system provides template-driven interactive authoring for VR doc
 | REQ ID | Requirement |
 |--------|-------------|
 | REQ-INT-022 | **MCP Interact Tool.** The MCP server shall expose a `qms_interact` tool that is functionally equivalent to the `qms interact` CLI command, consistent with REQ-MCP-007 (functional equivalence). |
-
-#### 4.14.8 Compilation Enhancements
-
-| REQ ID | Requirement |
-|--------|-------------|
-| REQ-INT-023 | **Auto-Generated Metadata.** The compiler shall auto-generate `date`, `performer`, and `performed_date` metadata fields from response timestamps and authors when not explicitly present in source data. `date` shall be the earliest response date, `performer` shall be the most frequent response author, and `performed_date` shall be the latest response date. These values are injected into source metadata before template substitution. |
-| REQ-INT-024 | **Block Rendering.** All non-table lines containing response substitutions shall use block rendering: response values rendered inside blockquotes using `_render_value_only()`, with attribution lines rendered below the closing blockquote (not inside it) using `_render_attributions()`. Table lines continue to use inline rendering. |
-| REQ-INT-025 | **Step Subsection Numbering.** Loop-expanded step headings shall use subsection numbering in the format `### N.n Step n` where N is the parent section number and n is the step iteration counter (e.g., `### 4.1 Step 1`, `### 4.2 Step 2`). The loop expansion regex and heading generation shall produce this format. |
 
 ---
 

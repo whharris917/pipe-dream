@@ -1,23 +1,24 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-095: Add REQ-DOC-018/019/020 (attachment lifecycle), REQ-INT-023/024/025
-  (compiler enhancements); qualified baseline 31f8306 (cr-095 branch, 673 tests)'
+revision_summary: 'CR-094: Add @end-prompt tests to REQ-INT-001, compilation defect
+  tests to REQ-INT-016; qualified baseline updated to c676b61 (cr-094 branch, 643
+  tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v18.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v17.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 139 requirements defined in SDLC-QMS-RS across the following domains:
+This RTM covers all 133 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
-- REQ-DOC (Document Management): 20 requirements
+- REQ-DOC (Document Management): 17 requirements
 - REQ-WF (Workflow): 23 requirements
 - REQ-META (Metadata): 4 requirements
 - REQ-AUDIT (Audit Trail): 4 requirements
@@ -29,7 +30,7 @@ This RTM covers all 139 requirements defined in SDLC-QMS-RS across the following
 - REQ-INIT (Project Initialization): 8 requirements
 - REQ-USER (User Management): 5 requirements
 - REQ-MCP (MCP Server): 16 requirements
-- REQ-INT (Interaction System): 25 requirements
+- REQ-INT (Interaction System): 22 requirements
 
 ---
 
@@ -64,9 +65,8 @@ Tests are organized by workflow scenario rather than individual requirement. Eac
 | Interaction Parser | `test_interact_parser.py` | Template tag parsing, header, prompts, gates, loops |
 | Interaction Source | `test_interact_source.py` | Source data model, session/source files, append-only responses |
 | Interaction Engine | `test_interact_engine.py` | Engine behavior, cursor, sequential enforcement, interpolation |
-| Interaction Compiler | `test_interact_compiler.py` | Compilation, tag stripping, amendment rendering, block rendering, auto-metadata |
+| Interaction Compiler | `test_interact_compiler.py` | Compilation, tag stripping, amendment rendering |
 | Interaction Integration | `test_interact_integration.py` | Checkout/checkin/read integration, atomic commits, MCP parity |
-| Attachment Lifecycle | `test_attachment_lifecycle.py` | Attachment classification, terminal state guard, cascade close |
 
 ### 3.4 Traceability Convention
 
@@ -103,9 +103,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-DOC-015 | Addendum Parent State | test_document_types::test_create_add_requires_closed_parent, test_create_add_under_cr | PASS |
 | REQ-DOC-016 | VR Parent State | test_document_types::test_create_vr_under_cr, test_vr_requires_in_execution_parent | PASS |
 | REQ-DOC-017 | VR Initial Status | test_document_types::test_vr_born_in_execution | PASS |
-| REQ-DOC-018 | Attachment Document Classification | test_attachment_lifecycle::test_vr_is_attachment, test_cr_not_attachment, test_sop_not_attachment, test_add_not_attachment, test_attachment_types_are_executable | PASS |
-| REQ-DOC-019 | Terminal State Checkout Guard | test_attachment_lifecycle::test_closed_is_terminal, test_retired_is_terminal, test_draft_is_not_terminal, test_effective_is_not_terminal | PASS |
-| REQ-DOC-020 | Cascade Close of Attachments | test_attachment_lifecycle::test_attachment_types_discoverable, test_vr_id_pattern_matches_parent, test_nested_parent_pattern, test_terminal_states_rejected, test_non_terminal_states_allowed, test_compile_from_source_data, test_compile_empty_source | PASS |
 | REQ-WF-001 | Status Transition Validation | test_sop_lifecycle::test_invalid_transition, test_invalid_transitions_comprehensive | PASS |
 | REQ-WF-002 | Non-Executable Document Lifecycle | test_sop_lifecycle::test_sop_full_lifecycle | PASS |
 | REQ-WF-003 | Executable Document Lifecycle | test_cr_lifecycle::test_cr_full_lifecycle, test_document_types::test_vr_born_in_execution | PASS |
@@ -214,9 +211,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INT-020 | Engine-Managed Commits | test_interact_integration::test_commit_message_format, test_commit_hash_recorded_in_response, test_engine_commit_function_exists, test_engine_commit_returns_empty_on_no_project_root, test_engine_commit_in_git_repo | PASS |
 | REQ-INT-021 | Commit Staging Scope | test_interact_integration::test_stages_all_changes, test_no_commit_when_no_changes | PASS |
 | REQ-INT-022 | MCP Interact Tool | test_interact_integration::test_mcp_tools_module_has_qms_interact, test_mcp_interact_has_respond_param, test_mcp_interact_has_file_param, test_mcp_interact_has_reason_param, test_mcp_interact_has_goto_param, test_mcp_interact_has_cancel_goto_param, test_mcp_interact_has_reopen_param, test_mcp_interact_has_progress_param, test_mcp_interact_has_compile_param, test_mcp_interact_calls_interact_command, test_cli_interact_command_registered, test_cli_interact_has_all_flags, test_interact_registered_in_command_registry, test_interact_requires_doc_id, test_new_modules_import_cleanly | PASS |
-| REQ-INT-023 | Auto-Generated Metadata | test_interact_compiler::test_auto_date_from_earliest_timestamp, test_auto_performer_from_authors, test_auto_performed_date_from_latest_timestamp, test_explicit_metadata_not_overwritten, test_no_responses_no_auto_metadata, test_auto_metadata_in_compilation | PASS |
-| REQ-INT-024 | Block Rendering | test_interact_compiler::test_standalone_response_blockquoted, test_attribution_below_blockquote, test_label_context_also_block_rendered, test_table_context_not_wrapped, test_empty_block_not_wrapped | PASS |
-| REQ-INT-025 | Step Subsection Numbering | test_interact_compiler::test_step_subsection_headings, test_step_expected_blockquoted, test_step_actual_code_fenced | PASS |
 
 ---
 
@@ -517,49 +511,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_document_types.py | test_vr_born_in_execution | VR created with status IN_EXECUTION, version 1.0, execution_phase post_release, checked out. |
-
----
-
-#### REQ-DOC-018: Attachment Document Classification
-
-**Requirement:** Document types may be classified as attachments via the `attachment` property in the DOCUMENT_TYPES registry. VR is an attachment type.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_attachment_lifecycle.py | test_vr_is_attachment | VR document type has attachment: True. |
-| test_attachment_lifecycle.py | test_cr_not_attachment | CR is not classified as an attachment. |
-| test_attachment_lifecycle.py | test_sop_not_attachment | SOP is not classified as an attachment. |
-| test_attachment_lifecycle.py | test_add_not_attachment | ADD is not classified as an attachment. |
-| test_attachment_lifecycle.py | test_attachment_types_are_executable | All attachment types are also executable. |
-
----
-
-#### REQ-DOC-019: Terminal State Checkout Guard
-
-**Requirement:** The CLI shall reject checkout of documents in terminal states (CLOSED, RETIRED).
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_attachment_lifecycle.py | test_closed_is_terminal | CLOSED is recognized as a terminal state. |
-| test_attachment_lifecycle.py | test_retired_is_terminal | RETIRED is recognized as a terminal state. |
-| test_attachment_lifecycle.py | test_draft_is_not_terminal | DRAFT is not a terminal state. |
-| test_attachment_lifecycle.py | test_effective_is_not_terminal | EFFECTIVE is not a terminal state. |
-
----
-
-#### REQ-DOC-020: Cascade Close of Attachments
-
-**Requirement:** When a parent document is closed, the CLI shall automatically close all child attachment documents not in a terminal state, auto-compiling interactive attachments if needed.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_attachment_lifecycle.py | test_attachment_types_discoverable | Attachment types can be discovered from DOCUMENT_TYPES registry. |
-| test_attachment_lifecycle.py | test_vr_id_pattern_matches_parent | VR IDs match parent document pattern for cascade discovery. |
-| test_attachment_lifecycle.py | test_nested_parent_pattern | Nested parent patterns (e.g., CR-001-VAR-001-VR-001) match correctly. |
-| test_attachment_lifecycle.py | test_terminal_states_rejected | Attachments in terminal states are skipped during cascade close. |
-| test_attachment_lifecycle.py | test_non_terminal_states_allowed | Attachments in non-terminal states are eligible for cascade close. |
-| test_attachment_lifecycle.py | test_compile_from_source_data | Auto-compilation produces valid markdown from source data. |
-| test_attachment_lifecycle.py | test_compile_empty_source | Auto-compilation handles empty source gracefully. |
 
 ---
 
@@ -1611,7 +1562,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-### 5.15 Interaction System (REQ-INT-001 through REQ-INT-025)
+### 5.15 Interaction System (REQ-INT-001 through REQ-INT-022)
 
 #### REQ-INT-001: Tag Vocabulary
 
@@ -1982,59 +1933,18 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-INT-023: Auto-Generated Metadata
-
-**Requirement:** The compiler shall auto-generate date, performer, and performed_date metadata fields from response timestamps and authors when not explicitly present.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_compiler.py | test_auto_date_from_earliest_timestamp | date auto-generated from earliest response timestamp. |
-| test_interact_compiler.py | test_auto_performer_from_authors | performer auto-generated from unique response authors. |
-| test_interact_compiler.py | test_auto_performed_date_from_latest_timestamp | performed_date auto-generated from latest response timestamp. |
-| test_interact_compiler.py | test_explicit_metadata_not_overwritten | Explicit metadata values are preserved over auto-generated. |
-| test_interact_compiler.py | test_no_responses_no_auto_metadata | No auto-metadata when no responses exist. |
-| test_interact_compiler.py | test_auto_metadata_in_compilation | Auto-generated metadata appears in compiled output. |
-
----
-
-#### REQ-INT-024: Block Rendering
-
-**Requirement:** All non-table lines containing response substitutions shall use block rendering with attribution below the blockquote.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_compiler.py | test_standalone_response_blockquoted | Standalone response gets blockquote wrapping. |
-| test_interact_compiler.py | test_attribution_below_blockquote | Attribution is below the blockquote, not inside it. |
-| test_interact_compiler.py | test_label_context_also_block_rendered | Label-context responses are also block-rendered. |
-| test_interact_compiler.py | test_table_context_not_wrapped | Table-context responses are NOT blockquoted. |
-| test_interact_compiler.py | test_empty_block_not_wrapped | Empty block-context placeholder is not wrapped. |
-
----
-
-#### REQ-INT-025: Step Subsection Numbering
-
-**Requirement:** Loop-expanded step headings shall use subsection numbering in the format ### N.n Step n.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_interact_compiler.py | test_step_subsection_headings | Steps produce 4.1 Step 1, 4.2 Step 2 headings. |
-| test_interact_compiler.py | test_step_expected_blockquoted | Step expected values are rendered as blockquotes. |
-| test_interact_compiler.py | test_step_actual_code_fenced | Step actual values are in code fences. |
-
----
-
 ## 6. Test Execution Summary
 
 ### 6.1 Qualified Baseline
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v18.0 |
+| Requirements Spec | SDLC-QMS-RS v17.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-095 |
-| Commit | 31f8306 |
-| Total Tests | 673 |
-| Passed | 673 |
+| Branch | cr-094 |
+| Commit | c676b61 |
+| Total Tests | 643 |
+| Passed | 643 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -2064,19 +1974,18 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_interact_parser.py | 49 | 49 | 0 |
 | test_interact_source.py | 46 | 46 | 0 |
 | test_interact_engine.py | 44 | 44 | 0 |
-| test_interact_compiler.py | 58 | 58 | 0 |
+| test_interact_compiler.py | 44 | 44 | 0 |
 | test_interact_integration.py | 31 | 31 | 0 |
-| test_attachment_lifecycle.py | 16 | 16 | 0 |
 | Other unit tests | 203 | 203 | 0 |
-| **Subtotal** | **447** | **447** | **0** |
+| **Subtotal** | **417** | **417** | **0** |
 
 #### 6.2.3 Full Test Suite Summary
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
 | Qualification Tests | 226 | 226 | 0 |
-| Unit Tests | 447 | 447 | 0 |
-| **Total** | **673** | **673** | **0** |
+| Unit Tests | 417 | 417 | 0 |
+| **Total** | **643** | **643** | **0** |
 
 ### 6.3 Test Environment
 
