@@ -2,15 +2,15 @@
   "doc_id": "CR-091-ADD-001-VR-001",
   "template": "VR",
   "template_version": 5,
-  "cursor": "step_actual",
-  "cursor_context": {
-    "loop": "steps",
-    "iteration": 4
-  },
+  "cursor": "__end__",
+  "cursor_context": {},
   "metadata": {
     "parent_doc_id": "CR-091-ADD-001",
     "vr_id": "CR-091-ADD-001-VR-001",
-    "title": ""
+    "title": "",
+    "date": "2026-02-22",
+    "performer": "claude",
+    "performed_date": "2026-02-22"
   },
   "responses": {
     "related_eis": [
@@ -140,12 +140,41 @@
         "author": "claude",
         "timestamp": "2026-02-22T22:41:35Z"
       }
+    ],
+    "step_actual.4": [
+      {
+        "value": "Engine rejected the out-of-order goto with: 'Error: Prompt summary_outcome has not been answered yet.' Exit code 1. Cursor remains at step_actual.4 (the current prompt). No state corruption — progress output unchanged from before the attempt.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:42:01Z",
+        "commit": "b86cfee"
+      }
+    ],
+    "step_outcome.4": [
+      {
+        "value": "Pass. Sequential enforcement works correctly. The engine rejected the goto to an unanswered prompt with a clear error message and exit code 1. No state corruption occurred.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:42:38Z"
+      }
+    ],
+    "summary_outcome": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:43:05Z"
+      }
+    ],
+    "summary_narrative": [
+      {
+        "value": "Verified the interaction system engine end-to-end by using it to author this VR. Four verification steps exercised distinct capabilities: (1) progress tracking (REQ-INT-015) — all prompts displayed with correct fill status, loop context, and commit markers; (2) compilation (REQ-INT-017) with attribution (REQ-INT-010) and atomic commits (REQ-INT-013) — source compiled to well-formed markdown with per-response timestamps and embedded commit hashes; (3) amendment workflow (REQ-INT-012, REQ-INT-016) — goto navigation, reason enforcement, append-only amendments, automatic cursor return; (4) sequential enforcement (REQ-INT-009) — out-of-order access correctly rejected. The approach is self-referential: this VR is itself the primary evidence artifact. Its successful completion through the interaction engine — with atomic commits pinning project state at each evidence-capture prompt — demonstrates that the system works as designed. Minor observation: VR title field is empty in frontmatter due to metadata not being populated at creation, which is cosmetic.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:43:23Z"
+      }
     ]
   },
   "loops": {
     "steps": {
       "iterations": 4,
-      "closed": false,
+      "closed": true,
       "reopenings": []
     }
   },
@@ -161,6 +190,10 @@
     "more_steps.3": {
       "value": "yes",
       "timestamp": "2026-02-22T22:41:10Z"
+    },
+    "more_steps.4": {
+      "value": "no",
+      "timestamp": "2026-02-22T22:42:51Z"
     }
   }
 }

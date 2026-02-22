@@ -11,3 +11,4 @@
 {"ts": "2026-02-21T20:14:15+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
 {"ts": "2026-02-21T20:14:15+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
 {"ts": "2026-02-22T22:33:58+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-22T22:44:44+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
