@@ -6,9 +6,9 @@
 
 ## 1. Where We Are Now
 
-**INV-013 CLOSED.** Seed-QMS template divergence investigation — all 9 template pairs aligned between QMS and seed. CR-098 (corrective: template alignment) and CR-099 (preventive: procedural controls) both CLOSED. TEMPLATE-VR v3.0, TEMPLATE-CR v9.0, SOP-002 v15.0.
+**INV-014 CLOSED.** SDLC governance bypass investigation — CR-098 committed directly to qms-cli main. 4 CAPAs: deny rule fix + PreToolUse hook enforcement, retroactive test verification (673 pass), SOP-005 v7.0 / SOP-002 v16.0 / TEMPLATE-CR v10.0 tightened, seed aligned via PR #18. CR-100 CLOSED.
 
-57 CRs CLOSED (CR-042 through CR-099). 4 INVs CLOSED (INV-010 through INV-013).
+58 CRs CLOSED (CR-042 through CR-100). 5 INVs CLOSED (INV-010 through INV-014).
 
 ---
 
@@ -44,6 +44,8 @@
 
 **Template Divergence Investigation (Feb 22, INV-013).** Systematic drift between QMS-controlled and seed templates across all 9 pairs. CR-098 aligned all templates. CR-099 added dual-template awareness to TEMPLATE-CR and SOP-002.
 
+**SDLC Governance Bypass Investigation (Feb 22, INV-014).** CR-098 committed directly to qms-cli main bypassing SOP-005 execution branch workflow. Discovered all Claude Code deny rules are non-functional (platform bug). CR-100 tightened SOP-005 (dev location, PR mandate, file scope), TEMPLATE-CR (explicit locations, PR enforcement), SOP-002 (PR verification in QA checklist). PreToolUse hook as enforcement. Seed aligned via PR #18.
+
 ---
 
 ## 3. What's Built
@@ -61,13 +63,13 @@
 | Document | Version |
 |----------|---------|
 | SOP-001 | v21.0 EFFECTIVE |
-| SOP-002 | v15.0 EFFECTIVE |
+| SOP-002 | v16.0 EFFECTIVE |
 | SOP-003 | v3.0 EFFECTIVE |
 | SOP-004 | v9.0 EFFECTIVE |
-| SOP-005 | v6.0 EFFECTIVE |
+| SOP-005 | v7.0 EFFECTIVE |
 | SOP-006 | v5.0 EFFECTIVE |
 | SOP-007 | v2.0 EFFECTIVE |
-| TEMPLATE-CR | v9.0 EFFECTIVE |
+| TEMPLATE-CR | v10.0 EFFECTIVE |
 | TEMPLATE-VAR | v3.0 EFFECTIVE |
 | TEMPLATE-ADD | v2.0 EFFECTIVE |
 | TEMPLATE-VR | v3.0 EFFECTIVE |
@@ -151,7 +153,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 **Identity & Access Hardening** (~1 session) — proxy header validation (L7), Git MCP access control
 **Agent Hub Robustness** (~1-2 sessions) — C3, H4, M6, M8, M9, M10
 **GUI Polish** (~1-2 sessions) — H6, M3, M4, M5, M7, L3, L4, L5, L6
-**Process Refinement** (~1-2 sessions) — branch protection/merge strategy in SOPs, commit column in EI table
+**Process Refinement** (~1-2 sessions) — commit column in EI table
 **QMS Workflow** — proceduralize adding new documents, comments visibility restriction during active workflows
 
 ### Discussion / Design Needed
@@ -161,7 +163,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Automate RTM generation | RTM is large, repetitive, error-prone to maintain manually |
 | Improve RTM readability | One test per line with row-spanning REQ IDs |
 | Simplify SOPs to behavioral baselines | Review for tooling-dependent language |
-| Production/test environment isolation | Programmatic separation between production and test environments |
+| Production/test environment isolation | Largely addressed by INV-014 (PreToolUse hook, SOP-005 v7.0). Remaining: programmatic separation beyond hooks. |
 | Subconscious agent | Design discussion complete; implementation design pending |
 
 ### Deferred
@@ -184,3 +186,5 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 **Container security.** C3 (root user) remains the last critical code review finding.
 
 **Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 673.
+
+**Claude Code deny rules non-functional.** All deny rules in settings.local.json are silently ignored due to a known platform bug (GitHub #8961, #6699, #6631). PreToolUse hooks provide actual enforcement. Deny rules retained as defense-in-depth.
