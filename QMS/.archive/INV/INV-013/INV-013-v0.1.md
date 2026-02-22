@@ -1,0 +1,274 @@
+---
+title: 'Seed-QMS Template Divergence: Systematic Drift Between Dual-Template Architecture'
+revision_summary: Initial draft
+---
+
+# INV-013: Seed-QMS Template Divergence: Systematic Drift Between Dual-Template Architecture
+
+## 1. Purpose
+
+This investigation examines a systematic divergence between two copies of template documents maintained in the project: the QMS-controlled copies in `QMS/TEMPLATE/` and the seed copies in `qms-cli/seed/templates/`. The deviation was discovered during CR-097 closure when TEMPLATE-VR in `QMS/TEMPLATE/` was found to be at schema v3 (from CR-091), while the seed copy had advanced to schema v5 (from CR-095). Subsequent audit revealed that all nine templates in both locations have diverged, with drift occurring in both directions — some QMS copies are ahead of seed, others behind. No SOP, template, or procedural guidance addresses this dual-template architecture or requires alignment checks.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+The deviation was discovered on 2026-02-22 during post-CR-097 review. CR-097 included a VR (CR-097-VR-001) that was compiled against the seed TEMPLATE-VR (schema v5), while the QMS-controlled TEMPLATE-VR remained at schema v3. This discrepancy prompted a full audit of all templates in both locations, revealing systematic drift across all nine template pairs.
+
+- **Triggering Event:** CR-097 closure revealed TEMPLATE-VR is 2 schema versions behind seed
+- **Related Document:** CR-097, CR-091, CR-095
+
+### 2.2 Deviation Type
+
+Procedural deviation. The templates themselves are not defective — each copy is internally consistent and functional. The deviation is the absence of any procedure to maintain alignment between the dual-template architecture, and the resulting systematic drift that accumulated across multiple CRs.
+
+- **Type:** Procedural
+
+### 2.3 Systems/Documents Affected
+
+- `QMS/TEMPLATE/TEMPLATE-VR.md` — QMS copy at schema v3 (CR-091), seed at schema v5 (CR-095)
+- `QMS/TEMPLATE/TEMPLATE-CR.md` — QMS copy has VR column (CR-089), seed does not
+- `QMS/TEMPLATE/TEMPLATE-ADD.md` — QMS copy has VR column (CR-089), seed at initial creation (CR-082)
+- `QMS/TEMPLATE/TEMPLATE-VAR.md` — QMS copy has VR column (CR-089), seed at CR-084
+- `QMS/TEMPLATE/TEMPLATE-ER.md` — QMS copy at CR-017 migration, seed at initial release
+- `QMS/TEMPLATE/TEMPLATE-INV.md` — QMS copy at CR-017 migration, seed at initial release
+- `QMS/TEMPLATE/TEMPLATE-SOP.md` — QMS copy at CR-017 migration, seed at initial release
+- `QMS/TEMPLATE/TEMPLATE-TC.md` — QMS copy at CR-017 migration, seed at initial release
+- `QMS/TEMPLATE/TEMPLATE-TP.md` — QMS copy at CR-017 migration, seed at initial release
+- `SOP-002` — Change control procedure lacks template alignment guidance
+- `TEMPLATE-CR` — Usage guide lacks dual-template architecture awareness
+
+---
+
+## 3. Background
+
+### 3.1 Expected Behavior
+
+The project maintains templates in two locations with complementary purposes:
+
+1. **QMS-controlled templates** (`QMS/TEMPLATE/`): The effective templates used by the QMS CLI when creating new documents in an established QMS instance. These are governed by document control (SOP-001) and modified through Change Records.
+
+2. **Seed templates** (`qms-cli/seed/templates/`): Templates bundled with the QMS CLI source code, used when bootstrapping a new QMS instance via `qms init`. These are part of the SDLC-governed codebase.
+
+Both copies should contain functionally equivalent content. When a CR modifies a template's structure (schema changes, new columns, updated guidance), both copies should be updated to maintain alignment.
+
+### 3.2 Actual Behavior
+
+The two template sets have diverged in both directions across multiple CRs:
+
+**QMS copies ahead of seed (3 templates):**
+- TEMPLATE-CR: QMS has VR column from CR-089; seed lacks it (last updated CR-086)
+- TEMPLATE-ADD: QMS has VR column from CR-089; seed at initial creation (CR-082)
+- TEMPLATE-VAR: QMS has VR column from CR-089; seed at CR-084
+
+**Seed copies ahead of QMS (1 template):**
+- TEMPLATE-VR: Seed at schema v5 (CR-095); QMS at schema v3 (CR-091)
+
+**Minor/migration differences (5 templates):**
+- TEMPLATE-ER, TEMPLATE-INV, TEMPLATE-SOP, TEMPLATE-TC, TEMPLATE-TP: QMS copies reference CR-017 migration; seed copies reference "Initial release". These may have cosmetic differences from the migration process.
+
+### 3.3 Discovery
+
+Discovered on 2026-02-22 during post-CR-097 review. The Lead observed that CR-097-VR-001 was compiled using the seed TEMPLATE-VR (schema v5, with streamlined sections from CR-095), while the QMS-controlled TEMPLATE-VR remained at schema v3 (from CR-091). A full audit of all nine template pairs confirmed systematic divergence.
+
+### 3.4 Timeline
+
+| Date | Event |
+|------|-------|
+| 2026-02-08 | CR-089: VR column added to QMS TEMPLATE-CR, TEMPLATE-ADD, TEMPLATE-VAR; seed copies not updated |
+| 2026-02-09 | CR-091: TEMPLATE-VR updated to schema v3 in QMS; seed copy also updated |
+| 2026-02-10 | CR-094: TEMPLATE-VR updated to schema v4 in seed only; QMS copy not updated |
+| 2026-02-10 | CR-095: TEMPLATE-VR updated to schema v5 in seed only; QMS copy not updated |
+| 2026-02-22 | CR-097 closure: Divergence discovered during post-closure review |
+| 2026-02-22 | Full audit confirms all 9 template pairs diverge |
+
+---
+
+## 4. Description of Deviation(s)
+
+The deviation is systematic template drift caused by the absence of procedural controls for a dual-template architecture. The drift accumulated naturally across multiple CRs, with each CR updating only the template copy relevant to its immediate scope.
+
+### 4.1 Facts and Observations
+
+**Category A — QMS ahead of seed (3 templates):**
+
+CR-089 added a "VR" column to the execution item tables in TEMPLATE-CR, TEMPLATE-ADD, and TEMPLATE-VAR within `QMS/TEMPLATE/`. The seed copies in `qms-cli/seed/templates/` were not updated because CR-089's scope was QMS document changes, and the seed templates live in the SDLC-governed `qms-cli` submodule — a different change boundary.
+
+| Template | QMS revision | Seed revision | Divergence |
+|----------|-------------|---------------|------------|
+| TEMPLATE-CR | CR-089 (VR column) | CR-086 (no VR column) | QMS has VR tracking column; seed does not |
+| TEMPLATE-ADD | CR-089 (VR column) | CR-082 (initial creation) | QMS has VR tracking column; seed does not |
+| TEMPLATE-VAR | CR-089 (VR column) | CR-084 (integration guidance) | QMS has VR tracking column; seed does not |
+
+**Category B — Seed ahead of QMS (1 template):**
+
+CR-094 and CR-095 evolved TEMPLATE-VR through schema v4 and v5 in the seed copy, removing redundant prompts and streamlining sections. These changes were made in `qms-cli/seed/templates/` as part of SDLC-governed code changes. The QMS-controlled copy in `QMS/TEMPLATE/` was not updated.
+
+| Template | QMS revision | Seed revision | Divergence |
+|----------|-------------|---------------|------------|
+| TEMPLATE-VR | CR-091 (schema v3) | CR-095 (schema v5) | QMS 2 schema versions behind seed |
+
+**Category C — Minor/migration differences (5 templates):**
+
+Five templates have not been substantively modified since initial creation. The QMS copies reference "CR-017: Initial migration to QMS control" while the seed copies reference "Initial release." These may have cosmetic differences introduced during the CR-017 migration process.
+
+| Template | QMS revision | Seed revision | Divergence |
+|----------|-------------|---------------|------------|
+| TEMPLATE-ER | CR-017 (migration) | Initial release | Migration cosmetic differences |
+| TEMPLATE-INV | CR-017 (migration) | Initial release | Migration cosmetic differences |
+| TEMPLATE-SOP | CR-017 (migration) | Initial release | Migration cosmetic differences |
+| TEMPLATE-TC | CR-017 (migration) | Initial release | Migration cosmetic differences |
+| TEMPLATE-TP | CR-017 (migration) | Initial release | Migration cosmetic differences |
+
+### 4.2 Evidence
+
+- `QMS/TEMPLATE/TEMPLATE-VR.md` frontmatter: `revision_summary: 'CR-091: Interactive VR template v3'`
+- `qms-cli/seed/templates/TEMPLATE-VR.md` frontmatter: `revision_summary: 'CR-095: Remove redundant prompts/sections, strip labels, subsection headings'`
+- `QMS/TEMPLATE/TEMPLATE-CR.md` frontmatter: `revision_summary: 'CR-089: Add VR column to EI table and update execution guidance'`
+- `qms-cli/seed/templates/TEMPLATE-CR.md` frontmatter: `revision_summary: 'CR-086: Update execution instructions with pre/post-execution commit guidance and fix repository language'`
+- All 9 QMS templates listed via `ls QMS/TEMPLATE/`
+- All 9 seed templates listed via `ls qms-cli/seed/templates/`
+
+---
+
+## 5. Impact Assessment
+
+### 5.1 Systems Affected
+
+| System | Impact | Description |
+|--------|--------|-------------|
+| QMS bootstrapping | Medium | New QMS instances created via `qms init` would receive inconsistent templates — some features present in production QMS (VR column) would be absent |
+| QMS document creation | Low | Current production QMS uses QMS-controlled templates; seed divergence does not affect existing instance |
+| qms-cli compiler | Medium | The VR compiler (CR-095) supports schema v5 features that the QMS-controlled TEMPLATE-VR does not declare |
+
+### 5.2 Documents Affected
+
+| Document | Impact | Description |
+|----------|--------|-------------|
+| TEMPLATE-VR (QMS) | High | 2 schema versions behind seed; new VRs in QMS would use outdated schema |
+| TEMPLATE-CR (seed) | Medium | Missing VR column that QMS copy has; bootstrapped instances would lack VR tracking |
+| TEMPLATE-ADD (seed) | Medium | Missing VR column that QMS copy has |
+| TEMPLATE-VAR (seed) | Medium | Missing VR column that QMS copy has |
+| SOP-002 | Low | No template alignment verification in QA checklist |
+| TEMPLATE-CR usage guide | Low | No dual-template architecture awareness |
+
+### 5.3 Other Impacts
+
+**Process trust:** The QMS template architecture has an undocumented dual-copy design with no alignment controls. Template changes have been accumulating on one side or the other for at least 6 CRs (CR-082 through CR-095) without detection. This is a systemic gap, not an isolated oversight.
+
+**Precedent:** As the QMS and qms-cli continue to evolve, template changes will continue to occur. Without procedural guidance, drift will continue to accumulate and compound.
+
+---
+
+## 6. Root Cause Analysis
+
+### 6.1 Contributing Factors
+
+1. **Invisible dual-copy architecture:** The existence of two template sets with different governance mechanisms (document control vs. SDLC code control) is not documented in any SOP or template usage guide. Developers and agents working on template changes may not be aware that a second copy exists.
+
+2. **Submodule boundary partitions changes naturally:** `QMS/TEMPLATE/` lives in the pipe-dream repository while `qms-cli/seed/templates/` lives in the qms-cli submodule. CRs that modify QMS documents naturally scope to pipe-dream; CRs that modify CLI code naturally scope to qms-cli. The submodule boundary creates a structural incentive to update only one side.
+
+3. **No alignment verification in workflow:** Neither SOP-002 (Change Control) nor TEMPLATE-CR includes any guidance about verifying template alignment when a CR modifies a template. QA's review checklists do not include template alignment checks.
+
+4. **Accumulation across multiple CRs:** The drift did not happen in a single event. It accumulated incrementally across CR-082, CR-084, CR-086, CR-089, CR-091, CR-094, and CR-095 — each CR updating only the template copy relevant to its immediate scope.
+
+5. **No automated detection:** There is no tooling or process check that compares QMS templates against seed templates. The divergence could only be discovered through manual inspection.
+
+### 6.2 Root Cause(s)
+
+**Primary root cause:** No procedural guidance exists for the dual-template architecture. No SOP, template usage guide, or workflow step addresses the relationship between QMS-controlled templates and seed templates, or requires that changes to one be propagated to the other.
+
+**Contributing root cause:** The submodule boundary between pipe-dream and qms-cli creates a natural partition that encourages one-sided template changes. Without a bridging procedure that explicitly requires cross-boundary alignment, drift is the expected outcome — not an anomaly.
+
+---
+
+## 7. Remediation Plan (CAPAs)
+
+<!--
+CAPA EXECUTION INSTRUCTIONS
+===========================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+- Sections 1-6 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the sections below should be edited during execution phase
+
+CAPA TYPES (per SOP-003 Section 6):
+- Corrective Action: Eliminate cause of existing deviation and/or remediate consequences
+- Preventive Action: Eliminate cause of potential future deviation; continuous improvement
+
+COLUMNS:
+- CAPA: CAPA identifier (e.g., INV-001-CAPA-001)
+- Type: Corrective or Preventive
+- Description: What the CAPA accomplishes (static)
+- Implementation: How it will be implemented, child CR references (editable)
+- Outcome: Pass or Fail (editable)
+- Verified By - Date: Signature (editable)
+
+CHILD CRs:
+CAPAs may spawn child CRs. Reference them in the Implementation column.
+All child CRs must be CLOSED before the INV can be closed.
+-->
+
+| CAPA | Type | Description | Implementation | Outcome | Verified By - Date |
+|------|------|-------------|----------------|---------|---------------------|
+| INV-013-CAPA-001 | Corrective | Align all 9 templates between QMS and seed. Update QMS TEMPLATE-VR to schema v5; update seed TEMPLATE-CR/ADD/VAR to include VR column; reconcile remaining 5 templates for migration cosmetic differences. | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-013-CAPA-002 | Preventive | Update TEMPLATE-CR usage guide to add dual-template architecture awareness section, warning authors that template changes must be propagated to both QMS and seed copies, and requiring an alignment verification EI. | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+| INV-013-CAPA-003 | Preventive | Update SOP-002 Section 7.3 QA post-review checklist to include template alignment verification for CRs that modify templates. | [IMPLEMENTATION] | [Pass/Fail] | [VERIFIER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 4-6 during execution.
+-->
+
+---
+
+## 8. Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during CAPA execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual CAPA, but apply to the INV as a whole.
+-->
+
+---
+
+## 9. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all CAPAs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 10. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control (Section 7.3 — QA post-review requirements)
+- **SOP-003:** Deviation Management
+- **SOP-004:** Document Execution
+- **SOP-005:** Code Governance
+- **CR-089:** VR column added to QMS TEMPLATE-CR/ADD/VAR (QMS copies updated, seed not)
+- **CR-091:** Interactive VR template v3 (both copies updated to schema v3)
+- **CR-094:** VR template schema v4 (seed copy updated, QMS not)
+- **CR-095:** VR template schema v5 (seed copy updated, QMS not)
+- **CR-097:** VR compilation rendering fixes (triggered discovery of divergence)
+
+---
+
+**END OF DOCUMENT**
