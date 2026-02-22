@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 3
+    "iteration": 4
   },
   "metadata": {
     "parent_doc_id": "CR-091-ADD-001",
@@ -111,11 +111,40 @@
         "author": "claude",
         "timestamp": "2026-02-22T22:39:18Z"
       }
+    ],
+    "step_actual.3": [
+      {
+        "value": "Amendment workflow executed successfully:\n\nCommand 1 (--goto related_eis --reason '...'): Engine navigated to related_eis, displayed current value ('EI-2'), showed prompt in AMENDMENT MODE with return target noted ('return to step_actual after response').\n\nCommand 2 (--respond 'EI-2 (VR column)'): First attempt without --reason correctly rejected with 'Amendments require a reason (--reason)' — enforcement of REQ-INT-012. Second attempt with --reason succeeded, recorded amendment, and cursor automatically returned to step_actual.3.\n\nCommand 3 (--progress): All prompts show [x] through step_expected.3, step_actual.3 shows [ ] (current). related_eis shows [x] (no special amendment indicator in progress view, but amendment is recorded in source).\n\nCompiled output verification: The related_eis value in the table now shows 'EI-2 (VR column)' (the amended value). The amendment trail (original value, strikethrough, reason) is stored in the source file and would be visible in the full compiled rendering of response entries.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:40:44Z",
+        "commit": "afb6a47"
+      }
+    ],
+    "step_outcome.3": [
+      {
+        "value": "Pass. Amendment workflow operates as designed: goto navigates to the target prompt, the engine enforces reason requirements, amendments are recorded in source, and cursor returns to the original position after the amendment. The --reason enforcement without prompting correctly rejects amendment attempts without rationale.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:40:57Z"
+      }
+    ],
+    "step_instructions.4": [
+      {
+        "value": "Verify sequential enforcement by attempting to respond to a prompt that hasn't been reached yet. This tests REQ-INT-009 (sequential enforcement) — the engine must reject out-of-order responses. Command: python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --goto summary_outcome --reason 'Testing out-of-order access'",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:41:23Z"
+      }
+    ],
+    "step_expected.4": [
+      {
+        "value": "The engine should reject the goto with an error message indicating that summary_outcome has not been answered yet and cannot be navigated to for amendment. The goto should have no effect — the cursor should remain at step_instructions.4 (or wherever it was). No state corruption.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:41:35Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 3,
+      "iterations": 4,
       "closed": false,
       "reopenings": []
     }
@@ -128,6 +157,10 @@
     "more_steps.2": {
       "value": "yes",
       "timestamp": "2026-02-22T22:38:49Z"
+    },
+    "more_steps.3": {
+      "value": "yes",
+      "timestamp": "2026-02-22T22:41:10Z"
     }
   }
 }
