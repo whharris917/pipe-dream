@@ -1,0 +1,2 @@
+{"ts": "2026-02-22T18:57:22+00:00", "event": "CLOSE", "user": "claude", "version": "0.1"}
+{"ts": "2026-02-22T18:57:22+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "0.1", "from_status": "DRAFT", "to_status": "CLOSED"}
