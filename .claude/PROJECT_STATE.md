@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-21-004*
+*Last updated: Session-2026-02-22-001*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-095 CLOSED.** Attachment auto-close + VR template/compiler refinements. VR classified as attachment type with cascade close on parent closure, terminal state checkout guard, auto-compile for interactive attachments. TEMPLATE-VR v5 with auto-metadata, block rendering, attribution below blockquotes, step subsection numbering. 30 new tests (673 total). RS v18.0, RTM v22.0 EFFECTIVE. Merged to qms-cli main at `f0cd391`.
+**CR-096 CLOSED.** Compaction resilience — 5-layer defense-in-depth for conversation compaction. Compact Instructions in CLAUDE.md, post-compaction recovery protocol in Session Start Checklist, incremental session notes guidance, PreCompact hook (pre-compact.py), SessionStart recovery hook (post-compact-recovery.py). Configuration/documentation CR — no code changes.
 
-53 CRs CLOSED (CR-042 through CR-095).
+54 CRs CLOSED (CR-042 through CR-096).
 
 ---
 
@@ -37,6 +37,8 @@
 **Compilation Defects (Feb 21, CR-094).** Four defects in compiled VR output fixed: duplicate frontmatter, broken tables, guidance leak, no visual distinction. TEMPLATE-VR v4 with `@end-prompt`. 643 tests.
 
 **Attachment Lifecycle + Compiler Refinements (Feb 22, CR-095).** Attachment document classification, cascade close, terminal state checkout guard. TEMPLATE-VR v5, auto-metadata, block rendering, step subsection numbering. 673 tests.
+
+**Compaction Resilience (Feb 22, CR-096).** 5-layer defense-in-depth: Compact Instructions, post-compaction recovery protocol, incremental session notes, PreCompact hook, SessionStart recovery hook. Config/docs only.
 
 ---
 
@@ -156,7 +158,6 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 |------|---------|
 | Automate RTM generation | RTM is large, repetitive, error-prone to maintain manually |
 | Improve RTM readability | One test per line with row-spanning REQ IDs |
-| Session heartbeat mechanism | Prevent post-compaction session discontinuities |
 | Simplify SOPs to behavioral baselines | Review for tooling-dependent language |
 | Production/test environment isolation | Programmatic separation between production and test environments |
 | Subconscious agent | Design discussion complete; implementation design pending |
