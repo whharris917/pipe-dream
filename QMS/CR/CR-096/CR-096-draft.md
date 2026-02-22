@@ -1,0 +1,250 @@
+---
+title: Compaction Resilience — Hook Infrastructure + CLAUDE.md Updates
+revision_summary: Initial draft
+---
+
+# CR-096: Compaction Resilience — Hook Infrastructure + CLAUDE.md Updates
+
+## 1. Purpose
+
+Implement a defense-in-depth system to preserve session continuity across Claude Code conversation compaction events. When context compaction occurs during long-running tasks — particularly when the Lead is away — post-compaction Claude currently loses critical execution context, leading to session discontinuities, repeated initialization, and lost work state. This CR adds compaction-aware instructions to CLAUDE.md, establishes an incremental session notes practice, and deploys PreCompact/SessionStart hooks to automate state capture and recovery.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+- **Parent Document:** None — independent improvement identified during Session-2026-02-22-001 investigation of compaction behavior
+
+### 2.2 Changes Summary
+
+Five layers of compaction resilience:
+1. **Compact Instructions** in CLAUDE.md to guide the compaction summarizer
+2. **Session Start Checklist** updates for post-compaction recovery protocol
+3. **Incremental Session Notes** guidance in CLAUDE.md
+4. **PreCompact hook** to log compaction events
+5. **SessionStart hook** to inject session notes into post-compaction context
+
+### 2.3 Files Affected
+
+- `CLAUDE.md` — Add Compact Instructions section, update Session Start Checklist, add incremental notes guidance
+- `.claude/settings.local.json` — Add hooks configuration
+- `.claude/hooks/pre-compact.py` — New: PreCompact hook script
+- `.claude/hooks/post-compact-recovery.py` — New: SessionStart post-compaction recovery hook script
+
+---
+
+## 3. Current State
+
+CLAUDE.md has no compaction-specific instructions. The Session Start Checklist recognizes "new session" and "continuation after consolidation" but has no specific protocol for post-compaction recovery. No hooks are configured for compaction events. Session notes are written only at session end, leaving no durable on-disk state during long execution sequences.
+
+---
+
+## 4. Proposed State
+
+CLAUDE.md includes a Compact Instructions section that guides the compaction summarizer to preserve session identity, active QMS document state, work completed/in-progress, pending decisions, and agent state. The Session Start Checklist includes a post-compaction recovery protocol. A PreCompact hook logs compaction events to the session folder. A SessionStart hook injects session notes into post-compaction context. Session notes are written incrementally as work progresses.
+
+---
+
+## 5. Change Description
+
+### 5.1 Compact Instructions (Layer 1)
+
+A new `## Compact Instructions` section in CLAUDE.md tells the compaction summarizer what to preserve (session identity, active QMS document, work completed/in-progress, pending decisions, agent state, key file paths) and what to skip (SOP content, CLAUDE.md content, historical project context, full code snippets, tool output).
+
+### 5.2 Session Start Checklist Update (Layer 2)
+
+Step 0 gains a third case: "Continuation after compaction." The protocol: read CURRENT_SESSION, read session notes, compare against compaction summary, announce recovery, and resume from where notes indicate. The "How Sessions Work" bullets add compaction as an explicit case.
+
+### 5.3 Incremental Session Notes (Layer 3)
+
+A new subsection under Session Management documents the incremental session notes practice: update after each EI, routing event, commit, or significant decision. Format: "Current State" block at top (the recovery target) plus a chronological progress log.
+
+### 5.4 PreCompact Hook (Layer 4)
+
+`.claude/hooks/pre-compact.py` — Python script that reads JSON from stdin, extracts trigger and transcript_path, reads CURRENT_SESSION, and appends a timestamped compaction event to `{session_dir}/compaction-log.txt`. Configured with `async: true` to avoid blocking compaction.
+
+### 5.5 Post-Compaction Recovery Hook (Layer 5)
+
+`.claude/hooks/post-compact-recovery.py` — Python script that reads JSON from stdin, reads CURRENT_SESSION, and prints session notes content to stdout (which is injected into post-compaction Claude's context by the SessionStart hook). Falls back to a notice directing to PROJECT_STATE.md if no notes exist.
+
+---
+
+## 6. Justification
+
+- **Problem:** Compaction during long-running tasks causes post-compaction Claude to lose execution context, resulting in re-initialization, repeated work, and lost state
+- **Impact of not making this change:** Every long session risks state loss at compaction boundaries. The Lead must monitor compaction warnings or accept context loss
+- **How the solution addresses root cause:** Defense in depth — Compact Instructions shape what the summarizer preserves, incremental notes create durable on-disk state, PreCompact logs the event, and SessionStart injects recovery context. No single point of failure.
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `CLAUDE.md` | Modify | Add Compact Instructions, update checklist, add notes guidance |
+| `.claude/settings.local.json` | Modify | Add hooks configuration |
+| `.claude/hooks/pre-compact.py` | Create | PreCompact hook script |
+| `.claude/hooks/post-compact-recovery.py` | Create | SessionStart recovery hook script |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| None | — | No controlled documents affected |
+
+### 7.3 Other Impacts
+
+None. This change is entirely within the Claude Code configuration and project documentation. No code systems, submodules, or external interfaces are affected.
+
+---
+
+## 8. Testing Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document authoring.
+
+For code CRs, address both categories per SOP-002 Section 6.8:
+1. Automated verification: unit tests, qualification tests, CI
+2. Integration verification: what will be exercised through user-facing levers
+   in a running system to demonstrate the change is effective
+
+For document-only CRs, a description of procedural verification is sufficient.
+Delete the subsections below and use a simple list.
+-->
+
+This is a configuration/documentation CR — no SDLC-governed code is affected. Verification is procedural:
+
+1. **JSON validity:** Confirm `.claude/settings.local.json` parses correctly after hook configuration
+2. **Hook scripts:** Verify both Python scripts execute without error when given well-formed JSON stdin
+3. **Integration test:** Trigger `/compact` with session notes present; verify PreCompact logs the event and post-compaction Claude receives recovery context
+4. **CLAUDE.md review:** Confirm all three additions (Compact Instructions, checklist update, notes guidance) are present and correctly formatted
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Execution Items
+
+| EI | Task |
+|----|------|
+| EI-1 | Pre-execution commit |
+| EI-2 | Add Compact Instructions section to CLAUDE.md |
+| EI-3 | Update Session Start Checklist with post-compaction recovery |
+| EI-4 | Add Incremental Session Notes guidance to CLAUDE.md |
+| EI-5 | Create PreCompact hook script |
+| EI-6 | Create post-compaction recovery hook script |
+| EI-7 | Configure hooks in settings.local.json |
+| EI-8 | Test with `/compact` |
+| EI-9 | Post-execution commit |
+
+---
+
+## 10. Execution
+
+<!--
+EXECUTION PHASE INSTRUCTIONS
+============================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+PRE-EXECUTION: After releasing for execution, the first execution item is to
+commit and push the project repository (including all submodules) to capture
+the pre-execution baseline (per SOP-004 Section 5). Record the commit hash
+in EI-1's execution summary.
+
+POST-EXECUTION: The final execution item is to commit and push the project
+repository (including all submodules) to capture the post-execution state
+(per SOP-004 Section 5). Record the commit hash in the final EI's execution
+summary.
+
+- Sections 1-9 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the comment sections below should be edited during execution phase
+
+COLUMNS:
+- EI: Execution item identifier
+- Task Description: What to do (static, from Implementation Plan)
+- VR: "Yes" if integration verification required (static, set during planning);
+  replaced with VR ID during execution (editable). Blank if no VR needed.
+  See SOP-004 Section 9C.
+- Execution Summary: Narrative of what was done, evidence, observations (editable)
+- Task Outcome: Pass or Fail (editable)
+- Performed By - Date: Signature (editable)
+
+TASK OUTCOME:
+- Pass: Task completed as planned
+- Fail: Task could not be completed as planned - attach VAR with explanation
+
+VAR TYPES (see VAR-TEMPLATE):
+- Type 1: Use when the failed task is critical to CR objectives
+- Type 2: Use when impact is contained and CR can conceptually close
+
+EXECUTION SUMMARY EXAMPLES:
+- "Implemented per plan. Commit abc123."
+- "Modified src/module.py:45-67. Unit tests passing."
+- "Created SOP-007 (now EFFECTIVE)."
+-->
+
+| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|----|-------------------|--------------|---------------------|
+| EI-1 | Pre-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Add Compact Instructions section to CLAUDE.md | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Update Session Start Checklist with post-compaction recovery | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Add Incremental Session Notes guidance to CLAUDE.md | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Create PreCompact hook script | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Create post-compaction recovery hook script | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Configure hooks in settings.local.json | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-8 | Test with `/compact` | Yes | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-9 | Post-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual execution item, but apply to the CR as a whole.
+-->
+
+---
+
+## 11. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-004:** Execution and Testing
+- **Design Document:** `.claude/sessions/Session-2026-02-22-001/compaction-resilience-design.md`
+
+---
+
+**END OF DOCUMENT**
