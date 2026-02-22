@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-22-002*
+*Last updated: Session-2026-02-22-003*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-097 CLOSED.** VR compilation rendering fixes — three defects in compiled VR step subsections: added labels (Instructions/Expected/Actual/Outcome), switched instructions from bold to blockquote, improved auto-commit message format. 673 tests, SDLC-QMS-RTM v23.0.
+**INV-013 CLOSED.** Seed-QMS template divergence investigation — all 9 template pairs aligned between QMS and seed. CR-098 (corrective: template alignment) and CR-099 (preventive: procedural controls) both CLOSED. TEMPLATE-VR v3.0, TEMPLATE-CR v9.0, SOP-002 v15.0.
 
-55 CRs CLOSED (CR-042 through CR-097).
+57 CRs CLOSED (CR-042 through CR-099). 4 INVs CLOSED (INV-010 through INV-013).
 
 ---
 
@@ -42,6 +42,8 @@
 
 **VR Compilation Rendering Fixes (Feb 22, CR-097).** Step subsection labels, blockquoted instructions, improved auto-commit messages. 673 tests, SDLC-QMS-RTM v23.0.
 
+**Template Divergence Investigation (Feb 22, INV-013).** Systematic drift between QMS-controlled and seed templates across all 9 pairs. CR-098 aligned all templates. CR-099 added dual-template awareness to TEMPLATE-CR and SOP-002.
+
 ---
 
 ## 3. What's Built
@@ -59,16 +61,16 @@
 | Document | Version |
 |----------|---------|
 | SOP-001 | v21.0 EFFECTIVE |
-| SOP-002 | v14.0 EFFECTIVE |
+| SOP-002 | v15.0 EFFECTIVE |
 | SOP-003 | v3.0 EFFECTIVE |
 | SOP-004 | v9.0 EFFECTIVE |
 | SOP-005 | v6.0 EFFECTIVE |
 | SOP-006 | v5.0 EFFECTIVE |
 | SOP-007 | v2.0 EFFECTIVE |
-| TEMPLATE-CR | v8.0 EFFECTIVE |
+| TEMPLATE-CR | v9.0 EFFECTIVE |
 | TEMPLATE-VAR | v3.0 EFFECTIVE |
 | TEMPLATE-ADD | v2.0 EFFECTIVE |
-| TEMPLATE-VR | v2.0 EFFECTIVE |
+| TEMPLATE-VR | v3.0 EFFECTIVE |
 
 ---
 
