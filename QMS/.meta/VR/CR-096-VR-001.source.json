@@ -156,5 +156,10 @@
       "value": "no",
       "timestamp": "2026-02-22T17:26:03Z"
     }
-  }
+  },
+  "status": "CLOSED",
+  "responsible_user": null,
+  "checked_out": false,
+  "checked_out_date": null,
+  "pending_assignees": []
 }

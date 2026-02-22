@@ -1,2 +1,4 @@
 {"ts": "2026-02-22T17:21:13+00:00", "event": "CREATE", "user": "claude", "version": "1.0", "title": "CR-096 EI-8: Hook Integration Test"}
 {"ts": "2026-02-22T17:26:38+00:00", "event": "CHECKIN", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-22T17:31:33+00:00", "event": "CLOSE", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-22T17:31:33+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "IN_EXECUTION", "to_status": "CLOSED"}
