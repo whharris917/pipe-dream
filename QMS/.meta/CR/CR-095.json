@@ -10,7 +10,6 @@
   "checked_out_date": null,
   "effective_version": null,
   "pending_assignees": [],
-  "review_outcomes": {
-    "qa": "RECOMMEND"
-  }
+  "review_outcomes": {},
+  "completed_reviewers": []
 }

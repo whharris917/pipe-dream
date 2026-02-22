@@ -1,6 +1,6 @@
 ---
 title: Attachment Auto-Close + VR Template/Compiler Refinements
-revision_summary: Initial draft
+revision_summary: Execution complete — all 12 EIs passed, 673 tests, no variances
 ---
 
 # CR-095: Attachment Auto-Close + VR Template/Compiler Refinements
@@ -212,18 +212,18 @@ This CR implements changes to qms-cli, a controlled submodule. Development follo
 
 | EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
 |----|------------------|----|-------------------|--------------|---------------------|
-| EI-1 | Pre-execution commit (pipe-dream) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-2 | Create execution branch in qms-cli | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-3 | Implement Theme A (attachment property, checkout guard, cascade close) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-4 | Implement Theme B (TEMPLATE-VR v5, compiler refinements) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-5 | Write tests: checkout guard, cascade close, compiler changes; update existing tests | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-6 | Run full test suite, fix failures, iterate | Yes | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-7 | Update RS: add REQ-DOC-018 through REQ-DOC-020, REQ-INT-023 through REQ-INT-025 | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-8 | Update RTM: add entries for 6 new requirements | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-9 | Route RS + RTM to EFFECTIVE | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-10 | Merge to qms-cli main (`--no-ff`) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-11 | Update pipe-dream submodule pointer | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-12 | Post-execution commit (pipe-dream) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-1 | Pre-execution commit (pipe-dream) | | Commit a56da86 captures pre-execution state | Pass | claude - 2026-02-22 |
+| EI-2 | Create execution branch in qms-cli | | Branch cr-095 created from main (2c61af2) | Pass | claude - 2026-02-22 |
+| EI-3 | Implement Theme A (attachment property, checkout guard, cascade close) | | `attachment: True` on VR in qms_config.py; 3-line terminal state guard in checkout.py; cascade close helper with auto-compile in close.py (~170 lines); attachment close flexibility (any non-terminal status) | Pass | claude - 2026-02-22 |
+| EI-4 | Implement Theme B (TEMPLATE-VR v5, compiler refinements) | | TEMPLATE-VR v5 (removed date/performer/performed_date prompts, Signature/References sections, renamed to Prerequisites, stripped redundant labels, subsection headings); auto-metadata injection in interact_compiler.py; block rendering for all non-table responses; attribution below blockquotes; step subsection numbering (4.1, 4.2, etc.) | Pass | claude - 2026-02-22 |
+| EI-5 | Write tests: checkout guard, cascade close, compiler changes; update existing tests | | 16 new tests in test_attachment_lifecycle.py (5 classification, 4 terminal state, 3 cascade logic, 2 close flexibility, 2 auto-compile); 14 new tests in test_interact_compiler.py (5 block rendering, 6 auto-metadata, 3 step subsection); updated 3 existing parser tests for v5 | Pass | claude - 2026-02-22 |
+| EI-6 | Run full test suite, fix failures, iterate | Yes | 673/673 tests pass. Fixed: add_response timestamp patching pattern, version assertion 4→5 in parser tests, removed date/performer/performed_date from expected prompts, node count 14→11. See CR-095-VR-001 for integration verification. | Pass | claude - 2026-02-22 |
+| EI-7 | Update RS: add REQ-DOC-018 through REQ-DOC-020, REQ-INT-023 through REQ-INT-025 | | Added 6 requirements to SDLC-QMS-RS: REQ-DOC-018 (attachment classification), REQ-DOC-019 (checkout guard), REQ-DOC-020 (cascade close), REQ-INT-023 (auto-metadata), REQ-INT-024 (block rendering), REQ-INT-025 (step subsections). Now EFFECTIVE v18.0. | Pass | claude - 2026-02-22 |
+| EI-8 | Update RTM: add entries for 6 new requirements | | Added 6 traceability entries to SDLC-QMS-RTM with 30 test function references. Updated test counts (673 total). Qualified baseline: 31f8306. Now EFFECTIVE v22.0. | Pass | claude - 2026-02-22 |
+| EI-9 | Route RS + RTM to EFFECTIVE | | RS reviewed + approved (v18.0 EFFECTIVE). RTM reviewed, corrected TBD baseline to 31f8306, re-reviewed + approved (v22.0 EFFECTIVE). | Pass | claude - 2026-02-22 |
+| EI-10 | Merge to qms-cli main (`--no-ff`) | | Merged cr-095 → main with --no-ff. Merge commit: f0cd391. Pushed to remote. | Pass | claude - 2026-02-22 |
+| EI-11 | Update pipe-dream submodule pointer | | qms-cli submodule updated: 2c61af2 → f0cd391 | Pass | claude - 2026-02-22 |
+| EI-12 | Post-execution commit (pipe-dream) | | Commit 4bf56e4 captures RS v18.0, RTM v22.0, archives, audit trails, and updated submodule pointer | Pass | claude - 2026-02-22 |
 
 ---
 
@@ -231,13 +231,25 @@ This CR implements changes to qms-cli, a controlled submodule. Development follo
 
 | Comment | Performed By - Date |
 |---------|---------------------|
-| [COMMENT] | [PERFORMER] - [DATE] |
+| Execution proceeded without variances. QA RTM review caught TBD baseline placeholder — corrected and re-reviewed before approval. | claude - 2026-02-22 |
 
 ---
 
 ## 11. Execution Summary
 
-[EXECUTION_SUMMARY]
+All 12 execution items completed successfully with no variances.
+
+**Theme A (Attachment Lifecycle):** VR document type classified as attachment. Terminal state checkout guard prevents re-checkout of CLOSED/RETIRED documents. Cascade close automatically closes child attachments when parent closes, including auto-compilation of interactive attachments from source data. Attachments can be directly closed from any non-terminal status.
+
+**Theme B (VR Template & Compiler):** TEMPLATE-VR v5 removes redundant prompts (date, performer, performed_date — now auto-generated), unnecessary sections (Signature, References), and redundant labels. Steps use subsection numbering (4.1, 4.2). Compiler auto-generates metadata from response timestamps/authors, block-renders all non-table responses with attribution below blockquotes.
+
+**Qualification:** 673/673 tests pass on cr-095 branch (commit 31f8306). 30 new tests cover all 6 new requirements. SDLC-QMS-RS v18.0 and SDLC-QMS-RTM v22.0 both EFFECTIVE.
+
+**Key commits:**
+- Pre-execution: a56da86 (pipe-dream)
+- Implementation: 31f8306 (qms-cli cr-095)
+- Merge: f0cd391 (qms-cli main)
+- Post-execution: 4bf56e4 (pipe-dream)
 
 ---
 
