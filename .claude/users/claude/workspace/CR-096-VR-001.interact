@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 2
+    "iteration": 3
   },
   "metadata": {
     "parent_doc_id": "CR-096",
@@ -76,11 +76,40 @@
         "author": "claude",
         "timestamp": "2026-02-22T17:23:45Z"
       }
+    ],
+    "step_actual.2": [
+      {
+        "value": "Script exited with code 0. Full stdout output:\n\n=== POST-COMPACTION RECOVERY ===\nSession: Session-2026-02-22-001\nA context compaction has just occurred. Your session notes from before compaction are below.\nUse these to verify your compaction summary and resume work from the correct point.\n\n# Session-2026-02-22-001\n\n## Current State (last updated: 2026-02-22T14:00)\n- **Active document:** CR-096 (IN_EXECUTION)\n- **Current EI:** EI-8 (Test with /compact)\n- **Blocking on:** Nothing\n- **Next:** EI-9 (Post-execution commit)\n- **Subagent IDs:** qa=a1e186c42fc0f39aa\n\n## Progress Log\n\n### Session Focus\nCompaction resilience design and implementation. Investigated Claude Code compaction behavior, designed 5-layer defense-in-depth, implemented as CR-096.\n\n### CR-096 Execution\n- EI-1: Pre-execution commit (4d40f89)\n- EI-2: Added Compact Instructions section to CLAUDE.md\n- EI-3: Updated Session Start Checklist with post-compaction recovery protocol\n- EI-4: Added Incremental Session Notes guidance to CLAUDE.md\n- EI-5: Created .claude/hooks/pre-compact.py\n- EI-6: Created .claude/hooks/post-compact-recovery.py\n- EI-7: Configured hooks in .claude/settings.local.json\n- EI-8: Testing hooks (in progress)\n\n=== END RECOVERY CONTEXT ===\n\nAll expected elements present. No files modified.",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:24:07Z",
+        "commit": "a342f10"
+      }
+    ],
+    "step_outcome.2": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:24:18Z"
+      }
+    ],
+    "step_instructions.3": [
+      {
+        "value": "Test post-compaction recovery hook fallback behavior when no session notes exist. First remove the notes file, then run:\n\nmv .claude/sessions/Session-2026-02-22-001/notes.md .claude/sessions/Session-2026-02-22-001/notes.md.bak\necho '{\"cwd\": \"C:/Users/wilha/projects/pipe-dream\"}' | python .claude/hooks/post-compact-recovery.py\nmv .claude/sessions/Session-2026-02-22-001/notes.md.bak .claude/sessions/Session-2026-02-22-001/notes.md",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:24:44Z"
+      }
+    ],
+    "step_expected.3": [
+      {
+        "value": "1. Script exits with code 0\n2. stdout contains '=== POST-COMPACTION NOTICE ===' (not RECOVERY)\n3. stdout contains 'No session notes found'\n4. stdout directs to .claude/PROJECT_STATE.md as fallback\n5. stdout ends with '=== END NOTICE ==='\n6. notes.md is restored after the test",
+        "author": "claude",
+        "timestamp": "2026-02-22T17:24:57Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 2,
+      "iterations": 3,
       "closed": false,
       "reopenings": []
     }
@@ -89,6 +118,10 @@
     "more_steps.1": {
       "value": "yes",
       "timestamp": "2026-02-22T17:23:19Z"
+    },
+    "more_steps.2": {
+      "value": "yes",
+      "timestamp": "2026-02-22T17:24:31Z"
     }
   }
 }
