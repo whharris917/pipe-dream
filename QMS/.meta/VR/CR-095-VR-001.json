@@ -2,12 +2,12 @@
   "doc_id": "CR-095-VR-001",
   "doc_type": "VR",
   "version": "1.0",
-  "status": "IN_EXECUTION",
+  "status": "CLOSED",
   "executable": true,
   "execution_phase": "post_release",
-  "responsible_user": "claude",
-  "checked_out": true,
-  "checked_out_date": "2026-02-22",
+  "responsible_user": null,
+  "checked_out": false,
+  "checked_out_date": null,
   "effective_version": null,
   "pending_assignees": []
 }

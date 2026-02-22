@@ -1,0 +1,99 @@
+{
+  "doc_id": "CR-095-VR-001",
+  "template": "VR",
+  "template_version": 5,
+  "cursor": "__end__",
+  "cursor_context": {},
+  "metadata": {
+    "parent_doc_id": "CR-095",
+    "vr_id": "CR-095-VR-001",
+    "title": "EI-6 Integration Verification: Full Test Suite",
+    "date": "2026-02-22",
+    "performer": "claude",
+    "performed_date": "2026-02-22"
+  },
+  "responses": {
+    "related_eis": [
+      {
+        "value": "EI-6",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:50:05Z"
+      }
+    ],
+    "objective": [
+      {
+        "value": "Verify that the full QMS CLI test suite passes with all CR-095 changes: attachment classification, terminal state checkout guard, cascade close, auto-metadata generation, block rendering, attribution placement, and step subsection numbering",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:50:17Z"
+      }
+    ],
+    "pre_conditions": [
+      {
+        "value": "qms-cli repository checked out on branch cr-095 at commit 31f8306. Python 3.x with pytest installed. All CR-095 implementation changes committed: qms_config.py, commands/checkout.py, commands/close.py, interact_compiler.py, seed/templates/TEMPLATE-VR.md, tests/test_interact_compiler.py, tests/test_interact_parser.py, tests/test_attachment_lifecycle.py.",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:50:31Z"
+      }
+    ],
+    "step_instructions.1": [
+      {
+        "value": "Run the full test suite from the qms-cli directory:\ncd qms-cli && python -m pytest tests/ -v --tb=short",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:50:42Z"
+      }
+    ],
+    "step_expected.1": [
+      {
+        "value": "All 673 tests pass with 0 failures. No errors, no warnings related to CR-095 changes. Specifically: test_attachment_lifecycle.py (16 tests), test_interact_compiler.py (58 tests including 14 new CR-095 tests), and test_interact_parser.py (49 tests with updated v5 assertions) all pass.",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:50:55Z"
+      }
+    ],
+    "step_actual.1": [
+      {
+        "value": "======================= 673 passed in 511.95s (0:08:31) =======================\n\nAll 673 tests passed. Breakdown of CR-095-relevant test files:\n- tests/test_attachment_lifecycle.py: 16 passed\n- tests/test_interact_compiler.py: 58 passed\n- tests/test_interact_parser.py: 49 passed\nNo failures, no errors, no warnings.",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:51:15Z",
+        "commit": "41402b6"
+      }
+    ],
+    "step_outcome.1": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:51:28Z"
+      }
+    ],
+    "summary_outcome": [
+      {
+        "value": "Pass",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:51:50Z"
+      }
+    ],
+    "summary_narrative": [
+      {
+        "value": "Full QMS CLI test suite executed on cr-095 branch (commit 31f8306) covering all CR-095 changes. 673 tests passed in ~8.5 minutes with zero failures. The 30 new tests specifically verify: attachment document classification (5), terminal state checkout guard (4), cascade close logic (3), attachment close flexibility (2), interactive auto-compile (2), block rendering (5), auto-metadata generation (6), and step subsection numbering (3). Existing tests were updated for TEMPLATE-VR v5 changes (version assertions, prompt list, node count). No unexpected behavior observed.",
+        "author": "claude",
+        "timestamp": "2026-02-22T14:52:09Z"
+      }
+    ]
+  },
+  "loops": {
+    "steps": {
+      "iterations": 1,
+      "closed": true,
+      "reopenings": []
+    }
+  },
+  "gates": {
+    "more_steps.1": {
+      "value": "no",
+      "timestamp": "2026-02-22T14:51:40Z"
+    }
+  },
+  "status": "CLOSED",
+  "responsible_user": null,
+  "checked_out": false,
+  "checked_out_date": null,
+  "pending_assignees": []
+}
