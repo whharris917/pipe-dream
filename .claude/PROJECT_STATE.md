@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-22-001*
+*Last updated: Session-2026-02-22-002*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-096 CLOSED.** Compaction resilience — 5-layer defense-in-depth for conversation compaction. Compact Instructions in CLAUDE.md, post-compaction recovery protocol in Session Start Checklist, incremental session notes guidance, PreCompact hook (pre-compact.py), SessionStart recovery hook (post-compact-recovery.py). Configuration/documentation CR — no code changes.
+**CR-097 CLOSED.** VR compilation rendering fixes — three defects in compiled VR step subsections: added labels (Instructions/Expected/Actual/Outcome), switched instructions from bold to blockquote, improved auto-commit message format. 673 tests, SDLC-QMS-RTM v23.0.
 
-54 CRs CLOSED (CR-042 through CR-096).
+55 CRs CLOSED (CR-042 through CR-097).
 
 ---
 
@@ -40,6 +40,8 @@
 
 **Compaction Resilience (Feb 22, CR-096).** 5-layer defense-in-depth: Compact Instructions, post-compaction recovery protocol, incremental session notes, PreCompact hook, SessionStart recovery hook. Config/docs only.
 
+**VR Compilation Rendering Fixes (Feb 22, CR-097).** Step subsection labels, blockquoted instructions, improved auto-commit messages. 673 tests, SDLC-QMS-RTM v23.0.
+
 ---
 
 ## 3. What's Built
@@ -49,8 +51,8 @@
 | Document | Version | Tests |
 |----------|---------|-------|
 | SDLC-QMS-RS | v18.0 EFFECTIVE | 139 requirements |
-| SDLC-QMS-RTM | v22.0 EFFECTIVE | 673 tests, qualified commit 31f8306 |
-| Qualified Baseline | CLI-13.0 | qms-cli commit 31f8306 (main: f0cd391) |
+| SDLC-QMS-RTM | v23.0 EFFECTIVE | 673 tests, qualified commit d73f154 |
+| Qualified Baseline | CLI-14.0 | qms-cli commit d73f154 (main: 6867966) |
 
 ### Controlled Document State
 
@@ -85,8 +87,6 @@
 | INV-006 | IN_EXECUTION v1.0 | Legacy — incorrect code modification target. |
 | CR-036-VAR-002 | IN_EXECUTION v1.0 | Legacy — documentation drift. |
 | CR-036-VAR-004 | IN_EXECUTION v1.0 | Legacy — partial test coverage analysis. |
-
-*Note: CR-094-ADD-001-VR-001 was auto-closed by CR-095's cascade close feature (previously listed as needing manual draft rename).*
 
 ---
 
