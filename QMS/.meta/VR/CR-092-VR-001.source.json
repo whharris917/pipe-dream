@@ -7,7 +7,10 @@
   "metadata": {
     "parent_doc_id": "CR-092",
     "vr_id": "CR-092-VR-001",
-    "title": "CR-092 Integration Verification: Production CLI and Commit Reachability"
+    "title": "CR-092 Integration Verification: Production CLI and Commit Reachability",
+    "date": "2026-02-21",
+    "performer": "claude",
+    "performed_date": "2026-02-21"
   },
   "responses": {
     "related_eis": [
