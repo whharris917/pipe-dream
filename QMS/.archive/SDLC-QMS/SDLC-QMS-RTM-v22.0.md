@@ -1,8 +1,7 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-097: Update verification evidence for VR compilation rendering
-  fixes (labels, blockquote instructions, commit messages); qualified baseline d73f154
-  (cr-097 branch, 673 tests)'
+revision_summary: 'CR-095: Add REQ-DOC-018/019/020 (attachment lifecycle), REQ-INT-023/024/025
+  (compiler enhancements); qualified baseline 31f8306 (cr-095 branch, 673 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -208,7 +207,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INT-013 | Query Flags | test_interact_engine::test_progress_shows_all_prompts, test_progress_shows_filled_status, test_progress_shows_commit_prompts, test_progress_shows_loop_iterations; test_interact_compiler::test_compile_preview_matches_compile_document | PASS |
 | REQ-INT-014 | Sequential Enforcement | test_interact_engine::test_cannot_skip_prompts, test_cursor_at_correct_start, test_cursor_advances_sequentially, test_respond_on_gate_raises_if_not_gate, test_respond_on_prompt_raises_if_gate | PASS |
 | REQ-INT-015 | Contextual Interpolation | test_interact_engine::test_interpolates_previous_response, test_unresolved_placeholder_left_intact, test_interpolates_metadata, test_interpolates_loop_counter | PASS |
-| REQ-INT-016 | Compilation | test_interact_compiler::test_strips_template_header, test_strips_prompt_tags, test_strips_guidance_text, test_substitutes_placeholders, test_preserves_markdown_structure, test_substitutes_metadata, test_empty_responses_leave_blank, test_vr_compiles_with_filled_responses, test_vr_compiles_empty_gracefully, test_template_fm_removed, test_document_fm_kept, test_notice_stripped, test_single_fm_preserved, test_compiled_output_has_one_fm, test_real_template_preamble_stripped, test_table_rows_no_attribution, test_table_row_single_line, test_table_amendment_active_only, test_loop_instructions_blockquoted, test_loop_attribution_outside_code_fence, test_guidance_stripped_before_end_prompt, test_scaffold_preserved_after_end_prompt, test_end_prompt_tag_stripped_from_output, test_fallback_without_end_prompt, test_block_context_wrapped, test_block_context_attribution_in_blockquote, test_label_context_not_wrapped, test_table_context_not_wrapped, test_empty_block_not_wrapped | PASS |
+| REQ-INT-016 | Compilation | test_interact_compiler::test_strips_template_header, test_strips_prompt_tags, test_strips_guidance_text, test_substitutes_placeholders, test_preserves_markdown_structure, test_substitutes_metadata, test_empty_responses_leave_blank, test_vr_compiles_with_filled_responses, test_vr_compiles_empty_gracefully, test_template_fm_removed, test_document_fm_kept, test_notice_stripped, test_single_fm_preserved, test_compiled_output_has_one_fm, test_real_template_preamble_stripped, test_table_rows_no_attribution, test_table_row_single_line, test_table_amendment_active_only, test_loop_bold_not_broken, test_loop_attribution_outside_code_fence, test_guidance_stripped_before_end_prompt, test_scaffold_preserved_after_end_prompt, test_end_prompt_tag_stripped_from_output, test_fallback_without_end_prompt, test_block_context_wrapped, test_block_context_attribution_in_blockquote, test_label_context_not_wrapped, test_table_context_not_wrapped, test_empty_block_not_wrapped | PASS |
 | REQ-INT-017 | Interactive Checkout | test_interact_integration::test_checkout_creates_interact_session, test_checkout_seeds_from_source_json, test_checkout_creates_placeholder_md | PASS |
 | REQ-INT-018 | Interactive Checkin | test_interact_integration::test_checkin_compiles_to_markdown, test_checkin_stores_source_json, test_checkin_removes_interact_session | PASS |
 | REQ-INT-019 | Source-Aware Read | test_interact_integration::test_read_compiles_from_session, test_read_compiles_from_source_json, test_read_falls_back_to_standard_for_non_interactive | PASS |
@@ -216,7 +215,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INT-021 | Commit Staging Scope | test_interact_integration::test_stages_all_changes, test_no_commit_when_no_changes | PASS |
 | REQ-INT-022 | MCP Interact Tool | test_interact_integration::test_mcp_tools_module_has_qms_interact, test_mcp_interact_has_respond_param, test_mcp_interact_has_file_param, test_mcp_interact_has_reason_param, test_mcp_interact_has_goto_param, test_mcp_interact_has_cancel_goto_param, test_mcp_interact_has_reopen_param, test_mcp_interact_has_progress_param, test_mcp_interact_has_compile_param, test_mcp_interact_calls_interact_command, test_cli_interact_command_registered, test_cli_interact_has_all_flags, test_interact_registered_in_command_registry, test_interact_requires_doc_id, test_new_modules_import_cleanly | PASS |
 | REQ-INT-023 | Auto-Generated Metadata | test_interact_compiler::test_auto_date_from_earliest_timestamp, test_auto_performer_from_authors, test_auto_performed_date_from_latest_timestamp, test_explicit_metadata_not_overwritten, test_no_responses_no_auto_metadata, test_auto_metadata_in_compilation | PASS |
-| REQ-INT-024 | Block Rendering | test_interact_compiler::test_standalone_response_blockquoted, test_attribution_below_blockquote, test_label_context_also_block_rendered, test_table_context_not_wrapped, test_empty_block_not_wrapped, test_loop_instructions_blockquoted | PASS |
+| REQ-INT-024 | Block Rendering | test_interact_compiler::test_standalone_response_blockquoted, test_attribution_below_blockquote, test_label_context_also_block_rendered, test_table_context_not_wrapped, test_empty_block_not_wrapped | PASS |
 | REQ-INT-025 | Step Subsection Numbering | test_interact_compiler::test_step_subsection_headings, test_step_expected_blockquoted, test_step_actual_code_fenced | PASS |
 
 ---
@@ -1884,7 +1883,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_interact_compiler.py | test_table_rows_no_attribution | D2: Table cell substitution omits attribution. |
 | test_interact_compiler.py | test_table_row_single_line | D2: Table row remains single line after substitution. |
 | test_interact_compiler.py | test_table_amendment_active_only | D2: Table cell shows only active value. |
-| test_interact_compiler.py | test_loop_instructions_blockquoted | D2: Step instructions use blockquote rendering with label (CR-097). |
+| test_interact_compiler.py | test_loop_bold_not_broken | D2: Bold markers wrap only value, not attribution. |
 | test_interact_compiler.py | test_loop_attribution_outside_code_fence | D2: Attribution outside code fences in step_actual. |
 | test_interact_compiler.py | test_guidance_stripped_before_end_prompt | D3: Guidance between @prompt and @end-prompt stripped. |
 | test_interact_compiler.py | test_scaffold_preserved_after_end_prompt | D3: Scaffold after @end-prompt preserved. |
@@ -2009,7 +2008,6 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_interact_compiler.py | test_label_context_also_block_rendered | Label-context responses are also block-rendered. |
 | test_interact_compiler.py | test_table_context_not_wrapped | Table-context responses are NOT blockquoted. |
 | test_interact_compiler.py | test_empty_block_not_wrapped | Empty block-context placeholder is not wrapped. |
-| test_interact_compiler.py | test_loop_instructions_blockquoted | Step instructions use blockquote rendering with label (CR-097). |
 
 ---
 
@@ -2019,9 +2017,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_interact_compiler.py | test_step_subsection_headings | Steps produce 4.1 Step 1, 4.2 Step 2 headings; verifies all four subsection labels present (CR-097). |
-| test_interact_compiler.py | test_step_expected_blockquoted | Step expected values are rendered as blockquotes; verifies Expected label present (CR-097). |
-| test_interact_compiler.py | test_step_actual_code_fenced | Step actual values are in code fences; verifies Actual label present (CR-097). |
+| test_interact_compiler.py | test_step_subsection_headings | Steps produce 4.1 Step 1, 4.2 Step 2 headings. |
+| test_interact_compiler.py | test_step_expected_blockquoted | Step expected values are rendered as blockquotes. |
+| test_interact_compiler.py | test_step_actual_code_fenced | Step actual values are in code fences. |
 
 ---
 
@@ -2033,8 +2031,8 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 |-----------|-------|
 | Requirements Spec | SDLC-QMS-RS v18.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-097 |
-| Commit | d73f154 |
+| Branch | cr-095 |
+| Commit | 31f8306 |
 | Total Tests | 673 |
 | Passed | 673 |
 | Failed | 0 |
