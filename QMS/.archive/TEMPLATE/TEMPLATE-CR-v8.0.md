@@ -1,7 +1,6 @@
 ---
 title: Change Record Template
-revision_summary: 'CR-099: Add TEMPLATE CR PATTERNS section for dual-template architecture
-  awareness'
+revision_summary: 'CR-089: Add VR column to EI table and update execution guidance'
 ---
 
 <!--
@@ -92,19 +91,6 @@ The pattern ensures:
 - Changed functionality is verified in a running system, not only via automated tests
 - The qualified commit hash in the RTM is reachable on main via merge commit
 - Full traceability from requirements to verified implementation
-
-TEMPLATE CR PATTERNS:
-Templates exist in two locations that must stay aligned:
-- QMS/TEMPLATE/ -- active QMS instance (governed by document control)
-- qms-cli/seed/templates/ -- used when bootstrapping new QMS instances (governed by SDLC)
-
-When a CR modifies any template:
-- Changes must be propagated to BOTH locations
-- QMS copy: checkout via QMS CLI, edit, checkin
-- Seed copy: commit in qms-cli submodule, update submodule pointer
-- Include an alignment verification EI in the implementation plan to confirm
-  both copies match after changes are applied
-- QA will verify template alignment during post-review (SOP-002 Section 7.3)
 
 Delete this comment block after reading.
 ================================================================================

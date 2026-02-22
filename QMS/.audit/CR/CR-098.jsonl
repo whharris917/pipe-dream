@@ -10,3 +10,5 @@
 {"ts": "2026-02-22T19:59:18+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
 {"ts": "2026-02-22T19:59:27+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
 {"ts": "2026-02-22T19:59:27+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-02-22T20:12:16+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}
+{"ts": "2026-02-22T20:13:24+00:00", "event": "CHECKIN", "user": "claude", "version": "1.1"}
