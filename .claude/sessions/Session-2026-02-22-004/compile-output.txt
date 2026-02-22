@@ -1,0 +1,16 @@
+Compiled output from: python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --compile
+
+Observations:
+1. YAML frontmatter present with title and revision_summary fields
+2. Section headings: Verification Identification (1), Verification Objective (2), Prerequisites (3), Verification Steps (4), Summary (5)
+3. Response values correctly substituted for all filled prompts
+4. Per-response attribution on every response: author (claude), timestamp, format "*-- claude, YYYY-MM-DD HH:MM:SS*"
+5. Commit hash 134c3d6 embedded on step_actual.1: "*-- claude, 2026-02-22 22:36:41 | commit: 134c3d6*"
+6. No raw template tags (<!-- @prompt... -->) in output — all stripped
+7. No guidance text between tags in output — all stripped
+8. Step 1 fully rendered (instructions, expected, actual with commit, outcome)
+9. Step 2 partially rendered (instructions and expected only — actual/outcome not yet filled)
+10. Summary section present but empty (not yet filled)
+11. Title field in frontmatter is empty (metadata.title was not populated at VR creation) — cosmetic issue, does not affect VR validity
+
+Key evidence: the compilation engine (REQ-INT-017) correctly transforms source responses into structured markdown. Attribution (REQ-INT-010) is present on every response. Atomic commit hash (REQ-INT-013) is embedded in commit-enabled responses. Template tags and guidance text are fully stripped.

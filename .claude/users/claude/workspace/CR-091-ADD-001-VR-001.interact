@@ -5,7 +5,7 @@
   "cursor": "step_actual",
   "cursor_context": {
     "loop": "steps",
-    "iteration": 1
+    "iteration": 2
   },
   "metadata": {
     "parent_doc_id": "CR-091-ADD-001",
@@ -47,14 +47,48 @@
         "author": "claude",
         "timestamp": "2026-02-22T22:35:58Z"
       }
+    ],
+    "step_actual.1": [
+      {
+        "value": "Progress output shows all template prompts with correct fill status:\n\nProgress:\n  [x] related_eis\n  [x] objective\n  [x] pre_conditions\n  [x] step_instructions.1 [steps.1]\n  [x] step_expected.1 [steps.1]\n  [ ] step_actual.1 (commit) [steps.1]\n  [ ] step_outcome.1 [steps.1]\n  [ ] more_steps\n  [ ] summary_outcome\n  [ ] summary_narrative\n\nFirst three prompts and step_instructions.1, step_expected.1 show [x] (filled). Current prompt step_actual.1 and all subsequent show [ ] (unfilled). Loop iteration context shown in brackets [steps.1]. Commit-enabled prompts marked with (commit). No errors.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:36:41Z",
+        "commit": "134c3d6"
+      }
+    ],
+    "step_outcome.1": [
+      {
+        "value": "Pass. Progress output matches expectations. All filled prompts show [x], unfilled show [ ]. Loop context and commit markers displayed correctly.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:36:55Z"
+      }
+    ],
+    "step_instructions.2": [
+      {
+        "value": "Verify that the --compile flag produces a well-formed VR markdown document from the recorded responses, with proper attribution and the atomic commit hash embedded. This tests REQ-INT-017 (compilation engine), REQ-INT-010 (attribution), and REQ-INT-013 (atomic commits). Command: python qms-cli/qms.py --user claude interact CR-091-ADD-001-VR-001 --compile",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:37:22Z"
+      }
+    ],
+    "step_expected.2": [
+      {
+        "value": "Compiled markdown output containing: (1) YAML frontmatter with title and revision_summary, (2) Section headings (Verification Identification, Objective, Pre-Conditions, Steps, Summary), (3) Response values substituted for template placeholders, (4) Per-response attribution (author, timestamp) on each response, (5) Commit hash 134c3d6 on the step_actual.1 response (the commit-enabled prompt), (6) No raw template tags (<!-- @prompt... --> stripped), (7) No guidance text between tags. Step 2 should not appear in compiled output since it is not yet complete.",
+        "author": "claude",
+        "timestamp": "2026-02-22T22:37:39Z"
+      }
     ]
   },
   "loops": {
     "steps": {
-      "iterations": 1,
+      "iterations": 2,
       "closed": false,
       "reopenings": []
     }
   },
-  "gates": {}
+  "gates": {
+    "more_steps.1": {
+      "value": "yes",
+      "timestamp": "2026-02-22T22:37:05Z"
+    }
+  }
 }
