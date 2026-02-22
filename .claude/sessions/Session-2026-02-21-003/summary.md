@@ -76,9 +76,11 @@ There is no "label context" category. A response is either in a table cell or it
 
 5. **Remove redundant labels.** Where a `{{placeholder}}` is the sole content of a section, strip the label (e.g., `**Objective:** {{objective}}` becomes just `{{objective}}`). The section heading already names the content. Applies to: Objective, Pre-Conditions/Prerequisites, Summary Narrative, and likely others.
 
+6. **Verification steps as subsections.** Each loop iteration should compile as its own subsection (`### 4.1 Step 1`, `### 4.2 Step 2`, etc.) instead of all steps under flat `### Step N` headings within a single Section 4. This gives each step its own navigable anchor and clearer visual separation.
+
 ### Compiler Changes (interact_compiler.py)
 
-6. **Blockquote attribution goes BELOW the block, not inside it.** Currently `_substitute_line()` wraps the entire result (value + attribution) in `> ` prefix. The fix: blockquote the value only, then render attribution on a separate line after the closing blockquote.
+7. **Blockquote attribution goes BELOW the block, not inside it.** Currently `_substitute_line()` wraps the entire result (value + attribution) in `> ` prefix. The fix: blockquote the value only, then render attribution on a separate line after the closing blockquote.
 
    Current (wrong):
    ```
@@ -93,8 +95,8 @@ There is no "label context" category. A response is either in a table cell or it
    *-- claude, 2026-02-21 23:48:07*
    ```
 
-7. **All non-table responses are block-rendered.** No inline rendering. If a line has `**Label:** {{placeholder}}`, the compiled output should be the label on one line, then the response as a blockquote below it, then attribution below that. (Or, per item 5, the label may be removed entirely if redundant with the heading.)
+8. **All non-table responses are block-rendered.** No inline rendering. If a line has `**Label:** {{placeholder}}`, the compiled output should be the label on one line, then the response as a blockquote below it, then attribution below that. (Or, per item 5, the label may be removed entirely if redundant with the heading.)
 
 ### Programmatic Metadata
 
-8. **Auto-generate document metadata in compiled output.** The Identification table's Date column and the removed Signature section should be replaced by metadata derived from the source file: responsible user, first/last response timestamps, parent document ID.
+9. **Auto-generate document metadata in compiled output.** The Identification table's Date column and the removed Signature section should be replaced by metadata derived from the source file: responsible user, first/last response timestamps, parent document ID.

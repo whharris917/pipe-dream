@@ -97,7 +97,7 @@ Lead-identified improvements from reviewing CR-094-ADD-001-VR-001 output:
 
 **Core principle:** All author responses (outside tables) rendered as blockquotes or code fences, with attribution BELOW the block. No inline rendering. No "label context." Redundant labels stripped.
 
-**Template (TEMPLATE-VR):** Remove `date`, `performer`, `performed_date` prompts. Eliminate Signature and References sections. Rename "Pre-Conditions" to "Prerequisites". Strip redundant labels where placeholder is sole section content (e.g., `**Objective:**`).
+**Template (TEMPLATE-VR):** Remove `date`, `performer`, `performed_date` prompts. Eliminate Signature and References sections. Rename "Pre-Conditions" to "Prerequisites". Strip redundant labels where placeholder is sole section content (e.g., `**Objective:**`). Verification steps as subsections (4.1 Step 1, 4.2 Step 2, etc.).
 
 **Compiler (interact_compiler.py):** Fix blockquote attribution placement (below block, not inside). All non-table responses block-rendered. Auto-generate metadata (date, performer) from source data.
 
