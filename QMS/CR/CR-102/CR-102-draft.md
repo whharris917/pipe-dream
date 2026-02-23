@@ -1,0 +1,357 @@
+---
+title: Genericize QMS-Docs and overhaul qms-cli bootstrap seed
+revision_summary: Initial draft
+---
+
+# CR-102: Genericize QMS-Docs and overhaul qms-cli bootstrap seed
+
+## 1. Purpose
+
+Make QMS-Docs portable and ship them as part of the qms-cli bootstrap, so that anyone cloning qms-cli and running `qms init` gets a complete, self-contained QMS project with educational documentation, agent definitions, orchestrator instructions, and write protection — without any references to Pipe Dream, Flow State, or other instance-specific infrastructure.
+
+Additionally, remove seed SOPs from the bootstrap. The three-strand authority model (CLI mechanism + Templates structure + QMS-Policy.md judgment) makes SOPs redundant as seeded content. QMS-Docs and QMS-Policy.md replace their educational and policy functions.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Session-2026-02-22-005 established the three-strand authority model and built the QMS-Docs suite. Session-2026-02-23-001 (CR-101) redirected agent reading directives from SOPs to QMS-Docs. This CR completes the transition by making QMS-Docs portable and shipping them in the tool.
+
+- **Parent Document:** None (continuation of documentation architecture work from Session-2026-02-22-005)
+
+### 2.2 Changes Summary
+
+1. Genericize all QMS-Docs content — remove Pipe Dream, Flow State, and agent-hub references
+2. Add genericized QMS-Docs to `qms-cli/seed/docs/`
+3. Add generic TU agent definition to `qms-cli/seed/agents/`
+4. Add starter CLAUDE.md to `qms-cli/seed/`
+5. Add generic write guard hook to `qms-cli/seed/hooks/`
+6. Remove `qms-cli/seed/sops/` (all 7 SOP seed files)
+7. Update `qms-cli/commands/init.py` to seed new artifacts and skip SOPs
+8. Add `tu` as a default user in bootstrap
+
+### 2.3 Files Affected
+
+**qms-cli (SDLC-governed):**
+- `commands/init.py` — Add seeding for docs, hooks, CLAUDE.md; remove SOP seeding; add `tu` user
+- `seed/docs/` — New directory: ~38 genericized QMS-Docs files
+- `seed/agents/tu.md` — New: generic Technical Unit agent definition
+- `seed/claude.md` — New: starter CLAUDE.md template
+- `seed/hooks/qms-write-guard.py` — New: generic write guard hook
+- `seed/hooks/README.md` — New: brief hook documentation
+- `seed/sops/` — Delete: all 7 SOP seed files
+- Tests — Update init qualification tests
+
+**pipe-dream (project root):**
+- `QMS-Docs/` — Genericize all instance-specific content (working copy, then copied to seed)
+
+---
+
+## 3. Current State
+
+QMS-Docs exist only in the Pipe Dream project root (`pipe-dream/QMS-Docs/`). They contain references to Pipe Dream, Flow State, agent-hub, specific GitHub URLs, and Pipe Dream-specific agent domains (tu_ui, tu_sketch, tu_sim, tu_scene). The qms-cli bootstrap seeds 7 SOPs, 9 templates, and 1 agent definition (qa.md). A new user cloning qms-cli gets mechanical infrastructure but no educational layer, no orchestrator instructions, no write protection hooks, and no generic TU agent.
+
+---
+
+## 4. Proposed State
+
+QMS-Docs are instance-agnostic and ship inside `qms-cli/seed/docs/`. Running `qms init` creates a complete project with: QMS-Docs (educational layer), templates (structural layer), QMS-Policy.md (judgment layer), a starter CLAUDE.md, agent definitions for qa and tu, a write guard hook, and user workspaces for lead, claude, qa, and tu. No SOPs are seeded. All examples and references use generic placeholders rather than Pipe Dream-specific systems.
+
+---
+
+## 5. Change Description
+
+### 5.1 QMS-Docs Genericization
+
+Remove all instance-specific references from ~38 QMS-Docs files. Categories of changes:
+
+**Direct project references (replace with generic):**
+- "Pipe Dream" → "your project" or remove
+- "Flow State" → generic system names (e.g., "my-app", "{system}")
+- GitHub URLs (whharris917/*) → placeholder URLs or remove
+- flow-state/ specific paths → generic paths
+
+**Instance-specific infrastructure (remove or genericize):**
+- Docker/container development paths → mention as optional
+- Agent domain descriptions (sketch, sim, scene, UI) → generic domain pattern
+- CLAUDE.md, SELF.md, PROJECT_STATE.md references → describe as optional project files
+- .claude/sessions/ references → remove or describe as optional
+
+**Examples using Flow State concepts (replace with generic):**
+- Solver/constraint/particle examples → generic software examples
+- pygame, Numba references → remove
+- Specific file paths (solver_kernels.py, etc.) → generic paths
+
+**Preserve as-is (these are qms-cli concepts, not instance-specific):**
+- .claude/users/ workspace/inbox paths
+- .interact session files
+- Template compilation mechanics
+- QMS CLI commands
+
+### 5.2 New Seed: `seed/docs/`
+
+Copy the genericized QMS-Docs into `qms-cli/seed/docs/`. Directory structure mirrors QMS-Docs/:
+
+```
+seed/docs/
+├── QMS-Policy.md
+├── QMS-Glossary.md
+├── START_HERE.md
+├── FAQ.md
+├── README.md
+├── 01-Overview.md ... 12-CLI-Reference.md
+├── guides/          (9 guides)
+└── types/           (12 type references)
+```
+
+### 5.3 New Seed: `seed/agents/tu.md`
+
+Generic Technical Unit agent definition. Includes:
+- Role description (domain expert, professional judgment)
+- Invocation contexts (reviews, SDLC drafting, investigations, consultation)
+- Placeholder domain section with customization guidance
+- Required Reading pointing at QMS-Docs
+- Generic review criteria (correctness, architectural fit, risk, completeness)
+- CLI/MCP command reference
+- Prohibited behavior section
+
+### 5.4 New Seed: `seed/claude.md`
+
+Starter CLAUDE.md for the orchestrator agent. Includes:
+- QMS identity section (user: claude)
+- Session start checklist pointing at QMS-Docs
+- QMS operations reference (CLI and MCP)
+- Permissions summary
+- Prohibited behavior section
+- Placeholder sections for project-specific architecture
+
+Does NOT include: Flow State architecture, agent-hub infrastructure, container details, session management, compaction resilience, or any Pipe Dream-specific content.
+
+### 5.5 New Seed: `seed/hooks/qms-write-guard.py`
+
+Generic PreToolUse hook that blocks direct writes to:
+- `QMS/.meta/` — CLI-managed metadata
+- `QMS/.audit/` — CLI-managed audit trails
+- `QMS/.archive/` — CLI-managed archive
+- `qms-cli/` — the tool itself
+
+Includes a comment explaining how to add project-specific governed directories.
+
+### 5.6 New Seed: `seed/hooks/README.md`
+
+Brief documentation explaining:
+- What hooks are and how they work
+- The shipped write guard hook and what it protects
+- How to add custom hooks
+
+### 5.7 Remove: `seed/sops/`
+
+Delete all 7 SOP seed files (SOP-001 through SOP-007). The three-strand authority model makes seeded SOPs redundant:
+- Mechanism → CLI code
+- Structure → Templates
+- Judgment → QMS-Policy.md (now in seed/docs/)
+
+### 5.8 Update: `commands/init.py`
+
+Modifications to the init command:
+
+1. **Add `seed_docs()` function** — copies `seed/docs/` to `{root}/QMS-Docs/`
+2. **Add `seed_hooks()` function** — copies `seed/hooks/` to `{root}/.claude/hooks/`
+3. **Add `seed_claude_md()` function** — copies `seed/claude.md` to `{root}/CLAUDE.md`
+4. **Add `tu` to default users** — `["lead", "claude", "qa", "tu"]`
+5. **Remove `seed_sops()` call** — no longer seeds SOPs
+6. **Remove SOP directory creation** — no `QMS/SOP/`, `.meta/SOP/`, `.audit/SOP/`
+7. **Update `check_clean_runway()`** — check for `QMS-Docs/` and `CLAUDE.md` existence
+8. **Update "Next steps" output** — reference QMS-Docs instead of SOPs
+
+---
+
+## 6. Justification
+
+- qms-cli is designed as a standalone tool others can use. Currently it ships without the educational layer needed to understand and operate the QMS. New users get a CLI and templates but no guidance on judgment, policy, or workflow.
+- QMS-Docs were built as the replacement for SOPs but currently exist only in Pipe Dream. Moving them into the tool makes them available to all projects.
+- SOPs are scaffolding from the three-strand analysis. Continuing to seed them into new projects propagates redundancy.
+- The generic TU, starter CLAUDE.md, and write guard hook close the gap between "infrastructure exists" and "project is operable."
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `qms-cli/commands/init.py` | Modify | New seeding functions, remove SOP seeding, add tu user |
+| `qms-cli/seed/docs/` (~38 files) | Create | Genericized QMS-Docs |
+| `qms-cli/seed/agents/tu.md` | Create | Generic TU agent definition |
+| `qms-cli/seed/claude.md` | Create | Starter CLAUDE.md |
+| `qms-cli/seed/hooks/qms-write-guard.py` | Create | Generic write guard hook |
+| `qms-cli/seed/hooks/README.md` | Create | Hook documentation |
+| `qms-cli/seed/sops/SOP-001.md` through `SOP-007.md` | Delete | Remove SOP seeds |
+| `qms-cli/tests/` | Modify | Update init tests |
+| `QMS-Docs/` (~38 files) | Modify | Genericize instance-specific content |
+
+### 7.2 Documents Affected
+
+None. No QMS-controlled documents are modified (QMS-Docs are not controlled documents).
+
+### 7.3 Other Impacts
+
+- Future `qms init` invocations will produce a different project structure (no SOPs, has QMS-Docs)
+- Existing projects using seeded SOPs are unaffected (their QMS/SOP/ directories remain)
+- Pipe Dream's own QMS/SOP/ is unaffected (SOPs remain on disk, just no longer seeded for new projects)
+
+### 7.4 Development Controls
+
+This CR implements changes to qms-cli, a controlled submodule. Development follows established controls:
+
+1. **Test environment isolation:** Development in `.test-env/` (local)
+2. **Branch isolation:** All development on branch `cr-102/exec`
+3. **Write protection:** `.claude/settings.local.json` blocks direct writes to `qms-cli/`
+4. **Qualification required:** All new/modified requirements must have passing tests before merge
+5. **CI verification:** Tests must pass on GitHub Actions for dev branch
+6. **PR gate:** Changes merge to main only via PR after RS/RTM approval
+7. **Submodule update:** Parent repo updates pointer only after PR merge
+
+### 7.5 Qualified State Continuity
+
+| Phase | main branch | RS/RTM Status | Qualified Release |
+|-------|-------------|---------------|-------------------|
+| Before CR | Current commit | EFFECTIVE v18.0 / v23.0 | CLI-14.0 |
+| During execution | Unchanged | DRAFT (checked out) | CLI-14.0 (unchanged) |
+| Post-approval | Merged from cr-102/exec | EFFECTIVE v19.0 / v24.0 | CLI-15.0 |
+
+---
+
+## 8. Testing Summary
+
+### Automated Verification
+
+- Existing init qualification tests updated to expect new seed structure
+- New tests: verify QMS-Docs seeded correctly, verify tu user created, verify hooks seeded, verify CLAUDE.md seeded, verify no SOP directories created
+- Full test suite must pass on CI
+
+### Integration Verification
+
+- Run `qms init` in a clean temporary directory
+- Verify complete project structure: QMS-Docs present, CLAUDE.md present, hooks present, tu user exists, no QMS/SOP/ directory
+- Run basic QMS operations (create CR, checkout, checkin) to confirm functional bootstrap
+- Verify QMS-Docs contain no Pipe Dream/Flow State references (grep verification)
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: Test Environment Setup
+
+1. Verify `.test-env/qms-cli/` exists or clone from GitHub
+2. Create and checkout branch `cr-102/exec`
+3. Verify clean test environment
+
+### 9.2 Phase 2: Requirements (RS Update)
+
+1. Checkout SDLC-QMS-RS
+2. Add requirements for new seed artifacts (docs seeding, hooks seeding, CLAUDE.md seeding, SOP removal)
+3. Checkin RS, route for review and approval
+
+### 9.3 Phase 3: Genericize QMS-Docs
+
+1. Edit all ~38 QMS-Docs files in `pipe-dream/QMS-Docs/` to remove instance-specific content
+2. Verify with grep that no Pipe Dream/Flow State/agent-hub references remain
+3. Copy genericized docs to `.test-env/qms-cli/seed/docs/`
+
+### 9.4 Phase 4: Create New Seed Artifacts
+
+1. Create `seed/agents/tu.md` — generic TU agent definition
+2. Create `seed/claude.md` — starter CLAUDE.md
+3. Create `seed/hooks/qms-write-guard.py` — generic write guard
+4. Create `seed/hooks/README.md` — hook documentation
+
+### 9.5 Phase 5: Remove SOP Seeds
+
+1. Delete `seed/sops/` directory and all 7 SOP files
+
+### 9.6 Phase 6: Update init.py
+
+1. Add `seed_docs()`, `seed_hooks()`, `seed_claude_md()` functions
+2. Add `tu` to default users list
+3. Remove `seed_sops()` call and SOP directory creation
+4. Update `check_clean_runway()` for new artifacts
+5. Update completion message
+
+### 9.7 Phase 7: Qualification
+
+1. Update existing init tests for new structure
+2. Add new tests for docs/hooks/CLAUDE.md seeding
+3. Run full test suite, verify all pass
+4. Push to dev branch, verify CI passes
+5. Document qualified commit hash
+
+### 9.8 Phase 8: Integration Verification
+
+1. Run `qms init --root /tmp/test-project` on the dev branch
+2. Verify complete project structure
+3. Run basic QMS operations in the new project
+4. Grep QMS-Docs for residual instance-specific references
+
+### 9.9 Phase 9: RTM Update and Approval
+
+1. Checkout SDLC-QMS-RTM
+2. Add verification evidence referencing CI-verified commit
+3. Checkin RTM, route for review and approval
+
+### 9.10 Phase 10: Merge and Submodule Update
+
+1. Verify RS and RTM are both EFFECTIVE
+2. Create PR to merge cr-102/exec to main
+3. Merge via merge commit (not squash)
+4. Verify qualified commit reachable on main
+5. Update submodule pointer in pipe-dream
+6. Verify functionality in production context
+
+---
+
+## 10. Execution
+
+| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|----|-------------------|--------------|---------------------|
+| EI-1 | Pre-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Phase 1: Test environment setup | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Phase 2: RS update (requirements for new seed artifacts) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Phase 3: Genericize QMS-Docs | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Phase 4: Create new seed artifacts (tu.md, claude.md, hooks) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Phase 5: Remove SOP seeds | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Phase 6: Update init.py | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-8 | Phase 7: Qualification (tests + CI) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-9 | Phase 8: Integration verification | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-10 | Phase 9: RTM update and approval | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-11 | Phase 10: Merge and submodule update | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-12 | Post-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+---
+
+## 11. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **CR-101** — Trial: Redirect agent reading directives from SOPs to QMS-Docs
+- **Session-2026-02-22-005** — Three-strand authority model design session
+- **Session-2026-02-23-001** — QMS-Docs genericization design discussion
+
+---
+
+**END OF DOCUMENT**
