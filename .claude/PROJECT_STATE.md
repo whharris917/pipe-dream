@@ -6,9 +6,9 @@
 
 ## 1. Where We Are Now
 
-**SOP reading directive trial live.** CR-101 redirected all agent reading directives from QMS/SOP/ to QMS-Docs/. SOPs remain on disk as fallback. QMS-Docs suite (QMS-Policy.md, glossary, FAQ, guides, START_HERE, type references) promoted to project root.
+**Bootstrap overhaul complete.** CR-102 genericized all QMS-Docs (removed Pipe Dream/Flow State references) and overhauled the qms-cli bootstrap seed: `qms init` now creates QMS-Docs, generic TU agent, starter CLAUDE.md, write guard hook, and a `tu` user. SOP seeds removed (replaced by educational documentation layer). 677 tests, SDLC-QMS-RS v19.0, SDLC-QMS-RTM v24.0.
 
-60 CRs CLOSED (CR-042 through CR-101, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
+61 CRs CLOSED (CR-042 through CR-102, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
 
 ---
 
@@ -48,7 +48,7 @@
 
 **VR Evidence Remediation (Feb 22, CR-091-ADD-001).** Replaced inadequate freehand CR-091-VR-001 with interactive VR authored through the system it verifies. 4 verification steps (progress tracking, compilation, amendment workflow, sequential enforcement), all Pass. Type 2 VAR (VAR-001) documents empty title field (CLI bug) and SOP-004/TEMPLATE-VR alignment gap.
 
-**Documentation Architecture (Feb 22-23).** Session-2026-02-22-005 established three-strand authority model: CLI (mechanism) + Templates (structure) + QMS-Policy.md (judgment). Built QMS-Docs suite and promoted to project root. CR-101 redirected all agent reading directives from SOPs to QMS-Docs as reversible trial.
+**Documentation Architecture & Bootstrap Overhaul (Feb 22-23, CR-101, CR-102).** Three-strand authority model: CLI (mechanism) + Templates (structure) + QMS-Policy.md (judgment). Built QMS-Docs suite, genericized for portability (zero instance-specific references). CR-101 redirected agent reading directives from SOPs to QMS-Docs. CR-102 overhauled qms-cli bootstrap: seeds QMS-Docs, generic TU agent, starter CLAUDE.md, write guard hook; removed SOP seeds; added `tu` user. 677 tests, RS v19.0, RTM v24.0.
 
 ---
 
@@ -58,9 +58,9 @@
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v18.0 EFFECTIVE | 139 requirements |
-| SDLC-QMS-RTM | v23.0 EFFECTIVE | 673 tests, qualified commit d73f154 |
-| Qualified Baseline | CLI-14.0 | qms-cli commit d73f154 (main: 6867966) |
+| SDLC-QMS-RS | v19.0 EFFECTIVE | 141 requirements |
+| SDLC-QMS-RTM | v24.0 EFFECTIVE | 677 tests, qualified commit eeaa145 |
+| Qualified Baseline | CLI-15.0 | qms-cli commit eeaa145 (main: 6e73be8) |
 
 ### Controlled Document State
 
@@ -155,6 +155,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
+| START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
 
 ### Bundleable (natural CR groupings)
 
@@ -192,7 +193,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 673.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 677.
 
 **Claude Code deny rules non-functional.** All deny rules in settings.local.json are silently ignored due to a known platform bug (GitHub #8961, #6699, #6631). PreToolUse hooks provide actual enforcement. Deny rules retained as defense-in-depth.
 
