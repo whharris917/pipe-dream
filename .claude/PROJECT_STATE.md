@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-22-003*
+*Last updated: Session-2026-02-22-004*
 
 ---
 
 ## 1. Where We Are Now
 
-**INV-014 CLOSED.** SDLC governance bypass investigation — CR-098 committed directly to qms-cli main. 4 CAPAs: deny rule fix + PreToolUse hook enforcement, retroactive test verification (673 pass), SOP-005 v7.0 / SOP-002 v16.0 / TEMPLATE-CR v10.0 tightened, seed aligned via PR #18. CR-100 CLOSED.
+**All open items from CR-090 onward resolved.** Session-2026-02-22-004 closed 5 orphaned/open documents: CR-090-VR-001, CR-092-VR-001, CR-091-VR-001 (superseded), CR-091-ADD-001-VR-001, CR-091-ADD-001. One Type 2 VAR (CR-091-ADD-001-VAR-001) remains PRE_APPROVED for future corrective CR.
 
-58 CRs CLOSED (CR-042 through CR-100). 5 INVs CLOSED (INV-010 through INV-014).
+59 CRs CLOSED (CR-042 through CR-100, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
 
 ---
 
@@ -46,6 +46,8 @@
 
 **SDLC Governance Bypass Investigation (Feb 22, INV-014).** CR-098 committed directly to qms-cli main bypassing SOP-005 execution branch workflow. Discovered all Claude Code deny rules are non-functional (platform bug). CR-100 tightened SOP-005 (dev location, PR mandate, file scope), TEMPLATE-CR (explicit locations, PR enforcement), SOP-002 (PR verification in QA checklist). PreToolUse hook as enforcement. Seed aligned via PR #18.
 
+**VR Evidence Remediation (Feb 22, CR-091-ADD-001).** Replaced inadequate freehand CR-091-VR-001 with interactive VR authored through the system it verifies. 4 verification steps (progress tracking, compilation, amendment workflow, sequential enforcement), all Pass. Type 2 VAR (VAR-001) documents empty title field (CLI bug) and SOP-004/TEMPLATE-VR alignment gap.
+
 ---
 
 ## 3. What's Built
@@ -80,8 +82,7 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-091-ADD-001 | IN_EXECUTION v1.0 | VR evidence remediation. Unblocked now that submodule is updated. |
-| CR-091-VR-001 | IN_EXECUTION v1.0 | Inadequate — freehand, not interactive. To be superseded by CR-091-ADD-001-VR-001. |
+| CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. Documents VR title propagation bug and SOP-004/TEMPLATE-VR alignment gap. Awaiting future corrective CR. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
 | INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
@@ -96,13 +97,16 @@
 
 ## 5. Forward Plan
 
-### Next: Resume CR-091-ADD-001
+### Interactive Engine Redesign (design discussion complete)
 
-CR-091-ADD-001 is IN_EXECUTION. Author CR-091-ADD-001-VR-001 via `qms interact`, complete remaining EIs, route for post-review.
+A design discussion explored decoupling the interaction system into three independent artifacts. Design documents captured in Session-2026-02-22-004:
 
-### Interaction System Phase 2+ (future)
-- **Phase 3:** Expand to executable documents (TEMPLATE-CR, TEMPLATE-VAR, TEMPLATE-ADD)
-- **Phase 4+:** Non-executable documents, intent decomposition layer
+- `interactive-engine-redesign.md` — Full architecture: workflow specs (YAML/Python), Jinja2 rendering templates, template inheritance hierarchy, two-layer (authoring + process) architecture, workflow language progression (Levels 1-4)
+- `cr-prompt-path-example.md` — Worked example: interactive CR authoring with 8 phases, variant-based EI table selection, auto-populated development controls
+
+**Key insight:** Prompt sequence follows author's thinking (what -> why -> how -> verify -> plan), while compiled document follows reader's structure (Sections 1-12). The `.source.json` is the clean interface between them.
+
+**Implementation approach:** Build for Level 3 (Python declarative), start at Level 2 (YAML + Jinja2). Design engine interfaces against an abstract workflow API so the backend can evolve independently.
 
 ### Phase B: Git MCP Access Control (~1 session)
 - Add identity resolution to `agent-hub/git_mcp/server.py`
@@ -142,6 +146,8 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 | Item | Effort | Source |
 |------|--------|--------|
+| Fix CLI title metadata propagation in interactive engine | Small | CR-091-ADD-001-VAR-001 |
+| Align SOP-004 Section 9C.4 with TEMPLATE-VR v5 (remove Signature requirement) | Small | CR-091-ADD-001-VAR-001 |
 | Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 / Session-2026-02-21-002 |
 | Interactive document write protection (REQ-INT-023) | Medium | Session-2026-02-21-001 defect |
 | Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
@@ -150,6 +156,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 ### Bundleable (natural CR groupings)
 
+**Interactive Engine v2** (~2-3 sessions) — Three-artifact separation (workflow spec, rendering template, source data), Jinja2 compilation, template inheritance, CR/VAR/ADD interactive authoring. See design docs in Session-2026-02-22-004.
 **Identity & Access Hardening** (~1 session) — proxy header validation (L7), Git MCP access control
 **Agent Hub Robustness** (~1-2 sessions) — C3, H4, M6, M8, M9, M10
 **GUI Polish** (~1-2 sessions) — H6, M3, M4, M5, M7, L3, L4, L5, L6
@@ -179,8 +186,6 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **checkin.py bug fix needs governance.** Commit `532e630` fixed an `UnboundLocalError` in interactive checkin. Needs a proper CR for traceability.
 
-**CR-091-VR-001 inadequacy.** Freehand VR bypassed the interaction system. Remediation via CR-091-ADD-001 in progress (unblocked).
-
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
 **Container security.** C3 (root user) remains the last critical code review finding.
@@ -188,3 +193,5 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 **Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 673.
 
 **Claude Code deny rules non-functional.** All deny rules in settings.local.json are silently ignored due to a known platform bug (GitHub #8961, #6699, #6631). PreToolUse hooks provide actual enforcement. Deny rules retained as defense-in-depth.
+
+**SOP-004/TEMPLATE-VR alignment gap.** SOP-004 Section 9C.4 still lists "Signature" as required VR content, but TEMPLATE-VR v5 (approved under CR-098) removed it. Documented in CR-091-ADD-001-VAR-001, corrective CR pending.
