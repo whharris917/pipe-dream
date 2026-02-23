@@ -1,0 +1,2 @@
+2026-02-23T17:32:29 | COMPACTION (auto) | transcript: C:\Users\wilha\.claude\projects\C--Users-wilha-projects-pipe-dream\83ff8c81-07ea-4b16-9975-e818983abd3d.jsonl
+2026-02-23T17:32:48 | COMPACTION (manual) | transcript: C:\Users\wilha\.claude\projects\C--Users-wilha-projects-pipe-dream\83ff8c81-07ea-4b16-9975-e818983abd3d.jsonl
