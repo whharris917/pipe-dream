@@ -100,7 +100,7 @@ Something went wrong during execution.
 2. Record the failure observation in the Actual Outcome column
 3. Create the VAR:
    ```bash
-   qms create VAR --parent CR-045 --title "EI-3 solver regression requires alternative approach"
+   qms create VAR --parent CR-045 --title "EI-3 test regression requires alternative approach"
    ```
 4. Decide Type 1 or Type 2 (see decision criteria below)
 5. In the VAR, document:
@@ -115,7 +115,7 @@ Something went wrong during execution.
 **In the parent's EI table:**
 
 ```markdown
-| EI-3 | Implement solver fix | Solver converges in <20 iterations | Solver diverges after 30+ iterations due to interaction with existing anchor constraints | See CR-045-VAR-001 | Fail | claude | 2026-02-15 |
+| EI-3 | Implement API fix | Response completes in <200ms | Request times out after 30s+ due to interaction with existing connection pool limits | See CR-045-VAR-001 | Fail | claude | 2026-02-15 |
 ```
 
 **Key rule:** The parent EI gets a Fail outcome and a reference to the VAR. Do not leave the EI blank or try to resolve the failure inline.
@@ -160,7 +160,7 @@ Something went wrong during execution.
 
 1. Create the INV:
    ```bash
-   qms create INV --title "Investigation: Recurring solver divergence across multiple CRs"
+   qms create INV --title "Investigation: Recurring timeout failures across multiple CRs"
    ```
 2. In the INV, document:
    - Description of the deviation
@@ -171,7 +171,7 @@ Something went wrong during execution.
    ```
    INV-005
      EI-1: Root cause analysis (done in INV)
-     EI-2: Corrective action -- create CR-060 to fix solver
+     EI-2: Corrective action -- create CR-060 to fix the defect
      EI-3: Preventive action -- create CR-061 to add regression tests
    ```
 4. Route INV through full lifecycle

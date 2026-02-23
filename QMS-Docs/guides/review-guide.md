@@ -20,7 +20,7 @@ Before running `qms route {DOC_ID} --review`, verify:
 ### What Happens During Review
 
 1. **QA receives the routing notification** in their inbox.
-2. **QA assigns Technical Unit reviewers** based on the document's scope (e.g., `tu_ui` for UI changes, `tu_sim` for physics changes).
+2. **QA assigns Technical Unit reviewers** based on the document's scope (e.g., the appropriate TU for the affected domain).
 3. **Each reviewer evaluates independently.** You will not know intermediate results until all reviewers finish.
 4. **The status moves to REVIEWED** (or POST_REVIEWED) automatically once all assigned reviewers submit their outcome.
 
@@ -33,7 +33,7 @@ If any reviewer submits `request-updates`, the approval gate is blocked. To proc
 1. **Read the comments.** Use `qms comments {DOC_ID}` to see all review feedback.
 2. **Check out the document.** `qms checkout {DOC_ID}`
 3. **Address every point raised.** Do not cherry-pick -- each comment needs a response in the document or an explanation of why it does not apply.
-4. **Update the revision_summary.** State what changed (e.g., `"Addressed reviewer feedback: clarified impact on solver module"`).
+4. **Update the revision_summary.** State what changed (e.g., `"Addressed reviewer feedback: clarified impact on auth module"`).
 5. **Check in.** `qms checkin {DOC_ID}`
 6. **Re-route for review.** `qms route {DOC_ID} --review` -- the full review cycle restarts.
 
@@ -93,7 +93,7 @@ Use `qms withdraw {DOC_ID}` (or simply `qms checkout {DOC_ID}` which auto-withdr
 | **Child document status** | Are child documents in required states? (See [Post-Review Checklist](post-review-checklist.md)) |
 | **Code governance** | For code CRs: is RS EFFECTIVE? RTM EFFECTIVE with real commit hash? Branch merged? |
 
-#### Technical Units (tu_ui, tu_scene, tu_sketch, tu_sim) -- Technical Accuracy
+#### Technical Units (TUs) -- Technical Accuracy
 
 | Check | Question to Ask |
 |-------|-----------------|
@@ -117,9 +117,9 @@ Use `qms withdraw {DOC_ID}` (or simply `qms checkout {DOC_ID}` which auto-withdr
 
 | Pattern | Example |
 |---------|---------|
-| **Identify the issue** | "Section 5.2 describes modifying `solver.py` but Section 7.1 does not list it in Files Affected." |
-| **Explain why it matters** | "This means the impact assessment is incomplete and reviewers for the solver domain may not be assigned." |
-| **Suggest a resolution** | "Add `solver.py` to Section 7.1 with the change description." |
+| **Identify the issue** | "Section 5.2 describes modifying `auth.py` but Section 7.1 does not list it in Files Affected." |
+| **Explain why it matters** | "This means the impact assessment is incomplete and reviewers for the affected domain may not be assigned." |
+| **Suggest a resolution** | "Add `auth.py` to Section 7.1 with the change description." |
 
 **Unhelpful comments to avoid:**
 
@@ -152,7 +152,7 @@ Is there a factual error, missing content, or SOP non-conformance?
 |----------|---------|---------|
 | **Preference** | Recommend (with comment) | "I would use a dictionary instead of a list here, but the list approach works." |
 | **Defect** | Request-updates | "This approach creates a circular import between `tools.py` and `scene.py`." |
-| **Risk** | Request-updates | "The impact assessment does not mention `compiler.py`, which imports the modified function." |
+| **Risk** | Request-updates | "The impact assessment does not mention `handlers.py`, which imports the modified function." |
 | **Incompleteness** | Request-updates | "Section 8 Testing Summary is empty." |
 | **Style** | Recommend (with or without comment) | "The variable name `x` is unclear but functionally correct." |
 
@@ -200,7 +200,7 @@ qms review {DOC_ID} --request-updates --comment "..." # Request changes
 ### Commands for QA (Additional)
 
 ```bash
-qms assign {DOC_ID} --add tu_ui tu_sim      # Assign reviewers
+qms assign {DOC_ID} --add tu_frontend tu_backend  # Assign reviewers
 qms approve {DOC_ID}                         # Approve document
 qms reject {DOC_ID} --comment "..."          # Reject document
 ```

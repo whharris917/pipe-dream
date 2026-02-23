@@ -2,11 +2,11 @@
 
 ## What Is the QMS?
 
-The Quality Management System (QMS) is a GMP-inspired document control and workflow engine that governs how code gets written, reviewed, approved, and deployed in the Pipe Dream project. It is implemented as a CLI tool (`qms-cli`) backed by flat-file storage (Markdown documents, JSON metadata, JSONL audit trails).
+The Quality Management System (QMS) is a GMP-inspired document control and workflow engine that governs how code gets written, reviewed, approved, and deployed. It is implemented as a CLI tool (`qms-cli`) backed by flat-file storage (Markdown documents, JSON metadata, JSONL audit trails).
 
 Every meaningful change -- whether to application code, to a procedure, or to the QMS itself -- flows through a controlled document with defined review, approval, and execution stages. Nothing ships without a paper trail.
 
-## Why GMP for a CAD/Physics Project?
+## Why GMP?
 
 This is not a pharmaceutical company. The QMS exists for three reasons:
 
@@ -22,7 +22,7 @@ The QMS operates on two governance layers simultaneously:
 
 ### Layer 1: Code Governance
 
-Controls how the Flow State application gets developed.
+Controls how application code gets developed.
 
 | Mechanism | Purpose |
 |-----------|---------|
@@ -106,21 +106,23 @@ All QMS operations flow through the `qms-cli` tool. Direct manipulation of metad
 ## Project Structure
 
 ```
-pipe-dream/                          # QMS project root
+my-project/                          # QMS project root
+├── qms-cli/                         # CLI tool (git submodule)
+├── qms.config.json                  # Project root marker
+├── CLAUDE.md                        # Orchestrator instructions
 ├── QMS/                             # Controlled documents
-│   ├── SOP/                         # Standard Operating Procedures
 │   ├── CR/                          # Change Records
 │   ├── INV/                         # Investigations
-│   ├── RS/                          # Requirements Specifications
-│   ├── RTM/                         # Requirements Traceability Matrices
-│   ├── .meta/                       # Sidecar metadata (JSON)
-│   ├── .audit/                      # Audit trails (JSONL)
-│   └── .archive/                    # Superseded versions
-├── qms-cli/                         # CLI tool (git submodule)
-├── flow-state/                      # Application code (git submodule)
-└── .claude/                         # Agent infrastructure
-    ├── users/                       # Per-user workspaces and inboxes
-    └── sessions/                    # Session tracking
+│   ├── TEMPLATE/                    # Document templates
+│   ├── .meta/                       # Document metadata (CLI-managed)
+│   ├── .audit/                      # Audit trails (CLI-managed)
+│   └── .archive/                    # Version archive (CLI-managed)
+├── QMS-Docs/                        # Educational documentation
+├── .claude/
+│   ├── users/                       # Per-user workspaces and inboxes
+│   ├── agents/                      # Agent definitions
+│   └── hooks/                       # Hook scripts
+└── my-app/                          # Example: a governed codebase
 ```
 
 See [02-Document-Control.md](02-Document-Control.md) for the full directory structure and metadata architecture.

@@ -182,7 +182,7 @@ CREATE ──> IN_EXECUTION ──> POST_REVIEW ──> POST_REVIEWED ──> PO
 
 ### RS (Requirements Specification)
 
-- **SDLC singleton.** One RS per governed system (flow-state, qms-cli).
+- **SDLC singleton.** One RS per governed system (each governed system gets its own RS).
 - **Requirements only.** No implementation details -- just "the system shall..." statements.
 - **Paired with RTM.** RS defines requirements; RTM proves they are met.
 

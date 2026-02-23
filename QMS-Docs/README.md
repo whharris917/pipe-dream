@@ -1,6 +1,6 @@
 # QMS Documentation
 
-User-facing documentation for the Pipe Dream Quality Management System.
+User-facing documentation for the Quality Management System.
 
 ## Structure
 

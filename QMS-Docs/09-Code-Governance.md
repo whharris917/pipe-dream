@@ -1,6 +1,6 @@
 # 9. Code Governance
 
-Source code in Pipe Dream is treated as a **qualified system** -- analogous to a validated piece of equipment in GMP manufacturing. Git is the qualified platform; branches, commits, and merges are the controlled operations performed on it. Every code change is authorized by a Change Record, executed on an isolated branch, verified through CI, and merged only after all quality gates are satisfied.
+Source code is treated as a **qualified system** -- analogous to a validated piece of equipment in GMP manufacturing. Git is the qualified platform; branches, commits, and merges are the controlled operations performed on it. Every code change is authorized by a Change Record, executed on an isolated branch, verified through CI, and merged only after all quality gates are satisfied.
 
 ## The GMP Analogy
 
@@ -10,12 +10,12 @@ Git plays the same role here. The `main` branch is the qualified state of each s
 
 ## Systems
 
-A **system** is a distinct codebase governed under the QMS. Each system lives in its own git repository (mounted as a submodule in pipe-dream):
+A **system** is a distinct codebase governed under the QMS. Each system lives in its own git repository (mounted as a submodule in the project root):
 
 | System | Repository | Submodule Path |
 |--------|-----------|----------------|
-| Flow State | `whharris917/flow-state` | `flow-state/` |
-| QMS CLI | `whharris917/qms-cli` | `qms-cli/` |
+| *Your App* | *github.com/org/my-app* | `my-app/` |
+| QMS CLI | *github.com/org/qms-cli* | `qms-cli/` |
 
 Each system has its own [Requirements Specification (RS)](types/RS.md), [Requirements Traceability Matrix (RTM)](types/RTM.md), and release history.
 
@@ -39,7 +39,7 @@ main ─────────────────────────
 | **3. Test** | Run test suite, verify behavior | All automated tests must pass; manual verification as needed |
 | **4. Qualify** | Update SDLC documents (RS, RTM) | RS must be EFFECTIVE; RTM must be EFFECTIVE with verified requirements |
 | **5. Merge** | Merge execution branch to `main` | Only after merge gate prerequisites are met |
-| **6. Update submodule pointer** | In pipe-dream, update the submodule ref | `git add flow-state && git commit` to record the new qualified state |
+| **6. Update submodule pointer** | In the project root, update the submodule ref | `git add my-app && git commit` to record the new qualified state |
 
 ## Development Environments
 
@@ -47,9 +47,8 @@ Code development happens in designated locations, never in the QMS-controlled di
 
 | Environment | Location | Purpose |
 |-------------|----------|---------|
-| **Local development** | `.test-env/` (in project root) | Local testing, experimentation |
-| **Container development** | `/projects/` (in Docker container) | Isolated agent development |
-| **Production (read-only)** | `flow-state/`, `qms-cli/` (submodule paths) | The qualified codebase -- do not develop here directly |
+| **Local development** | `.test-env/` | Isolated local development |
+| **Production (read-only)** | Submodule paths (e.g., `my-app/`, `qms-cli/`) | The qualified codebase -- do not develop here directly |
 
 The execution branch is created in the system's own repository, cloned or checked out in the development environment, and only merged back to `main` after qualification.
 

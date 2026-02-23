@@ -135,7 +135,7 @@ re.compile(r"^(?:CR|INV)-\d{3}-VAR-\d{3}$")
 ## CLI Creation
 
 ```bash
-qms --user claude create VAR --parent CR-005 --title "Fix broken constraint solver"
+qms --user claude create VAR --parent CR-005 --title "Fix broken validation logic"
 ```
 
 **Required flags:**

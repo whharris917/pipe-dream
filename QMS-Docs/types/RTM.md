@@ -63,7 +63,7 @@ all_types["FLOW-RTM"] = {
 The `create` command type argument is the dynamic key, e.g., `FLOW-RTM`:
 
 ```bash
-python qms-cli/qms.py --user claude create FLOW-RTM --title "Flow State Requirements Traceability Matrix"
+python qms-cli/qms.py --user claude create FLOW-RTM --title "My App Requirements Traceability Matrix"
 ```
 
 ### Singleton ID Assignment
@@ -195,7 +195,7 @@ for namespace in get_all_sdlc_namespaces():
 
 ```bash
 # Create
-python qms-cli/qms.py --user claude create FLOW-RTM --title "Flow State Requirements Traceability Matrix"
+python qms-cli/qms.py --user claude create FLOW-RTM --title "My App Requirements Traceability Matrix"
 
 # Check status
 python qms-cli/qms.py --user claude status SDLC-FLOW-RTM

@@ -37,7 +37,7 @@ Both types are investigated using the same INV document structure.
 - An execution item fails due to a known, localized issue -- use a [VAR](07-Child-Documents.md) instead
 - A test step fails during a Test Protocol -- use an [ER (Exception Report)](07-Child-Documents.md) instead
 - The issue is a simple scope change during execution -- use a VAR
-- You want to track a feature request or improvement idea -- use the backlog in `PROJECT_STATE.md`
+- You want to track a feature request or improvement idea -- use your project backlog
 
 ### Decision Guide
 

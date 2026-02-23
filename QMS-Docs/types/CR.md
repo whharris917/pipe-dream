@@ -65,7 +65,7 @@ The template defines a strict structure per SOP-002 Section 6.
 | 9.5 | Integration Verification | Launch application, exercise functionality, confirm effectiveness |
 | 9.6 | RTM Update and Approval | Checkout RTM, add evidence, route for approval. RTM must be EFFECTIVE before Phase 7 |
 | 9.7 | Merge and Submodule Update | Verify RS/RTM EFFECTIVE, create PR, merge (no squash), verify commit reachability, update submodule |
-| 9.8 | Documentation | Update CLAUDE.md or other documentation |
+| 9.8 | Documentation | Update project documentation |
 
 #### Execution Content (Sections 10-12) -- Editable during execution
 

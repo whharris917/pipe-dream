@@ -62,7 +62,7 @@ Parent close triggers VR close (cascade)
 ### Command
 
 ```bash
-qms create VR --parent CR-045 --title "Verify parallel constraint enforcement"
+qms create VR --parent CR-045 --title "Verify token validation under load"
 ```
 
 **What happens on creation:**
@@ -139,9 +139,9 @@ The objective describes the **capability** being verified, not the specific test
 
 | Bad (mechanism-focused) | Good (capability-focused) |
 |------------------------|--------------------------|
-| "Run the solver and check output" | "Verify that the constraint solver enforces parallel-line constraints within tolerance" |
+| "Run the module and check output" | "Verify that the authentication module validates JWT tokens within the configured latency budget" |
 | "Test the dropdown widget" | "Verify that the toolbar dropdown renders, responds to click events, and closes on outside click" |
-| "Check that the config was updated" | "Verify that the application reads and applies the updated solver iteration count from configuration" |
+| "Check that the config was updated" | "Verify that the application reads and applies the updated retry count from configuration" |
 
 **The test:** Could you change the implementation and still use the same objective? If yes, it is capability-focused. If changing the implementation would require rewriting the objective, it is mechanism-focused.
 
@@ -151,9 +151,9 @@ Pre-conditions must be specific enough that someone with terminal access (but no
 
 | Bad | Good |
 |-----|------|
-| "System is running" | "Flow State application launched via `python main.py --mode builder` from commit `abc1234` on branch `cr-045/exec`" |
-| "Latest code" | "Branch `cr-045/exec` at commit `abc1234`. No uncommitted changes. Python 3.11, pygame 2.5.0." |
-| "Config is set" | "`config.py` has `SOLVER_ITERATIONS = 50`, `PARALLEL_TOLERANCE = 0.001`. Verified via `grep SOLVER flow-state/core/config.py`." |
+| "System is running" | "Application launched via `python main.py` from commit `abc1234` on branch `cr-045/exec`" |
+| "Latest code" | "Branch `cr-045/exec` at commit `abc1234`. No uncommitted changes. Python 3.11, dependencies installed per requirements.txt." |
+| "Config is set" | "`config.py` has `MAX_RETRIES = 5`, `REQUEST_TIMEOUT = 30`. Verified via `grep MAX_RETRIES src/config.py`." |
 
 **Minimum requirements:**
 - Branch and commit hash
@@ -167,20 +167,20 @@ Step instructions must be executable. A reader should be able to copy-paste them
 
 | Bad | Good |
 |-----|------|
-| "Run the tests" | "Execute: `cd flow-state && python -m pytest tests/test_solver.py -v`" |
-| "Open the app and try the dropdown" | "1. Launch: `python main.py --mode builder`\n2. Click the tool selector in the top toolbar\n3. Observe the dropdown menu" |
-| "Check the config" | "Execute: `grep -n PARALLEL_TOLERANCE flow-state/core/config.py`" |
+| "Run the tests" | "Execute: `python -m pytest tests/test_auth.py -v`" |
+| "Open the app and try the dropdown" | "1. Launch: `python main.py`\n2. Click the tool selector in the top toolbar\n3. Observe the dropdown menu" |
+| "Check the config" | "Execute: `grep -n REQUEST_TIMEOUT src/config.py`" |
 
 **For multi-step instructions**, use numbered sub-steps:
 
 ```
-1. Launch the application: `python main.py --mode builder`
-2. Click "File > New" to create an empty scene
-3. Select the Line tool (press L)
-4. Draw two lines by clicking at (100,100)-(200,100) and (100,200)-(200,200)
-5. Select both lines (Ctrl+A)
-6. Apply Parallel constraint (press P)
-7. Observe the solver output in the terminal
+1. Launch the application: `python main.py`
+2. Navigate to the user management page
+3. Click "Create New User"
+4. Fill in required fields: username "testuser", email "test@example.com"
+5. Click "Submit"
+6. Observe the confirmation message and redirect
+7. Verify the new user appears in the user list
 ```
 
 ### Observations: Copy-Paste Actual Output
@@ -189,9 +189,9 @@ The `step_actual` prompt is where evidence lives. This is the most important par
 
 | Bad | Good |
 |-----|------|
-| "Tests passed" | "```\n$ python -m pytest tests/test_solver.py -v\ntests/test_solver.py::test_parallel PASSED\ntests/test_solver.py::test_anchor PASSED\ntests/test_solver.py::test_combined PASSED\n3 passed in 0.42s\n```" |
-| "Dropdown appeared" | "Dropdown rendered at position (120, 45). Menu contains 3 items: 'Select', 'Line', 'Brush'. Font renders at 14px. Background color: #2a2a2a." |
-| "It works" | "Solver converged in 14 iterations. Final angle between lines: 0.0003 rad (within 0.001 tolerance). Terminal output:\n```\nSolver: 14 iterations, max_error=0.0003\n```" |
+| "Tests passed" | "```\n$ python -m pytest tests/test_auth.py -v\ntests/test_auth.py::test_valid_token PASSED\ntests/test_auth.py::test_expired_token PASSED\ntests/test_auth.py::test_malformed_token PASSED\n3 passed in 0.42s\n```" |
+| "Dropdown appeared" | "Dropdown rendered at position (120, 45). Menu contains 3 items: 'Select', 'Edit', 'Delete'. Font renders at 14px. Background color: #2a2a2a." |
+| "It works" | "Auth module validated token in 45ms. Response status: 200 OK with correct user payload. Terminal output:\n```\nAuth: token validated, user_id=42, expires_in=3600s\n```" |
 
 **Rules for observations:**
 1. **Copy-paste terminal output** -- do not retype or summarize
@@ -291,7 +291,7 @@ The commit hash creates a verifiable link between your observation and the code 
 |-------------|--------------|
 | "The feature works correctly" | "Terminal output: `3 passed, 0 failed`" |
 | "The widget renders as expected" | "Screenshot: dropdown at (120, 45), 3 items visible, #2a2a2a background" |
-| "Performance is acceptable" | "Solver converged in 14 iterations (0.003s). Baseline was 12 iterations (0.002s)." |
+| "Performance is acceptable" | "Request handler completed in 45ms (0.045s). Baseline was 38ms (0.038s)." |
 
 **The test:** Could you write this sentence without having run the step? If yes, it is assertional.
 
@@ -301,9 +301,9 @@ The commit hash creates a verifiable link between your observation and the code 
 
 | Vague | Reproducible |
 |-------|-------------|
-| "Test the solver" | "Execute: `python -m pytest tests/test_solver.py::test_parallel -v`" |
-| "Verify the UI" | "1. Launch `python main.py --mode builder`\n2. Press L to select Line tool\n3. Draw line from (100,100) to (200,100)\n4. Observe toolbar state" |
-| "Check the output" | "Execute: `grep SOLVER_ITERATIONS flow-state/core/config.py` and verify output shows `SOLVER_ITERATIONS = 50`" |
+| "Test the module" | "Execute: `python -m pytest tests/test_auth.py::test_valid_token -v`" |
+| "Verify the UI" | "1. Launch `python main.py`\n2. Navigate to the login page\n3. Enter test credentials\n4. Observe the response" |
+| "Check the output" | "Execute: `grep MAX_RETRIES src/config.py` and verify output shows `MAX_RETRIES = 5`" |
 
 ### 3. Post-Hoc Filling
 
@@ -333,7 +333,7 @@ The commit hash creates a verifiable link between your observation and the code 
 
 | Summarized | Quoted |
 |------------|--------|
-| "All three tests passed" | "```\ntests/test_solver.py::test_parallel PASSED\ntests/test_solver.py::test_anchor PASSED\ntests/test_solver.py::test_combined PASSED\n3 passed in 0.42s\n```" |
+| "All three tests passed" | "```\ntests/test_auth.py::test_valid_token PASSED\ntests/test_auth.py::test_expired_token PASSED\ntests/test_auth.py::test_malformed_token PASSED\n3 passed in 0.42s\n```" |
 
 **When output is very long**, use `--respond --file` to capture it from a file:
 
@@ -368,7 +368,7 @@ Keep them separate:
 This is the bar. Every VR should be reproducible by a competent person who:
 
 - Has access to the repository and can checkout the specified commit
-- Has the required toolchain installed (Python, pygame, etc.)
+- Has the required toolchain installed (as specified in the project's setup documentation)
 - Can read and follow written instructions
 - Has **no prior knowledge** of the project's architecture, history, or conventions
 

@@ -33,7 +33,7 @@ Start with what's in front of you right now, then follow the link.
 - **Fix something that was missed after a document closed** → You need an ADD (Addendum Report). ADDs are for "we closed this, then realized we missed something."
   - [More on ADDs](#i-closed-a-document-but-found-a-problem) | [ADD reference](types/ADD.md)
 
-- **I'm not sure if this needs a CR** → Ask yourself: does this change anything under QMS control? That includes code in `flow-state/`, documents in `QMS/`, and templates in `QMS/TEMPLATE/`. If yes, you need a CR. Things that do NOT need a CR: session notes, QMS-Docs, CLAUDE.md, SELF.md, PROJECT_STATE.md.
+- **I'm not sure if this needs a CR** → Ask yourself: does this change anything under QMS control? That includes code in governed submodules, documents in `QMS/`, and templates in `QMS/TEMPLATE/`. If yes, you need a CR. Things that do NOT need a CR: session notes, QMS-Docs, and project documentation files outside `QMS/`.
 
 > **Common mistake:** Starting to write code before creating a CR. All code changes must be authorized by a CR. Create the CR first, get it pre-approved, then start coding.
 
@@ -278,7 +278,7 @@ You cannot skip re-review and go straight to re-approval. The CLI will block you
 1. **Check your inbox** — `qms inbox`. You may have pending review or approval tasks assigned to you.
 2. **Check your workspace** — `qms workspace`. You may have documents checked out that need attention.
 3. **Check active document status** — `qms status {DOC_ID}` for any document you're working on. Is it waiting for you?
-4. **Read [PROJECT_STATE.md](../../.claude/PROJECT_STATE.md)** — this has the current project focus and forward plan.
+4. **Check your project's planning documents** — these have the current project focus and forward plan.
 5. **Ask the Lead** — if none of the above clarifies your next move.
 
 > **You are not expected to figure everything out yourself.** The QMS is complex. Asking for help is always the right call when you're unsure.

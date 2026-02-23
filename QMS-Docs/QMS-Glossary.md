@@ -57,7 +57,7 @@ All major QMS-related terms used and/or defined across SOP-001 through SOP-007.
 | **Sidecar File** | JSON metadata file in `.meta/` managed by the QMS CLI; stores workflow state separate from document content. | SOP-001 §5.2 |
 | **Static Field** | A field in the executable block that is defined at document creation and is never editable (e.g., test step instructions). | SOP-004 §3 |
 | **Subagent** | A spawned agent assigned a specific role (e.g., Quality agent, Reviewer agent). | SOP-007 §3 |
-| **System** | A distinct codebase governed under SOP-005 (e.g., Flow State, QMS CLI). | SOP-005 §3 |
+| **System** | A distinct codebase governed under SOP-005 (e.g., a web application, a CLI tool). | SOP-005 §3 |
 | **System Release** | A versioned, qualified state of a system's code; format `{SYSTEM}-{MAJOR}.{MINOR}`. | SOP-005 §3, §9 |
 | **Task Outcome** | Pass or Fail designation for each execution item; Fail requires a VAR or ER attachment. | SOP-004 §4.2 |
 | **Task Prompt** | The instruction provided when spawning a subagent. | SOP-007 §3 |

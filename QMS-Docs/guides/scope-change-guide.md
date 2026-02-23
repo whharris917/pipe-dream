@@ -113,7 +113,7 @@ Execute the EI according to its **correct intent**, and document the discrepancy
 **Example:**
 
 ```markdown
-| EI-3 | Update solver_kernel.py with new constraint | File updated with constraint | EI description references "solver_kernel.py" (singular) but the actual file is "solver_kernels.py" (plural). Updated the correct file per design intent. | See CR-045-VAR-001 (Type 2, documentation error) | Fail | claude | 2026-02-15 |
+| EI-3 | Update auth_handler.py with new validator | File updated with validator | EI description references "auth_handler.py" (singular) but the actual file is "auth_handlers.py" (plural). Updated the correct file per design intent. | See CR-045-VAR-001 (Type 2, documentation error) | Fail | claude | 2026-02-15 |
 ```
 
 **Note on proportionality:** Yes, creating a VAR for a typo feels heavy. But the alternative -- silently executing something different from what was approved -- undermines the approval process. The VAR is lightweight (Type 2, minimal content) and provides the traceability that makes the system work.
@@ -160,7 +160,7 @@ For each EI you want to drop, follow the "EI Is Unnecessary" scenario above. Eac
 VAR Title: "EIs 5-7 unnecessary after EI-2 refactoring"
 
 Variance Description:
-EIs 5, 6, and 7 were planned as incremental updates to the solver configuration.
+EIs 5, 6, and 7 were planned as incremental updates to the service configuration.
 EI-2's implementation resolved the underlying issue comprehensively, making
 these incremental steps unnecessary.
 

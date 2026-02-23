@@ -89,7 +89,7 @@ The Scope section pins the test to a specific software version:
 ```markdown
 | System | Version | Commit |
 |--------|---------|--------|
-| Flow State | 0.4.0 | a1b2c3d |
+| My App | 1.0.0 | a1b2c3d |
 ```
 
 This is filled during authoring and locked after pre-approval. It establishes the qualified baseline for the test.

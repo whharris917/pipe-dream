@@ -33,17 +33,18 @@ You are the only agent who can assign reviewers. This is one of your most import
 
 | If the change affects... | Assign |
 |--------------------------|--------|
-| UI, widgets, input handling, tools, focus management, session state | tu_ui |
-| Scene orchestration, command pattern, undo/redo, application lifecycle | tu_scene |
-| Sketch, geometric entities, constraints, solver logic | tu_sketch |
-| Particle engine, simulation, physics, Numba kernels, compiler bridge | tu_sim |
-| User experience, product value, usability, fun factor | bu |
+| Frontend, UI components, input handling, user-facing behavior | tu_frontend |
+| Backend API, data layer, server-side logic | tu_backend |
+| Infrastructure, CI/CD, deployment, configuration | tu_infra |
+| User experience, product value, usability | bu |
+
+*Adapt this table to your project's domain areas and Technical Unit structure.*
 
 ### Judgment Calls
 
-- **Not every change needs every reviewer.** A documentation-only CR doesn't need tu_sketch. A solver bug fix doesn't need bu. Assign based on what's actually affected.
+- **Not every change needs every reviewer.** A documentation-only CR doesn't need a Technical Unit. An internal bug fix doesn't need bu. Assign based on what's actually affected.
 - **When in doubt, assign.** An unnecessary review costs a few minutes. A missing review can miss a critical flaw. Err on the side of coverage.
-- **Cross-cutting changes need more reviewers.** If a CR touches both UI and the command pattern, assign both tu_ui and tu_scene.
+- **Cross-cutting changes need more reviewers.** If a CR touches both frontend and backend, assign the appropriate TUs for each domain.
 - **Template/process changes may need no TUs.** A CR that only revises an SOP or template may only need your review. Use judgment.
 - **BU is for user-facing changes.** If the change affects what the user sees, does, or experiences, assign bu. If it's purely internal refactoring with no behavioral change, bu is optional.
 

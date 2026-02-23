@@ -1,49 +1,70 @@
 # Session-2026-02-23-001
 
-## Current State (last updated: post CR-101 closure)
-- **Active document:** None
+## Current State (last updated: mid CR-102 execution)
+- **Active document:** CR-102 (IN_EXECUTION v1.1)
+- **Current EI:** EI-5 in progress — seed/docs/ copied, need to create tu.md, claude.md, hooks
 - **Blocking on:** Nothing
-- **Next:** Lead direction — SOP retirement trial now live, monitor agent behavior
-
-## Context from Previous Session (Session-2026-02-22-005)
-
-Major documentation architecture session:
-- **Three-strand authority model adopted:** CLI (mechanism) + Templates (structure) + QMS-Policy.md (judgment)
-- **SOPs to be retired:** Replaced by three-strand model + QMS-Docs as educational layer
-- Built QMS-Policy.md (~200 lines), streamlined SOPs, QMS-Docs suite (glossary, FAQ, guides, START_HERE)
-- Formal SOP retirement not yet executed — awaiting Lead's go-ahead
+- **Next:** Finish EI-5 (create tu.md, claude.md, hooks), then EI-6 through EI-12
+- **Subagent IDs:** qa=a38e31066c4ffef3f
+- **SDLC-QMS-RS:** v19.0 EFFECTIVE (updated for CR-102, 10 REQ-INIT requirements)
 
 ## Progress Log
 
-### Session Start
-- Initialized session, read previous notes, read all 7 SOPs
-- QMS inbox: empty
+### Housekeeping (early session)
+- Committed/pushed session artifacts from 022-004, 022-005 (commit 6412640)
+- Promoted QMS-Docs to project root from session 022-005 folder
+- Moved QMS-Glossary.md and QMS-Policy.md into QMS-Docs/, updated 42 internal links across 34 files (commit 6f8e1e3)
 
-### Housekeeping
-- Committed and pushed all uncommitted artifacts from sessions 022-004, 022-005, 023-001 (commit 6412640)
-- Copied QMS-Docs/, QMS-Glossary.md, QMS-Policy.md from session 022-005 to project root
-- Moved QMS-Glossary.md and QMS-Policy.md into QMS-Docs/, updated 42 internal links across 34 files
-- Committed and pushed (commit 6f8e1e3)
+### CR-101: Redirect agent reading directives — CLOSED
+- Redirected CLAUDE.md Step 4 and all 6 agent definitions from SOPs to QMS-Docs
+- Commits: 2801eac (execution), 81ad6da (closure)
+- Updated PROJECT_STATE.md (commit 67cb3d4)
 
-### SOP Reading Directive Audit
-- Lead raised concern about whether agents actually depend on SOPs
-- Audited all SOP references across CLAUDE.md, agent definitions, hooks, settings, session files
-- Found 2 critical read directives: CLAUDE.md Step 4 ("Read all SOPs") and 6 agent Required Reading sections (SOP-001, SOP-002)
-- Found 1 infrastructure reference: write guard hook cites SOP-005 Section 7.1 (error messages only)
-- Proposed reversible trial: redirect pointers, keep SOPs on disk
+### Design Discussion: Project Mapping & QMS-Docs Portability
+- Lead raised need to properly map the project layers: Tool (qms-cli) vs Instance (Pipe Dream) vs Recursive Knot (qms-cli governing itself)
+- Decision: QMS-Docs should move into qms-cli and become portable (no Pipe Dream/Flow State references)
+- Decision: Bootstrap should ship QMS-Docs, generic TU agent, starter CLAUDE.md, write guard hook
+- Decision: Remove SOPs from seed (three-strand model makes them redundant)
+- Decision: Add `tu` as fourth default user
 
-### CR-101: Redirect agent reading directives from SOPs to QMS-Docs
-- Created, drafted, routed for review
-- QA requested update (qa.md line 181 had two SOP paths, CR only addressed one). Fixed, re-reviewed, recommended.
-- Pre-approved (v1.0), released for execution
-- EI-1: Pre-execution commit (93ade3e)
-- EI-2: CLAUDE.md — Step 4, Compact Instructions, Permissions reference updated
-- EI-3: 6 agent definitions updated (qa, bu, tu_ui, tu_scene, tu_sim, tu_sketch)
-- EI-4: Verification grep — zero residual SOP reading directives
-- EI-5: Post-execution commit (2801eac)
-- Post-reviewed, post-approved (v2.0), CLOSED
-- Closure commit 81ad6da, pushed
+### CR-102: Genericize QMS-Docs and overhaul qms-cli bootstrap seed — IN EXECUTION
+- Drafted, reviewed (no deficiencies), pre-approved (v1.0), released
+- **EI-1:** Pre-execution commit 1b11f3c — Pass
+- **EI-2:** Test env setup — .test-env/qms-cli on branch cr-102/exec, 673 tests pass — Pass
+- **EI-3:** RS update — SDLC-QMS-RS v19.0 EFFECTIVE. REQ-INIT changes: removed SOP seeding req, added docs/hooks/CLAUDE.md seeding reqs, added tu user, updated safety checks. 8→10 requirements. — Pass
+- **EI-4:** Genericize QMS-Docs — 3 parallel agents edited ~30 files across top-level docs, guides/, and types/. Grep verification: zero remaining Pipe Dream/Flow State/agent-hub/Docker/PROJECT_STATE/SELF.md references. — Pass
+- **EI-5:** IN PROGRESS — Copied genericized QMS-Docs to .test-env/qms-cli/seed/docs/. Still need to create:
+  - seed/agents/tu.md (generic TU agent definition — design agreed, content drafted in conversation)
+  - seed/claude.md (starter CLAUDE.md)
+  - seed/hooks/qms-write-guard.py (generic write guard)
+  - seed/hooks/README.md
+- **EI-6:** Pending — Remove seed/sops/
+- **EI-7:** Pending — Update commands/init.py
+- **EI-8:** Pending — Qualification (tests + CI)
+- **EI-9:** Pending — Integration verification
+- **EI-10:** Pending — RTM update and approval
+- **EI-11:** Pending — Merge and submodule update
+- **EI-12:** Pending — Post-execution commit
 
-## Key Decisions
-- SOP retirement is a reversible trial, not a permanent change. SOPs remain on disk.
-- Reading lists kept intentionally non-specific to accommodate QMS-Docs evolution.
+## Key Design Artifacts (from conversation, not yet written to files)
+
+### Generic TU agent (seed/agents/tu.md)
+- Frontmatter: name=tu, group=reviewer
+- Domain section has HTML comment telling maintainer to customize
+- Required Reading: QMS-Policy.md, review-guide.md, QMS-Glossary.md
+- Generic review criteria: correctness, architectural fit, risk, completeness
+- Prohibited behavior section
+
+### Generic write guard hook (seed/hooks/qms-write-guard.py)
+- Guards: QMS/.meta/, QMS/.audit/, QMS/.archive/, qms-cli/
+- Comment explaining how to add project-specific directories
+
+### Starter CLAUDE.md (seed/claude.md)
+- QMS identity, session start checklist pointing at QMS-Docs
+- QMS operations reference, permissions, prohibited behavior
+- Placeholder sections for project-specific architecture
+
+### START_HERE.md elevator pitch (proposed, not yet written)
+- Proposed concise "Elevator Pitch" section for top of START_HERE.md
+- Names the project dual nature, states core loop, three rules
+- Lead approved concept, not yet applied to file

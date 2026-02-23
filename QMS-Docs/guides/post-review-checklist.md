@@ -40,7 +40,7 @@ These apply to **all** executable documents (CR, INV, TP, ER, VAR, ADD).
 
 ## Pre-Flight: Code CR Additions
 
-These apply specifically to CRs that modify controlled code in SDLC-governed systems (flow-state, qms-cli).
+These apply specifically to CRs that modify controlled code in SDLC-governed systems (e.g., your application, qms-cli).
 
 ### SDLC Documents
 
@@ -53,7 +53,7 @@ These apply specifically to CRs that modify controlled code in SDLC-governed sys
 - [ ] **Execution branch has been merged to main.** The merge must use a standard merge commit (no squash). Verify: the qualified commit from the execution branch is reachable from `main`.
 - [ ] **Merge commit hash is recorded.** The EI for the merge step should record the merge commit hash as evidence.
 - [ ] **Qualified commit is reachable from main.** After merge, verify: `git log main --oneline | grep {qualified_commit_short}` shows the commit. If a squash merge was used (prohibited), the original commit hash will not be reachable.
-- [ ] **Submodule pointer updated.** If the CR modifies `flow-state` or `qms-cli`, the submodule reference in `pipe-dream` must be updated to point to the post-merge state.
+- [ ] **Submodule pointer updated.** If the CR modifies a governed submodule, the submodule reference in the parent project must be updated to point to the post-merge state.
 - [ ] **All tests pass at the qualified commit.** CI must have verified the test suite at the specific commit hash recorded in the RTM.
 
 ---

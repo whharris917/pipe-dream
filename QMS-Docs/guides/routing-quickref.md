@@ -172,7 +172,7 @@ When a document is routed for review:
 
 1. **QA receives an inbox item** automatically (QA is mandatory on all reviews)
 2. **QA evaluates the scope** and determines which Technical Units should review
-3. **QA assigns TUs** using `qms assign {DOC_ID} --add tu_ui tu_sim ...`
+3. **QA assigns TUs** using `qms assign {DOC_ID} --add {TU_IDs} ...`
 4. **All assigned reviewers** (QA + assigned TUs/BU) evaluate independently
 5. **Status advances to REVIEWED** (or POST_REVIEWED) only when all assigned reviewers have submitted
 

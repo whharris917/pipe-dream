@@ -22,10 +22,10 @@ If the answer is no, your evidence is insufficient. The reviewer should never ha
 
 | Quality | Example |
 |---------|---------|
-| Bad | "Updated the solver module" |
-| Bad | "Committed changes to flow-state" |
-| Acceptable | "Commit `abc1234`: Added `parallel_constraint()` to `solver_kernels.py`" |
-| Good | "Commit `abc1234`: Added `parallel_constraint()` kernel to `solver_kernels.py` implementing PBD parallel-line enforcement per Section 4 design. Also updated `solver.py` to register the new kernel in the constraint dispatch table." |
+| Bad | "Updated the auth module" |
+| Bad | "Committed changes to my-app" |
+| Acceptable | "Commit `abc1234`: Added `validate_token()` to `auth.py`" |
+| Good | "Commit `abc1234`: Added `validate_token()` function to `auth.py` implementing JWT validation per Section 4 design. Also updated `middleware.py` to register the new validator in the request pipeline." |
 
 **Minimum requirements:**
 - Commit hash (short form `abc1234` is fine)
@@ -36,9 +36,9 @@ If the answer is no, your evidence is insufficient. The reviewer should never ha
 
 ```
 Commit abc1234:
-- solver_kernels.py: Added parallel_constraint() kernel
-- solver.py: Registered new kernel in dispatch table
-- config.py: Added PARALLEL_TOLERANCE constant (0.001 rad)
+- auth.py: Added validate_token() function
+- middleware.py: Registered new validator in request pipeline
+- config.py: Added TOKEN_EXPIRY_SECONDS constant (3600)
 ```
 
 ### Document Updates
@@ -63,8 +63,8 @@ Commit abc1234:
 | Quality | Example |
 |---------|---------|
 | Bad | "Updated config" |
-| Acceptable | "Set SOLVER_ITERATIONS to 50 in config.py" |
-| Good | "config.py: Changed `SOLVER_ITERATIONS` from 30 to 50 to accommodate increased constraint count after parallel-line support was added. Before: `SOLVER_ITERATIONS = 30`. After: `SOLVER_ITERATIONS = 50`. Commit `def5678`." |
+| Acceptable | "Set MAX_RETRIES to 5 in config.py" |
+| Good | "config.py: Changed `MAX_RETRIES` from 3 to 5 to accommodate increased timeout frequency after connection pooling was added. Before: `MAX_RETRIES = 3`. After: `MAX_RETRIES = 5`. Commit `def5678`." |
 
 **Minimum requirements:**
 - Configuration file or location
@@ -89,7 +89,7 @@ When an EI has `VR=Yes`, the VR document contains the detailed evidence. The EI 
 | Quality | Example |
 |---------|---------|
 | Bad | "Created the branch" |
-| Good | "Branch `cr-045/exec` created from `main@abc1234`. Verified: `git log --oneline -1` shows `abc1234 Update PROJECT_STATE.md...`" |
+| Good | "Branch `cr-045/exec` created from `main@abc1234`. Verified: `git log --oneline -1` shows `abc1234 Update project state document...`" |
 
 ### QMS Workflow Actions
 
@@ -111,7 +111,7 @@ When an EI has `VR=Yes`, the VR document contains the detailed evidence. The EI 
 | "Tests pass" | "pytest output: 42 passed, 0 failed (commit abc1234)" |
 | "The widget renders correctly" | "Screenshot shows dropdown at (120, 45) with 3 menu items visible" |
 | "No regressions observed" | "Full test suite: 142 passed, 0 failed, 0 skipped. Diff from baseline: +2 new tests, 0 removed." |
-| "The fix works" | "Reproduced original failure scenario. After applying commit def5678, constraint solver converges in 12 iterations (previously diverged at iteration 30+)." |
+| "The fix works" | "Reproduced original failure scenario. After applying commit def5678, request handler completes in 200ms (previously timed out at 30s+)." |
 
 **The test:** If you can write the sentence *without having done the work*, it is assertional. Evidence must contain information that could only come from actually performing the task.
 
@@ -121,7 +121,7 @@ When an EI has `VR=Yes`, the VR document contains the detailed evidence. The EI 
 
 | Missing artifact (bad) | With artifact (good) |
 |------------------------|---------------------|
-| "Committed the fix" | "Commit `abc1234`: Fixed off-by-one in solver loop" |
+| "Committed the fix" | "Commit `abc1234`: Fixed off-by-one in pagination loop" |
 | "Updated the document" | "SOP-002 v2.0 EFFECTIVE, Section 4.3 added" |
 | "Test passed" | "CI run #147: all green. Log: [link or paste of summary]" |
 
@@ -143,7 +143,7 @@ When an EI has `VR=Yes`, the VR document contains the detailed evidence. The EI 
 
 | Vague (bad) | Specific (good) |
 |-------------|----------------|
-| "Updated several files" | "Modified `solver.py`, `solver_kernels.py`, and `config.py`" |
+| "Updated several files" | "Modified `auth.py`, `middleware.py`, and `config.py`" |
 | "Per the design" | "Per Section 4 of CR-042 (Proposed State)" |
 | "As discussed" | "Per Lead decision during EI-2 execution (see Execution Comments)" |
 
@@ -158,7 +158,7 @@ These are two different things that serve two different purposes.
 Traceable, verifiable proof that a specific task was completed. Answers: **"What proves this was done?"**
 
 ```
-Commit abc1234: Added parallel_constraint() kernel to solver_kernels.py
+Commit abc1234: Added validate_token() function to auth.py
 ```
 
 ### Execution Summary (Narrative Section)
@@ -167,7 +167,7 @@ A narrative overview of the entire execution phase. Answers: **"What happened du
 
 ```
 Execution proceeded per plan. EI-1 through EI-4 completed without deviation.
-EI-5 encountered an unexpected solver regression requiring VAR-001 (Type 2).
+EI-5 encountered an unexpected test regression requiring VAR-001 (Type 2).
 The VAR was pre-approved and will be resolved separately.
 Final code state: commit ghi7890 on branch cr-045/exec.
 All 5 EIs executed: 4 Pass, 1 Fail (with attached VAR-001).
@@ -185,8 +185,8 @@ When a single EI spans multiple commits (common for implementation tasks), docum
 
 ```
 Evidence:
-- Commit abc1234: Added constraint kernel
-- Commit def5678: Registered kernel in dispatch table
+- Commit abc1234: Added validation function
+- Commit def5678: Registered validator in request pipeline
 - Commit ghi9012: Added unit tests (3 tests, all passing)
 ```
 
@@ -195,7 +195,7 @@ Evidence:
 ```
 Evidence:
 Commits abc1234..ghi9012 (3 commits):
-- Added parallel_constraint() kernel and registration
+- Added validate_token() function and pipeline registration
 - Added 3 unit tests covering edge cases
 Final state verified at ghi9012.
 ```
@@ -207,7 +207,7 @@ If commits were squashed before recording evidence:
 ```
 Evidence:
 Commit jkl3456 (squashed from 3 development commits):
-Parallel constraint implementation including kernel, registration, and tests.
+Token validation implementation including function, pipeline registration, and tests.
 ```
 
 **Preference order:** Option A (most traceable) > Option B (acceptable) > Option C (acceptable if squash happened).
@@ -221,11 +221,11 @@ Here is a complete, well-evidenced EI table entry:
 ```markdown
 | EI # | Task Description | Expected Outcome | Actual Outcome | Evidence | Outcome | By | Date |
 |------|-----------------|------------------|----------------|----------|---------|----|------|
-| EI-3 | Implement parallel constraint kernel per Section 4 design | Solver enforces parallel-line constraints within 0.001 rad tolerance | Parallel constraint enforced correctly. Solver converges in 14 iterations for a 2-line parallel scenario. | Commit abc1234: Added `parallel_constraint()` to `solver_kernels.py` (kernel implementation) and `solver.py` (dispatch registration). Commit def5678: Added 3 unit tests to `test_solver.py` -- all passing. Config: `PARALLEL_TOLERANCE = 0.001` added to `config.py`. | Pass | claude | 2026-02-15 |
+| EI-3 | Implement token validation per Section 4 design | Auth module validates JWT tokens within 200ms latency budget | Token validation working correctly. Auth module validates tokens in 45ms average across 100-request benchmark. | Commit abc1234: Added `validate_token()` to `auth.py` (validation implementation) and `middleware.py` (pipeline registration). Commit def5678: Added 3 unit tests to `test_auth.py` -- all passing. Config: `TOKEN_EXPIRY_SECONDS = 3600` added to `config.py`. | Pass | claude | 2026-02-15 |
 ```
 
 **What makes this good:**
-1. Actual Outcome is specific and measurable (14 iterations, 2-line scenario)
+1. Actual Outcome is specific and measurable (45ms average, 100-request benchmark)
 2. Evidence names every modified file and what changed in each
 3. Two commit hashes provide full traceability
 4. Test results are included (3 tests, all passing)

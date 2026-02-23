@@ -65,7 +65,7 @@ If the new work is minor and directly supports an existing EI (e.g., a helper fu
 
 Apply the **third-party reviewer test**: could someone who wasn't present during execution, reading only your evidence, independently conclude the work was done?
 
-**Good evidence:** "Implemented constraint solver refactor. Commit `abc1234` on branch `cr-056`. pytest: 42 passed, 0 failed. See CR-056-VR-001 for behavioral verification."
+**Good evidence:** "Implemented authentication module refactor. Commit `abc1234` on branch `cr-056`. pytest: 42 passed, 0 failed. See CR-056-VR-001 for behavioral verification."
 
 **Bad evidence:** "Done. Tests pass."
 

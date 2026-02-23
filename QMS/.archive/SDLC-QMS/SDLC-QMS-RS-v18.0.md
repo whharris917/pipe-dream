@@ -1,7 +1,6 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-102: Overhaul init seed — add docs/hooks/CLAUDE.md/TU, remove
-  SOPs, update safety checks'
+revision_summary: 'CR-095: Attachment auto-close, VR template v5, compiler refinements'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -481,15 +480,13 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ ID | Requirement |
 |--------|-------------|
 | REQ-INIT-001 | **Config File Creation.** The `init` command shall create a `qms.config.json` file at the project root containing: version identifier, creation timestamp, and empty SDLC namespaces array. |
-| REQ-INIT-002 | **QMS Directory Structure.** The `init` command shall create the complete QMS directory structure including: `QMS/CR/`, `QMS/INV/`, `QMS/TEMPLATE/`, `QMS/.meta/`, `QMS/.audit/`, and `QMS/.archive/`. |
-| REQ-INIT-003 | **User Directory Structure.** The `init` command shall create user directories for default users (lead, claude, qa, tu) with `workspace/` and `inbox/` subdirectories under `.claude/users/`. |
-| REQ-INIT-004 | **Default Agent Creation.** The `init` command shall create default agent files at `.claude/agents/` including: `qa.md` with `group: quality` in frontmatter, and `tu.md` with `group: reviewer` in frontmatter. |
-| REQ-INIT-005 | **Template Seeding.** The `init` command shall seed the `QMS/TEMPLATE/` directory with document templates from `qms-cli/seed/templates/`, creating corresponding `.meta/` and `.audit/` files with EFFECTIVE status at version 1.0. |
-| REQ-INIT-006 | **Documentation Seeding.** The `init` command shall seed a `QMS-Docs/` directory at the project root with educational documentation from `qms-cli/seed/docs/`, including QMS-Policy.md, QMS-Glossary.md, START_HERE.md, and supporting guides and type references. |
-| REQ-INIT-007 | **Hook Seeding.** The `init` command shall seed `.claude/hooks/` with hook scripts from `qms-cli/seed/hooks/`, including a write guard hook that blocks direct writes to QMS-managed directories. |
-| REQ-INIT-008 | **Orchestrator Instructions Seeding.** The `init` command shall create a starter `CLAUDE.md` at the project root from `qms-cli/seed/claude.md`. |
-| REQ-INIT-009 | **Safety Checks.** The `init` command shall abort with an error if any of the following already exist at the target location: `QMS/` directory, `.claude/users/` directory, `.claude/agents/qa.md` file, `QMS-Docs/` directory, `CLAUDE.md` file, or `qms.config.json` file. All checks shall be performed before any changes are made. |
-| REQ-INIT-010 | **Root Flag Support.** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. If not provided, the current working directory shall be used. |
+| REQ-INIT-002 | **QMS Directory Structure.** The `init` command shall create the complete QMS directory structure including: `QMS/SOP/`, `QMS/CR/`, `QMS/INV/`, `QMS/TEMPLATE/`, `QMS/.meta/`, `QMS/.audit/`, and `QMS/.archive/`. |
+| REQ-INIT-003 | **User Directory Structure.** The `init` command shall create user directories for hardcoded administrators: `.claude/users/lead/workspace/`, `.claude/users/lead/inbox/`, `.claude/users/claude/workspace/`, `.claude/users/claude/inbox/`, and for the default QA user. |
+| REQ-INIT-004 | **Default Agent Creation.** The `init` command shall create a default QA agent file at `.claude/agents/qa.md` with `group: quality` in frontmatter. |
+| REQ-INIT-005 | **SOP Seeding.** The `init` command shall seed the `QMS/SOP/` directory with sanitized SOP documents from `qms-cli/seed/sops/`, creating corresponding `.meta/` and `.audit/` files with EFFECTIVE status at version 1.0. |
+| REQ-INIT-006 | **Template Seeding.** The `init` command shall seed the `QMS/TEMPLATE/` directory with document templates from `qms-cli/seed/templates/`, creating corresponding `.meta/` and `.audit/` files with EFFECTIVE status at version 1.0. |
+| REQ-INIT-007 | **Safety Checks.** The `init` command shall abort with an error if any of the following already exist at the target location: `QMS/` directory, `.claude/users/` directory, `.claude/agents/qa.md` file, or `qms.config.json` file. All checks shall be performed before any changes are made. |
+| REQ-INIT-008 | **Root Flag Support.** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. If not provided, the current working directory shall be used. |
 
 ---
 

@@ -122,7 +122,7 @@ Every response is a **timestamped append-only list**, not a scalar. The initial 
   "responses": {
     "objective": [
       {
-        "value": "Verify constraint solver handles parallel lines",
+        "value": "Verify API endpoint returns correct response",
         "author": "claude",
         "timestamp": "2026-02-22T01:15:00Z"
       }
@@ -372,7 +372,7 @@ re.compile(r"^(?:CR|INV)-\d{3}(?:-(?:VAR|ADD)-\d{3})*-VR-\d{3}$")
 ## CLI Creation
 
 ```bash
-qms --user claude create VR --parent CR-091 --title "Verify constraint solver fix"
+qms --user claude create VR --parent CR-091 --title "Verify bug fix"
 ```
 
 **Required flags:**

@@ -12,7 +12,7 @@ If a rule is enforced by the CLI, it belongs in the code, not here. If a documen
 
 ## 1. Governance Philosophy
 
-The QMS is recursive. It controls how Flow State is developed, and it controls its own evolution through the same mechanisms. When a process fails, an Investigation analyzes the failure and Corrective/Preventive Actions improve the procedures — using the same document control infrastructure that governs the application code.
+The QMS is recursive. It controls how application code is developed, and it controls its own evolution through the same mechanisms. When a process fails, an Investigation analyzes the failure and Corrective/Preventive Actions improve the procedures — using the same document control infrastructure that governs the application code.
 
 This recursion is intentional. The system learns from its own mistakes. Every process failure is an input to process improvement. The QMS is not a static framework imposed from above; it is a living system that discovers better orchestration patterns empirically.
 
@@ -38,12 +38,9 @@ When reviewers disagree, the orchestrator does not adjudicate. Disagreements are
 
 QA assigns Technical Unit reviewers based on the domains affected by a change:
 
-| Domain | Reviewer |
-|--------|----------|
-| UI, input handling, tools, widgets, focus management | tu_ui |
-| Scene orchestration, command pattern, undo/redo | tu_scene |
-| Sketch, geometry, constraints, solver | tu_sketch |
-| Particle engine, simulation, Numba kernels | tu_sim |
+| Domain (project-specific) | Reviewer |
+|--------------------------|----------|
+| *Defined per project based on codebase domains* | tu, or specialized TUs (e.g., tu_backend, tu_frontend) |
 | User experience, product value, usability | bu |
 
 QA exercises judgment in assignment. Not every change requires every reviewer. The goal is relevant expertise, not comprehensive coverage.
