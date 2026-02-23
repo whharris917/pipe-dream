@@ -248,10 +248,10 @@ This is a document-only CR affecting agent configuration files. Verification is 
 
 | EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
 |----|------------------|----|-------------------|--------------|---------------------|
-| EI-1 | Pre-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-2 | Phase 1: CLAUDE.md updates (Step 4, Compact Instructions, Permissions) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-3 | Phase 2: Agent definition updates (all 6 files) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-4 | Phase 3: Verification — grep for residual SOP reading directives | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-1 | Pre-execution commit | | Commit 93ade3e | Pass | claude - 2026-02-23 |
+| EI-2 | Phase 1: CLAUDE.md updates (Step 4, Compact Instructions, Permissions) | | Three edits applied per plan: Step 4 reading list, compact instructions, permissions reference | Pass | claude - 2026-02-23 |
+| EI-3 | Phase 2: Agent definition updates (all 6 files) | | qa.md: 4 edits (description, Required Reading, role header, file path). bu.md, tu_ui.md, tu_scene.md, tu_sim.md, tu_sketch.md: 1 edit each (Required Reading) | Pass | claude - 2026-02-23 |
+| EI-4 | Phase 3: Verification — grep for residual SOP reading directives | | Grep for "Read (all\|the) SOP" and "QMS/SOP/SOP-00[12].md" in CLAUDE.md and .claude/agents/ — zero matches | Pass | claude - 2026-02-23 |
 | EI-5 | Post-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 
 ---
@@ -266,7 +266,7 @@ This is a document-only CR affecting agent configuration files. Verification is 
 
 ## 11. Execution Summary
 
-[EXECUTION_SUMMARY]
+All execution items completed per plan. CLAUDE.md Session Start Checklist, Compact Instructions, and Permissions reference updated. All 6 agent definition files (qa, bu, tu_ui, tu_scene, tu_sim, tu_sketch) updated with QMS-Docs reading lists. Verification grep confirmed zero residual SOP reading directives in affected files. SOPs remain on disk unchanged.
 
 ---
 

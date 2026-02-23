@@ -175,9 +175,15 @@ If a previous session folder exists, read all files in:
 
 This provides continuity from the last session's discussions and decisions.
 
-### 4. Read All SOPs
+### 4. Read QMS Documentation
 
-Read all Standard Operating Procedures in `QMS/SOP/`.
+Read the following QMS documents:
+
+1. `QMS-Docs/QMS-Policy.md` — Core policy decisions and judgment criteria
+2. `QMS-Docs/START_HERE.md` — Decision tree for common workflows
+3. `QMS-Docs/QMS-Glossary.md` — Term definitions
+
+These three documents provide the context needed for QMS operations. For deeper reference on specific topics, consult the numbered guides in `QMS-Docs/` and type references in `QMS-Docs/types/`.
 
 ### Incremental Session Notes
 
@@ -225,7 +231,7 @@ When summarizing this conversation for context compaction, preserve:
 7. **Key file paths:** Files currently being edited or recently created
 
 Do NOT spend summary space on:
-- SOP content (available on disk via `QMS/SOP/`)
+- QMS-Docs content (available on disk via `QMS-Docs/`)
 - CLAUDE.md content (re-injected automatically)
 - Historical project context (available in `.claude/PROJECT_STATE.md`)
 - Full code snippets (available via file reads)
@@ -369,7 +375,7 @@ See `agent-hub/docker/README.md` for detailed documentation.
 
 ### Permissions
 
-**Your permissions (per SOP-001 Section 4.2):**
+**Your permissions (per QMS-Policy.md Section 2):**
 - Create, checkout, checkin documents
 - Route documents for review/approval
 - Release/close executable documents you own
