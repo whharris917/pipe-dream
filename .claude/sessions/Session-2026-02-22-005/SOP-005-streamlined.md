@@ -1,0 +1,420 @@
+---
+title: Code Governance
+revision_summary: 'CR-100: Add development environment specification, PR mandate,
+  file type scope, and direct commit prohibition (INV-014 CAPA-003)'
+---
+
+# SOP-005: Code Governance
+
+## 1. Purpose
+
+This Standard Operating Procedure establishes procedures for governing source code within the QMS framework, ensuring traceability, version control, and appropriate change control for all code changes.
+
+---
+
+## 2. Scope
+
+This SOP applies to all source code within the Pipe Dream project, including:
+
+- Application code (e.g., Flow State)
+- QMS infrastructure code (e.g., QMS CLI)
+- Any code that supports or implements QMS-controlled systems
+
+---
+
+## 3. Definitions
+
+| Term | Definition |
+|------|------------|
+| **System** | A distinct codebase governed under this SOP (e.g., Flow State, QMS CLI) |
+| **System Release** | A versioned, qualified state of a system's code |
+| **Genesis Sandbox** | A development environment for foundational work on new systems, outside QMS governance |
+| **Execution Branch** | A git branch used during CR execution phase for implementing approved changes |
+| **Qualified Commit** | The git commit hash representing the code state under which a System Release was qualified |
+| **Adoption CR** | A Change Record that brings a new system from Genesis Sandbox into Production |
+
+---
+
+## 4. Separation of Concerns
+
+### 4.1 The Problem
+
+Code and documents have fundamentally different version control needs. Mixing them creates conceptual confusion about what the QMS "is."
+
+### 4.2 GMP Analogy
+
+In a GMP manufacturing environment:
+
+| Asset Type | Where It Lives | Version Control |
+|------------|----------------|-----------------|
+| SOPs, batch records, specifications | Document QMS (e.g., Veeva, MasterControl) | Document lifecycle (draft → review → effective) |
+| PLC code, equipment software | Asset management system (e.g., FactoryTalk AssetCentre) | Code version control, qualified separately |
+
+The QMS *references* equipment by ID, but doesn't *contain* the equipment or its code.
+
+### 4.3 Our Approach
+
+| Asset Type | Location | Version Control |
+|------------|----------|-----------------|
+| SOPs, CRs, INVs, specifications | `QMS/` directory | QMS document lifecycle |
+| Application code, infrastructure code | Code directories (outside `QMS/`) | Git commits wrapped by CRs |
+
+**Git becomes the "qualified system" for code**, analogous to FactoryTalk AssetCentre in manufacturing.
+
+---
+
+## 5. Repository Structure
+
+Code and documents are separated within the project repository:
+
+```
+pipe-dream/
+├── {system-a}/               # Source code for System A
+│   ├── core/
+│   ├── model/
+│   └── ...
+│
+├── {system-b}/               # Source code for System B
+│   ├── commands/
+│   ├── models/
+│   └── ...
+│
+├── QMS/                      # Controlled documents (NO CODE)
+│   ├── SOP/
+│   ├── CR/
+│   ├── INV/
+│   ├── SDLC-SYS-A/           # SDLC docs for System A
+│   │   ├── RS.md
+│   │   └── RTM.md
+│   └── SDLC-SYS-B/           # SDLC docs for System B
+│       ├── RS.md
+│       └── RTM.md
+│
+└── ...
+```
+
+### 5.1 Key Principles
+
+1. **One repo, multiple systems:** All governed systems live in the same repository
+2. **Separate SDLC tracks:** Each system has its own SDLC documentation in `QMS/`
+3. **Bidirectional traceability:** CRs reference code files and commits; SDLC documents (RS, RTM) reference the System Release and Qualified Commit
+
+---
+
+## 6. Code Reference Format
+
+References to code in GMP documentation shall use:
+
+```
+{file_path} @ {commit_hash}
+```
+
+**Example:**
+```
+{system-b}/commands/checkout.py @ a1b2c3d
+```
+
+This provides:
+- **Location:** Which file
+- **Version:** Which exact state of that file
+- **Reproducibility:** Anyone can checkout that commit and see the exact code
+
+---
+
+## 7. Development Models
+
+### 7.1 Execution Branch (Standard Model — Frequent)
+
+For all evolutionary work on existing systems, code changes happen within the CR lifecycle. The execution branch model encompasses the full qualification workflow: development, testing, SDLC approval, and merge.
+
+**Development Environment:**
+
+All development under this workflow occurs in designated non-production directories:
+
+- **Local development:** `.test-env/{system}/` (e.g., `.test-env/qms-cli/`). This is the only permitted local development location.
+- **Containerized agents:** `/projects/{system}/`. This is the only permitted container development location.
+
+The production copy of a governed submodule (e.g., `pipe-dream/qms-cli/`, `pipe-dream/flow-state/`) must never be edited directly. Write protection rules in `.claude/settings.local.json` and PreToolUse hooks enforce this constraint.
+
+This workflow applies to **all modifications** within a governed system's directory, regardless of file type: source code, tests, templates, configuration, documentation, and any other files.
+
+#### 7.1.1 Workflow
+
+```
+CR Pre-Approved
+    |
+    v
++---------------------------------------------------+
+|  EXECUTION PHASE (CR IN_EXECUTION)                |
+|                                                   |
+|  1. Create execution branch from main             |
+|  2. Implement code changes                        |
+|  3. Run tests -- all must pass (CI-verified)      |
+|  4. Record the qualified commit (see 7.1.2)       |
+|  5. Update RS and RTM, route to EFFECTIVE         |
+|  6. Merge to main (see 7.1.3)                     |
+|  7. Update parent repo submodule pointer (7.1.3)  |
+|  8. Document work in CR (files, commits)          |
+|                                                   |
++---------------------------------------------------+
+    |
+    v
+Route for Post-Review
+    |
+    +---> Problems found? ---> git revert, fix, iterate
+    |
+    v
+Post-Approval ---> Close
+```
+
+**This IS GMP.** The git branch is merely the technical substrate; governance is fully present.
+
+**Used for:**
+- Adding features to existing systems
+- Bug fixes
+- Refactoring
+- Any modification to existing code
+- Any modification to files within the governed codebase, including templates, configuration, and documentation
+
+#### 7.1.2 The Qualified Commit
+
+The **qualified commit** is the git commit on the execution branch where all tests passed, as verified by CI. This is the commit hash recorded in the RTM's Qualified Baseline section.
+
+The qualified commit is always an execution branch commit — not a merge commit, and not a commit that exists only on main. It must be reachable on main after the merge (see 7.1.3).
+
+#### 7.1.3 Merge Gate and Merge Type
+
+**Prerequisites (the merge gate):** Code shall not be merged to main until:
+1. All tests pass at the qualified commit (CI-verified)
+2. The RS is EFFECTIVE (updated and approved)
+3. The RTM is EFFECTIVE (updated with the qualified commit hash and approved)
+
+**Required merge type:** Regular merge commit using `git merge --no-ff` (or the equivalent "Create a merge commit" option in GitHub).
+
+**Prohibited merge type:** Squash merge (`--squash`) is prohibited. A squash merge creates a new commit hash on main that has no relationship to any execution branch commit. This destroys the traceability chain: the RTM references a qualified commit that would not exist on main, making the qualification evidence unverifiable from the main branch history.
+
+**Fast-forward merge:** Acceptable only when the execution branch contains a single commit (hash is preserved). However, `--no-ff` is preferred even in this case because merge commits clearly delineate CR boundaries in `git log`.
+
+**Merge method:** Code shall be merged to main exclusively via GitHub Pull Request. Direct commits to main, force-push to main, and local merge followed by push are prohibited.
+
+**Submodule pointer update (for submodule-based systems):** When the governed code resides in a git submodule, merging to the submodule's main branch is necessary but not sufficient. The parent repository must also update its submodule pointer to reference the new submodule HEAD. This step ensures the qualified commit is reachable from the parent repository's main branch. Omitting this step breaks the traceability chain: the RTM references a commit that exists in the submodule's history but is not reachable from the parent repository that consumers actually use. The submodule pointer update in the parent repository must occur only after the PR is merged and the merge commit is verified on main.
+
+#### 7.1.4 Why Merge Type Matters
+
+The RTM records a specific commit hash as the qualified commit. An auditor must be able to verify — at that exact commit — that all tests passed. If the hash was destroyed by a squash merge, the RTM references a phantom commit that never existed on main. The traceability chain required by SOP-006 Section 7.2 is broken.
+
+With a regular merge commit (`--no-ff`), the execution branch commits are preserved as ancestors of the merge commit. The qualified commit is reachable via `git log` on main, and `git checkout <hash>` reproduces the exact qualified state.
+
+#### 7.1.5 Rollback Procedures
+
+Code CRs should include a rollback approach as part of their planning. The strategy depends on where the change is in its lifecycle:
+
+**Execution branch rollback (before merge to main):**
+
+If problems are discovered during execution or post-review before the code has been merged to main:
+
+1. Revert or fix commits on the execution branch
+2. Re-run tests, verify CI passes
+3. Update the qualified commit hash in the RTM if it changed
+4. Document the rollback in the CR execution record
+
+The main branch is unaffected because the merge gate (Section 7.1.3) has not been passed.
+
+**Main branch rollback (after merge):**
+
+If problems are discovered after the execution branch has been merged to main:
+
+1. Create a new CR documenting the rollback (per SOP-002 Section 10)
+2. Use `git revert` on the merge commit to undo the change on main
+3. Verify all tests pass on the reverted state
+4. Update SDLC documents (RS/RTM) to reflect the reverted state
+5. The original CR remains closed -- the rollback CR provides the audit trail
+
+`git revert` is the only acceptable approach. `git reset` is prohibited because it does not preserve history. The original commits must remain reachable for audit purposes.
+
+### 7.2 Genesis Sandbox (Rare — New Systems Only)
+
+For bringing an entirely new, self-contained system into existence:
+
+- Long-running, free-form development
+- Outside the QMS workflow (no CR governs it yet)
+- Git branch pattern: `genesis/{system-name}` (e.g., `genesis/new-tool`)
+- Ends when foundation and structural beams are in place
+
+**Used for:**
+- Initial creation of a wholly new tool
+- Building the foundation of a new independent subsystem
+
+**NOT used for:**
+- Adding modules to existing systems
+- Any work that would benefit from QA/TU review
+
+**Adoption into Production:** See Section 8 for the formal QMS process by which a Genesis Sandbox's results are incorporated into the Production Environment.
+
+### 7.3 The Line Where GMP Begins
+
+> **The line beyond which you would expect to learn real lessons and make discoveries/breakthroughs in our GMP-Inspired Recursive Governance Loop experiment.**
+
+If the work would benefit from diverse perspectives, review, or documented rationale—GMP begins.
+
+---
+
+## 8. Adopting a Genesis Sandbox System into Production
+
+When a Genesis Sandbox produces code that is ready for adoption, the process follows standard GMP—it's just a CR whose execution involves creating a new code directory rather than modifying existing code.
+
+### 8.1 The Adoption CR
+
+Create a CR to adopt the new system:
+
+**CR Scope:**
+- Create new code directory in Production (main branch)
+- Create SDLC documentation (RS, RTM)
+- Establish initial qualified state
+
+**CR Execution:**
+1. Copy code from genesis branch to main branch (new directory)
+2. Create SDLC documents via standard document workflows
+3. Run acceptance testing
+4. Document evidence in CR
+
+### 8.2 Workflow Diagram
+
+```
+Genesis Sandbox                    Adoption Process                   Production
+───────────────                    ────────────────                   ──────────
+
+genesis/new-tool                   CR-XXX: Adopt new-tool             main branch
+├── src/                           ────────────────────────
+├── tests/                         Pre-Review
+└── README.md                        ↓
+                                   Pre-Approval
+       │                             ↓
+       │                           IN_EXECUTION
+       │                           ┌─────────────────────────┐
+       └──────────────────────────►│ 1. Create new-tool/     │──────► new-tool/
+                                   │ 2. Create SDLC-NEWTOOL/ │        ├── src/
+                                   │ 3. Run acceptance tests │        ├── tests/
+                                   │ 4. Document evidence    │        └── README.md
+                                   └─────────────────────────┘
+                                             ↓                        QMS/SDLC-NEWTOOL/
+                                   Post-Review                        ├── RS.md
+                                             ↓                        └── RTM.md
+                                   Post-Approval
+                                             ↓
+                                   CLOSED
+```
+
+### 8.3 Rollback if Adoption Fails
+
+If problems are discovered during post-review:
+
+| Incremental CR (normal) | Adoption CR |
+|-------------------------|-------------|
+| `git revert` the commits | Delete the new code directory |
+| Fix issues, re-execute | Fix in genesis branch, re-execute adoption |
+
+The "revert" for an adoption is simply removing the new directory from Production. The genesis branch remains intact for fixes and re-adoption.
+
+### 8.4 Key Insight
+
+The adoption CR is not special—it follows the same workflow as any CR. The only difference is:
+- **Normal CR:** Changes existing files
+- **Adoption CR:** Creates a new directory (and its SDLC docs)
+
+Both are governed by pre-review, pre-approval, execution, post-review, post-approval, close.
+
+---
+
+## 9. System Release Versioning
+
+Each qualified system has a **System Release version** that tracks its qualified state over time.
+
+### 9.1 Version Format
+
+```
+{SYSTEM}-{MAJOR}.{MINOR}
+```
+
+**Examples:**
+- `SYS-A-1.0` — First qualified release of System A
+- `SYS-B-1.0` — First qualified release of System B
+- `SYS-A-1.3` — Third incremental update to System A after initial qualification
+
+### 9.2 Version Lifecycle
+
+| Event | Version Change | Trigger |
+|-------|----------------|---------|
+| Initial adoption from Genesis Sandbox | → 1.0 | Adoption CR closes |
+| Subsequent CR affecting code | N.X → N.(X+1) | CR closes |
+| Major architectural change | N.X → (N+1).0 | CR closes (at initiator discretion) |
+
+### 9.3 Version Assignment
+
+- **1.0:** Assigned when a system is first adopted, qualified, and released via an Adoption CR
+- **Incremental (N.X+1):** Assigned when any CR affecting that system's code is closed
+- **Major (N+1.0):** Assigned at initiator discretion for significant architectural changes
+
+### 9.4 SDLC Document References
+
+SDLC documents must reference the System Release version they describe:
+
+```yaml
+# In SDLC-SYS-A-RS.md or RTM.md frontmatter
+System Release: SYS-A-1.3
+Qualified Commit: a1b2c3d4e5f6
+```
+
+This ensures that:
+- The document describes a specific, reproducible state of the code
+- Anyone can checkout the exact commit and see what was qualified
+- Updates to the system trigger updates to SDLC documents
+
+### 9.5 Relationship to CRs
+
+Each CR that modifies a system's code:
+1. References the **current** System Release version in scope
+2. Upon closure, increments the version
+3. SDLC documents are updated (if needed) to reflect the new version
+
+---
+
+## 10. Traceability Model
+
+### 10.1 Code → Documentation
+
+Every code change is traceable to its authorizing CR:
+- Git commit message references CR ID
+- CR execution section documents files modified and commit hashes
+
+### 10.2 Documentation → Code
+
+SDLC documents reference the code they describe:
+- RS requirements trace to code locations
+- RTM maps requirements to test cases and code
+
+### 10.3 CR Execution Evidence Format
+
+```
+CR-XXX execution:
+  - Modified: {system-a}/core/commands.py @ a1b2c3d
+  - Created: {system-a}/core/new_feature.py @ a1b2c3d
+  - Tests: {system-a}/tests/test_new_feature.py @ a1b2c3d
+```
+
+---
+
+## 11. Summary — When to Use What
+
+| Scenario | Approach |
+|----------|----------|
+| New feature for existing system | CR with Execution Branch |
+| Bug fix | CR with Execution Branch |
+| Refactoring | CR with Execution Branch |
+| Building foundation of entirely new tool | Genesis Sandbox |
+| Adopting genesis tool into Production | CR (Adoption CR) |
+| Continued development of adopted tool | CR with Execution Branch |
+
+---
+
+**END OF DOCUMENT**

@@ -1,0 +1,294 @@
+---
+title: Change Control
+revision_summary: 'CR-100: Add PR merge verification to Section 7.3 QA post-review
+  checklist (INV-014 CAPA-003)'
+---
+
+# SOP-002: Change Control
+
+---
+
+## 1. Purpose
+
+This Standard Operating Procedure establishes the change control process for the Flow State project. It defines the requirements for initiating, documenting, reviewing, and approving changes within the Quality Management System.
+
+---
+
+## 2. Scope
+
+This SOP applies to all changes within the Flow State project, including:
+
+- Standard Operating Procedures (SOP)
+- Source code and configuration
+- System architecture and design
+- User interface and user experience
+- Documentation
+
+**All changes require a Change Record (CR).** No exceptions.
+
+---
+
+## 3. Definitions
+
+| Term | Definition |
+|------|------------|
+| **CR** | Change Record - the controlled document authorizing a change |
+| **TP** | Test Protocol - optional document detailing test procedures for a CR |
+| **QA** | Quality Assurance Representative - member of Quality group per SOP-001; mandatory reviewer and approver |
+| **TU** | Technical Unit - member of Reviewer group per SOP-001; domain expert assigned by QA to review technical changes |
+| **Review Team** | QA plus any TUs assigned to a CR; this team remains consistent throughout the CR lifecycle |
+
+---
+
+## 4. Responsibilities
+
+### 4.1 Change Initiator
+
+The user initiating a change shall:
+
+- Create a CR documenting the proposed change
+- Provide all required content per Section 6
+- Address reviewer comments
+- Execute the change after pre-approval
+- Document execution results for post-review
+
+### 4.2 QA Representative
+
+QA shall:
+
+- Review all CRs for procedural compliance
+- Determine which TUs (if any) must join the Review Team for each CR
+- Determine if a Test Protocol (TP) is required
+- Serve as mandatory member of the Review Team
+
+### 4.3 Review Team
+
+The Review Team (QA + assigned TUs) shall:
+
+- Remain consistent throughout the CR lifecycle
+- Participate in both pre-review and post-review
+- Participate in both pre-approval and post-approval
+- Verify the change is well-defined (pre) and correctly implemented (post)
+
+---
+
+## 5. CR Numbering
+
+Change Records use sequential numbering:
+
+| Format | Example |
+|--------|---------|
+| CR-NNN | CR-001, CR-002, CR-003 |
+
+Numbers are assigned in order of creation.
+
+**ID Reuse Policy:**
+- IDs for documents that complete their workflow (CLOSED, RETIRED) are **never reused**
+- IDs for canceled documents (never-effective, v < 1.0) are **freed for reuse** per SOP-001 Section 9.7.1
+
+---
+
+## 6. CR Content Requirements
+
+Every Change Record shall include the following sections. Sections 1-9 constitute the pre-approved content (locked after pre-approval). Sections 10-13 are editable during execution.
+
+### 6.1 Purpose
+
+What problem does this CR solve? What improvement does it introduce?
+
+### 6.2 Scope
+
+Brief overview of affected system(s) or functionality. Include:
+
+- **Context:** Reference to parent document (INV) if applicable, or origin of the change
+- **Changes Summary:** High-level description of what will change
+- **Files Affected:** List of files/documents to be modified or created
+
+### 6.3 Current State
+
+Concise declarative statement(s) describing what exists now. Use present tense.
+
+### 6.4 Proposed State
+
+Concise declarative statement(s) describing what will exist after the change. Use present tense.
+
+### 6.5 Change Description
+
+Full technical details of the change. Structure is flexible based on complexity—may include subsections, diagrams, code snippets, or other explanatory content as needed.
+
+### 6.6 Justification
+
+Why is this change needed? Explain:
+
+- The problem being solved or improvement being made
+- Impact of not making this change
+- How the proposed solution addresses the root cause
+
+### 6.7 Impact Assessment
+
+Assessment of change impact across domains:
+
+- **Files Affected:** Code files, configuration files
+- **Documents Affected:** SOPs, specifications, other controlled documents
+- **Other:** External systems, interfaces, dependencies
+
+### 6.8 Testing Summary
+
+Description of how the implementation will be verified. This need not be exhaustive; if QA determines comprehensive testing is required, a separate Test Protocol (TP) will be created.
+
+For CRs involving code changes, the testing summary should address both:
+
+1. **Automated verification:** Unit tests, qualification tests, CI checks
+2. **Integration verification:** How the changed functionality will be verified behaviorally. Execution items requiring integration verification should be flagged with "Yes" in the VR column of the EI table; evidence is recorded in Verification Records (VRs) per SOP-004 Section 9C
+
+For document-only CRs, a description of procedural verification is sufficient.
+
+### 6.9 Implementation Plan
+
+Detailed plan for executing the change. May include:
+
+- Execution item (EI) table with task descriptions
+- Sequenced steps organized by component or area
+- Dependencies between tasks
+
+### 6.10 Execution
+
+The executable block containing:
+
+- **EI Table:** Task descriptions, execution summaries, outcomes, signatures
+- **Execution Comments:** Free-form observations, decisions, VAR attachments
+
+Per SOP-004, each EI has a Task Outcome of Pass or Fail. Failed tasks require a VAR attachment.
+
+### 6.11 Execution Summary
+
+Overall narrative summarizing the execution after all EIs are complete. Include deviations from plan and final assessment.
+
+### 6.12 References
+
+Related documents including:
+
+- Governing SOPs (SOP-001, SOP-002 at minimum)
+- Parent documents (INV if applicable)
+- Related CRs or other controlled documents
+
+---
+
+## 7. CR Workflow
+
+Change Records follow the executable document workflow defined in SOP-001.
+
+### 7.1 Review Team Assignment
+
+When a CR is routed for pre-review, QA determines the Review Team composition:
+
+- QA is always included
+- TUs are assigned based on the technical domains affected by the change
+
+This team remains assigned for all subsequent workflow stages.
+
+### 7.2 Execution
+
+After pre-approval, the change initiator:
+
+1. Releases the CR for execution (`qms release`)
+2. Commits and pushes the project repository and all submodules to capture the pre-execution state (first execution item, per SOP-004 Section 5)
+3. Implements the change as documented
+4. Performs testing as described in the CR
+5. Documents results in the CR
+6. Commits and pushes the project repository and all submodules to capture the post-execution state (final execution item, per SOP-004 Section 5)
+7. Routes the CR for post-review
+
+### 7.3 Post-Review Requirements
+
+A CR may only be routed for post-review when **all** of the following conditions are met:
+
+1. **Execution Complete:** All execution items have Task Outcome of Pass, or Fail outcomes are documented via Variance Report (VAR) per SOP-004 Section 9A
+
+2. **Blocking VARs Resolved:** All Type 1 VARs must be fully closed; Type 2 VARs must be at least pre-approved
+
+3. **Documentation Approved:** Any controlled documents (SOPs, specifications) modified under the CR have completed their own review/approval workflows and are EFFECTIVE
+
+4. **Evidence Documented:** Completion evidence is recorded in the CR's Execution Summary column
+
+5. **SDLC Prerequisites Met:** For CRs affecting SDLC-governed systems per SOP-006, the system's RS and RTM must be EFFECTIVE (see SOP-006 Section 7.4)
+
+6. **VRs Complete:** All execution items flagged with "Yes" in the VR column have an attached VR that is checked in and ready for review (see SOP-004 Section 9C)
+
+**QA Post-Review Verification:**
+
+During post-review, the QA representative shall verify:
+
+- All execution items show Task Outcome of Pass, or Fail with attached VAR
+- All Type 1 VARs are closed; all Type 2 VARs are at least pre-approved
+- All VR-flagged execution items have attached VRs with complete evidence
+- Any SOPs or controlled documents listed in scope are EFFECTIVE (not DRAFT or IN_REVIEW)
+- The CR's revision_summary requirements (Section 8) have been applied to modified documents
+- For code CRs: RS and RTM for affected systems are EFFECTIVE per SOP-006 Section 7.4
+- For code CRs affecting submodule-based systems: the qualified commit referenced in the RTM is reachable from the production submodule's main branch, and the parent repository's submodule pointer has been updated (per SOP-005 Section 7.1.3)
+- For code CRs: verify that code was integrated to the governed system's main branch via GitHub Pull Request merge — not via direct commit, local merge, or force-push
+- For CRs that modify templates: both QMS-controlled copies (`QMS/TEMPLATE/`) and seed copies (`qms-cli/seed/templates/`) are aligned and reflect the changes authorized by the CR
+
+If any condition is not met, QA shall submit review with `--request-updates` and document the deficiency.
+
+---
+
+## 8. Document Traceability
+
+Document revisions driven by a Change Record should reference the CR ID in their `revision_summary` frontmatter field for traceability.
+
+**Recommended Format:**
+```yaml
+revision_summary: "CR-XXX: Description of changes"
+```
+
+**Example:**
+```yaml
+revision_summary: "CR-004: Add traceability requirement for revision summaries"
+```
+
+**Benefits of CR ID references:**
+- Establishes a clear link between document changes and their authorizing CRs
+- Enables audit trails from any document revision back to the change control record
+- Provides context (rationale, approvers, testing) for any historical revision
+
+**When CR ID is not required:**
+- Initial document creation (v0.1)
+- Executable documents (CRs, INVs, TPs, ERs, VARs) which are self-authorizing
+- Revisions not driven by a specific CR
+- Documents created before this policy took effect
+
+---
+
+## 9. Test Protocol (TP)
+
+If QA determines that a CR requires comprehensive testing, a Test Protocol shall be created as a child document of the CR.
+
+| Parent | Child |
+|--------|-------|
+| CR-001 | CR-001-TP |
+| CR-015 | CR-015-TP |
+
+The TP follows its own executable workflow and must be closed before the parent CR can be closed.
+
+---
+
+## 10. Rollback
+
+All changes are tracked in git. If a change must be reverted:
+
+1. Create a new CR documenting the rollback
+2. Reference the original CR being reverted
+3. Execute the rollback using git commands
+4. Follow the standard CR workflow
+
+For CRs affecting SDLC-governed code, see SOP-005 Section 7.1.5 for specific rollback procedures covering execution branch and main branch scenarios.
+
+---
+
+## 11. References
+
+- SOP-001: Quality Management System - Document Control
+
+
+**END OF DOCUMENT**
