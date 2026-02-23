@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-22-004*
+*Last updated: Session-2026-02-23-001*
 
 ---
 
 ## 1. Where We Are Now
 
-**All open items from CR-090 onward resolved.** Session-2026-02-22-004 closed 5 orphaned/open documents: CR-090-VR-001, CR-092-VR-001, CR-091-VR-001 (superseded), CR-091-ADD-001-VR-001, CR-091-ADD-001. One Type 2 VAR (CR-091-ADD-001-VAR-001) remains PRE_APPROVED for future corrective CR.
+**SOP reading directive trial live.** CR-101 redirected all agent reading directives from QMS/SOP/ to QMS-Docs/. SOPs remain on disk as fallback. QMS-Docs suite (QMS-Policy.md, glossary, FAQ, guides, START_HERE, type references) promoted to project root.
 
-59 CRs CLOSED (CR-042 through CR-100, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
+60 CRs CLOSED (CR-042 through CR-101, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
 
 ---
 
@@ -47,6 +47,8 @@
 **SDLC Governance Bypass Investigation (Feb 22, INV-014).** CR-098 committed directly to qms-cli main bypassing SOP-005 execution branch workflow. Discovered all Claude Code deny rules are non-functional (platform bug). CR-100 tightened SOP-005 (dev location, PR mandate, file scope), TEMPLATE-CR (explicit locations, PR enforcement), SOP-002 (PR verification in QA checklist). PreToolUse hook as enforcement. Seed aligned via PR #18.
 
 **VR Evidence Remediation (Feb 22, CR-091-ADD-001).** Replaced inadequate freehand CR-091-VR-001 with interactive VR authored through the system it verifies. 4 verification steps (progress tracking, compilation, amendment workflow, sequential enforcement), all Pass. Type 2 VAR (VAR-001) documents empty title field (CLI bug) and SOP-004/TEMPLATE-VR alignment gap.
+
+**Documentation Architecture (Feb 22-23).** Session-2026-02-22-005 established three-strand authority model: CLI (mechanism) + Templates (structure) + QMS-Policy.md (judgment). Built QMS-Docs suite and promoted to project root. CR-101 redirected all agent reading directives from SOPs to QMS-Docs as reversible trial.
 
 ---
 
@@ -169,7 +171,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 |------|---------|
 | Automate RTM generation | RTM is large, repetitive, error-prone to maintain manually |
 | Improve RTM readability | One test per line with row-spanning REQ IDs |
-| Simplify SOPs to behavioral baselines | Review for tooling-dependent language |
+| Formal SOP retirement | Trial live (CR-101). Monitor agent behavior before deciding. |
 | Production/test environment isolation | Largely addressed by INV-014 (PreToolUse hook, SOP-005 v7.0). Remaining: programmatic separation beyond hooks. |
 | Subconscious agent | Design discussion complete; implementation design pending |
 
