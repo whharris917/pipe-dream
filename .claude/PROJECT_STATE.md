@@ -159,6 +159,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 | START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
 | Migrate pipe-dream/QMS-Docs/ to read from qms-cli/manual/ submodule | Medium | CR-103 deferred scope |
+| Add pytest to qms-cli requirements.txt | Trivial | Sandbox testing 2026-02-24 |
 
 ### Bundleable (natural CR groupings)
 

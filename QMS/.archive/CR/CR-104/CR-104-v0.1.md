@@ -1,0 +1,400 @@
+---
+title: Create claude-qms Starter Repo, Harden qms init
+revision_summary: Initial draft
+---
+
+# CR-104: Create claude-qms Starter Repo, Harden qms init
+
+## 1. Purpose
+
+End users have no canonical way to obtain the QMS framework. `qms init` currently unpacks `seed/` into whatever directory it's run from with no guard beyond collision checks and no confirmation. This CR creates `claude-qms` as the canonical distribution repo and hardens `qms init` with marker-based targeting and a confirmation prompt.
+
+Future work (not this CR): separating AI-centric parts (agents, hooks, CLAUDE.md) out of qms-cli/seed/ into claude-qms exclusively; abstracting the `.claude/` data directory.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Independent improvement identified during development. The QMS needs a distribution path for external users.
+
+- **Parent Document:** None
+
+### 2.2 Changes Summary
+
+1. Create `whharris917/claude-qms` GitHub repo as the canonical starter template
+2. Redesign `qms init` to require a `.claude-qms` marker file or `--root` flag (no more "init in cwd")
+3. Add confirmation prompt before any changes, with `--yes` flag for non-interactive mode
+4. Update SDLC-QMS-RS/RTM for changed init behavior
+5. Register SDLC namespace "CQ" with initial RS and RTM for claude-qms
+
+### 2.3 Files Affected
+
+- `qms-cli/commands/init.py` — Marker detection, confirmation prompt, `--yes` flag, `--root` marker placement, no-context error
+- `qms-cli/qms.py` — Add `--yes` argument to init subparser
+- `qms-cli/tests/qualification/test_init.py` — New tests for marker, confirmation, `--root` marker, no-context failure; update existing tests for marker requirement
+- `qms-cli/requirements.txt` — Add `pytest>=7.0`
+- `pipe-dream/.gitmodules` — Add claude-qms submodule
+- `pipe-dream/sandbox/launch.sh` — Clone claude-qms, run `qms init --yes`
+
+---
+
+## 3. Current State
+
+`qms init` unpacks `seed/` into the current working directory (or `--root` target) with collision checks but no confirmation prompt. There is no canonical distribution repo for obtaining the QMS framework. Users must manually clone qms-cli and run init with no guidance on project structure.
+
+---
+
+## 4. Proposed State
+
+`qms init` requires either a `.claude-qms` marker file one level up (when run from inside qms-cli/) or an explicit `--root` flag. A confirmation prompt lists all artifacts that will be created before proceeding. The `--yes` flag skips confirmation for scripted use. The `whharris917/claude-qms` repo provides the canonical starter project with the marker file and qms-cli as a submodule.
+
+---
+
+## 5. Change Description
+
+### 5.1 claude-qms Repo (New)
+
+```
+claude-qms/
+├── .claude-qms              ← marker file (tells qms init where to unpack)
+├── .gitmodules
+├── .gitignore
+├── README.md                ← getting started guide
+└── qms-cli/                 ← submodule → whharris917/qms-cli
+```
+
+The marker file `.claude-qms` is an empty file that signals to `qms init` that the parent directory is a valid QMS project root.
+
+### 5.2 qms init Redesign
+
+**Scenario 1 — Happy path (from inside qms-cli/):**
+1. `qms init` looks one level up (`../`) for `.claude-qms` marker
+2. Found → collision pre-check against parent directory
+3. Clean → confirmation prompt listing what will be created
+4. "Y" → unpack seed/ into parent
+
+**Scenario 2 — Explicit root:**
+1. `qms init --root /path/to/project`
+2. Collision pre-check against specified root
+3. Clean → place `.claude-qms` marker, show confirmation prompt
+4. "Y" → unpack seed/ into specified root
+
+**Scenario 3 — No marker, no --root:**
+1. Helpful error message explaining both paths
+
+**Confirmation prompt (all successful paths):**
+```
+The folder /path/to/project will be initialized as a QMS project.
+
+The following will be created:
+  qms.config.json           Project configuration
+  QMS/                      Document storage (CR, INV, TEMPLATE)
+  QMS/.meta/                Document metadata
+  QMS/.audit/               Audit trails
+  QMS/TEMPLATE/             Document templates
+  .claude/users/            Workspaces for lead, claude, qa, tu
+  .claude/agents/           Agent definitions (qa.md, tu.md)
+  .claude/hooks/            Write guard hook
+  CLAUDE.md                 Orchestrator instructions
+
+Proceed? [y/N]
+```
+
+**Non-interactive mode:** `qms init --yes` (or `-y`) skips confirmation.
+
+### 5.3 What Stays the Same
+
+- `seed/` directory contents (templates, agents, hooks, claude.md)
+- All seeding logic (templates with metadata/audit, agents, hooks, CLAUDE.md)
+- `check_clean_runway()` collision check items (unchanged)
+
+### 5.4 What Changes in init
+
+- **New:** Marker detection (look one level up for `.claude-qms`)
+- **New:** Confirmation prompt before any changes
+- **New:** `--yes`/`-y` flag to skip confirmation
+- **New:** `--root` places `.claude-qms` marker file in target
+- **Changed:** Without marker or `--root`, init refuses (no more "init in cwd")
+- **Changed:** Error messages updated for the two-path model
+
+---
+
+## 6. Justification
+
+- Users currently have no guided way to bootstrap a QMS project — they must understand internal structure
+- `qms init` in an arbitrary directory is dangerous: no safeguard against initializing in the wrong place
+- The marker file provides an intentional opt-in that prevents accidental initialization
+- The confirmation prompt gives users visibility into what will be created before any changes occur
+- The starter repo provides the canonical "clone and go" experience for new adopters
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `qms-cli/commands/init.py` | Modify | Marker detection, confirmation prompt, --yes flag, --root marker placement |
+| `qms-cli/qms.py` | Modify | Add --yes argument to init subparser |
+| `qms-cli/tests/qualification/test_init.py` | Modify | Update existing tests, add new tests for marker/confirmation behavior |
+| `qms-cli/requirements.txt` | Modify | Add pytest>=7.0 |
+| `pipe-dream/.gitmodules` | Modify | Add claude-qms submodule |
+| `pipe-dream/sandbox/launch.sh` | Modify | Update to clone claude-qms and use qms init --yes |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| SDLC-QMS-RS | Modify | Update REQ-INIT-009, REQ-INIT-010; add REQ-INIT-011 (marker), REQ-INIT-012 (confirmation) |
+| SDLC-QMS-RTM | Modify | Updated verification evidence for changed requirements |
+| SDLC-CQ-RS | Create | Requirements for claude-qms repo |
+| SDLC-CQ-RTM | Create | Traceability for claude-qms repo |
+
+### 7.3 Other Impacts
+
+- Existing users of `qms init` without a marker file will see a new error message directing them to use `--root` or set up a marker
+- The `sandbox/launch.sh` script will need updating to use the new flow
+
+### 7.4 Development Controls
+
+This CR implements changes to qms-cli, a controlled submodule. Development follows established controls:
+
+1. **Test environment isolation:** Development in `.test-env/` (local) or `/projects/` (containerized agents). No other locations are permitted.
+2. **Branch isolation:** All development on branch `cr-104/exec`
+3. **Write protection:** `.claude/settings.local.json` blocks direct writes to `qms-cli/`
+4. **Qualification required:** All new/modified requirements must have passing tests before merge
+5. **CI verification:** Tests must pass on GitHub Actions for dev branch
+6. **PR gate:** Changes merge to main only via PR after RS/RTM approval
+7. **Submodule update:** Parent repo updates pointer only after PR merge
+
+### 7.5 Qualified State Continuity
+
+| Phase | main branch | RS/RTM Status | Qualified Release |
+|-------|-------------|---------------|-------------------|
+| Before CR | Current commit | EFFECTIVE v20.0 | QMS-20.0 |
+| During execution | Unchanged | DRAFT (checked out) | QMS-20.0 (unchanged) |
+| Post-approval | Merged from cr-104/exec | EFFECTIVE v21.0 | QMS-21.0 |
+
+---
+
+## 8. Testing Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document authoring.
+
+For code CRs, address both categories per SOP-002 Section 6.8:
+1. Automated verification: unit tests, qualification tests, CI
+2. Integration verification: what will be exercised through user-facing levers
+   in a running system to demonstrate the change is effective
+
+For document-only CRs, a description of procedural verification is sufficient.
+Delete the subsections below and use a simple list.
+-->
+
+### Automated Verification
+
+- **Marker detection test:** Place `.claude-qms` in parent, run init from child → succeeds
+- **No-context failure test:** Run init with no marker and no `--root` → fails with helpful error
+- **Confirmation prompt test:** Capture stdin/stdout, verify prompt appears, verify "N" aborts
+- **`--yes` flag test:** Run init with `--yes` → succeeds without prompt
+- **`--root` with marker placement test:** `--root /path` → `.claude-qms` placed in target, init succeeds
+- **Existing collision tests:** Updated to include marker file in fixture before testing collision checks
+- **Full test suite:** All existing tests must continue to pass
+
+### Integration Verification
+
+- Clone claude-qms repo, verify structure
+- Run `qms init --yes` from inside qms-cli/ within claude-qms → verify full QMS structure created
+- Run `qms --user claude create CR --title "Test"` in initialized project → verify works
+- Sandbox end-to-end: clone, init, qms commands
+
+---
+
+## 9. Implementation Plan
+
+### 9.1 Phase 1: Test Environment Setup
+
+1. Verify/create `.test-env/` development directory
+2. Clone/update qms-cli from GitHub into `.test-env/`
+3. Create and checkout branch `cr-104/exec`
+4. Run existing test suite, confirm baseline pass count
+
+### 9.2 Phase 2: Requirements (RS Update)
+
+1. Checkout SDLC-QMS-RS in production QMS
+2. Modify REQ-INIT-009 (remove cwd default, add marker requirement)
+3. Modify REQ-INIT-010 (--root now also places marker)
+4. Add REQ-INIT-011 (marker file detection)
+5. Add REQ-INIT-012 (confirmation prompt and --yes flag)
+6. Checkin RS, route for review and approval
+
+### 9.3 Phase 3: Implementation
+
+1. Create `whharris917/claude-qms` on GitHub with marker file, qms-cli submodule, README.md, .gitignore
+2. Implement code changes in `.test-env/qms-cli/` on branch `cr-104/exec`:
+   - Redesign `commands/init.py`: marker detection, confirmation prompt, `--yes` flag, `--root` marker placement, error messages
+   - Update `qms.py`: add `--yes`/`-y` argument to init subparser
+   - Add `pytest>=7.0` to `requirements.txt`
+3. Commit to `cr-104/exec` branch
+
+### 9.4 Phase 4: Qualification
+
+1. Implement test changes in `.test-env/qms-cli/` on branch `cr-104/exec`:
+   - Update `tests/qualification/test_init.py`: marker-based tests, confirmation tests, --root tests, no-context failure test
+   - Update existing test fixtures to include marker file where needed
+2. Run full test suite in `.test-env/`, verify all tests pass
+3. Push `cr-104/exec` to GitHub
+4. Verify GitHub Actions CI passes
+5. Document qualified commit hash
+
+### 9.5 Phase 5: Integration Verification
+
+1. Clone claude-qms repo to a temporary location
+2. Run `qms init --yes` from inside qms-cli/ within claude-qms
+3. Verify full QMS structure created at claude-qms root
+4. Run `qms --user claude create CR --title "Test"` → verify works
+5. Document what was exercised and observed
+
+### 9.6 Phase 6: RTM Update and Approval
+
+1. Checkout SDLC-QMS-RTM in production QMS
+2. Add verification evidence referencing CI-verified commit
+3. Checkin RTM, route for review and approval
+4. Register SDLC namespace "CQ"; create initial SDLC-CQ-RS and SDLC-CQ-RTM
+5. **Verify RTM reaches EFFECTIVE status before proceeding to Phase 7**
+
+### 9.7 Phase 7: Merge and Submodule Update
+
+**Prerequisite:** RS and RTM must both be EFFECTIVE before proceeding.
+
+1. Verify RS is EFFECTIVE
+2. Verify RTM is EFFECTIVE
+3. Create PR to merge `cr-104/exec` to main
+4. Merge PR using merge commit (not squash)
+5. Verify qualified commit hash is reachable on main
+6. Update qms-cli submodule pointer in claude-qms; push
+7. Add claude-qms as submodule in pipe-dream
+8. Update `sandbox/launch.sh` to clone claude-qms, run `qms init --yes`
+9. Verify sandbox end-to-end
+
+---
+
+## 10. Execution
+
+<!--
+EXECUTION PHASE INSTRUCTIONS
+============================
+NOTE: Do NOT delete this comment block. It provides guidance for execution.
+
+PRE-EXECUTION: After releasing for execution, the first execution item is to
+commit and push the project repository (including all submodules) to capture
+the pre-execution baseline (per SOP-004 Section 5). Record the commit hash
+in EI-1's execution summary.
+
+POST-EXECUTION: The final execution item is to commit and push the project
+repository (including all submodules) to capture the post-execution state
+(per SOP-004 Section 5). Record the commit hash in the final EI's execution
+summary.
+
+- Sections 1-9 are PRE-APPROVED content - do NOT modify during execution
+- Only THIS TABLE and the comment sections below should be edited during execution phase
+
+COLUMNS:
+- EI: Execution item identifier
+- Task Description: What to do (static, from Implementation Plan)
+- VR: "Yes" if integration verification required (static, set during planning);
+  replaced with VR ID during execution (editable). Blank if no VR needed.
+  See SOP-004 Section 9C.
+- Execution Summary: Narrative of what was done, evidence, observations (editable)
+- Task Outcome: Pass or Fail (editable)
+- Performed By - Date: Signature (editable)
+
+TASK OUTCOME:
+- Pass: Task completed as planned
+- Fail: Task could not be completed as planned - attach VAR with explanation
+
+VAR TYPES (see VAR-TEMPLATE):
+- Type 1: Use when the failed task is critical to CR objectives
+- Type 2: Use when impact is contained and CR can conceptually close
+
+EXECUTION SUMMARY EXAMPLES:
+- "Implemented per plan. Commit abc123."
+- "Modified src/module.py:45-67. Unit tests passing."
+- "Created SOP-007 (now EFFECTIVE)."
+-->
+
+| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|----|-------------------|--------------|---------------------|
+| EI-1 | Pre-execution baseline commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Test env setup: clone qms-cli to `.test-env/`, branch `cr-104/exec`, baseline tests | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Create `whharris917/claude-qms` on GitHub: `.claude-qms` marker, qms-cli submodule, README.md, .gitignore; push | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Implement code changes in `.test-env/qms-cli/`: redesign `commands/init.py` (marker detection, confirmation prompt, `--yes` flag, `--root` marker placement, no-context error), update `qms.py` (add `--yes` arg) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Update tests in `.test-env/qms-cli/`: `tests/qualification/test_init.py` — marker-based tests, confirmation tests, --root tests, no-context failure test, update existing fixtures | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Add `pytest>=7.0` to `requirements.txt` in `.test-env/qms-cli/` | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Run full test suite in `.test-env/qms-cli/`, verify pass count | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-8 | Push `cr-104/exec` branch from `.test-env/qms-cli/`, CI green | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-9 | Update SDLC-QMS-RS: modify REQ-INIT-* for marker + confirmation behavior | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-10 | Update SDLC-QMS-RTM: updated verification evidence | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-11 | Register SDLC namespace "CQ"; create initial SDLC-CQ-RS and SDLC-CQ-RTM | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-12 | Merge qms-cli PR to main | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-13 | Update qms-cli submodule pointer in claude-qms; push | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-14 | Add claude-qms as submodule in pipe-dream | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-15 | Update `sandbox/launch.sh` to clone claude-qms, run `qms init --yes` | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-16 | Verify sandbox end-to-end: clone, qms init, qms commands, claude launches | Yes | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-17 | Post-execution commit | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Add rows as needed. When adding rows, fill columns 3-5 during execution.
+-->
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Record observations, decisions, or issues encountered during execution.
+Add rows as needed.
+
+This section is the appropriate place to attach VARs that do not apply
+to any individual execution item, but apply to the CR as a whole.
+-->
+
+---
+
+## 11. Execution Summary
+
+<!--
+NOTE: Do NOT delete this comment. It provides guidance during document execution.
+
+Complete this section after all EIs are executed.
+Summarize the overall outcome and any deviations from the plan.
+-->
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control
+- **SOP-004:** Execution Protocol
+- **SOP-005:** SDLC Governance
+- **SOP-006:** Requirements Traceability
+- **SDLC-QMS-RS:** QMS CLI Requirements Specification (v20.0, EFFECTIVE)
+- **SDLC-QMS-RTM:** QMS CLI Requirements Traceability Matrix
+
+---
+
+**END OF DOCUMENT**
