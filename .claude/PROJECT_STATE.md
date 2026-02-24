@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-23-001*
+*Last updated: Session-2026-02-23-002*
 
 ---
 
 ## 1. Where We Are Now
 
-**Bootstrap overhaul complete.** CR-102 genericized all QMS-Docs (removed Pipe Dream/Flow State references) and overhauled the qms-cli bootstrap seed: `qms init` now creates QMS-Docs, generic TU agent, starter CLAUDE.md, write guard hook, and a `tu` user. SOP seeds removed (replaced by educational documentation layer). 677 tests, SDLC-QMS-RS v19.0, SDLC-QMS-RTM v24.0.
+**Docs/manual split complete.** CR-103 separated qms-cli documentation into `docs/` (7 software doc files) and `manual/` (38 files relocated from `seed/docs/`). `qms init` no longer seeds `QMS-Docs/` into projects. 678 tests, SDLC-QMS-RS v20.0, SDLC-QMS-RTM v25.0.
 
-61 CRs CLOSED (CR-042 through CR-102, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
+62 CRs CLOSED (CR-042 through CR-103, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
 
 ---
 
@@ -50,6 +50,8 @@
 
 **Documentation Architecture & Bootstrap Overhaul (Feb 22-23, CR-101, CR-102).** Three-strand authority model: CLI (mechanism) + Templates (structure) + QMS-Policy.md (judgment). Built QMS-Docs suite, genericized for portability (zero instance-specific references). CR-101 redirected agent reading directives from SOPs to QMS-Docs. CR-102 overhauled qms-cli bootstrap: seeds QMS-Docs, generic TU agent, starter CLAUDE.md, write guard hook; removed SOP seeds; added `tu` user. 677 tests, RS v19.0, RTM v24.0.
 
+**Docs/Manual Directory Split (Feb 23, CR-103).** Separated qms-cli documentation into `docs/` (7 new software doc files) and `manual/` (38 files from `seed/docs/`). Removed `seed_docs()` from init — projects no longer get a `QMS-Docs/` copy. `pipe-dream/QMS-Docs/` untouched (deferred to follow-up CR). 678 tests, RS v20.0, RTM v25.0.
+
 ---
 
 ## 3. What's Built
@@ -58,9 +60,9 @@
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v19.0 EFFECTIVE | 141 requirements |
-| SDLC-QMS-RTM | v24.0 EFFECTIVE | 677 tests, qualified commit eeaa145 |
-| Qualified Baseline | CLI-15.0 | qms-cli commit eeaa145 (main: 6e73be8) |
+| SDLC-QMS-RS | v20.0 EFFECTIVE | 141 requirements |
+| SDLC-QMS-RTM | v25.0 EFFECTIVE | 678 tests, qualified commit f6717a0 |
+| Qualified Baseline | CLI-16.0 | qms-cli commit f6717a0 (main: 54708d2) |
 
 ### Controlled Document State
 
@@ -156,6 +158,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 | START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
+| Migrate pipe-dream/QMS-Docs/ to read from qms-cli/manual/ submodule | Medium | CR-103 deferred scope |
 
 ### Bundleable (natural CR groupings)
 
@@ -193,7 +196,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 677.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 678.
 
 **Claude Code deny rules non-functional.** All deny rules in settings.local.json are silently ignored due to a known platform bug (GitHub #8961, #6699, #6631). PreToolUse hooks provide actual enforcement. Deny rules retained as defense-in-depth.
 
