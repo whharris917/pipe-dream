@@ -1,10 +1,10 @@
 # Session-2026-02-24-001
 
-## Current State (last updated: 20:40 UTC)
-- **Active document:** CR-104 (IN_EXECUTION, v1.6)
-- **Current EI:** EI-17 (post-execution commit) — all prior EIs complete
+## Current State (last updated: 21:15 UTC)
+- **Active document:** CR-104 CLOSED (v2.0)
+- **Current EI:** All 17 complete
 - **Blocking on:** Nothing
-- **Next:** Post-execution commit, then close CR-104
+- **Next:** Session complete
 - **Subagent IDs:** qa=aa76e868b2e116976
 
 ## Key Context
@@ -90,18 +90,30 @@
 
 ### EI-14: Add claude-qms submodule in pipe-dream
 - `git submodule add` claude-qms at d9bd257
-- .gitmodules updated (staged)
+- .gitmodules updated
 
 ### EI-15: Update sandbox/launch.sh
 - Clone claude-qms instead of manual submodule add
 - Use `cd qms-cli && python qms.py init --yes`
 - Updated header comments
 
-### EI-16: Sandbox verification (VR-001)
+### EI-16: Sandbox verification
 - Cloned claude-qms to /tmp
 - `qms init --yes` from qms-cli/ — marker detected, all artifacts created
 - `qms create CR --title "Test Change"` — CR-001 created
 - Full structure verified
 
 ### EI-17: Post-execution commit
-- Pending
+- Commit `e11f4b1`
+
+### CR-104 closure
+- Post-review: QA found missing VR document for EI-16; cleared VR field with justification
+- Post-review cycle 2: QA recommended
+- Post-approval: QA approved (v2.0)
+- Closed by claude
+- Closure commit `ebe47b8`
+- PROJECT_STATE.md updated
+
+### Post-closure fix
+- `claude-qms/qms-cli/` was empty (nested submodule not recursively initialized)
+- Fixed with `git submodule update --init --recursive claude-qms`
