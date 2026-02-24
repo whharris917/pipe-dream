@@ -1,19 +1,16 @@
 {
-  "doc_id": "SDLC-QMS-RTM",
-  "doc_type": "QMS-RTM",
-  "version": "26.0",
+  "doc_id": "SDLC-CQ-RS",
+  "doc_type": "CQ-RS",
+  "version": "1.0",
   "status": "EFFECTIVE",
   "executable": false,
   "execution_phase": null,
   "responsible_user": null,
   "checked_out": false,
   "checked_out_date": null,
-  "effective_version": "26.0",
-  "supersedes": null,
+  "effective_version": "1.0",
   "pending_assignees": [],
   "review_outcomes": {
     "qa": "RECOMMEND"
-  },
-  "pending_reviewers": [],
-  "completed_reviewers": []
+  }
 }

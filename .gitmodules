@@ -4,3 +4,6 @@
 [submodule "flow-state"]
 	path = flow-state
 	url = https://github.com/whharris917/flow-state.git
+[submodule "claude-qms"]
+	path = claude-qms
+	url = https://github.com/whharris917/claude-qms.git

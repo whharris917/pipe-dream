@@ -1,21 +1,20 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-104: Update REQ-INIT-010 (--root marker placement), add REQ-INIT-011
-  (marker detection) and REQ-INIT-012 (confirmation prompt); qualified baseline 1761b0a
-  (cr-104/exec branch, 688 tests)'
+revision_summary: 'CR-103: Update REQ-INIT-006 (docs/manual directories) and REQ-INIT-009
+  (remove QMS-Docs blocker); qualified baseline f6717a0 (cr-103/exec branch, 678 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v21.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v20.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 143 requirements defined in SDLC-QMS-RS v21.0 across the following domains:
+This RTM covers all 141 requirements defined in SDLC-QMS-RS v20.0 across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 20 requirements
@@ -27,7 +26,7 @@ This RTM covers all 143 requirements defined in SDLC-QMS-RS v21.0 across the fol
 - REQ-QRY (Query Operations): 6 requirements
 - REQ-PROMPT (Prompt Generation): 6 requirements
 - REQ-TEMPLATE (Document Templates): 5 requirements
-- REQ-INIT (Project Initialization): 12 requirements
+- REQ-INIT (Project Initialization): 10 requirements
 - REQ-USER (User Management): 5 requirements
 - REQ-MCP (MCP Server): 16 requirements
 - REQ-INT (Interaction System): 25 requirements
@@ -173,9 +172,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INIT-007 | Hook Seeding | test_init::test_init_seeds_hooks | PASS |
 | REQ-INIT-008 | Orchestrator Instructions Seeding | test_init::test_init_seeds_claude_md | PASS |
 | REQ-INIT-009 | Safety Checks | test_init::test_init_blocked_by_existing_qms, test_init_blocked_by_existing_users, test_init_blocked_by_existing_qa_agent, test_init_blocked_by_existing_config, test_init_blocked_by_existing_claude_md | PASS |
-| REQ-INIT-010 | Root Flag Support | test_init::test_init_with_root_flag, test_init::test_init_root_places_marker, test_init::test_init_root_does_not_duplicate_marker | PASS |
-| REQ-INIT-011 | Marker-Based Root Detection | test_init::test_init_detects_marker_in_parent, test_init::test_init_no_context_fails | PASS |
-| REQ-INIT-012 | Confirmation Prompt | test_init::test_init_confirmation_aborts_on_no, test_init::test_init_confirmation_aborts_on_empty, test_init::test_init_confirmation_proceeds_on_yes, test_init::test_init_confirmation_shows_artifact_list, test_init::test_init_yes_flag_skips_confirmation, test_init::test_init_aborts_on_eof | PASS |
+| REQ-INIT-010 | Root Flag Support | test_init::test_init_with_root_flag | PASS |
 | REQ-USER-001 | Hardcoded Administrators | test_init::test_hardcoded_admins_work | PASS |
 | REQ-USER-002 | Agent File-Based Group Assignment | test_init::test_agent_group_assignment | PASS |
 | REQ-USER-003 | User Add Command | test_init::test_user_add_creates_structure, test_user_add_requires_admin | PASS |
@@ -1314,39 +1311,11 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-INIT-010: Root Flag Support
 
-**Requirement:** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. When `--root` is used and no `.claude-qms` marker file exists in the target directory, init shall create one.
+**Requirement:** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_init.py | test_init_with_root_flag | Init creates structure at specified root directory. |
-| test_init.py | test_init_root_places_marker | --root creates .claude-qms marker when absent. |
-| test_init.py | test_init_root_does_not_duplicate_marker | --root does not overwrite existing marker. |
-
----
-
-#### REQ-INIT-011: Marker-Based Root Detection
-
-**Requirement:** When `--root` is not provided, the `init` command shall look one level up from the current working directory for a `.claude-qms` marker file. If found, the parent directory shall be used as the project root. If not found and `--root` is not provided, init shall abort with a helpful error message explaining both resolution paths (marker file and `--root` flag).
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_init.py | test_init_detects_marker_in_parent | Marker in parent dir detected, init from child succeeds. |
-| test_init.py | test_init_no_context_fails | No marker, no --root → helpful error message. |
-
----
-
-#### REQ-INIT-012: Confirmation Prompt
-
-**Requirement:** Before making any changes, the `init` command shall display a list of all artifacts that will be created and prompt the user for confirmation with a `[y/N]` default-no prompt. The `--yes` (or `-y`) flag shall skip the confirmation prompt for non-interactive use. If the user declines or stdin is closed, init shall abort without creating any files.
-
-| Test File | Test Function | Description |
-|-----------|---------------|-------------|
-| test_init.py | test_init_confirmation_aborts_on_no | User responds N → abort, no files created. |
-| test_init.py | test_init_confirmation_aborts_on_empty | Empty input (default N) → abort. |
-| test_init.py | test_init_confirmation_proceeds_on_yes | User responds y → init proceeds. |
-| test_init.py | test_init_confirmation_shows_artifact_list | Confirmation prompt lists artifacts to be created. |
-| test_init.py | test_init_yes_flag_skips_confirmation | --yes flag bypasses confirmation prompt. |
-| test_init.py | test_init_aborts_on_eof | Closed stdin (EOF) → abort. |
 
 ---
 
@@ -2086,13 +2055,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v21.0 |
+| Requirements Spec | SDLC-QMS-RS v20.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-104/exec |
-| Commit | 1761b0a |
-| CI Run | 22366400276 |
-| Total Tests | 688 |
-| Passed | 688 |
+| Branch | cr-103/exec |
+| Commit | f6717a0 |
+| Total Tests | 678 |
+| Passed | 678 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -2111,9 +2079,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_queries.py | 16 | 16 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
-| test_init.py | 30 | 30 | 0 |
+| test_init.py | 20 | 20 | 0 |
 | test_mcp.py | 74 | 74 | 0 |
-| **Subtotal** | **241** | **241** | **0** |
+| **Subtotal** | **231** | **231** | **0** |
 
 #### 6.2.2 Unit Tests (tests/)
 
@@ -2132,9 +2100,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 241 | 241 | 0 |
+| Qualification Tests | 231 | 231 | 0 |
 | Unit Tests | 447 | 447 | 0 |
-| **Total** | **688** | **688** | **0** |
+| **Total** | **678** | **678** | **0** |
 
 ### 6.3 Test Environment
 

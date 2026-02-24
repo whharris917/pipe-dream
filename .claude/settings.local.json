@@ -82,11 +82,7 @@
       "Edit(QMS/**)",
       "Write(QMS/**)",
       "Edit(**/QMS/**)",
-      "Write(**/QMS/**)",
-      "Edit(qms-cli/**)",
-      "Write(qms-cli/**)",
-      "Edit(flow-state/**)",
-      "Write(flow-state/**)"
+      "Write(**/QMS/**)"
     ],
     "defaultMode": "acceptEdits"
   },

@@ -1,8 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-104: REQ-INIT-009 unchanged. REQ-INIT-010 updated for --root
-  marker placement. Added REQ-INIT-011 (marker detection) and REQ-INIT-012 (confirmation
-  prompt with --yes flag).'
+revision_summary: 'CR-103: REQ-INIT-006 changed from init seeding QMS-Docs to docs/
+  and manual/ directories in qms-cli. REQ-INIT-009 removed QMS-Docs/ blocker.'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -490,9 +489,7 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-INIT-007 | **Hook Seeding.** The `init` command shall seed `.claude/hooks/` with hook scripts from `qms-cli/seed/hooks/`, including a write guard hook that blocks direct writes to QMS-managed directories. |
 | REQ-INIT-008 | **Orchestrator Instructions Seeding.** The `init` command shall create a starter `CLAUDE.md` at the project root from `qms-cli/seed/claude.md`. |
 | REQ-INIT-009 | **Safety Checks.** The `init` command shall abort with an error if any of the following already exist at the target location: `QMS/` directory, `.claude/users/` directory, `.claude/agents/qa.md` file, `CLAUDE.md` file, or `qms.config.json` file. All checks shall be performed before any changes are made. |
-| REQ-INIT-010 | **Root Flag Support.** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. When `--root` is used and no `.claude-qms` marker file exists in the target directory, init shall create one. |
-| REQ-INIT-011 | **Marker-Based Root Detection.** When `--root` is not provided, the `init` command shall look one level up from the current working directory for a `.claude-qms` marker file. If found, the parent directory shall be used as the project root. If not found and `--root` is not provided, init shall abort with a helpful error message explaining both resolution paths (marker file and `--root` flag). |
-| REQ-INIT-012 | **Confirmation Prompt.** Before making any changes, the `init` command shall display a list of all artifacts that will be created and prompt the user for confirmation with a `[y/N]` default-no prompt. The `--yes` (or `-y`) flag shall skip the confirmation prompt for non-interactive use. If the user declines or stdin is closed, init shall abort without creating any files. |
+| REQ-INIT-010 | **Root Flag Support.** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. If not provided, the current working directory shall be used. |
 
 ---
 

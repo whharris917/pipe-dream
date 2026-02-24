@@ -3,11 +3,15 @@
 # QMS Sandbox — End-User Testing Environment
 #
 # Simulates the intended end-user setup:
-#   ~/projects/my-project/
-#   ├── qms-cli/          (submodule)
-#   ├── QMS/              (created by qms init)
-#   ├── .claude/          (created by qms init)
-#   └── CLAUDE.md         (created by qms init)
+#   1. Clone claude-qms (the canonical starter repo)
+#   2. Run qms init from inside qms-cli/ (marker-based detection)
+#   3. Result:
+#     ~/projects/my-project/
+#     ├── .claude-qms        (marker file, from starter repo)
+#     ├── qms-cli/           (submodule → whharris917/qms-cli)
+#     ├── QMS/               (created by qms init)
+#     ├── .claude/           (created by qms init)
+#     └── CLAUDE.md          (created by qms init)
 #
 # Launches a fresh Docker container with qms-cli and Claude Code installed.
 # No connection to the real QMS. Safe to experiment freely.
@@ -27,7 +31,7 @@ set -euo pipefail
 PYTHON_VERSION="${1:-3.11}"
 IMAGE="python:${PYTHON_VERSION}-slim"
 CONTAINER_NAME="qms-sandbox"
-REPO_URL="https://github.com/whharris917/qms-cli.git"
+REPO_URL="https://github.com/whharris917/claude-qms.git"
 
 echo "=== QMS Sandbox ==="
 echo "Image:  ${IMAGE}"
@@ -66,14 +70,13 @@ docker "${DOCKER_ARGS[@]}" "${IMAGE}" bash -c "
   echo '--- Installing Claude Code ---'
   npm install -g --silent @anthropic-ai/claude-code 2>&1 | tail -1
 
-  # Set up project directory (mirrors intended end-user layout)
-  mkdir -p /root/projects/my-project && cd /root/projects/my-project
-  git init -q
+  # Clone the canonical starter repo (includes qms-cli as submodule)
+  echo '--- Cloning claude-qms starter repo ---'
+  mkdir -p /root/projects && cd /root/projects
+  git clone --recurse-submodules ${REPO_URL} my-project
+  cd my-project
   git config user.email 'sandbox@example.com'
   git config user.name 'Sandbox User'
-
-  echo '--- Adding qms-cli as submodule ---'
-  git submodule add -q ${REPO_URL} qms-cli
 
   echo '--- Installing Python dependencies ---'
   pip install -q --root-user-action=ignore --no-warn-script-location -r qms-cli/requirements.txt 2>&1 | grep -v '^\[notice\]'
@@ -86,7 +89,7 @@ WRAPPER
   chmod +x /usr/local/bin/qms
 
   echo '--- Bootstrapping project ---'
-  python qms-cli/qms.py init
+  cd qms-cli && python qms.py init --yes && cd ..
 
   # Initial commit so auto-commits during execution have a base
   git add -A && git commit -q -m 'Initial QMS project'
