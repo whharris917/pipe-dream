@@ -1,7 +1,7 @@
 ---
 title: QMS CLI Requirements Specification
-revision_summary: 'CR-103: REQ-INIT-006 changed from init seeding QMS-Docs to docs/
-  and manual/ directories in qms-cli. REQ-INIT-009 removed QMS-Docs/ blocker.'
+revision_summary: 'CR-102: Overhaul init seed — add docs/hooks/CLAUDE.md/TU, remove
+  SOPs, update safety checks'
 ---
 
 # SDLC-QMS-RS: QMS CLI Requirements Specification
@@ -485,10 +485,10 @@ This returns a chronological record of every action taken on the document, by wh
 | REQ-INIT-003 | **User Directory Structure.** The `init` command shall create user directories for default users (lead, claude, qa, tu) with `workspace/` and `inbox/` subdirectories under `.claude/users/`. |
 | REQ-INIT-004 | **Default Agent Creation.** The `init` command shall create default agent files at `.claude/agents/` including: `qa.md` with `group: quality` in frontmatter, and `tu.md` with `group: reviewer` in frontmatter. |
 | REQ-INIT-005 | **Template Seeding.** The `init` command shall seed the `QMS/TEMPLATE/` directory with document templates from `qms-cli/seed/templates/`, creating corresponding `.meta/` and `.audit/` files with EFFECTIVE status at version 1.0. |
-| REQ-INIT-006 | **Documentation Directories.** qms-cli shall provide a `manual/` directory containing QMS operational documentation (including QMS-Policy.md, QMS-Glossary.md, START_HERE.md, and supporting guides and type references) and a `docs/` directory containing software documentation (including CLI reference, getting started guide, project structure, configuration, users/permissions, and MCP server setup). |
+| REQ-INIT-006 | **Documentation Seeding.** The `init` command shall seed a `QMS-Docs/` directory at the project root with educational documentation from `qms-cli/seed/docs/`, including QMS-Policy.md, QMS-Glossary.md, START_HERE.md, and supporting guides and type references. |
 | REQ-INIT-007 | **Hook Seeding.** The `init` command shall seed `.claude/hooks/` with hook scripts from `qms-cli/seed/hooks/`, including a write guard hook that blocks direct writes to QMS-managed directories. |
 | REQ-INIT-008 | **Orchestrator Instructions Seeding.** The `init` command shall create a starter `CLAUDE.md` at the project root from `qms-cli/seed/claude.md`. |
-| REQ-INIT-009 | **Safety Checks.** The `init` command shall abort with an error if any of the following already exist at the target location: `QMS/` directory, `.claude/users/` directory, `.claude/agents/qa.md` file, `CLAUDE.md` file, or `qms.config.json` file. All checks shall be performed before any changes are made. |
+| REQ-INIT-009 | **Safety Checks.** The `init` command shall abort with an error if any of the following already exist at the target location: `QMS/` directory, `.claude/users/` directory, `.claude/agents/qa.md` file, `QMS-Docs/` directory, `CLAUDE.md` file, or `qms.config.json` file. All checks shall be performed before any changes are made. |
 | REQ-INIT-010 | **Root Flag Support.** The `init` command shall accept an optional `--root` flag to specify an alternate project root directory. If not provided, the current working directory shall be used. |
 
 ---

@@ -1,20 +1,21 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-103: Update REQ-INIT-006 (docs/manual directories) and REQ-INIT-009
-  (remove QMS-Docs blocker); qualified baseline f6717a0 (cr-103/exec branch, 678 tests)'
+revision_summary: 'CR-102: Update REQ-INIT traceability for bootstrap overhaul (docs,
+  hooks, CLAUDE.md, tu user, SOP removal); qualified baseline eeaa145 (cr-102/exec
+  branch, 677 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
 
 ## 1. Purpose
 
-This document provides traceability between the requirements specified in SDLC-QMS-RS v20.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
+This document provides traceability between the requirements specified in SDLC-QMS-RS v19.0 and the qualification tests that verify them. Each requirement is mapped to specific test protocols and functions where verification occurs.
 
 ---
 
 ## 2. Scope
 
-This RTM covers all 141 requirements defined in SDLC-QMS-RS v20.0 across the following domains:
+This RTM covers all 141 requirements defined in SDLC-QMS-RS across the following domains:
 
 - REQ-SEC (Security): 8 requirements
 - REQ-DOC (Document Management): 20 requirements
@@ -168,10 +169,10 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INIT-003 | User Directory Structure | test_init::test_init_creates_complete_structure | PASS |
 | REQ-INIT-004 | Default Agent Creation | test_init::test_init_seeds_agents | PASS |
 | REQ-INIT-005 | Template Seeding | test_init::test_init_seeds_templates | PASS |
-| REQ-INIT-006 | Documentation Directories | test_init::test_docs_directory_exists, test_init::test_manual_directory_exists, test_init::test_init_does_not_seed_qms_docs | PASS |
+| REQ-INIT-006 | Documentation Seeding | test_init::test_init_seeds_docs | PASS |
 | REQ-INIT-007 | Hook Seeding | test_init::test_init_seeds_hooks | PASS |
 | REQ-INIT-008 | Orchestrator Instructions Seeding | test_init::test_init_seeds_claude_md | PASS |
-| REQ-INIT-009 | Safety Checks | test_init::test_init_blocked_by_existing_qms, test_init_blocked_by_existing_users, test_init_blocked_by_existing_qa_agent, test_init_blocked_by_existing_config, test_init_blocked_by_existing_claude_md | PASS |
+| REQ-INIT-009 | Safety Checks | test_init::test_init_blocked_by_existing_qms, test_init_blocked_by_existing_users, test_init_blocked_by_existing_qa_agent, test_init_blocked_by_existing_config, test_init_blocked_by_existing_qms_docs, test_init_blocked_by_existing_claude_md | PASS |
 | REQ-INIT-010 | Root Flag Support | test_init::test_init_with_root_flag | PASS |
 | REQ-USER-001 | Hardcoded Administrators | test_init::test_hardcoded_admins_work | PASS |
 | REQ-USER-002 | Agent File-Based Group Assignment | test_init::test_agent_group_assignment | PASS |
@@ -1263,15 +1264,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-INIT-006: Documentation Directories
+#### REQ-INIT-006: Documentation Seeding
 
-**Requirement:** qms-cli shall provide a `manual/` directory containing QMS operational documentation and a `docs/` directory containing software documentation.
+**Requirement:** The `init` command shall seed a `QMS-Docs/` directory with educational documentation from `qms-cli/seed/docs/`.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
-| test_init.py | test_docs_directory_exists | Verifies docs/ directory exists with README.md, cli-reference.md, getting-started.md. |
-| test_init.py | test_manual_directory_exists | Verifies manual/ directory exists with QMS-Policy.md, QMS-Glossary.md, START_HERE.md, guides/, types/. |
-| test_init.py | test_init_does_not_seed_qms_docs | Verifies init does NOT create QMS-Docs/ at the project root. |
+| test_init.py | test_init_seeds_docs | Verifies QMS-Docs/ with QMS-Policy.md, QMS-Glossary.md, START_HERE.md, guides, and type references. |
 
 ---
 
@@ -1297,7 +1296,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 #### REQ-INIT-009: Safety Checks
 
-**Requirement:** The `init` command shall abort if any of the following already exist: `QMS/`, `.claude/users/`, `.claude/agents/qa.md`, `CLAUDE.md`, or `qms.config.json`.
+**Requirement:** The `init` command shall abort if any of the following already exist: `QMS/`, `.claude/users/`, `.claude/agents/qa.md`, `QMS-Docs/`, `CLAUDE.md`, or `qms.config.json`.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
@@ -1305,6 +1304,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_init.py | test_init_blocked_by_existing_users | Init blocked if .claude/users/ exists. |
 | test_init.py | test_init_blocked_by_existing_qa_agent | Init blocked if qa.md exists. |
 | test_init.py | test_init_blocked_by_existing_config | Init blocked if qms.config.json exists. |
+| test_init.py | test_init_blocked_by_existing_qms_docs | Init blocked if QMS-Docs/ exists. |
 | test_init.py | test_init_blocked_by_existing_claude_md | Init blocked if CLAUDE.md exists. |
 
 ---
@@ -2055,12 +2055,12 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v20.0 |
+| Requirements Spec | SDLC-QMS-RS v19.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-103/exec |
-| Commit | f6717a0 |
-| Total Tests | 678 |
-| Passed | 678 |
+| Branch | cr-102/exec |
+| Commit | eeaa145 |
+| Total Tests | 677 |
+| Passed | 677 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results
@@ -2079,9 +2079,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | test_queries.py | 16 | 16 | 0 |
 | test_prompts.py | 7 | 7 | 0 |
 | test_templates.py | 9 | 9 | 0 |
-| test_init.py | 20 | 20 | 0 |
+| test_init.py | 19 | 19 | 0 |
 | test_mcp.py | 74 | 74 | 0 |
-| **Subtotal** | **231** | **231** | **0** |
+| **Subtotal** | **230** | **230** | **0** |
 
 #### 6.2.2 Unit Tests (tests/)
 
@@ -2100,9 +2100,9 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Category | Tests | Passed | Failed |
 |----------|-------|--------|--------|
-| Qualification Tests | 231 | 231 | 0 |
+| Qualification Tests | 230 | 230 | 0 |
 | Unit Tests | 447 | 447 | 0 |
-| **Total** | **678** | **678** | **0** |
+| **Total** | **677** | **677** | **0** |
 
 ### 6.3 Test Environment
 
