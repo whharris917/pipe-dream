@@ -179,11 +179,11 @@ This provides continuity from the last session's discussions and decisions.
 
 Read the following QMS documents:
 
-1. `QMS-Docs/QMS-Policy.md` — Core policy decisions and judgment criteria
-2. `QMS-Docs/START_HERE.md` — Decision tree for common workflows
-3. `QMS-Docs/QMS-Glossary.md` — Term definitions
+1. `Quality-Manual/QMS-Policy.md` — Core policy decisions and judgment criteria
+2. `Quality-Manual/START_HERE.md` — Decision tree for common workflows
+3. `Quality-Manual/QMS-Glossary.md` — Term definitions
 
-These three documents provide the context needed for QMS operations. For deeper reference on specific topics, consult the numbered guides in `QMS-Docs/` and type references in `QMS-Docs/types/`.
+These three documents provide the context needed for QMS operations. For deeper reference on specific topics, consult the numbered guides in `Quality-Manual/` and type references in `Quality-Manual/types/`.
 
 ### Incremental Session Notes
 
@@ -231,7 +231,7 @@ When summarizing this conversation for context compaction, preserve:
 7. **Key file paths:** Files currently being edited or recently created
 
 Do NOT spend summary space on:
-- QMS-Docs content (available on disk via `QMS-Docs/`)
+- Quality-Manual content (available on disk via `Quality-Manual/`)
 - CLAUDE.md content (re-injected automatically)
 - Historical project context (available in `.claude/PROJECT_STATE.md`)
 - Full code snippets (available via file reads)

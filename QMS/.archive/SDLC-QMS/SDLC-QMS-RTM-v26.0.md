@@ -1,8 +1,8 @@
 ---
 title: QMS CLI Requirements Traceability Matrix
-revision_summary: 'CR-105: Remove test_manual_directory_exists from REQ-INIT-006 mapping
-  (manual relocated to standalone repo). Qualified baseline 918984d (cr-105/exec,
-  687 tests).'
+revision_summary: 'CR-104: Update REQ-INIT-010 (--root marker placement), add REQ-INIT-011
+  (marker detection) and REQ-INIT-012 (confirmation prompt); qualified baseline 1761b0a
+  (cr-104/exec branch, 688 tests)'
 ---
 
 # SDLC-QMS-RTM: QMS CLI Requirements Traceability Matrix
@@ -169,7 +169,7 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 | REQ-INIT-003 | User Directory Structure | test_init::test_init_creates_complete_structure | PASS |
 | REQ-INIT-004 | Default Agent Creation | test_init::test_init_seeds_agents | PASS |
 | REQ-INIT-005 | Template Seeding | test_init::test_init_seeds_templates | PASS |
-| REQ-INIT-006 | Software Documentation Directory | test_init::test_docs_directory_exists, test_init::test_init_does_not_seed_qms_docs | PASS |
+| REQ-INIT-006 | Documentation Directories | test_init::test_docs_directory_exists, test_init::test_manual_directory_exists, test_init::test_init_does_not_seed_qms_docs | PASS |
 | REQ-INIT-007 | Hook Seeding | test_init::test_init_seeds_hooks | PASS |
 | REQ-INIT-008 | Orchestrator Instructions Seeding | test_init::test_init_seeds_claude_md | PASS |
 | REQ-INIT-009 | Safety Checks | test_init::test_init_blocked_by_existing_qms, test_init_blocked_by_existing_users, test_init_blocked_by_existing_qa_agent, test_init_blocked_by_existing_config, test_init_blocked_by_existing_claude_md | PASS |
@@ -1266,13 +1266,14 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 ---
 
-#### REQ-INIT-006: Software Documentation Directory
+#### REQ-INIT-006: Documentation Directories
 
-**Requirement:** qms-cli shall provide a `docs/` directory containing software documentation.
+**Requirement:** qms-cli shall provide a `manual/` directory containing QMS operational documentation and a `docs/` directory containing software documentation.
 
 | Test File | Test Function | Description |
 |-----------|---------------|-------------|
 | test_init.py | test_docs_directory_exists | Verifies docs/ directory exists with README.md, cli-reference.md, getting-started.md. |
+| test_init.py | test_manual_directory_exists | Verifies manual/ directory exists with QMS-Policy.md, QMS-Glossary.md, START_HERE.md, guides/, types/. |
 | test_init.py | test_init_does_not_seed_qms_docs | Verifies init does NOT create QMS-Docs/ at the project root. |
 
 ---
@@ -2085,13 +2086,13 @@ Test code includes inline markers `[REQ-XXX]` to identify where each requirement
 
 | Attribute | Value |
 |-----------|-------|
-| Requirements Spec | SDLC-QMS-RS v22.0 |
+| Requirements Spec | SDLC-QMS-RS v21.0 |
 | Repository | whharris917/qms-cli |
-| Branch | cr-105/exec |
-| Commit | 918984d |
-| CI Run | 22373782753 |
-| Total Tests | 687 |
-| Passed | 687 |
+| Branch | cr-104/exec |
+| Commit | 1761b0a |
+| CI Run | 22366400276 |
+| Total Tests | 688 |
+| Passed | 688 |
 | Failed | 0 |
 
 ### 6.2 Test Protocol Results

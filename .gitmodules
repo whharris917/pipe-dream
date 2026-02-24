@@ -7,3 +7,6 @@
 [submodule "claude-qms"]
 	path = claude-qms
 	url = https://github.com/whharris917/claude-qms.git
+[submodule "Quality-Manual"]
+	path = Quality-Manual
+	url = https://github.com/whharris917/quality-manual.git

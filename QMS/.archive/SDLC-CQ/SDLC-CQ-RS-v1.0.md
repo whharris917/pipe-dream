@@ -1,6 +1,7 @@
 ---
 title: claude-qms Requirements Specification
-revision_summary: 'CR-105: Added REQ-REPO-004 (Quality-Manual submodule).'
+revision_summary: 'CR-104: Initial requirements for the claude-qms canonical starter
+  repository'
 ---
 
 # SDLC-CQ-RS: claude-qms Requirements Specification
@@ -13,9 +14,9 @@ This document defines the requirements for the `claude-qms` repository — the c
 
 ## 2. Scope
 
-This RS covers the 6 requirements for the `claude-qms` repository across 2 domains:
+This RS covers the 5 requirements for the `claude-qms` repository across 2 domains:
 
-- REQ-REPO (Repository Structure): 4 requirements
+- REQ-REPO (Repository Structure): 3 requirements
 - REQ-DOC (Documentation): 2 requirements
 
 These requirements govern the contents of `whharris917/claude-qms` on GitHub.
@@ -31,7 +32,6 @@ These requirements govern the contents of `whharris917/claude-qms` on GitHub.
 | REQ-REPO-001 | **Marker File.** The repository shall contain a `.claude-qms` marker file at the root. This file signals to `qms init` that the directory is a valid QMS project root. |
 | REQ-REPO-002 | **QMS CLI Submodule.** The repository shall include `qms-cli/` as a git submodule pointing to `whharris917/qms-cli`. The submodule shall reference a qualified commit on the `main` branch. |
 | REQ-REPO-003 | **Gitignore.** The repository shall contain a `.gitignore` file that excludes QMS runtime artifacts (e.g., `.claude/users/`, `QMS/.meta/`, `QMS/.audit/`, `QMS/.archive/`, `__pycache__/`). |
-| REQ-REPO-004 | **Quality Manual Submodule.** The repository shall include `Quality-Manual/` as a git submodule pointing to `whharris917/quality-manual`. This provides the QMS operational documentation (policy, glossary, guides, and document type references) at the project root. |
 
 ---
 
@@ -47,7 +47,6 @@ These requirements govern the contents of `whharris917/claude-qms` on GitHub.
 ## 4. References
 
 - **CR-104:** Create claude-qms Starter Repo, Harden qms init
-- **CR-105:** Relocate QMS Manual to standalone repo at Quality-Manual/
 - **SDLC-QMS-RS:** QMS CLI Requirements Specification (defines `qms init` behavior)
 
 ---

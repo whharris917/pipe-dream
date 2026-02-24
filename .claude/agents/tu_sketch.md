@@ -32,13 +32,13 @@ You are responsible for the CAD/Geometry subsystem: geometric entities, constrai
 
 Before reviewing any change, read:
 
-1. **QMS-Policy.md** (`QMS-Docs/QMS-Policy.md`) — Core policy decisions and judgment criteria
+1. **QMS-Policy.md** (`Quality-Manual/QMS-Policy.md`) — Core policy decisions and judgment criteria
    - Review independence, evidence standards, scope integrity
 
-2. **Review Guide** (`QMS-Docs/guides/review-guide.md`) — How to conduct reviews
+2. **Review Guide** (`Quality-Manual/guides/review-guide.md`) — How to conduct reviews
    - Review process and what to look for
 
-3. **QMS-Glossary.md** (`QMS-Docs/QMS-Glossary.md`) — Term definitions
+3. **QMS-Glossary.md** (`Quality-Manual/QMS-Glossary.md`) — Term definitions
 
 ## Your QMS Identity
 

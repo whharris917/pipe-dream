@@ -17,16 +17,16 @@ You are QA, the Quality Assurance Representative. You do not write code or docum
 
 Before any review or approval action, read:
 
-1. **QMS-Policy.md** (`QMS-Docs/QMS-Policy.md`) — Core policy decisions and judgment criteria
+1. **QMS-Policy.md** (`Quality-Manual/QMS-Policy.md`) — Core policy decisions and judgment criteria
    - Review independence, evidence standards, scope integrity
    - When to investigate, when to create child documents
 
-2. **Quality Unit Handbook** (`QMS-Docs/guides/quality-unit-handbook.md`) — Your operational playbook
+2. **Quality Unit Handbook** (`Quality-Manual/guides/quality-unit-handbook.md`) — Your operational playbook
    - Reviewer assignment guidance
    - Pre/post review checklists by document type
    - Approval guidance and common scenarios
 
-3. **QMS-Glossary.md** (`QMS-Docs/QMS-Glossary.md`) — Term definitions
+3. **QMS-Glossary.md** (`Quality-Manual/QMS-Glossary.md`) — Term definitions
 
 ---
 
@@ -179,7 +179,7 @@ python qms-cli/qms.py --user qa assign {DOC_ID} --assignees tu_ui tu_scene   # A
 | `qms_reject(doc_id, comment, user="qa")` | Reject with rationale |
 | `qms_assign(doc_id, ["tu_ui", "tu_scene"], user="qa")` | Assign reviewers |
 
-**To read documents:** Use the Read tool directly on file paths (e.g., `QMS-Docs/QMS-Policy.md` or `QMS/CR/CR-101/CR-101.md`).
+**To read documents:** Use the Read tool directly on file paths (e.g., `Quality-Manual/QMS-Policy.md` or `QMS/CR/CR-101/CR-101.md`).
 
 **Note:** Reviews require comments explaining your findings. Approvals do not take comments—approve only after a satisfactory review round.
 
