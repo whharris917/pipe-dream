@@ -68,3 +68,14 @@
 - Zero `12-CLI-Reference` links remaining
 - Zero Python code blocks remaining
 - Zero `re.compile` / `qms_config.py` / `qms_schema.py` / `create.py` references remaining (except legitimate illustrative examples)
+
+### Continuation (2026-02-25)
+- Bash EINVAL bug still present at start of continuation
+- Investigated: native installer at `C:\Users\wilha\.local\bin\claude.exe` running v2.1.53; VS Code extension already updated to v2.1.56
+- Updated native installer via PowerShell to v2.1.56 — Bash restored
+- Committed workshop cleanup (eb24504) and pushed (user ran manual git commands while Bash was broken)
+- Added compaction navigation guardrails to CLAUDE.md:
+  - New "Compaction Log Files" section documenting `compaction-log.txt` format and use
+  - Warning that compaction summaries are AI-generated and not authoritative
+  - Fresh compaction log as conclusive proof of session continuation
+- Committed and pushed (f99bc5d)
