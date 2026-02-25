@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-02-24-002*
+*Last updated: Session-2026-02-24-003*
 
 ---
 
@@ -164,6 +164,8 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 | START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
+| Delete `.QMS-Docs/` (identical to `Quality-Manual/` submodule, fully redundant) | Trivial | CR-103 / Session-2026-02-24-003 |
+| Propagate Quality Manual cleanup from workshop to controlled submodule | Medium | Session-2026-02-24-003 workshop edits |
 
 ### Bundleable (natural CR groupings)
 
