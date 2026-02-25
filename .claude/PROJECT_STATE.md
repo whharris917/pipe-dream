@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-24-001*
+*Last updated: Session-2026-02-24-002*
 
 ---
 
 ## 1. Where We Are Now
 
-**claude-qms starter repo and hardened qms init complete.** CR-104 created `whharris917/claude-qms` as the canonical distribution repo and redesigned `qms init` with marker-based root detection, confirmation prompt, and `--yes` flag. New CQ namespace with RS/RTM. 688 tests, SDLC-QMS-RS v21.0, SDLC-QMS-RTM v26.0.
+**QMS Manual relocated to standalone repo.** CR-105 moved the 38-file operational manual from `qms-cli/manual/` to `whharris917/quality-manual`, included as a submodule at `Quality-Manual/` in both `claude-qms` and `pipe-dream`. End users and developers see identical directory structures. `QMS-Docs/` renamed to `.QMS-Docs/` (hidden). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0, SDLC-CQ-RS v2.0, SDLC-CQ-RTM v2.0.
 
-63 CRs CLOSED (CR-042 through CR-104, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
+64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
 
 ---
 
@@ -54,6 +54,8 @@
 
 **Distribution & Init Hardening (Feb 24, CR-104).** Created `whharris917/claude-qms` as canonical starter repo (marker file + qms-cli submodule). Redesigned `qms init`: marker-based root detection, confirmation prompt, `--yes` flag, `--root` marker placement. New CQ SDLC namespace (SDLC-CQ-RS v1.0, SDLC-CQ-RTM v1.0). 688 tests, RS v21.0, RTM v26.0.
 
+**Quality Manual Standalone Repo (Feb 24, CR-105).** Relocated 38-file operational manual from `qms-cli/manual/` to `whharris917/quality-manual`. Added as submodule at `Quality-Manual/` in both `claude-qms` and `pipe-dream`. Renamed `QMS-Docs/` to `.QMS-Docs/`. Updated all agent definitions and CLAUDE.md references. 687 tests, RS v22.0, RTM v27.0, CQ-RS v2.0, CQ-RTM v2.0.
+
 ---
 
 ## 3. What's Built
@@ -62,11 +64,11 @@
 
 | Document | Version | Tests |
 |----------|---------|-------|
-| SDLC-QMS-RS | v21.0 EFFECTIVE | 143 requirements |
-| SDLC-QMS-RTM | v26.0 EFFECTIVE | 688 tests, qualified commit 1761b0a |
-| SDLC-CQ-RS | v1.0 EFFECTIVE | 5 requirements |
-| SDLC-CQ-RTM | v1.0 EFFECTIVE | Inspection-based, qualified commit 6b22747 |
-| Qualified Baseline | CLI-17.0 | qms-cli commit f6f82db (main) |
+| SDLC-QMS-RS | v22.0 EFFECTIVE | 143 requirements |
+| SDLC-QMS-RTM | v27.0 EFFECTIVE | 687 tests, qualified commit 918984d |
+| SDLC-CQ-RS | v2.0 EFFECTIVE | 6 requirements |
+| SDLC-CQ-RTM | v2.0 EFFECTIVE | Inspection-based, qualified commit d3c34e5 |
+| Qualified Baseline | CLI-18.0 | qms-cli commit 309f217 (main) |
 
 ### Controlled Document State
 
@@ -162,7 +164,6 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
 | Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
 | START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
-| Migrate pipe-dream/QMS-Docs/ to read from qms-cli/manual/ submodule | Medium | CR-103 deferred scope |
 
 ### Bundleable (natural CR groupings)
 
@@ -200,7 +201,7 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **Container security.** C3 (root user) remains the last critical code review finding.
 
-**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 688.
+**Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 687.
 
 **Claude Code deny rules non-functional.** All deny rules in settings.local.json are silently ignored due to a known platform bug (GitHub #8961, #6699, #6631). PreToolUse hooks provide actual enforcement. Deny rules retained as defense-in-depth. Note: CR-104 removed qms-cli/flow-state deny rules since they were false-positive blocking .test-env/ writes; hook provides the actual enforcement.
 
