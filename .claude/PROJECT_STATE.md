@@ -1,14 +1,18 @@
 # Project State
 
-*Last updated: Session-2026-02-24-003*
+*Last updated: Session-2026-02-26-002 (post grand unification)*
 
 ---
 
 ## 1. Where We Are Now
 
-**QMS Manual relocated to standalone repo.** CR-105 moved the 38-file operational manual from `qms-cli/manual/` to `whharris917/quality-manual`, included as a submodule at `Quality-Manual/` in both `claude-qms` and `pipe-dream`. End users and developers see identical directory structures. `QMS-Docs/` renamed to `.QMS-Docs/` (hidden). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0, SDLC-CQ-RS v2.0, SDLC-CQ-RTM v2.0.
+**CR-107 and CR-106 design complete, drafts aligned.** Two CRs refined through extensive iterative design with Lead (11 key decisions, 5 design documents):
 
-64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014).
+- **CR-107 (Unified Document Lifecycle)** — Grand unification of all three document architectures (Direct, Interactive, Template-Variable) into a single system. Jinja2 as unified render engine (replaces both custom variable resolver and `compile_document()`). `.meta/` as universal data store populated by two input channels: frontmatter editing (all documents) and `qms interact` (interactive documents). Source files in `QMS/.source/` are Jinja2 templates ranging from trivial (no expressions) to complex (loops, conditionals). Template as living schema authority. Draft always derived. Checkout-triggered migration. Spectrum model (no mode switch between document types). DRAFT v0.1, content v1.0 — reflects grand unification design. 14 EIs.
+
+- **CR-106 (System Governance)** — Governed submodules as first-class QMS entities. Registration, exclusive checkout, qualification gate with RTM evidence chain, CLI-driven PR merge. Depends on CR-107 for unified lifecycle infrastructure (frontmatter-based `user_properties`, Jinja2 rendering). DRAFT v0.1, content v0.4 — aligned with CR-107 redesign. 13 EIs.
+
+64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0, SDLC-CQ-RS v2.0, SDLC-CQ-RTM v2.0.
 
 ---
 
@@ -56,6 +60,8 @@
 
 **Quality Manual Standalone Repo (Feb 24, CR-105).** Relocated 38-file operational manual from `qms-cli/manual/` to `whharris917/quality-manual`. Added as submodule at `Quality-Manual/` in both `claude-qms` and `pipe-dream`. Renamed `QMS-Docs/` to `.QMS-Docs/`. Updated all agent definitions and CLAUDE.md references. 687 tests, RS v22.0, RTM v27.0, CQ-RS v2.0, CQ-RTM v2.0.
 
+**Unified Document Lifecycle & System Governance (Feb 25-26, CR-107 + CR-106 — design complete).** Two-CR split: CR-107 provides unified document lifecycle infrastructure, CR-106 builds system governance on top. CR-107 evolved through three design phases: (1) genotype-phenotype analysis mapped three existing architectures; (2) A-C unification via universal source files, frontmatter-as-input, template-as-living-schema; (3) grand unification via Jinja2 render engine and `.meta/` as universal data store, making B (interactive) a limiting case rather than a separate architecture. Connects to interactive engine redesign (Session-2026-02-22-004) — same design from a different angle. 11 key design decisions through iterative Lead discussion. Both CR drafts finalized and aligned.
+
 ---
 
 ## 3. What's Built
@@ -92,6 +98,8 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
+| CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle: Jinja2 render engine, universal source files, living schema authority, frontmatter as sole input, checkout-triggered migration, spectrum model. Grand unification of all 3 document architectures. Ready for review. |
+| CR-106 | DRAFT v0.1 (content v0.4) | System Governance for governed submodules. Depends on CR-107. CLI-driven merge, qualification gate, RTM evidence chain. Aligned with CR-107 redesign. Ready for review. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. Documents VR title propagation bug and SOP-004/TEMPLATE-VR alignment gap. Awaiting future corrective CR. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
@@ -106,6 +114,12 @@
 ---
 
 ## 5. Forward Plan
+
+### Next Up: CR-107 → CR-106 (sequential)
+
+**CR-107 (Unified Document Lifecycle)** — Execution order: CR-107 first (foundational infrastructure), then CR-106 (consumer). Both are code CRs targeting qms-cli with full SDLC qualification cycles. Drafts complete and aligned. Ready for review/approval routing.
+
+**CR-106 (System Governance)** — Depends on CR-107 for unified lifecycle infrastructure (frontmatter-based `user_properties`, Jinja2 rendering). After CR-107 merges, CR-106 builds system governance on top.
 
 ### Interactive Engine Redesign (design discussion complete)
 
@@ -166,6 +180,9 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
 | Delete `.QMS-Docs/` (identical to `Quality-Manual/` submodule, fully redundant) | Trivial | CR-103 / Session-2026-02-24-003 |
 | Propagate Quality Manual cleanup from workshop to controlled submodule | Medium | Session-2026-02-24-003 workshop edits |
+| Standardize all metadata timestamps to UTC ISO 8601 (replace `date.today()` / local `datetime.now()`) | Small | Session-2026-02-26-001 audit: `qms_meta.py:111,133`, `prompts.py:19-21`, `qms_templates.py:24-26`, `commands/fix.py:78`, `commands/init.py:228` |
+| Consolidate SDLC namespace system into system registry (single source of truth) | Medium | Session-2026-02-26-001 design discussion; depends on CR-106 |
+| Extend `fix` command to handle system metadata corrections | Small | Session-2026-02-26-001 design discussion; depends on CR-106 |
 
 ### Bundleable (natural CR groupings)
 
