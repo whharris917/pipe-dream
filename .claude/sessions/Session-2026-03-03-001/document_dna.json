@@ -1,0 +1,64 @@
+{
+    "system_properties": {
+        "document_id": "...",
+        "title": "..."
+    },
+    "user_properties": {
+        "custom_1": "...",
+        "custom_2": "..."
+    },
+    "execution_properties": {
+    },
+    "sections":{
+        "1": {
+            "title": "Title of Section 1",
+            "locked": false,
+            "elements": [
+                {
+                    "type": "text",
+                    "locked": true,
+                    "properties": {
+                        "value": "Here are several paragraphs of text that can't be edited, potentially containing placeholders like this: Here is a user property: {{ user_properties.custom_1}}..."
+                    }
+                },
+                {
+                    "type": "table",
+                    "locked": false,
+                    "properties": {
+                        "name": "name_of_table",
+                        "columns": {
+                            "ID": {"type": "id"},
+                            "Prerequisites": {"type": "prerequisite"},
+                            "Instructions": {"type": "design"},
+                            "Expected Results": {"type": "design"},
+                            "Actual Results": {"type": "recorded_value"},
+                            "Performed By": {"type": "signature"}
+                        },
+                        "column_order": ["ID", "Prerequisites", "Instructions", "Expected Results", "Actual Results", "Performed By"],
+                        "rows": [
+                            {"values": {"Prerequisites": ["path::to::prerequisite::table::row"], "Instructions": "This text appears somewhere in this table based on prerequisite-based sorting and cannot be edited. This row cannot be deleted."}, "locked": true},
+                            {"values": {"Instructions": "These instructions are editable during document authoring. This row is able to be deleted."}, "locked": false}
+                        ]
+                    }
+
+                },
+                {
+                    "type": "text",
+                    "locked": false,
+                    "properties": {
+                        "value": "Here are several paragraphs of text that can be edited. This entire text block may be deleted."
+                    }
+                }
+            ]
+        },
+        "2": {
+            "title": "Title of Section 2",
+            "locked": true,
+            "elements": [
+                {},
+                {},
+                {}
+            ]
+        }
+    }
+}

@@ -1,0 +1,124 @@
+---
+title: '<<Change Record title>>'
+revision_summary: '<<Description of changes>>'
+
+# ── Metadata schema ──────────────────────────────────────────
+#
+# User properties for freeform fields. These are edited directly
+# in the frontmatter by the author. Checkin extracts them to
+# .meta/ user_properties as usual.
+
+schema:
+  purpose:         { type: text, required: true }
+  impact_analysis: { type: text }
+  references:      { type: text }
+
+# ── Interaction graph ────────────────────────────────────────
+#
+# Organized into zones. Each zone name corresponds to an
+# <!-- @interactive: name --> marker in the body below.
+#
+# Zones can declare sub-workflows for different lifecycle phases:
+#   authoring  — active during DRAFT (build the content)
+#   execution  — active during IN_EXECUTION (act on the content)
+#
+# The engine selects the active phase from the document state.
+
+graph:
+  zones:
+
+    ei_table:
+
+      # ── Authoring phase (DRAFT) ──
+      # Build the EI table interactively.
+      authoring:
+        collection: true
+        nodes:
+          ei_type:
+            values: [Implementation, Verification, Documentation]
+            prompt: "What type of execution item is this?"
+
+          ei_description:
+            prompt: |
+              Describe what this execution item accomplishes.
+              Be specific enough that a reviewer can determine
+              when this item is complete.
+
+          ei_acceptance:
+            prompt: >
+              What are the acceptance criteria for this item?
+              State observable, testable conditions.
+
+          add_another:
+            values: [yes, no]
+            prompt: "Add another execution item?"
+            yes: ei_type
+            no: ~
+
+      # ── Execution phase (IN_EXECUTION) ──
+      # Complete each EI built during authoring.
+      execution:
+        each: ei_table
+        nodes:
+          ei_status:
+            values: [Complete, Blocked, Deferred]
+            prompt: >
+              What is the status of EI-{{ item.index }}:
+              {{ item.ei_description }}?
+
+          ei_evidence:
+            prompt: "Provide evidence of completion for this item."
+            commit: true
+
+          ei_completed_at:
+            stamp: true
+---
+
+{# ═══════════════════════════════════════════════════════════════
+   RENDITION TEMPLATE
+
+   This body serves double duty:
+     1. During interaction, the Jinja2 between @interactive markers
+        is evaluated with items collected so far to provide context
+        above the current prompt.
+     2. After all phases complete, the full body is rendered as the
+        final document.
+
+   The template must render gracefully with partial data — during
+   authoring, execution fields don't exist yet; during execution,
+   they're filled in incrementally. Use default() for fields that
+   may be absent.
+
+   Data sources:
+     - Freeform fields (purpose, etc.) come from user_properties
+     - Interactive zone data (ei_table) comes from interaction.*
+     - System fields (doc_id, etc.) come from document metadata
+   ═══════════════════════════════════════════════════════════════ #}
+
+# {{ doc_id }}: {{ title }}
+
+## 1. Purpose
+
+{{ purpose }}
+
+## 2. Impact Analysis
+
+{{ impact_analysis }}
+
+## 3. Execution Items
+
+<!-- @interactive: ei_table -->
+| # | Type | Description | Acceptance | Status | Evidence |
+|---|------|-------------|------------|--------|----------|
+{% for ei in ei_table %}
+| EI-{{ loop.index }} | {{ ei.ei_type }} | {{ ei.ei_description }} | {{ ei.ei_acceptance }} | {{ ei.ei_status | default("—") }} | {{ ei.ei_evidence | default("—") }} |
+{% endfor %}
+<!-- @end-interactive -->
+
+## 4. References
+
+{{ references }}
+
+---
+
+**END OF CHANGE RECORD**

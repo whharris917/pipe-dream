@@ -1,16 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-02-26-002 (post grand unification)*
+*Last updated: Session-2026-03-03-001*
 
 ---
 
 ## 1. Where We Are Now
 
-**CR-107 and CR-106 design complete, drafts aligned.** Two CRs refined through extensive iterative design with Lead (11 key decisions, 5 design documents):
+**DocuBuilder paradigm established; genesis sandbox authorized.** Session 2026-03-03-001 produced a major design pivot: the Kneat eVal-inspired DocuBuilder model replaces the graph-based interaction engine design with a table-primitive approach. The table is the universal interactive primitive. Column types (ID, Design, Recorded Value, Signature, Witness, Issue, Choice List, Prerequisite, Calculated, Row Number) define the full spectrum from authoring to execution. Three property namespaces (system, user, execution), composable importable sections, prerequisite-based ordering, and cross-document references provide the complete framework. CR-108 authorizes a genesis sandbox (`docu-builder/`, git-ignored) for rapid exploratory prototyping.
 
-- **CR-107 (Unified Document Lifecycle)** — Grand unification of all three document architectures (Direct, Interactive, Template-Variable) into a single system. Jinja2 as unified render engine (replaces both custom variable resolver and `compile_document()`). `.meta/` as universal data store populated by two input channels: frontmatter editing (all documents) and `qms interact` (interactive documents). Source files in `QMS/.source/` are Jinja2 templates ranging from trivial (no expressions) to complex (loops, conditionals). Template as living schema authority. Draft always derived. Checkout-triggered migration. Spectrum model (no mode switch between document types). DRAFT v0.1, content v1.0 — reflects grand unification design. 14 EIs.
-
-- **CR-106 (System Governance)** — Governed submodules as first-class QMS entities. Registration, exclusive checkout, qualification gate with RTM evidence chain, CLI-driven PR merge. Depends on CR-107 for unified lifecycle infrastructure (frontmatter-based `user_properties`, Jinja2 rendering). DRAFT v0.1, content v0.4 — aligned with CR-107 redesign. 13 EIs.
+**CR-107 and CR-106 remain in DRAFT.** The interaction engine portion of CR-107 is superseded by the DocuBuilder paradigm. CR-107's non-interaction content (universal source files, Jinja2 render engine, living schema authority, spectrum model) remains valid. How CR-107 evolves in light of DocuBuilder is TBD — it may be revised, split, or partially superseded once the sandbox yields results.
 
 64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0, SDLC-CQ-RS v2.0, SDLC-CQ-RTM v2.0.
 
@@ -18,49 +16,13 @@
 
 ## 2. The Arc
 
-**Foundation (Feb 1-5, CR-042 through CR-055).** Remote MCP transport, container infrastructure, streamable-HTTP, process improvements from INV-007 through INV-010.
+**Foundation through Quality Manual** (Feb 1-24, CR-042 through CR-105). See previous PROJECT_STATE versions for detailed arc.
 
-**Multi-Agent Infrastructure (Feb 6-7, CR-056 through CR-063).** Unified launcher, Agent Hub, port-based discovery, agent permissions.
+**Unified Document Lifecycle & System Governance** (Feb 25-26, CR-107 + CR-106 — design complete). Grand unification of three document architectures into single Jinja2-based system. CR-106 builds system governance on top.
 
-**Feature Build (Feb 8-9, CR-064 through CR-072).** PTY manager, WebSocket endpoint, Tauri GUI, demand-driven bootstrap.
+**Interaction Architecture Exploration** (Feb 27 - Mar 2, design sessions). Multiple competing approaches explored: frontmatter-driven interaction, three-artifact separation, graph-based engine with Python dataclasses. No decisions finalized.
 
-**Identity and Security (Feb 9-10, CR-073 through CR-076).** Four-phase identity system, 396 tests, RS v12.0/RTM v14.0.
-
-**Audit, Hardening, and Verification (Feb 14, CR-077 through CR-081).** Code review (27 findings, 4 fixed), Phase A integration testing (2 containerized agents, full QMS lifecycle), GUI terminal hardening.
-
-**QMS Process Evolution (Feb 15-16, CR-082 through CR-088).** ADD document type. Merge gate. Integration verification mandate. Pre/post-execution commits. Rollback procedures. CLI quality and workflow enforcement. Agent Hub observability.
-
-**Testing & Evidence Framework (Feb 16-18, CR-089).** VR document type — CLI support (424 tests), SDLC docs (RS v15.0, RTM v19.0), TEMPLATE-VR, 4 SOP updates, 3 template updates.
-
-**Deficiency Resolution (Feb 19, CR-090).** MCP health checks switched from HTTP POST to TCP connect.
-
-**Interaction System (Feb 19-21, CR-091).** Template parser, source data model, interaction engine, compilation engine, CLI command, MCP tool. 22 requirements (REQ-INT-001 through REQ-INT-022), 611 tests. SOP-004 Section 11, TEMPLATE-VR v3 (interactive).
-
-**Governance Failure Investigation (Feb 21, INV-012).** CR-091 code never propagated to production submodule. CR-092 (corrective: submodule merge) and CR-093 (preventive: SOP-005 v6.0, SOP-002 v14.0) both CLOSED.
-
-**Compilation Defects (Feb 21, CR-094).** Four defects in compiled VR output fixed: duplicate frontmatter, broken tables, guidance leak, no visual distinction. TEMPLATE-VR v4 with `@end-prompt`. 643 tests.
-
-**Attachment Lifecycle + Compiler Refinements (Feb 22, CR-095).** Attachment document classification, cascade close, terminal state checkout guard. TEMPLATE-VR v5, auto-metadata, block rendering, step subsection numbering. 673 tests.
-
-**Compaction Resilience (Feb 22, CR-096).** 5-layer defense-in-depth: Compact Instructions, post-compaction recovery protocol, incremental session notes, PreCompact hook, SessionStart recovery hook. Config/docs only.
-
-**VR Compilation Rendering Fixes (Feb 22, CR-097).** Step subsection labels, blockquoted instructions, improved auto-commit messages. 673 tests, SDLC-QMS-RTM v23.0.
-
-**Template Divergence Investigation (Feb 22, INV-013).** Systematic drift between QMS-controlled and seed templates across all 9 pairs. CR-098 aligned all templates. CR-099 added dual-template awareness to TEMPLATE-CR and SOP-002.
-
-**SDLC Governance Bypass Investigation (Feb 22, INV-014).** CR-098 committed directly to qms-cli main bypassing SOP-005 execution branch workflow. Discovered all Claude Code deny rules are non-functional (platform bug). CR-100 tightened SOP-005 (dev location, PR mandate, file scope), TEMPLATE-CR (explicit locations, PR enforcement), SOP-002 (PR verification in QA checklist). PreToolUse hook as enforcement. Seed aligned via PR #18.
-
-**VR Evidence Remediation (Feb 22, CR-091-ADD-001).** Replaced inadequate freehand CR-091-VR-001 with interactive VR authored through the system it verifies. 4 verification steps (progress tracking, compilation, amendment workflow, sequential enforcement), all Pass. Type 2 VAR (VAR-001) documents empty title field (CLI bug) and SOP-004/TEMPLATE-VR alignment gap.
-
-**Documentation Architecture & Bootstrap Overhaul (Feb 22-23, CR-101, CR-102).** Three-strand authority model: CLI (mechanism) + Templates (structure) + QMS-Policy.md (judgment). Built QMS-Docs suite, genericized for portability (zero instance-specific references). CR-101 redirected agent reading directives from SOPs to QMS-Docs. CR-102 overhauled qms-cli bootstrap: seeds QMS-Docs, generic TU agent, starter CLAUDE.md, write guard hook; removed SOP seeds; added `tu` user. 677 tests, RS v19.0, RTM v24.0.
-
-**Docs/Manual Directory Split (Feb 23, CR-103).** Separated qms-cli documentation into `docs/` (7 new software doc files) and `manual/` (38 files from `seed/docs/`). Removed `seed_docs()` from init — projects no longer get a `QMS-Docs/` copy. `pipe-dream/QMS-Docs/` untouched (deferred to follow-up CR). 678 tests, RS v20.0, RTM v25.0.
-
-**Distribution & Init Hardening (Feb 24, CR-104).** Created `whharris917/claude-qms` as canonical starter repo (marker file + qms-cli submodule). Redesigned `qms init`: marker-based root detection, confirmation prompt, `--yes` flag, `--root` marker placement. New CQ SDLC namespace (SDLC-CQ-RS v1.0, SDLC-CQ-RTM v1.0). 688 tests, RS v21.0, RTM v26.0.
-
-**Quality Manual Standalone Repo (Feb 24, CR-105).** Relocated 38-file operational manual from `qms-cli/manual/` to `whharris917/quality-manual`. Added as submodule at `Quality-Manual/` in both `claude-qms` and `pipe-dream`. Renamed `QMS-Docs/` to `.QMS-Docs/`. Updated all agent definitions and CLAUDE.md references. 687 tests, RS v22.0, RTM v27.0, CQ-RS v2.0, CQ-RTM v2.0.
-
-**Unified Document Lifecycle & System Governance (Feb 25-26, CR-107 + CR-106 — design complete).** Two-CR split: CR-107 provides unified document lifecycle infrastructure, CR-106 builds system governance on top. CR-107 evolved through three design phases: (1) genotype-phenotype analysis mapped three existing architectures; (2) A-C unification via universal source files, frontmatter-as-input, template-as-living-schema; (3) grand unification via Jinja2 render engine and `.meta/` as universal data store, making B (interactive) a limiting case rather than a separate architecture. Connects to interactive engine redesign (Session-2026-02-22-004) — same design from a different angle. 11 key design decisions through iterative Lead discussion. Both CR drafts finalized and aligned.
+**DocuBuilder Paradigm Shift** (Mar 3, Session-2026-03-03-001). Kneat eVal-inspired pivot. Table as universal interactive primitive. Column types replace graph nodes. Prerequisites replace graph edges. Composable sections replace zone markers. Property namespaces replace schema declarations. Work Instructions replace sequential prompt workflows. CR-108 authorizes genesis sandbox.
 
 ---
 
@@ -98,9 +60,10 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle: Jinja2 render engine, universal source files, living schema authority, frontmatter as sole input, checkout-triggered migration, spectrum model. Grand unification of all 3 document architectures. Ready for review. |
-| CR-106 | DRAFT v0.1 (content v0.4) | System Governance for governed submodules. Depends on CR-107. CLI-driven merge, qualification gate, RTM evidence chain. Aligned with CR-107 redesign. Ready for review. |
-| CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. Documents VR title propagation bug and SOP-004/TEMPLATE-VR alignment gap. Awaiting future corrective CR. |
+| CR-108 | DRAFT v0.1 | DocuBuilder Genesis Sandbox. Exploratory prototyping, no required outcomes. Ready to route. |
+| CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle. Non-interaction content valid; interaction design superseded by DocuBuilder paradigm. Future TBD. |
+| CR-106 | DRAFT v0.1 (content v0.4) | System Governance. Depends on CR-107. Unchanged. |
+| CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. VR title bug + SOP-004/TEMPLATE-VR alignment gap. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
 | INV-002 | IN_EXECUTION v1.0 | Legacy — SOP-005 missing revision summary. |
@@ -115,32 +78,29 @@
 
 ## 5. Forward Plan
 
-### Next Up: CR-107 → CR-106 (sequential)
+### Immediate: Route CR-108 → Begin Sandbox
 
-**CR-107 (Unified Document Lifecycle)** — Execution order: CR-107 first (foundational infrastructure), then CR-106 (consumer). Both are code CRs targeting qms-cli with full SDLC qualification cycles. Drafts complete and aligned. Ready for review/approval routing.
+1. Route CR-108 for review/approval
+2. Set up `docu-builder/` sandbox (`.gitignore` entry, directory structure)
+3. Write informal RS from `authoring-and-executing-controlled-documents.md` principles
+4. Begin Python prototyping — interactive REPL exploration of core data model
 
-**CR-106 (System Governance)** — Depends on CR-107 for unified lifecycle infrastructure (frontmatter-based `user_properties`, Jinja2 rendering). After CR-107 merges, CR-106 builds system governance on top.
+### CR-107 / CR-106: On Hold
 
-### Interactive Engine Redesign (design discussion complete)
+CR-107's interaction engine design is superseded by DocuBuilder. The non-interaction content (universal source files, Jinja2 render engine, spectrum model, living schema authority) remains valid. How these CRs evolve depends on what the DocuBuilder sandbox reveals. Options: revise CR-107 to incorporate DocuBuilder, split into separate CRs, or supersede entirely.
 
-A design discussion explored decoupling the interaction system into three independent artifacts. Design documents captured in Session-2026-02-22-004:
+### DocuBuilder Design Artifacts (Session 2026-03-03-001)
 
-- `interactive-engine-redesign.md` — Full architecture: workflow specs (YAML/Python), Jinja2 rendering templates, template inheritance hierarchy, two-layer (authoring + process) architecture, workflow language progression (Levels 1-4)
-- `cr-prompt-path-example.md` — Worked example: interactive CR authoring with 8 phases, variant-based EI table selection, auto-populated development controls
+| Artifact | Location | Status |
+|----------|----------|--------|
+| Core principles | `.claude/sessions/Session-2026-03-03-001/authoring-and-executing-controlled-documents.md` | Active — 10 sections (I-X) covering principles, data model, and implementation strategy |
+| Document DNA | `.claude/sessions/Session-2026-03-03-001/document_dna.json` | Active — prototype JSON data model (see below) |
+| Workspace mockup | `prompt.txt` (project root) | Active — rendering concept showing agent-facing view |
+| Interaction design plan | `.claude/sessions/Session-2026-03-03-001/interaction-design-plan.md` | Superseded by DocuBuilder |
+| TEMPLATE-INTERACT.j2 | `.claude/sessions/Session-2026-03-03-001/` | Superseded |
+| TEMPLATE-CR.j2 | `.claude/sessions/Session-2026-03-03-001/` | Superseded |
 
-**Key insight:** Prompt sequence follows author's thinking (what -> why -> how -> verify -> plan), while compiled document follows reader's structure (Sections 1-12). The `.source.json` is the clean interface between them.
-
-**Implementation approach:** Build for Level 3 (Python declarative), start at Level 2 (YAML + Jinja2). Design engine interfaces against an abstract workflow API so the backend can evolve independently.
-
-### Phase B: Git MCP Access Control (~1 session)
-- Add identity resolution to `agent-hub/git_mcp/server.py`
-- Allowlist: `["claude", "lead"]` — other agents blocked
-
-### Phase D: GUI Enhancement (~2-3 sessions)
-- D.1: MCP health monitoring
-- D.2: QMS status panel
-- D.3: Notification injection API
-- D.4: Identity status visibility
+**Document DNA** (`document_dna.json`) is the prototype JSON structure for DocuBuilder documents. Key design decisions: named tables for stable cross-references, `column_order` array separating schema from rendering, sparse row values (only populated columns present), `::` separator for hierarchical prerequisite paths (e.g., `section_1::table_name::row`), hierarchical locking at section/element/row levels, and string-keyed sections for reorder-safe references. The workspace mockup (`prompt.txt`) demonstrates how this structure renders for agents. Together, these two artifacts define the starting point for sandbox prototyping.
 
 ---
 
@@ -171,37 +131,20 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 | Item | Effort | Source |
 |------|--------|--------|
 | Fix CLI title metadata propagation in interactive engine | Small | CR-091-ADD-001-VAR-001 |
-| Align SOP-004 Section 9C.4 with TEMPLATE-VR v5 (remove Signature requirement) | Small | CR-091-ADD-001-VAR-001 |
-| Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 / Session-2026-02-21-002 |
-| Interactive document write protection (REQ-INT-023) | Medium | Session-2026-02-21-001 defect |
-| Fix stale help text in `qms.py:154` ("QA/lead only" -> "administrators only") | Trivial | To-do 2026-01-17 |
-| Remove stdio transport option from both MCP servers | Small | To-do 2026-02-16 |
-| Stop tracking total counts of tests/REQs across documents | Small | To-do 2026-02-16 |
-| START_HERE.md elevator pitch | Small | Session-2026-02-23-001 design discussion |
-| Delete `.QMS-Docs/` (identical to `Quality-Manual/` submodule, fully redundant) | Trivial | CR-103 / Session-2026-02-24-003 |
-| Propagate Quality Manual cleanup from workshop to controlled submodule | Medium | Session-2026-02-24-003 workshop edits |
-| Standardize all metadata timestamps to UTC ISO 8601 (replace `date.today()` / local `datetime.now()`) | Small | Session-2026-02-26-001 audit: `qms_meta.py:111,133`, `prompts.py:19-21`, `qms_templates.py:24-26`, `commands/fix.py:78`, `commands/init.py:228` |
-| Consolidate SDLC namespace system into system registry (single source of truth) | Medium | Session-2026-02-26-001 design discussion; depends on CR-106 |
-| Extend `fix` command to handle system metadata corrections | Small | Session-2026-02-26-001 design discussion; depends on CR-106 |
+| Align SOP-004 Section 9C.4 with TEMPLATE-VR v5 | Small | CR-091-ADD-001-VAR-001 |
+| Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 |
+| Interactive document write protection (REQ-INT-023) | Medium | Session-2026-02-21-001 |
+| Fix stale help text in `qms.py:154` | Trivial | To-do 2026-01-17 |
+| Remove stdio transport option from MCP servers | Small | To-do 2026-02-16 |
+| Delete `.QMS-Docs/` | Trivial | CR-103 |
+| Propagate Quality Manual cleanup from workshop | Medium | Session-2026-02-24-003 |
+| Standardize metadata timestamps to UTC ISO 8601 | Small | Session-2026-02-26-001 |
 
-### Bundleable (natural CR groupings)
+### Bundleable
 
-**Interactive Engine v2** (~2-3 sessions) — Three-artifact separation (workflow spec, rendering template, source data), Jinja2 compilation, template inheritance, CR/VAR/ADD interactive authoring. See design docs in Session-2026-02-22-004.
-**Identity & Access Hardening** (~1 session) — proxy header validation (L7), Git MCP access control
+**Identity & Access Hardening** (~1 session) — proxy header validation, Git MCP access control
 **Agent Hub Robustness** (~1-2 sessions) — C3, H4, M6, M8, M9, M10
 **GUI Polish** (~1-2 sessions) — H6, M3, M4, M5, M7, L3, L4, L5, L6
-**Process Refinement** (~1-2 sessions) — commit column in EI table
-**QMS Workflow** — proceduralize adding new documents, comments visibility restriction during active workflows
-
-### Discussion / Design Needed
-
-| Item | Context |
-|------|---------|
-| Automate RTM generation | RTM is large, repetitive, error-prone to maintain manually |
-| Improve RTM readability | One test per line with row-spanning REQ IDs |
-| Formal SOP retirement | Trial live (CR-101). Monitor agent behavior before deciding. |
-| Production/test environment isolation | Largely addressed by INV-014 (PreToolUse hook, SOP-005 v7.0). Remaining: programmatic separation beyond hooks. |
-| Subconscious agent | Design discussion complete; implementation design pending |
 
 ### Deferred
 
@@ -209,12 +152,13 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 |------|-----------|
 | Remove EFFECTIVE status / rename to APPROVED | High disruption, low value |
 | Metadata injection into viewable rendition | No current pain point |
+| Consolidate SDLC namespaces into system registry | Depends on CR-106 |
 
 ---
 
 ## 8. Gaps & Risks
 
-**checkin.py bug fix needs governance.** Commit `532e630` fixed an `UnboundLocalError` in interactive checkin. Needs a proper CR for traceability.
+**checkin.py bug fix needs governance.** Commit `532e630` fixed an `UnboundLocalError` in interactive checkin. Needs a proper CR.
 
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
@@ -222,6 +166,8 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **Hub/GUI test coverage.** Hub 42 tests, GUI 0%. QMS CLI well-tested at 687.
 
-**Claude Code deny rules non-functional.** All deny rules in settings.local.json are silently ignored due to a known platform bug (GitHub #8961, #6699, #6631). PreToolUse hooks provide actual enforcement. Deny rules retained as defense-in-depth. Note: CR-104 removed qms-cli/flow-state deny rules since they were false-positive blocking .test-env/ writes; hook provides the actual enforcement.
+**Claude Code deny rules non-functional.** Platform bug. PreToolUse hooks provide actual enforcement.
 
-**SOP-004/TEMPLATE-VR alignment gap.** SOP-004 Section 9C.4 still lists "Signature" as required VR content, but TEMPLATE-VR v5 (approved under CR-098) removed it. Documented in CR-091-ADD-001-VAR-001, corrective CR pending.
+**SOP-004/TEMPLATE-VR alignment gap.** Documented in CR-091-ADD-001-VAR-001, corrective CR pending.
+
+**CR-107 interaction design superseded.** The graph-based interaction engine design explored across four sessions is superseded by the DocuBuilder paradigm. CR-107's non-interaction content remains valid but the CR needs revision once DocuBuilder prototyping yields results.

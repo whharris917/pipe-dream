@@ -1,0 +1,183 @@
+{#
+  TEMPLATE-INTERACT.j2
+  ====================
+  Generic interaction workspace renderer. Controlled document.
+
+  Two rendering modes, selected by the engine via the `mode` variable:
+
+    mode="full"  — Fully interactive documents (VR, etc.)
+                   This template renders the ENTIRE workspace.
+
+    mode="zone"  — Partially interactive documents (CR, etc.)
+                   This template renders only the fragment injected
+                   between @interactive markers. The surrounding
+                   freeform document is the source file itself.
+                   Navigation is appended to the assembled workspace
+                   by the engine, not by this template.
+
+  Context variables (provided by the engine):
+    mode              : "full" | "zone"
+    view              : "prompt" | "amendment" | "history" | "progress"
+    doc_id            : Document identifier
+    title             : Document title (may be empty)
+    complete          : bool — all interaction nodes satisfied
+    current           : {node_id, prompt, values, section}
+    progress          : {current, total}
+    amend             : {field, current_value, author, timestamp, reason, prompt, values}
+    history           : [{section, entries: [{field, value, author, timestamp, commit, amendments}]}]
+    progress_items    : [{field, filled, section}]
+    zone_name         : Name of the zone being rendered (zone mode)
+    zone_complete     : bool — this zone's graph is fully satisfied
+    zone_active       : bool — this zone is the current zone
+    zone_rendered     : Pre-rendered final content for a completed zone
+    zone_context      : Pre-rendered context (e.g., table of items collected so far)
+#}
+
+
+{# ── Reusable blocks ────────────────────────────────────────── #}
+
+{% macro prompt_ui(current, progress, section) -%}
+{% if section %}**{{ section }}** | {% endif %}Prompt {{ progress.current }} of {{ progress.total }}
+
+{{ current.prompt }}
+{% if current.values %}
+
+**Valid responses:** {{ current.values | join(' | ') }}
+{% endif %}
+
+<!-- @response: {{ current.node_id }} -->
+<<Respond here>>
+<!-- @end-response -->
+{%- endmacro %}
+
+
+{% macro amendment_ui(amend) -%}
+**Amending: {{ amend.field }}**
+
+Current value:
+
+> {{ amend.current_value | blockquote }}
+>
+> *{{ amend.author }}, {{ amend.timestamp }}*
+
+**Reason for amendment:** {{ amend.reason }}
+
+{{ amend.prompt }}
+{% if amend.values %}
+
+**Valid responses:** {{ amend.values | join(' | ') }}
+{% endif %}
+
+<!-- @response: {{ amend.field }} -->
+<<Enter amended response>>
+<!-- @end-response -->
+{%- endmacro %}
+
+
+{% macro nav_footer(commands) -%}
+---
+
+## Navigation
+
+<!-- @nav -->
+
+<!-- @end-nav -->
+
+Available: {{ commands }}
+{%- endmacro %}
+
+
+{# ── FULL WORKSPACE ─────────────────────────────────────────── #}
+
+{% if mode == "full" %}
+# {{ doc_id }}{% if title %}: {{ title }}{% endif %}
+
+{% if complete %}
+
+> **Interaction complete.** Check in this document to render the final version.
+
+{% elif view == "amendment" %}
+
+{{ amendment_ui(amend) }}
+
+{{ nav_footer("CANCEL (return without amending)") }}
+
+{% elif view == "history" %}
+
+## Response History
+
+{% for group in history %}
+{% if group.section %}
+### {{ group.section }}
+
+{% endif %}
+{% for entry in group.entries %}
+**{{ entry.field }}:**
+
+> {{ entry.value | blockquote }}
+>
+> *{{ entry.author }}, {{ entry.timestamp }}{% if entry.commit %} | commit: {{ entry.commit }}{% endif %}*
+{% if entry.amendments %}
+{% for a in entry.amendments %}
+
+> ~~{{ a.value }}~~ *({{ a.author }}, {{ a.timestamp }} — {{ a.reason }})*
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+
+{{ nav_footer("RETURN | AMEND <field> [reason]") }}
+
+{% elif view == "progress" %}
+
+## Progress
+
+| # | Field | Status | Section |
+|---|-------|--------|---------|
+{% for item in progress_items %}
+| {{ loop.index }} | {{ item.field }} | {{ "filled" if item.filled else "---" }} | {{ item.section or "" }} |
+{% endfor %}
+
+{{ nav_footer("RETURN | AMEND <field> [reason]") }}
+
+{% else %}
+{# ── Prompt view (default) ── #}
+
+{{ prompt_ui(current, progress, section) }}
+
+{{ nav_footer("HISTORY | PROGRESS | AMEND <field> [reason] | REOPEN <section> [reason] | PREVIEW") }}
+
+{% endif %}
+{% endif %}
+
+
+{# ── ZONE FRAGMENT ───────────────────────────────────────────── #}
+{#
+   Injected between <!-- @interactive: name --> markers in the
+   assembled workspace. Navigation is NOT included here — the
+   engine appends a single nav footer to the bottom of the
+   assembled document, outside all zones.
+#}
+
+{% if mode == "zone" %}
+{% if zone_complete %}
+{{ zone_rendered }}
+{% elif zone_active %}
+{% if view == "amendment" %}
+
+{{ amendment_ui(amend) }}
+
+{% else %}
+{% if zone_context %}
+{{ zone_context }}
+
+---
+
+{% endif %}
+{{ prompt_ui(current, progress, section) }}
+{% endif %}
+{% else %}
+*(Interactive — not yet started)*
+{% endif %}
+{% endif %}
