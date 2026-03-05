@@ -12,3 +12,4 @@
 {"ts": "2026-03-04T01:51:27+00:00", "event": "STATUS_CHANGE", "user": "qa", "version": "1.0", "from_status": "IN_PRE_APPROVAL", "to_status": "PRE_APPROVED"}
 {"ts": "2026-03-04T01:51:40+00:00", "event": "RELEASE", "user": "claude", "version": "1.0"}
 {"ts": "2026-03-04T01:51:40+00:00", "event": "STATUS_CHANGE", "user": "claude", "version": "1.0", "from_status": "PRE_APPROVED", "to_status": "IN_EXECUTION"}
+{"ts": "2026-03-04T01:52:13+00:00", "event": "CHECKOUT", "user": "claude", "version": "1.0"}

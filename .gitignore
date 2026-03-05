@@ -26,3 +26,6 @@ prompt.txt
 
 # Agent container config directories (contain auth tokens)
 .claude/users/*/container/
+
+# DocuBuilder genesis sandbox (CR-108)
+docu-builder/

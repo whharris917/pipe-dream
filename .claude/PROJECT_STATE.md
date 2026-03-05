@@ -1,14 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-03-03-001*
+*Last updated: Session-2026-03-03-002*
 
 ---
 
 ## 1. Where We Are Now
 
-**DocuBuilder paradigm established; genesis sandbox authorized.** Session 2026-03-03-001 produced a major design pivot: the Kneat eVal-inspired DocuBuilder model replaces the graph-based interaction engine design with a table-primitive approach. The table is the universal interactive primitive. Column types (ID, Design, Recorded Value, Signature, Witness, Issue, Choice List, Prerequisite, Calculated, Row Number) define the full spectrum from authoring to execution. Three property namespaces (system, user, execution), composable importable sections, prerequisite-based ordering, and cross-document references provide the complete framework. CR-108 authorizes a genesis sandbox (`docu-builder/`, git-ignored) for rapid exploratory prototyping.
+**DocuBuilder prototype operational.** Session 2026-03-03-002 (spanning into 2026-03-04) executed CR-108 EI-3 extensively: informal RS (35 requirements across 10 sections), working prototype (model.py, renderer.py, commands.py, engine.py), 20 usability tests (14 general + 3 README round + 3 stress tests) all passing. The prototype supports the full document lifecycle: authoring (sections, text blocks, tables with 9 column types), template creation with enforce/locked model, finalization, sequential execution with prerequisite blocking, amendment with cascade revert, and the inspect command. Agent-facing interface is a checkout/edit/checkin markdown file cycle.
 
-**CR-107 and CR-106 remain in DRAFT.** The interaction engine portion of CR-107 is superseded by the DocuBuilder paradigm. CR-107's non-interaction content (universal source files, Jinja2 render engine, living schema authority, spectrum model) remains valid. How CR-107 evolves in light of DocuBuilder is TBD — it may be revised, split, or partially superseded once the sandbox yields results.
+**CR-107 and CR-106 remain in DRAFT.** The interaction engine portion of CR-107 is superseded by the DocuBuilder paradigm. CR-107's non-interaction content (universal source files, Jinja2 render engine, living schema authority, spectrum model) remains valid. How CR-107 evolves in light of DocuBuilder is TBD.
 
 64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0, SDLC-CQ-RS v2.0, SDLC-CQ-RTM v2.0.
 
@@ -60,7 +60,7 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-108 | DRAFT v0.1 | DocuBuilder Genesis Sandbox. Exploratory prototyping, no required outcomes. Ready to route. |
+| CR-108 | IN_EXECUTION v1.1 | DocuBuilder Genesis Sandbox. EI-3 in progress: RS + prototype operational, 20 usability tests passed. |
 | CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle. Non-interaction content valid; interaction design superseded by DocuBuilder paradigm. Future TBD. |
 | CR-106 | DRAFT v0.1 (content v0.4) | System Governance. Depends on CR-107. Unchanged. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. VR title bug + SOP-004/TEMPLATE-VR alignment gap. |
@@ -78,16 +78,20 @@
 
 ## 5. Forward Plan
 
-### Immediate: Route CR-108 → Begin Sandbox
+### Immediate: Continue CR-108 EI-3 — DocuBuilder Prototype
 
-1. Route CR-108 for review/approval
-2. Set up `docu-builder/` sandbox (`.gitignore` entry, directory structure)
-3. Write informal RS from `authoring-and-executing-controlled-documents.md` principles
-4. Begin Python prototyping — interactive REPL exploration of core data model
+The prototype is operational with 20 passing usability tests. Remaining RS items not yet implemented:
+- Calculated columns (expressions evaluated against document properties)
+- Section visibility conditions (context economy)
+- Work Instructions (disposable guided documents)
+- Cross-document property references
+- Property namespaces (system, user, execution)
+- Duplicatable sections
+- Amendability flag (per-element)
 
 ### CR-107 / CR-106: On Hold
 
-CR-107's interaction engine design is superseded by DocuBuilder. The non-interaction content (universal source files, Jinja2 render engine, spectrum model, living schema authority) remains valid. How these CRs evolve depends on what the DocuBuilder sandbox reveals. Options: revise CR-107 to incorporate DocuBuilder, split into separate CRs, or supersede entirely.
+CR-107's interaction engine design is superseded by DocuBuilder. The non-interaction content (universal source files, Jinja2 render engine, spectrum model, living schema authority) remains valid. How these CRs evolve depends on what the DocuBuilder sandbox reveals.
 
 ### DocuBuilder Design Artifacts (Session 2026-03-03-001)
 
