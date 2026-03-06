@@ -71,6 +71,9 @@ pipe-dream/                     # QMS Project root (this repo)
 ├── .gitmodules                 # Submodule configuration
 ├── qms-cli/                    # Submodule → github.com/whharris917/qms-cli
 ├── flow-state/                 # Submodule → github.com/whharris917/flow-state
+├── claude-qms/                 # Submodule → github.com/whharris917/claude-qms
+├── Quality-Manual/             # Submodule → github.com/whharris917/quality-manual
+├── qms-workflow-engine/        # Submodule → github.com/whharris917/qms-workflow-engine
 ├── QMS/                        # Controlled documents (SOPs, CRs, etc.)
 └── .claude/                    # Users, agents, session data
 ```

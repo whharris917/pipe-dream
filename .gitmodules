@@ -10,3 +10,6 @@
 [submodule "Quality-Manual"]
 	path = Quality-Manual
 	url = https://github.com/whharris917/quality-manual.git
+[submodule "qms-workflow-engine"]
+	path = qms-workflow-engine
+	url = https://github.com/whharris917/qms-workflow-engine.git
