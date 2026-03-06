@@ -1,10 +1,10 @@
 # Session-2026-03-05-001
 
 ## Current State (last updated: 2026-03-06)
-- **Active document:** CR-108 (IN_POST_REVIEW v1.2), CR-109 (DRAFT v0.1, in workspace)
-- **Current work:** CR-108 closing (QA post-review in progress), CR-109 drafted
-- **Blocking on:** QA post-review of CR-108
-- **Next:** Complete CR-108 closure, checkin/route CR-109
+- **Active document:** CR-109 (DRAFT v0.1, checked in)
+- **Current work:** CR-108 CLOSED. CR-109 checked in, ready for review.
+- **Blocking on:** Nothing
+- **Next:** Route CR-109 for pre-review/approval, then execute
 
 ## Progress Log
 
@@ -70,3 +70,6 @@
   - Independence guarantee explicit in change description
 - QA post-review of CR-108 in progress
 - Updated PROJECT_STATE.md with current architectural decisions and forward plan
+- QA post-reviewed CR-108: COMPLIANT, recommended
+- Routed CR-108 for post-approval, QA approved, closed CR-108 (commit f33de58)
+- Checked in CR-109 (v0.1)

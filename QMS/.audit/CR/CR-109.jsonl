@@ -1,1 +1,2 @@
 {"ts": "2026-03-06T18:56:33+00:00", "event": "CREATE", "user": "claude", "version": "0.1", "title": "Add qms-workflow-engine submodule under formal change control"}
+{"ts": "2026-03-06T19:16:38+00:00", "event": "CHECKIN", "user": "claude", "version": "0.1"}

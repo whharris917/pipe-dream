@@ -3,97 +3,11 @@ title: Add qms-workflow-engine submodule under formal change control
 revision_summary: Initial draft
 ---
 
-<!--
-================================================================================
-TEMPLATE USAGE GUIDE
-================================================================================
-
-DOCUMENT TYPE:
-CRs are EXECUTABLE documents that authorize implementation activities.
-
-WORKFLOW:
-  DRAFT -> IN_PRE_REVIEW -> PRE_REVIEWED -> IN_PRE_APPROVAL -> PRE_APPROVED
-       -> IN_EXECUTION -> IN_POST_REVIEW -> POST_REVIEWED -> IN_POST_APPROVAL
-       -> POST_APPROVED -> CLOSED
-
-PLACEHOLDER TYPES:
-1. {{DOUBLE_CURLY}} - Replace when DRAFTING (before routing for review)
-2. [SQUARE_BRACKETS] - Replace during EXECUTION (after release)
-
-After authoring:
-- NO {{...}} placeholders should remain
-- All [...] placeholders should remain until execution
-
-Authors may define additional execution placeholders as needed. Use square
-brackets for any field that must be filled during execution.
-
-ID FORMAT:
-  CR-NNN
-  Example: CR-001, CR-015
-
-LOCKED vs EDITABLE:
-- Sections 1-9 are locked after pre-approval
-- Sections 10-12 are editable during execution
-- Section 13 may be updated to add references discovered during execution
-
-STRUCTURE (per SOP-002 Section 6):
-Pre-Approved Content (locked after pre-approval):
-  1. Purpose
-  2. Scope (Context, Changes Summary, Files Affected)
-  3. Current State
-  4. Proposed State
-  5. Change Description
-  6. Justification
-  7. Impact Assessment
-  8. Testing Summary
-  9. Implementation Plan
-
-Execution Content (editable during execution):
-  10. Execution (EI table, comments)
-  11. Execution Summary
-  12. References
-
-CODE CR PATTERNS:
-When a CR modifies controlled code (any system with SDLC governance):
-- Include Section 7.4 (Development Controls) and 7.5 (Qualified State Continuity)
-- Use the standardized implementation phases in Section 9
-- RS and RTM must be EFFECTIVE before merging to main (SOP-006 Section 7.4)
-- The qualified commit is the execution branch commit verified by CI (SOP-005 Section 7.1.2)
-- RTM must reference this execution branch commit hash -- not the merge commit
-- Merge type: regular merge commit (--no-ff). Squash merges are prohibited (SOP-005 Section 7.1.3)
-- Qualification happens on the execution branch; main stays qualified throughout
-- Integration verification is required before merge (SOP-002 Section 6.8): exercise
-  changed functionality through user-facing levers to demonstrate it works
-
-The pattern ensures:
-- main branch is always in a qualified state
-- No code merges without approved requirements and passing tests
-- Changed functionality is verified in a running system, not only via automated tests
-- The qualified commit hash in the RTM is reachable on main via merge commit
-- Full traceability from requirements to verified implementation
-
-TEMPLATE CR PATTERNS:
-Templates exist in two locations that must stay aligned:
-- QMS/TEMPLATE/ -- active QMS instance (governed by document control)
-- qms-cli/seed/templates/ -- used when bootstrapping new QMS instances (governed by SDLC)
-
-When a CR modifies any template:
-- Changes must be propagated to BOTH locations
-- QMS copy: checkout via QMS CLI, edit, checkin
-- Seed copy: follow the SOP-005 Section 7.1 execution branch workflow — develop in .test-env/, create execution branch, run CI, merge via PR, then update submodule pointer in parent repo
-- Include an alignment verification EI in the implementation plan to confirm
-  both copies match after changes are applied
-- QA will verify template alignment during post-review (SOP-002 Section 7.3)
-
-Delete this comment block after reading.
-================================================================================
--->
-
 # CR-109: Add qms-workflow-engine submodule under formal change control
 
 ## 1. Purpose
 
-{{PURPOSE - What problem does this CR solve? What improvement does it introduce?}}
+Establish the `qms-workflow-engine` repository as a controlled submodule within pipe-dream, bringing it under formal QMS change control from its inception. This enables full traceability for the workflow engine's development from commit zero, while ensuring it operates as a strictly parallel, independent tool that cannot interfere with the existing QMS.
 
 ---
 
@@ -101,56 +15,71 @@ Delete this comment block after reading.
 
 ### 2.1 Context
 
-{{CONTEXT - Reference parent investigation, CAPA, or driving document. If none, state the origin of this change (e.g., "Independent improvement identified during development" or "User-requested enhancement").}}
+Independent improvement. The workflow engine has been designed across Sessions 2026-03-03 through 2026-03-05 (CR-108 EI-3 prototyping, bedrock primitives design, agent interface research). The design is now sufficiently mature to warrant a dedicated repository under formal change control.
 
-- **Parent Document:** {{PARENT_DOC_ID or "None"}}
+- **Parent Document:** None
 
 ### 2.2 Changes Summary
 
-{{CHANGES_SUMMARY - Brief description of what will change}}
+Create a new GitHub repository (`qms-workflow-engine`) with minimal initial contents (README.md and .gitignore) and add it to pipe-dream as a git submodule.
 
 ### 2.3 Files Affected
 
-{{FILES_AFFECTED - List each file and describe changes}}
-
-- `{{path/to/file1}}` - {{description of changes}}
-- `{{path/to/file2}}` - {{description of changes}}
+- `.gitmodules` - Add qms-workflow-engine submodule entry
+- `qms-workflow-engine/` - New submodule directory (README.md, .gitignore)
 
 ---
 
 ## 3. Current State
 
-{{CURRENT_STATE - Concise declarative statement(s) describing what exists now. Use present tense.}}
+The pipe-dream repository contains two submodules: `flow-state` (application code) and `qms-cli` (QMS infrastructure). Workflow engine design work exists only as session artifacts (prototypes, research documents, forward plan) within `.claude/sessions/`. There is no dedicated repository for the workflow engine.
 
 ---
 
 ## 4. Proposed State
 
-{{PROPOSED_STATE - Concise declarative statement(s) describing what will exist after the change. Use present tense.}}
+A third submodule, `qms-workflow-engine`, exists in the pipe-dream repository. It contains only a README.md and .gitignore. It is under formal QMS change control: any future modifications to the engine require a CR with appropriate review and approval. No SDLC documents (RS/RTM) exist yet — they will be created when the engine has code to qualify.
 
 ---
 
 ## 5. Change Description
 
-{{CHANGE_DESCRIPTION - Full technical details of the change. Structure is flexible based on complexity.}}
+### 5.1 Repository Creation
 
-### 5.1 {{Component/Area 1}}
+Create a new GitHub repository at `github.com/whharris917/qms-workflow-engine` with:
 
-{{Details for this component}}
+- **README.md** — Project description, purpose statement, and relationship to pipe-dream/QMS
+- **.gitignore** — Python-appropriate gitignore (standard Python template)
 
-### 5.2 {{Component/Area 2}}
+No application code, no tests, no CI configuration. This is an intentionally minimal initial commit.
 
-{{Details for this component}}
+### 5.2 Submodule Integration
+
+Add the repository as a git submodule of pipe-dream:
+
+```bash
+git submodule add https://github.com/whharris917/qms-workflow-engine.git qms-workflow-engine
+```
+
+This updates `.gitmodules` to include the new submodule entry alongside `flow-state` and `qms-cli`.
+
+### 5.3 Independence Guarantee
+
+The workflow engine is a parallel, independent tool. It:
+
+- Has no runtime dependencies on the existing QMS CLI or document control system
+- Cannot modify QMS-controlled documents or metadata
+- Shares no code with `qms-cli` or `flow-state`
+- Any future integration with the QMS would require its own CR with full impact assessment
 
 ---
 
 ## 6. Justification
 
-{{JUSTIFICATION - Why is this change needed?}}
-
-- {{The problem being solved or improvement being made}}
-- {{Impact of not making this change}}
-- {{How the proposed solution addresses the root cause}}
+- **Provenance from day one:** Every design decision, structural change, and prototype iteration will be tracked under formal change control from the very first commit. This is especially valuable for a system that may eventually enhance or replace current QMS governance tooling.
+- **Recursive governance:** The QMS governs the development of the tool that will extend it — the recursive governance loop operating as designed.
+- **Zero risk:** The engine is independent and parallel. It cannot interfere with the existing QMS because any interaction would require its own CR with impact assessment. The cost of formal control on an almost-empty repo is near zero.
+- **Prevents technical debt:** Avoids the "we'll formalize later" trap where prototype code accumulates without traceability and requires retroactive justification.
 
 ---
 
@@ -160,47 +89,19 @@ Delete this comment block after reading.
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `{{path/to/file}}` | {{Create/Modify/Delete}} | {{Brief description}} |
+| `.gitmodules` | Modify | Add qms-workflow-engine submodule entry |
+| `qms-workflow-engine/README.md` | Create | Project description (via submodule) |
+| `qms-workflow-engine/.gitignore` | Create | Python gitignore (via submodule) |
 
 ### 7.2 Documents Affected
 
 | Document | Change Type | Description |
 |----------|-------------|-------------|
-| {{DOC-ID}} | {{Create/Modify}} | {{Brief description}} |
+| CLAUDE.md | Modify | Add qms-workflow-engine to project structure section |
 
 ### 7.3 Other Impacts
 
-{{OTHER_IMPACTS - External systems, interfaces, dependencies, or "None"}}
-
-### 7.4 Development Controls
-
-<!--
-Include this section when the CR modifies controlled code.
-Delete this section for document-only CRs.
--->
-
-This CR implements changes to {{SYSTEM}}, a controlled {{submodule/codebase}}. Development follows established controls:
-
-1. **Test environment isolation:** Development in `.test-env/` (local) or `/projects/` (containerized agents). No other locations are permitted.
-2. **Branch isolation:** All development on branch `{{BRANCH_NAME}}`
-3. **Write protection:** `.claude/settings.local.json` blocks direct writes to `{{SYSTEM}}/`
-4. **Qualification required:** All new/modified requirements must have passing tests before merge
-5. **CI verification:** Tests must pass on GitHub Actions for dev branch
-6. **PR gate:** Changes merge to main only via PR after RS/RTM approval
-7. **Submodule update:** Parent repo updates pointer only after PR merge
-
-### 7.5 Qualified State Continuity
-
-<!--
-Include this section when the CR modifies controlled code.
-Delete this section for document-only CRs.
--->
-
-| Phase | main branch | RS/RTM Status | Qualified Release |
-|-------|-------------|---------------|-------------------|
-| Before CR | Current commit | EFFECTIVE v{{N}}.0 | {{SYS}}-{{M}}.0 |
-| During execution | Unchanged | DRAFT (checked out) | {{SYS}}-{{M}}.0 (unchanged) |
-| Post-approval | Merged from {{BRANCH}} | EFFECTIVE v{{N+1}}.0 | {{SYS}}-{{M+1}}.0 |
+None. The new submodule is independent of all existing systems. No existing build processes, CI pipelines, or QMS operations are affected.
 
 ---
 
@@ -218,118 +119,23 @@ For document-only CRs, a description of procedural verification is sufficient.
 Delete the subsections below and use a simple list.
 -->
 
-### Automated Verification
+This is an infrastructure CR with no application code. Verification is procedural:
 
-{{AUTOMATED_TESTING - Unit tests, CI checks, qualification tests}}
-
-- {{Test case 1}}
-- {{Test case 2}}
-
-### Integration Verification
-
-{{INTEGRATION_TESTING - What will be launched, what functionality will be exercised through user-facing levers, what behavior demonstrates the change is effective}}
-
-- {{Verification step 1}}
-- {{Verification step 2}}
+- Confirm the GitHub repository exists and is accessible
+- Confirm `git submodule update --init` successfully clones the new submodule
+- Confirm the submodule contains only README.md and .gitignore
+- Confirm existing submodules (`flow-state`, `qms-cli`) are unaffected
 
 ---
 
 ## 9. Implementation Plan
 
-<!--
-For code CRs, use these standardized phases. Adjust as needed.
-For document-only CRs, simplify to relevant steps.
--->
-
-{{IMPLEMENTATION - Detailed plan for executing the change}}
-
-### 9.1 Phase 1: Test Environment Setup
-
-<!--
-Include for code CRs. Delete for document-only CRs.
--->
-
-1. Verify/create the required development directory: `.test-env/` (local) or `/projects/` (containerized agents)
-2. Clone/update {{SYSTEM}} from GitHub
-3. Create and checkout branch `{{BRANCH_NAME}}`
-4. Verify clean test environment
-
-### 9.2 Phase 2: Requirements (RS Update)
-
-<!--
-Include for code CRs that add/modify requirements. Delete if not applicable.
--->
-
-1. Checkout SDLC-{{NS}}-RS in production QMS
-2. Add/modify requirements as needed
-3. Checkin RS, route for review and approval
-
-### 9.3 Phase 3: Implementation
-
-1. Implement changes per Change Description
-2. Test locally
-3. Commit to dev branch
-
-### 9.4 Phase 4: Qualification
-
-<!--
-Include for code CRs. Delete for document-only CRs.
--->
-
-1. Add/update qualification tests
-2. Run full test suite, verify all tests pass
-3. Push to dev branch
-4. Verify GitHub Actions CI passes
-5. Document qualified commit hash
-
-### 9.5 Phase 5: Integration Verification
-
-<!--
-Include for code CRs. Delete for document-only CRs.
-
-This phase verifies the implementation in a running system before proceeding
-to RTM update and merge. It is distinct from Phase 4 (automated qualification)
-and from Phase 7 step 7 (post-merge smoke test):
-- Phase 4: Do the automated tests pass? (CI gate)
-- Phase 5: Does it actually work when you use it? (integration verification)
-- Phase 7 step 7: Did the merge itself introduce any problems? (post-merge smoke test)
--->
-
-1. Launch the application/system with the execution branch code
-2. Exercise changed functionality through user-facing levers
-3. Confirm the change is effective and no obvious regressions in related functionality
-4. Document what was exercised and what was observed
-
-### 9.6 Phase 6: RTM Update and Approval
-
-<!--
-Include for code CRs that add/modify requirements. Delete if not applicable.
--->
-
-1. Checkout SDLC-{{NS}}-RTM in production QMS
-2. Add verification evidence referencing CI-verified commit
-3. Checkin RTM, route for review and approval
-4. **Verify RTM reaches EFFECTIVE status before proceeding to Phase 7**
-
-### 9.7 Phase 7: Merge and Submodule Update
-
-<!--
-Include for code CRs. Delete for document-only CRs.
--->
-
-**Prerequisite:** RS and RTM must both be EFFECTIVE before proceeding (per SOP-006 Section 7.4).
-
-1. Verify RS is EFFECTIVE (document status check)
-2. Verify RTM is EFFECTIVE (document status check)
-3. Create PR to merge dev branch to main. The PR must pass all CI checks before merge. Direct commits to main are prohibited.
-4. Merge PR using merge commit -- not squash (per SOP-005 Section 7.1.3)
-5. Verify qualified commit hash from execution branch is reachable on main
-6. Update submodule pointer in parent repo
-7. Verify functionality in production context
-
-### 9.8 Phase 8: Documentation (if applicable)
-
-1. Update CLAUDE.md or other documentation as needed
+1. Commit and push the pre-execution baseline (per SOP-004 Section 5)
+2. Create the `qms-workflow-engine` GitHub repository with README.md and .gitignore
+3. Add the repository as a submodule to pipe-dream
+4. Update CLAUDE.md project structure to include the new submodule
+5. Verify submodule integration (clone test)
+6. Commit and push the post-execution state (per SOP-004 Section 5)
 
 ---
 
@@ -379,18 +185,12 @@ EXECUTION SUMMARY EXAMPLES:
 
 | EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
 |----|------------------|----|-------------------|--------------|---------------------|
-| EI-1 | {{DESCRIPTION}} | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-2 | {{DESCRIPTION}} | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-| EI-3 | {{DESCRIPTION}} | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
-
-<!--
-AUTHOR NOTE: Delete this comment after reading.
-
-Each EI row has design-time and run-time columns:
-- Columns 1-2 (EI, Task Description): Fill during drafting
-- Column 3 (VR): Set to "Yes" during drafting if VR required; replaced with VR ID during execution
-- Columns 4-6 (Execution Summary, Task Outcome, Performed By): Left for executor
--->
+| EI-1 | Commit and push pre-execution baseline | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Create qms-workflow-engine GitHub repository with README.md and .gitignore | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Add qms-workflow-engine as submodule to pipe-dream | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Update CLAUDE.md project structure section | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Verify submodule integration | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Commit and push post-execution state | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
 
 <!--
 NOTE: Do NOT delete this comment. It provides guidance during document execution.
@@ -433,10 +233,11 @@ Summarize the overall outcome and any deviations from the plan.
 
 ## 12. References
 
-{{REFERENCES - List related documents. At minimum, reference governing SOPs.}}
-
 - **SOP-001:** Document Control
 - **SOP-002:** Change Control
+- **SOP-005:** Code Governance (Section 5 — repository structure; submodule pattern)
+- **CR-030:** Established the submodule pattern for pipe-dream
+- **CR-108:** Workflow engine design work (EI-3 prototyping, in progress)
 
 ---
 

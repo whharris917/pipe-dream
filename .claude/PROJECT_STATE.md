@@ -23,7 +23,7 @@
 
 **CR-109 (qms-workflow-engine submodule) drafted.** Brings the new repo under formal change control from commit zero. In workspace, ready for checkin/review.
 
-64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0.
+65 CRs CLOSED (CR-042 through CR-105, CR-108, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0.
 
 ---
 
@@ -81,8 +81,7 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-108 | IN_POST_REVIEW v1.2 | DocuBuilder Genesis Sandbox. Exploration complete, closing. |
-| CR-109 | DRAFT v0.1 | Add qms-workflow-engine submodule under formal change control. |
+| CR-109 | DRAFT v0.1 | Add qms-workflow-engine submodule under formal change control. Checked in, ready for review. |
 | CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle. On hold — interaction design superseded. |
 | CR-106 | DRAFT v0.1 (content v0.4) | System Governance. Depends on CR-107. On hold. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. VR title bug + SOP-004/TEMPLATE-VR alignment gap. |
