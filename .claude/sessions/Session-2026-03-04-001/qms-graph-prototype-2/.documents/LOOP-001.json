@@ -1,0 +1,299 @@
+{
+  "graph": {
+    "graph": {
+      "id": "LOOP-001",
+      "name": "Diagnostic Procedure: LOOP-001",
+      "description": "Systematic diagnosis: observe -> hypothesize -> test -> conclude",
+      "entry_point": "diagnostic.start"
+    },
+    "nodes": {
+      "diagnostic.start": {
+        "id": "diagnostic.start",
+        "prompt": "Begin this procedure.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "diagnostic.observe"
+          }
+        ],
+        "context": "Review the objective and confirm you are ready to proceed.",
+        "evidence_schema": {
+          "objective": {
+            "type": "text",
+            "required": true,
+            "hint": "What is the goal?"
+          },
+          "ready": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ],
+            "hint": "Are you ready to proceed?"
+          }
+        },
+        "gate": "response.get('ready') == 'yes'"
+      },
+      "diagnostic.observe": {
+        "id": "diagnostic.observe",
+        "prompt": "Observe and document the symptoms.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "diagnostic.hypothesize"
+          }
+        ],
+        "context": "Gather all observable facts about the problem. Do not jump to conclusions.",
+        "evidence_schema": {
+          "symptoms": {
+            "type": "text",
+            "required": true,
+            "hint": "What symptoms are present?"
+          },
+          "onset": {
+            "type": "text",
+            "required": true,
+            "hint": "When did the problem start?"
+          },
+          "affected_systems": {
+            "type": "text",
+            "required": false,
+            "hint": "What systems or components are affected?"
+          }
+        }
+      },
+      "diagnostic.hypothesize": {
+        "id": "diagnostic.hypothesize",
+        "prompt": "Form a hypothesis about the root cause.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "diagnostic.test"
+          }
+        ],
+        "context": "Based on your observations, what do you think is causing the problem?",
+        "evidence_schema": {
+          "hypothesis": {
+            "type": "text",
+            "required": true,
+            "hint": "Your best explanation for the observed symptoms"
+          },
+          "confidence": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "alternative_hypotheses": {
+            "type": "text",
+            "required": false,
+            "hint": "Other possible explanations"
+          }
+        }
+      },
+      "diagnostic.test": {
+        "id": "diagnostic.test",
+        "prompt": "Test your hypothesis.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "diagnostic.hypothesize",
+            "condition": "last_response('diagnostic.test').get('hypothesis_confirmed') != 'yes'"
+          },
+          {
+            "to": "diagnostic.conclude"
+          }
+        ],
+        "context": "Design and execute a test that would confirm or refute your hypothesis.",
+        "evidence_schema": {
+          "test_description": {
+            "type": "text",
+            "required": true,
+            "hint": "What test did you perform?"
+          },
+          "test_result": {
+            "type": "text",
+            "required": true,
+            "hint": "What was the result?"
+          },
+          "hypothesis_confirmed": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no",
+              "inconclusive"
+            ]
+          }
+        }
+      },
+      "diagnostic.conclude": {
+        "id": "diagnostic.conclude",
+        "prompt": "State your conclusion.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "diagnostic.verify"
+          }
+        ],
+        "context": "Based on all evidence gathered, what is the root cause?",
+        "evidence_schema": {
+          "root_cause": {
+            "type": "text",
+            "required": true,
+            "hint": "The identified root cause"
+          },
+          "evidence_summary": {
+            "type": "text",
+            "required": true,
+            "hint": "Summary of supporting evidence"
+          },
+          "recommended_action": {
+            "type": "text",
+            "required": true,
+            "hint": "What should be done next?"
+          }
+        }
+      },
+      "diagnostic.verify": {
+        "id": "diagnostic.verify",
+        "prompt": "Verify the results.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "diagnostic.close"
+          }
+        ],
+        "context": "Check that all steps were completed successfully and evidence is complete.",
+        "evidence_schema": {
+          "all_steps_passed": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ]
+          },
+          "verification_notes": {
+            "type": "text",
+            "required": false,
+            "hint": "Any observations or concerns?"
+          }
+        },
+        "gate": "response.get('all_steps_passed') == 'yes'"
+      },
+      "diagnostic.close": {
+        "id": "diagnostic.close",
+        "prompt": "Close this procedure.",
+        "performer": "initiator",
+        "terminal": true,
+        "locked": true,
+        "edges": [],
+        "evidence_schema": {
+          "outcome": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "pass",
+              "fail"
+            ]
+          },
+          "summary": {
+            "type": "text",
+            "required": true,
+            "hint": "Final summary of what was accomplished"
+          }
+        }
+      }
+    }
+  },
+  "ticket": {
+    "id": "LOOP-001",
+    "cursor": "diagnostic.hypothesize",
+    "responses": {
+      "diagnostic.start": {
+        "objective": "Debug memory leak",
+        "ready": "yes"
+      },
+      "diagnostic.observe": {
+        "symptoms": "Memory usage grows over time",
+        "onset": "After last deploy",
+        "affected_systems": "API server"
+      },
+      "diagnostic.hypothesize": {
+        "hypothesis": "Connection pool leak",
+        "confidence": "low",
+        "alternative_hypotheses": "Could also be caching issue"
+      },
+      "diagnostic.test": {
+        "test_description": "Checked connection pool metrics",
+        "test_result": "Pool is within normal range",
+        "hypothesis_confirmed": "no"
+      }
+    },
+    "history": [
+      {
+        "node_id": "diagnostic.start",
+        "response": {
+          "objective": "Debug memory leak",
+          "ready": "yes"
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T19:18:59Z"
+      },
+      {
+        "node_id": "diagnostic.observe",
+        "response": {
+          "symptoms": "Memory usage grows over time",
+          "onset": "After last deploy",
+          "affected_systems": "API server"
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T19:19:11Z"
+      },
+      {
+        "node_id": "diagnostic.hypothesize",
+        "response": {
+          "hypothesis": "Connection pool leak",
+          "confidence": "low",
+          "alternative_hypotheses": "Could also be caching issue"
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T19:19:23Z"
+      },
+      {
+        "node_id": "diagnostic.test",
+        "response": {
+          "test_description": "Checked connection pool metrics",
+          "test_result": "Pool is within normal range",
+          "hypothesis_confirmed": "no"
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T19:19:36Z"
+      }
+    ],
+    "state": "active",
+    "created_at": "2026-03-05T19:18:34Z",
+    "metadata": {}
+  }
+}

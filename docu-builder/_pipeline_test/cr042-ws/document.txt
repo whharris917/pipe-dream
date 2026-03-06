@@ -1,0 +1,42 @@
+==============================================================================
+  CR-042: Add Dark Mode to Dashboard
+  Phase: EXECUTION
+==============================================================================
+
+  --------------------------------------------------------------------------
+  Section header: Header
+  Status: EXECUTION (SEALED)
+  --------------------------------------------------------------------------
+
+  [Text 0]
+  Change Record Template - Fill in purpose before finalizing
+
+  --------------------------------------------------------------------------
+  Section ei: Execution Items
+  Status: EXECUTION
+  --------------------------------------------------------------------------
+
+  [Table 0: EIs] [EXTENDABLE]
+  | Step (ID) | Description (Design)  | Prerequisites (Prereq) | Result (Recorded Value)                                       | Performer (Signature) |
+  |-----------|-----------------------|------------------------|---------------------------------------------------------------|-----------------------|
+  | EI-1      | Pre-execution commit  |                        | Commit a1b2c3d                                                | alice                 | [SEALED]
+  | EI-2      | Implement changes     | EI-1 complete          | Dark mode implemented and accessibility reviewed (amended x1) | bob                   |
+  | EI-3      | Post-execution commit | EI-2 complete          | Commit e4f5g6h                                                | alice                 | [SEALED]
+  | EI-4      | Update CSS variables  | EI-1 complete          | CSS variables updated                                         | bob                   |
+  | EI-5      | Add toggle switch     | EI-3 complete          | Toggle switch added                                           | carol                 |
+  | EI-6      | Run regression tests  | EI-4 complete          | 47 tests passing                                              | carol                 |
+  | [+ Add Row]                                                                                                                                         |
+  Progress: 12/12 cells executed
+
+------------------------------------------------------------------------------
+  EXECUTION COMMANDS:
+    nav <section_id>              -- Navigate to section
+    view_all                      -- Show all sections at once
+    exec <section_id> <table_index> <row_index> <column>=<value>
+    amend <section_id> <table_index> <row_index> <column>=<value> reason=<text>
+    add_row <section_id> <table_index> col=val ...
+                                    (extendable tables only)
+------------------------------------------------------------------------------
+  Write your command below, then save this file.
+
+>> 

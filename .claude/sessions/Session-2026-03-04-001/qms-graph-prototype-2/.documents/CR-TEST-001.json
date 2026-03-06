@@ -1,0 +1,436 @@
+{
+  "graph": {
+    "graph": {
+      "id": "CR-TEST-001",
+      "name": "Code Review Procedure: CR-TEST-001",
+      "description": "Structured code review: submit -> static analysis -> review -> feedback -> resolution",
+      "entry_point": "code-review.start"
+    },
+    "nodes": {
+      "code-review.start": {
+        "id": "code-review.start",
+        "prompt": "Begin this procedure.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.submit_code"
+          }
+        ],
+        "context": "Review the objective and confirm you are ready to proceed.",
+        "evidence_schema": {
+          "objective": {
+            "type": "text",
+            "required": true,
+            "hint": "What is the goal?"
+          },
+          "ready": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ],
+            "hint": "Are you ready to proceed?"
+          }
+        }
+      },
+      "code-review.submit_code": {
+        "id": "code-review.submit_code",
+        "prompt": "Submit code for review.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.static_analysis"
+          }
+        ],
+        "context": "Identify the code change to be reviewed. Provide the branch, commit range, or pull request reference.",
+        "evidence_schema": {
+          "branch_or_pr": {
+            "type": "text",
+            "required": true,
+            "hint": "Branch name, PR URL, or commit range"
+          },
+          "change_summary": {
+            "type": "text",
+            "required": true,
+            "hint": "Brief summary of what the code change does"
+          },
+          "files_changed": {
+            "type": "integer",
+            "required": true,
+            "hint": "Number of files changed"
+          },
+          "lines_changed": {
+            "type": "integer",
+            "required": false,
+            "hint": "Approximate lines added/removed"
+          }
+        }
+      },
+      "code-review.static_analysis": {
+        "id": "code-review.static_analysis",
+        "prompt": "Run static analysis on the submitted code.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.review"
+          }
+        ],
+        "context": "Execute linting, type checking, and automated tests. Report any findings before human review begins.",
+        "evidence_schema": {
+          "linting_result": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "pass",
+              "warnings",
+              "errors"
+            ],
+            "hint": "Result of lint/style checks"
+          },
+          "type_check_result": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "pass",
+              "warnings",
+              "errors"
+            ],
+            "hint": "Result of type checking"
+          },
+          "test_result": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "pass",
+              "fail",
+              "skipped"
+            ],
+            "hint": "Result of automated test suite"
+          },
+          "findings_summary": {
+            "type": "text",
+            "required": false,
+            "hint": "Summary of any issues found by static analysis"
+          }
+        }
+      },
+      "code-review.review": {
+        "id": "code-review.review",
+        "prompt": "Conduct the code review.",
+        "performer": "reviewer",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.feedback"
+          }
+        ],
+        "context": "Examine the code for correctness, clarity, maintainability, and adherence to project conventions. Consider edge cases, error handling, and test coverage.",
+        "evidence_schema": {
+          "correctness": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "good",
+              "minor_issues",
+              "major_issues"
+            ],
+            "hint": "Is the code functionally correct?"
+          },
+          "readability": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "good",
+              "acceptable",
+              "poor"
+            ],
+            "hint": "Is the code clear and well-documented?"
+          },
+          "test_coverage": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "sufficient",
+              "insufficient",
+              "none"
+            ],
+            "hint": "Are there adequate tests?"
+          },
+          "review_comments": {
+            "type": "text",
+            "required": true,
+            "hint": "Detailed review comments and suggestions"
+          },
+          "review_verdict": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "approve",
+              "request_changes",
+              "reject"
+            ],
+            "hint": "Overall review verdict"
+          }
+        }
+      },
+      "code-review.feedback": {
+        "id": "code-review.feedback",
+        "prompt": "Address review feedback.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.resolution"
+          }
+        ],
+        "context": "Review the comments provided and determine which changes to make. Respond to each comment with an action taken or rationale for not changing.",
+        "evidence_schema": {
+          "comments_addressed": {
+            "type": "integer",
+            "required": true,
+            "hint": "Number of review comments addressed"
+          },
+          "comments_deferred": {
+            "type": "integer",
+            "required": false,
+            "hint": "Number of comments deferred to future work"
+          },
+          "changes_made": {
+            "type": "text",
+            "required": true,
+            "hint": "Summary of changes made in response to review"
+          }
+        }
+      },
+      "code-review.resolution": {
+        "id": "code-review.resolution",
+        "prompt": "Resolve the code review.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.verify"
+          }
+        ],
+        "context": "Confirm that all feedback has been addressed and the code is ready to merge, or document why the review is being closed.",
+        "evidence_schema": {
+          "final_status": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "merged",
+              "closed",
+              "deferred"
+            ],
+            "hint": "Final disposition of the code change"
+          },
+          "resolution_notes": {
+            "type": "text",
+            "required": false,
+            "hint": "Any additional notes on the resolution"
+          }
+        }
+      },
+      "code-review.verify": {
+        "id": "code-review.verify",
+        "prompt": "Verify the results.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "code-review.close"
+          }
+        ],
+        "context": "Check that all steps were completed successfully and evidence is complete.",
+        "evidence_schema": {
+          "all_steps_passed": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ]
+          },
+          "verification_notes": {
+            "type": "text",
+            "required": false,
+            "hint": "Any observations or concerns?"
+          }
+        }
+      },
+      "code-review.close": {
+        "id": "code-review.close",
+        "prompt": "Close this procedure.",
+        "performer": "initiator",
+        "terminal": true,
+        "locked": true,
+        "edges": [],
+        "evidence_schema": {
+          "outcome": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "pass",
+              "fail"
+            ]
+          },
+          "summary": {
+            "type": "text",
+            "required": true,
+            "hint": "Final summary of what was accomplished"
+          }
+        }
+      }
+    }
+  },
+  "ticket": {
+    "id": "CR-TEST-001",
+    "cursor": "code-review.close",
+    "responses": {
+      "code-review.start": {
+        "objective": "Review the authentication module refactor",
+        "ready": "yes"
+      },
+      "code-review.submit_code": {
+        "branch_or_pr": "feature/auth-refactor PR #42",
+        "change_summary": "Refactored authentication module to use JWT tokens instead of session cookies",
+        "files_changed": 7,
+        "lines_changed": 340
+      },
+      "code-review.static_analysis": {
+        "linting_result": "warnings",
+        "type_check_result": "pass",
+        "test_result": "pass",
+        "findings_summary": "Two unused imports detected in auth/handlers.py"
+      },
+      "code-review.review": {
+        "correctness": "minor_issues",
+        "readability": "good",
+        "test_coverage": "sufficient",
+        "review_comments": "Token expiration logic in auth/jwt.py should handle clock skew. Also remove the unused imports flagged by linting.",
+        "review_verdict": "request_changes"
+      },
+      "code-review.feedback": {
+        "comments_addressed": 2,
+        "comments_deferred": 0,
+        "changes_made": "Added 30-second clock skew tolerance to JWT expiration check. Removed unused imports from auth/handlers.py."
+      },
+      "code-review.resolution": {
+        "final_status": "merged",
+        "resolution_notes": "All review comments addressed. CI passed after changes. Merged to main."
+      },
+      "code-review.verify": {
+        "all_steps_passed": "yes",
+        "verification_notes": "All steps completed. Static analysis clean after fixes. Review feedback fully addressed."
+      },
+      "code-review.close": {
+        "outcome": "pass",
+        "summary": "Code review of auth refactor (PR #42) completed successfully. Two issues found during review (clock skew handling, unused imports), both addressed. Code merged to main."
+      }
+    },
+    "history": [
+      {
+        "node_id": "code-review.start",
+        "response": {
+          "objective": "Review the authentication module refactor",
+          "ready": "yes"
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:41:05Z"
+      },
+      {
+        "node_id": "code-review.submit_code",
+        "response": {
+          "branch_or_pr": "feature/auth-refactor PR #42",
+          "change_summary": "Refactored authentication module to use JWT tokens instead of session cookies",
+          "files_changed": 7,
+          "lines_changed": 340
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:41:18Z"
+      },
+      {
+        "node_id": "code-review.static_analysis",
+        "response": {
+          "linting_result": "warnings",
+          "type_check_result": "pass",
+          "test_result": "pass",
+          "findings_summary": "Two unused imports detected in auth/handlers.py"
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:41:34Z"
+      },
+      {
+        "node_id": "code-review.review",
+        "response": {
+          "correctness": "minor_issues",
+          "readability": "good",
+          "test_coverage": "sufficient",
+          "review_comments": "Token expiration logic in auth/jwt.py should handle clock skew. Also remove the unused imports flagged by linting.",
+          "review_verdict": "request_changes"
+        },
+        "visit": 1,
+        "performer": "reviewer",
+        "timestamp": "2026-03-05T18:42:05Z"
+      },
+      {
+        "node_id": "code-review.feedback",
+        "response": {
+          "comments_addressed": 2,
+          "comments_deferred": 0,
+          "changes_made": "Added 30-second clock skew tolerance to JWT expiration check. Removed unused imports from auth/handlers.py."
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:42:19Z"
+      },
+      {
+        "node_id": "code-review.resolution",
+        "response": {
+          "final_status": "merged",
+          "resolution_notes": "All review comments addressed. CI passed after changes. Merged to main."
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:42:31Z"
+      },
+      {
+        "node_id": "code-review.verify",
+        "response": {
+          "all_steps_passed": "yes",
+          "verification_notes": "All steps completed. Static analysis clean after fixes. Review feedback fully addressed."
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:59:14Z"
+      },
+      {
+        "node_id": "code-review.close",
+        "response": {
+          "outcome": "pass",
+          "summary": "Code review of auth refactor (PR #42) completed successfully. Two issues found during review (clock skew handling, unused imports), both addressed. Code merged to main."
+        },
+        "visit": 1,
+        "performer": "initiator",
+        "timestamp": "2026-03-05T18:59:35Z"
+      }
+    ],
+    "state": "complete",
+    "created_at": "2026-03-05T18:31:45Z",
+    "metadata": {}
+  }
+}

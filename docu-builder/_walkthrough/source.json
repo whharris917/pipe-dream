@@ -1,0 +1,109 @@
+{
+  "system_properties": {
+    "document_id": "DOC-001",
+    "title": "Test Protocol",
+    "phase": "execution",
+    "created": "2026-03-04T21:59:27.772711+00:00",
+    "execution_started": "2026-03-04T21:59:27.853926+00:00"
+  },
+  "user_properties": {},
+  "execution_properties": {},
+  "sections": {
+    "steps": {
+      "title": "Execution Steps",
+      "locked": false,
+      "enforced": false,
+      "elements": [
+        {
+          "type": "table",
+          "locked": false,
+          "enforced": false,
+          "name": "items",
+          "columns": {
+            "Step": {
+              "type": "id"
+            },
+            "Description": {
+              "type": "design"
+            },
+            "Prerequisites": {
+              "type": "prerequisite"
+            },
+            "Actual Results": {
+              "type": "recorded_value"
+            },
+            "Pass/Fail": {
+              "type": "choice_list"
+            },
+            "Performer": {
+              "type": "signature"
+            }
+          },
+          "column_order": [
+            "Step",
+            "Description",
+            "Prerequisites",
+            "Actual Results",
+            "Pass/Fail",
+            "Performer"
+          ],
+          "extendable": true,
+          "sequential": true,
+          "rows": [
+            {
+              "values": {
+                "Description": "Verify installation",
+                "Actual Results": {
+                  "entries": [
+                    {
+                      "value": "Installation verified",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T21:59:27.888540+00:00"
+                    }
+                  ]
+                },
+                "Pass/Fail": {
+                  "entries": [
+                    {
+                      "value": "Pass",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T21:59:27.908384+00:00"
+                    }
+                  ]
+                },
+                "Performer": {
+                  "entries": [
+                    {
+                      "value": "alice",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T21:59:27.930433+00:00"
+                    }
+                  ]
+                }
+              },
+              "locked": false,
+              "enforced": false
+            },
+            {
+              "values": {
+                "Description": "Run test suite",
+                "Prerequisites": "S-1 complete"
+              },
+              "locked": false,
+              "enforced": false
+            },
+            {
+              "values": {
+                "Description": "Document results",
+                "Prerequisites": "S-2 complete"
+              },
+              "locked": false,
+              "enforced": false
+            }
+          ],
+          "id_prefix": "S-"
+        }
+      ]
+    }
+  }
+}

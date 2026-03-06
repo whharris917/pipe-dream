@@ -1,0 +1,326 @@
+{
+  "graph": {
+    "graph": {
+      "id": "INC-001",
+      "name": "Incident Response: INC-001",
+      "description": "Full incident response: triage -> diagnose -> contain -> remediate",
+      "entry_point": "incident.start"
+    },
+    "nodes": {
+      "incident.start": {
+        "id": "incident.start",
+        "prompt": "Triage the incident.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.observe"
+          }
+        ],
+        "context": "Assess the severity and immediate impact of this incident.",
+        "evidence_schema": {
+          "objective": {
+            "type": "text",
+            "required": true,
+            "hint": "Brief description of the incident"
+          },
+          "severity": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "hint": "How severe is this incident?"
+          },
+          "active_impact": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ],
+            "hint": "Is there ongoing impact right now?"
+          },
+          "ready": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ]
+          }
+        }
+      },
+      "incident.observe": {
+        "id": "incident.observe",
+        "prompt": "Observe and document the symptoms.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.hypothesize"
+          }
+        ],
+        "context": "Gather all observable facts about the problem. Do not jump to conclusions.",
+        "evidence_schema": {
+          "symptoms": {
+            "type": "text",
+            "required": true,
+            "hint": "What symptoms are present?"
+          },
+          "onset": {
+            "type": "text",
+            "required": true,
+            "hint": "When did the problem start?"
+          },
+          "affected_systems": {
+            "type": "text",
+            "required": false,
+            "hint": "What systems or components are affected?"
+          }
+        }
+      },
+      "incident.hypothesize": {
+        "id": "incident.hypothesize",
+        "prompt": "Form a hypothesis about the root cause.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.test"
+          }
+        ],
+        "context": "Based on your observations, what do you think is causing the problem?",
+        "evidence_schema": {
+          "hypothesis": {
+            "type": "text",
+            "required": true,
+            "hint": "Your best explanation for the observed symptoms"
+          },
+          "confidence": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "alternative_hypotheses": {
+            "type": "text",
+            "required": false,
+            "hint": "Other possible explanations"
+          }
+        }
+      },
+      "incident.test": {
+        "id": "incident.test",
+        "prompt": "Test your hypothesis.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.contain"
+          }
+        ],
+        "context": "Design and execute a test that would confirm or refute your hypothesis.",
+        "evidence_schema": {
+          "test_description": {
+            "type": "text",
+            "required": true,
+            "hint": "What test did you perform?"
+          },
+          "test_result": {
+            "type": "text",
+            "required": true,
+            "hint": "What was the result?"
+          },
+          "hypothesis_confirmed": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no",
+              "inconclusive"
+            ]
+          }
+        }
+      },
+      "incident.contain": {
+        "id": "incident.contain",
+        "prompt": "Contain the incident.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.remediate"
+          }
+        ],
+        "context": "Take immediate action to stop ongoing damage or impact.",
+        "evidence_schema": {
+          "containment_action": {
+            "type": "text",
+            "required": true,
+            "hint": "What containment action was taken?"
+          },
+          "impact_stopped": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no",
+              "partial"
+            ]
+          }
+        }
+      },
+      "incident.remediate": {
+        "id": "incident.remediate",
+        "prompt": "Remediate the root cause.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.conclude"
+          }
+        ],
+        "context": "Apply a fix for the root cause identified during diagnosis.",
+        "evidence_schema": {
+          "fix_description": {
+            "type": "text",
+            "required": true,
+            "hint": "What fix was applied?"
+          },
+          "fix_verified": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ]
+          },
+          "rollback_plan": {
+            "type": "text",
+            "required": false,
+            "hint": "How to roll back if the fix fails?"
+          }
+        }
+      },
+      "incident.conclude": {
+        "id": "incident.conclude",
+        "prompt": "State your conclusion.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.verify"
+          }
+        ],
+        "context": "Based on all evidence gathered, what is the root cause?",
+        "evidence_schema": {
+          "root_cause": {
+            "type": "text",
+            "required": true,
+            "hint": "The identified root cause"
+          },
+          "evidence_summary": {
+            "type": "text",
+            "required": true,
+            "hint": "Summary of supporting evidence"
+          },
+          "recommended_action": {
+            "type": "text",
+            "required": true,
+            "hint": "What should be done next?"
+          }
+        }
+      },
+      "incident.verify": {
+        "id": "incident.verify",
+        "prompt": "Verify the resolution.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "incident.close"
+          }
+        ],
+        "context": "Confirm the incident is fully resolved and services are restored.",
+        "evidence_schema": {
+          "all_steps_passed": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ]
+          },
+          "services_restored": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ]
+          },
+          "verification_notes": {
+            "type": "text",
+            "required": false
+          }
+        }
+      },
+      "incident.close": {
+        "id": "incident.close",
+        "prompt": "Close the incident.",
+        "performer": "initiator",
+        "terminal": true,
+        "locked": true,
+        "edges": [],
+        "evidence_schema": {
+          "outcome": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "resolved",
+              "mitigated",
+              "unresolved"
+            ]
+          },
+          "summary": {
+            "type": "text",
+            "required": true
+          },
+          "follow_up_needed": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes",
+              "no"
+            ],
+            "hint": "Are follow-up actions needed?"
+          }
+        }
+      }
+    }
+  },
+  "ticket": {
+    "id": "INC-001",
+    "cursor": "incident.start",
+    "responses": {},
+    "history": [],
+    "state": "active",
+    "created_at": "2026-03-05T18:28:53Z",
+    "metadata": {}
+  }
+}

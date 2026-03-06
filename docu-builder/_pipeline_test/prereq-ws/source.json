@@ -1,0 +1,161 @@
+{
+  "system_properties": {
+    "document_id": "CR-TEST",
+    "title": "Prerequisite Test",
+    "phase": "execution",
+    "created": "2026-03-04T13:29:12.788656+00:00",
+    "execution_started": "2026-03-04T13:29:12.936900+00:00"
+  },
+  "user_properties": {},
+  "execution_properties": {},
+  "sections": {
+    "steps": {
+      "title": "Test Steps",
+      "locked": false,
+      "sealed": false,
+      "elements": [
+        {
+          "type": "table",
+          "locked": false,
+          "sealed": false,
+          "name": "Test Steps",
+          "columns": {
+            "Step": {
+              "type": "id"
+            },
+            "Task": {
+              "type": "design"
+            },
+            "Prereq": {
+              "type": "prerequisite"
+            },
+            "Result": {
+              "type": "recorded_value"
+            },
+            "Sign": {
+              "type": "signature"
+            }
+          },
+          "column_order": [
+            "Step",
+            "Task",
+            "Prereq",
+            "Result",
+            "Sign"
+          ],
+          "extendable": true,
+          "rows": [
+            {
+              "values": {
+                "Task": "Setup environment",
+                "Result": {
+                  "entries": [
+                    {
+                      "value": "Environment ready",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.011635+00:00"
+                    }
+                  ]
+                },
+                "Sign": {
+                  "entries": [
+                    {
+                      "value": "alice",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.011635+00:00"
+                    }
+                  ]
+                }
+              },
+              "locked": false,
+              "sealed": false,
+              "sequential": false
+            },
+            {
+              "values": {
+                "Task": "Run unit tests",
+                "Prereq": "S-1 complete",
+                "Result": {
+                  "entries": [
+                    {
+                      "value": "All 42 unit tests pass",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.054970+00:00"
+                    }
+                  ]
+                },
+                "Sign": {
+                  "entries": [
+                    {
+                      "value": "bob",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.054970+00:00"
+                    }
+                  ]
+                }
+              },
+              "locked": false,
+              "sealed": false,
+              "sequential": false
+            },
+            {
+              "values": {
+                "Task": "Run integration tests",
+                "Prereq": "S-2 complete",
+                "Result": {
+                  "entries": [
+                    {
+                      "value": "Integration tests pass",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.082839+00:00"
+                    }
+                  ]
+                },
+                "Sign": {
+                  "entries": [
+                    {
+                      "value": "bob",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.082839+00:00"
+                    }
+                  ]
+                }
+              },
+              "locked": false,
+              "sealed": false,
+              "sequential": false
+            },
+            {
+              "values": {
+                "Task": "Deploy to staging",
+                "Prereq": "S-3 complete",
+                "Result": {
+                  "entries": [
+                    {
+                      "value": "Deployed to staging.example.com",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.112134+00:00"
+                    }
+                  ]
+                },
+                "Sign": {
+                  "entries": [
+                    {
+                      "value": "carol",
+                      "performer": "agent",
+                      "timestamp": "2026-03-04T13:29:13.112134+00:00"
+                    }
+                  ]
+                }
+              },
+              "locked": false,
+              "sealed": false,
+              "sequential": false
+            }
+          ],
+          "id_prefix": "S-"
+        }
+      ]
+    }
+  }
+}

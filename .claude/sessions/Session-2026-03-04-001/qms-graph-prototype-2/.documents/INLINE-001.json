@@ -1,0 +1,106 @@
+{
+  "graph": {
+    "graph": {
+      "id": "INLINE-001",
+      "name": "Logic Puzzle: INLINE-001",
+      "description": "A deductive reasoning puzzle with clues and solution",
+      "entry_point": "puzzle.setup"
+    },
+    "nodes": {
+      "puzzle.setup": {
+        "id": "puzzle.setup",
+        "prompt": "Read the puzzle.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "puzzle.work"
+          }
+        ],
+        "context": "Five people live in five consecutive houses. Each person has a\ndifferent nationality, drinks a different beverage, and owns a different pet.\n\nClues:\n1. The Brit lives in the red house.\n2. The Swede keeps dogs.\n3. The Dane drinks tea.\n4. The green house is immediately to the left of the white house.\n5. The green house owner drinks coffee.\n6. The person who smokes Pall Mall keeps birds.\n7. The owner of the yellow house smokes Dunhill.\n8. The person in the center house drinks milk.\n9. The Norwegian lives in the first house.\n10. The Blend smoker lives next to the cat owner.\n11. The horse owner lives next to the Dunhill smoker.\n12. The Bluemaster smoker drinks beer.\n13. The German smokes Prince.\n14. The Norwegian lives next to the blue house.\n15. The Blend smoker has a neighbor who drinks water.\n\nQuestion: Who owns the fish?",
+        "evidence_schema": {
+          "understood": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "yes"
+            ],
+            "hint": "Confirm you have read the puzzle"
+          }
+        }
+      },
+      "puzzle.work": {
+        "id": "puzzle.work",
+        "prompt": "Work through the puzzle step by step.",
+        "performer": "initiator",
+        "terminal": false,
+        "locked": true,
+        "edges": [
+          {
+            "to": "puzzle.solve"
+          }
+        ],
+        "context": "Use deductive reasoning. Show your work.",
+        "evidence_schema": {
+          "reasoning": {
+            "type": "text",
+            "required": true,
+            "hint": "Your step-by-step deduction"
+          }
+        }
+      },
+      "puzzle.solve": {
+        "id": "puzzle.solve",
+        "prompt": "State your answer.",
+        "performer": "initiator",
+        "terminal": true,
+        "locked": true,
+        "edges": [],
+        "evidence_schema": {
+          "fish_owner": {
+            "type": "text",
+            "required": true,
+            "hint": "Who owns the fish?"
+          },
+          "house_assignments": {
+            "type": "text",
+            "required": true,
+            "hint": "Full assignment of all houses"
+          },
+          "confidence": {
+            "type": "enum",
+            "required": true,
+            "values": [
+              "certain",
+              "likely",
+              "unsure"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "ticket": {
+    "id": "INLINE-001",
+    "cursor": "puzzle.work",
+    "responses": {
+      "puzzle.setup": {
+        "understood": "yes"
+      }
+    },
+    "history": [
+      {
+        "node_id": "puzzle.setup",
+        "response": {
+          "understood": "yes"
+        },
+        "performer": "initiator",
+        "timestamp": "2026-03-05T19:58:50Z"
+      }
+    ],
+    "state": "active",
+    "created_at": "2026-03-05T19:58:50Z",
+    "metadata": {}
+  }
+}

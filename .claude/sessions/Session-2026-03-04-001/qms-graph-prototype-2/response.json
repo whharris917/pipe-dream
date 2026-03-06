@@ -1,0 +1,5 @@
+{
+  "outcome": "resolved",
+  "summary": "Database connection pool exhaustion caused by a connection leak in the /api/v2/reports/export endpoint introduced in v2.14.3. Impact lasted approximately 45 minutes (08:30-09:15 UTC) affecting ~15% of user requests with 503 errors. Root cause identified via code diff and staging reproduction. Contained by rolling back to v2.14.2. Permanently fixed in v2.14.4-hotfix with proper context manager usage. All services restored and verified stable.",
+  "follow_up_needed": "yes"
+}
