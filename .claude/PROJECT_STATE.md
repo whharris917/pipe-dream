@@ -1,36 +1,49 @@
 # Project State
 
-*Last updated: Session-2026-03-04-001*
+*Last updated: Session-2026-03-05-001 (continued 2026-03-06)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Major design pivot: document-centric → workflow-centric.** Session 2026-03-04-001 produced a comprehensive design proposal for a Unified Workflow Engine that reframes DocuBuilder from a document editor to a workflow builder and execution platform. The design was driven by deep research across 5 parallel agents analyzing all SOPs, 100+ CRs, 14 INVs, 9 templates, audit trails, and 10+ external workflow systems (BPMN, Temporal.io, Dagster, XState, Petri nets, GMP electronic batch records, 21 CFR Part 11, ALCOA+, van der Aalst workflow patterns, AWS Step Functions).
+**Architectural decision made: graph-based workflow engine.** After a week of prototyping and research (Sessions 2026-03-03 through 2026-03-05), the Lead drove decomposition of the workflow engine down to three bedrock primitives: **Slot** {name, type, value?, writable}, **Node** {id, slots, edges, prompt?}, **Edge** {to, when?}. Everything else — prompts, schemas, gates, templates, documents — is emergent from these three.
 
-**Core insight:** QMS documents are workflow instances, not documents. The engine should enforce ordering constraints, prerequisite gates, and evidence requirements programmatically — eliminating the entire category of "agent didn't follow the process" failures by construction. Five primitives (WorkflowTemplate, WorkflowInstance, Step, Gate, Signal) replace the document primitives (sections, tables, text blocks, columns).
+**Key design decisions (finalized):**
+- Fork semantics: multiple true outgoing edges all fire (AND-join downstream)
+- Acyclic constraint: DAG always valid, no cycles, no deadlocks
+- Two modes: construction (modify graph structure) and execution (fill slots)
+- Replication (not cycles) for repeating steps
+- YAML storage: definitions separate from instances
+- Home node as universal navigation root; start nodes as workflow entry points
+- QMS document types map to workflows: CR, INV, VAR, TP, ER — each is a start node
+- "One verb: execute" — writing a template = executing the write-template template
+- Agent surface via tool/function calling, not raw text parsing
 
-**DocuBuilder prototype still operational** (20 passing usability tests) but the design direction has shifted from document editing to workflow execution. The prototype's key concepts (enforce/locked, prerequisites, sequential execution, cascade revert, audit trails) carry forward as workflow primitives.
+**CR-108 (DocuBuilder Genesis Sandbox) closing.** Sandbox explored, decision made, docu-builder deleted. Artifacts preserved in git history. Currently in post-review.
 
-**CR-107 and CR-106 remain in DRAFT.** CR-107's Jinja2/source infrastructure becomes the rendering layer for the workflow engine. CR-106's system governance becomes workflow steps and gates in the code-CR template.
+**CR-109 (qms-workflow-engine submodule) drafted.** Brings the new repo under formal change control from commit zero. In workspace, ready for checkin/review.
 
-64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0, SDLC-CQ-RS v2.0, SDLC-CQ-RTM v2.0.
+64 CRs CLOSED (CR-042 through CR-105, plus CR-091-ADD-001). 5 INVs CLOSED (INV-010 through INV-014). 687 tests, SDLC-QMS-RS v22.0, SDLC-QMS-RTM v27.0.
 
 ---
 
 ## 2. The Arc
 
-**Foundation through Quality Manual** (Feb 1-24, CR-042 through CR-105). See previous PROJECT_STATE versions for detailed arc.
+**Foundation through Quality Manual** (Feb 1-24, CR-042 through CR-105). See previous PROJECT_STATE versions.
 
-**Unified Document Lifecycle & System Governance** (Feb 25-26, CR-107 + CR-106 — design complete). Grand unification of three document architectures into single Jinja2-based system. CR-106 builds system governance on top.
+**Document Lifecycle & System Governance** (Feb 25-26, CR-107 + CR-106 — design complete, on hold).
 
-**Interaction Architecture Exploration** (Feb 27 - Mar 2, design sessions). Multiple competing approaches explored: frontmatter-driven interaction, three-artifact separation, graph-based engine with Python dataclasses. No decisions finalized.
+**Interaction Architecture Exploration** (Feb 27 - Mar 2). Multiple competing approaches explored.
 
-**DocuBuilder Paradigm Shift** (Mar 3, Session-2026-03-03-001). Kneat eVal-inspired pivot. Table as universal interactive primitive. Column types replace graph nodes. Prerequisites replace graph edges. Composable sections replace zone markers. Property namespaces replace schema declarations. Work Instructions replace sequential prompt workflows. CR-108 authorizes genesis sandbox.
+**DocuBuilder Genesis Sandbox** (Mar 3, CR-108). Table-primitive model. Prototype built (20 usability tests). Proved the concept but revealed design limitations.
 
-**Workflow Engine Design Pivot** (Mar 4-5, Session-2026-03-04-001). After building and testing the DocuBuilder prototype (20 usability tests), Lead identified that the document metaphor was constraining workflow thinking. Comprehensive research effort (5 parallel agents, 10+ external systems analyzed) produced a design proposal that reframes DocuBuilder from document editor to workflow engine. Key design decisions: 5 primitives (WorkflowTemplate, WorkflowInstance, Step, Gate, Signal), template inheritance with invariant steps, three-layer mutability model (template → instance drafting → instance execution), multi-workflow orchestration with lifecycle policies, ALCOA+ by construction.
-
-**QMS Graph Prototyping** (Mar 4-5, Session-2026-03-04-001, continued). Exploratory prototyping of graph-based workflow engine. Two prototypes built: `qms-graph-prototype` (YAML-based, 19 tests) and `qms-graph-prototype-2` (Python class inheritance, 137 tests, 7 templates). Prototype-2 uses native Python inheritance for templates (the "Copernican insight" — inheritance is the hard problem, and Python solves it natively). Features: gate conditions, acyclic DAG enforcement with forward-only retry spawning, deep diff, template locking, fill-based extension points, evidence schemas with typed validation. Five rounds of agent usability testing plus critical analysis against real QMS structures (interact_engine, TEMPLATE-CR/VR, SOPs). Analysis identified structural DNA as sound (inheritance, fill points, schemas, diff, acyclic invariant) with operational gaps (amendments, append-only responses, compilation, child documents). **All provisional/exploratory** — no design decisions finalized, no production code affected.
+**Workflow Engine Design** (Mar 3-6, Sessions 2026-03-03 through 2026-03-05).
+- DocuBuilder prototype: table-primitive model, 20 usability tests
+- QMS Graph prototype-2: Python class inheritance, 137 tests, 7 templates, acyclic DAG
+- Bedrock primitives distilled: Slot, Node, Edge — everything else emergent
+- Agent interface research: 30+ sources, SWE-agent ACI, EBR systems, BPMN, Rasa slot-filling, CrewAI task model
+- Construction/execution mode duality, replication pattern, YAML storage
+- CR-109 drafted to bring engine repo under formal control
 
 ---
 
@@ -68,9 +81,10 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-108 | IN_EXECUTION v1.1 | DocuBuilder Genesis Sandbox. EI-3 in progress: RS + prototype operational, 20 usability tests passed. |
-| CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle. Non-interaction content valid; interaction design superseded by DocuBuilder paradigm. Future TBD. |
-| CR-106 | DRAFT v0.1 (content v0.4) | System Governance. Depends on CR-107. Unchanged. |
+| CR-108 | IN_POST_REVIEW v1.2 | DocuBuilder Genesis Sandbox. Exploration complete, closing. |
+| CR-109 | DRAFT v0.1 | Add qms-workflow-engine submodule under formal change control. |
+| CR-107 | DRAFT v0.1 (content v1.0) | Unified Document Lifecycle. On hold — interaction design superseded. |
+| CR-106 | DRAFT v0.1 (content v0.4) | System Governance. Depends on CR-107. On hold. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. VR title bug + SOP-004/TEMPLATE-VR alignment gap. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
 | CR-020 | DRAFT v0.1 | Legacy test document. Candidate for cancellation. |
@@ -86,37 +100,31 @@
 
 ## 5. Forward Plan
 
-### Immediate: Lead Review of Workflow Engine Design
+### Immediate: CR-109 — Bring qms-workflow-engine Under Control
 
-The design document at `.claude/sessions/Session-2026-03-04-001/workflow-engine-design.md` proposes a fundamental reframe of DocuBuilder. Awaiting Lead feedback before proceeding with implementation.
+CR-109 is drafted. After CR-108 closes: checkin CR-109, route for review/approval, execute (create GitHub repo, add submodule).
 
-**Key decisions needed:**
-- Does the five-primitive model (WorkflowTemplate, WorkflowInstance, Step, Gate, Signal) capture the full problem?
-- Is the three-layer mutability model (template → drafting → execution) correct?
-- Should the prototype pivot to the workflow model, or continue refining the document model?
-- How does deviation handling (inline minor vs. child workflow major) interact with current VAR/INV processes?
+### Next: Build the Engine Core
 
-### CR-108 EI-3: Prototype Direction Depends on Design Decision
+With the repo established, begin implementation under formal change control:
+1. Define the DAG scheduler (node readiness, edge evaluation, fork/join, dead path elimination)
+2. Define the tool surface (construction and execution tool signatures)
+3. Build one real workflow (likely CR) in YAML and execute it to validate the model
+4. Build the rendering layer (the ACI that translates graph state to agent view)
 
-If workflow-centric direction is confirmed, the prototype pivots from document primitives (sections, tables, text blocks) to workflow primitives (steps, gates, signals). The existing prototype's audit trail, prerequisite logic, and enforce/locked concepts carry forward.
+### On Hold: CR-107 / CR-106
 
-If document-centric direction continues, remaining RS items: calculated columns, section visibility, work instructions, cross-document refs, property namespaces, duplicatable sections, amendability flag.
-
-### CR-107 / CR-106: On Hold
-
-CR-107's Jinja2/source infrastructure becomes the rendering layer for the workflow engine (if confirmed). CR-106's system governance becomes workflow steps and gates. Both CRs may need revision once the design direction is settled.
+CR-107's Jinja2/source infrastructure may become a rendering layer for the workflow engine. CR-106's system governance becomes workflow steps and gates. Both CRs may need revision or cancellation once the engine materializes.
 
 ### Design Artifacts
 
 | Artifact | Location | Status |
 |----------|----------|--------|
-| **Workflow Engine Design** | `.claude/sessions/Session-2026-03-04-001/workflow-engine-design.md` | **Active** — 14 sections, comprehensive proposal |
-| Core principles (DocuBuilder) | `.claude/sessions/Session-2026-03-03-001/authoring-and-executing-controlled-documents.md` | Partially superseded by workflow design |
-| Document DNA | `.claude/sessions/Session-2026-03-03-001/document_dna.json` | Partially superseded — audit trail and enforce/locked concepts carry forward |
-| DocuBuilder prototype | `docu-builder/docubuilder/` | Operational (20 tests) — direction depends on design decision |
-| QMS Graph prototype 1 | `.claude/sessions/Session-2026-03-04-001/qms-graph-prototype/` | Exploratory — YAML-based, 19 tests, subgraph support |
-| QMS Graph prototype 2 | `.claude/sessions/Session-2026-03-04-001/qms-graph-prototype-2/` | Exploratory — Python templates, 137 tests, 7 templates, acyclic DAG, critical analysis complete |
-| Workspace mockup | `prompt.txt` (project root) | Partially superseded by workflow rendered view concept |
+| **Workflow Engine Forward Plan** | `.claude/sessions/Session-2026-03-05-001/workflow-engine-plan.md` | **Active** — bedrock primitives, modes, storage, agent surface |
+| **Agent Interface Research** | `.claude/sessions/Session-2026-03-05-001/agent-interface-research.md` | **Active** — 9 sections, 30+ sources |
+| Workflow Engine Design (superseded) | `.claude/sessions/Session-2026-03-04-001/workflow-engine-design.md` | Superseded by forward plan (5-primitive model replaced by 3-primitive model) |
+| QMS Graph prototype 2 | `.claude/sessions/Session-2026-03-04-001/qms-graph-prototype-2/` | Exploratory — 137 tests, informed design decisions |
+| DocuBuilder prototype | git history at `20a7719` | Archived — 20 tests, informed decision to pursue graph-based approach |
 
 ---
 
@@ -186,4 +194,4 @@ See Session-2026-02-14 notes. Grouped into Agent Hub Robustness, GUI Polish, and
 
 **SOP-004/TEMPLATE-VR alignment gap.** Documented in CR-091-ADD-001-VAR-001, corrective CR pending.
 
-**CR-107 interaction design superseded.** The graph-based interaction engine design explored across four sessions is superseded by the DocuBuilder paradigm. CR-107's non-interaction content remains valid but the CR needs revision once DocuBuilder prototyping yields results.
+**CR-107/CR-106 stale.** Both CRs are on hold. Their interaction design content is superseded by the workflow engine. May need cancellation or significant revision once the engine materializes.

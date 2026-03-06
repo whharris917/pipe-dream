@@ -1,10 +1,10 @@
 # Session-2026-03-05-001
 
-## Current State (last updated: 2026-03-05 session start)
-- **Active document:** CR-108 (IN_EXECUTION v1.1, checked out)
-- **Current EI:** EI-3 (RS + prototyping — prototype-2 mature, analysis complete)
-- **Blocking on:** Nothing — awaiting Lead direction
-- **Next:** Lead review of prototype + analysis; design decisions on integration path
+## Current State (last updated: 2026-03-06)
+- **Active document:** CR-108 (IN_POST_REVIEW v1.2), CR-109 (DRAFT v0.1, in workspace)
+- **Current work:** CR-108 closing (QA post-review in progress), CR-109 drafted
+- **Blocking on:** QA post-review of CR-108
+- **Next:** Complete CR-108 closure, checkin/route CR-109
 
 ## Progress Log
 
@@ -57,3 +57,16 @@
   - CrewAI task model validates our architecture: description + output schema + upstream context + validation
   - We operate in the async/embedded UX pattern, not collaborative chat
 - Synthesis document now 9 substantive sections + sources (~550 lines)
+
+### CR-108 Closure + CR-109 Draft
+- Lead directed: delete docu-builder, close CR-108, draft CR-109
+- Removed docu-builder/ from .gitignore, committed artifacts to git (20a7719)
+- Deleted docu-builder/ directory
+- Filled CR-108 execution table (EI-1 through EI-4), execution summary, execution comments
+- Committed post-execution state (ce85407)
+- Routed CR-108 for post-review (ea8fb2b)
+- Created CR-109: add qms-workflow-engine submodule under formal change control
+  - Infrastructure-only CR, 6 EIs, no SDLC docs needed
+  - Independence guarantee explicit in change description
+- QA post-review of CR-108 in progress
+- Updated PROJECT_STATE.md with current architectural decisions and forward plan
