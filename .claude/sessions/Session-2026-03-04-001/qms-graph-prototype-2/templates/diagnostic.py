@@ -44,7 +44,9 @@ class Diagnostic(ProcedureBase):
                                         hint="What was the result?"),
                    "hypothesis_confirmed": Field("enum", required=True,
                                                  values=["yes", "no", "inconclusive"]),
-               })
+               },
+               retry={"when": "response.get('hypothesis_confirmed') != 'yes'",
+                      "nodes": ["hypothesize", "test"]})
 
         # Extension point: subclasses can add steps after testing
         self.fill(g, "post_diagnosis")
@@ -60,8 +62,3 @@ class Diagnostic(ProcedureBase):
                    "recommended_action": Field("text", required=True,
                                                hint="What should be done next?"),
                })
-
-        # Loop-back: failed hypothesis test returns to hypothesize
-        # (auto-linear fallthrough handles the forward path to next node)
-        g.edge(f"{self.id}.test", f"{self.id}.hypothesize",
-               condition="last_response('{}.test').get('hypothesis_confirmed') != 'yes'".format(self.id))

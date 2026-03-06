@@ -1,10 +1,10 @@
 # Session-2026-03-04-001
 
-## Current State (last updated: 2026-03-05 post-prototype-sprint)
+## Current State (last updated: 2026-03-05 post-acyclic-refactor)
 - **Active document:** CR-108 (IN_EXECUTION v1.1, checked out)
-- **Current EI:** EI-3 (RS + prototyping — massive prototype sprint complete)
-- **Blocking on:** Nothing — awaiting Lead review of prototype
-- **Next:** Lead demo of prototype; incorporate Round 2 usability feedback
+- **Current EI:** EI-3 (RS + prototyping — prototype-2 mature, analysis complete)
+- **Blocking on:** Nothing — awaiting Lead review of prototype + analysis
+- **Next:** Lead review of ANALYSIS.md; design decisions on integration path
 
 ## Progress Log
 
@@ -192,3 +192,18 @@
   - Gate conditions on ProcedureBase start/verify and Incident start/verify
   - Diagnostic hypothesis loop-back (test → hypothesize when hypothesis_confirmed != "yes")
   - Incident correctly inherits loop-back (test → hypothesize, forward → contain)
+
+### Acyclic Graph Refactoring (continued session)
+- Lead directive: "a graph should never be cyclic" — chose Option 3 (dynamic node creation at runtime)
+- **graph.py**: Added `retry` field to Node, cycle detection via DFS in `validate()`, `retry` param in `_GraphBuilder.node()`
+- **engine.py**: Simplified Ticket (removed `_visit_count`), extracted `_eval_condition()` helper, added `spawn_retry()` for forward-only node cloning, rewrote `do_respond()` with retry support, rewrote `auto_run()` to use `do_respond()` with base-name matching for spawned clones
+- **templates/diagnostic.py**: Removed cyclic `g.edge()` loop-back, replaced with `retry={"when": ..., "nodes": [...]}` on test node
+- **test_harness.py**: Updated Test 9 (removed dead `visits_since`/`last_response`), rewrote Test 11a2 for spawn/retry model, added Test 11d (cycle detection — all 6 templates verified acyclic), added Test 11e (spawn_retry mechanics)
+- **137 tests**, all passing (up from 117)
+
+### Critical Analysis: Prototype as QMS DNA
+- Deep comparison of prototype against real QMS structures (TEMPLATE-CR, TEMPLATE-VR, SOP-001, SOP-002, SOP-004, interact_engine.py, interact_source.py)
+- **Strengths identified:** Python inheritance for templates, fill-based extension points, evidence schemas with typed validation, deep diff for compliance, acyclic invariant cleaner than loop tracking
+- **Critical gaps:** No amendment mechanism (goto/revise), single-value responses (not append-only), no compilation to markdown, no child document spawning/blocking, hooks declared but unexecuted, no performer enforcement
+- **Verdict:** Structural DNA is sound; operational DNA incomplete. Recommended integration path: replace interact_parser with Python templates, adapt interact_source's append-only model into Ticket, bring interact_engine's amendment mechanism forward, add compilation layer, build child document support
+- Full analysis: `qms-graph-prototype-2/ANALYSIS.md`

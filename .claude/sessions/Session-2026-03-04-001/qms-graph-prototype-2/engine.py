@@ -18,6 +18,7 @@ Usage:
 
 import sys
 import os
+import re
 import json
 import time
 import argparse
@@ -41,25 +42,15 @@ class Ticket:
         self.cursor = start_node or (graph.entry_point if graph else None)
         self.responses = {}
         self.history = []
-        self._visit_count = {}
         self.state = "active"
         self.created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ")
         self.metadata = {}
 
     def record(self, node_id, response, performer="initiator"):
-        count = self._visit_count.get(node_id, 0) + 1
-        self._visit_count[node_id] = count
-        if count > 1:
-            prev = self.responses.get(node_id)
-            if prev is not None and not isinstance(prev, list):
-                self.responses[node_id] = [prev]
-            self.responses.setdefault(node_id, [])
-            self.responses[node_id].append(response)
-        else:
-            self.responses[node_id] = response
+        self.responses[node_id] = response
         self.history.append({
             "node_id": node_id, "response": response,
-            "visit": count, "performer": performer,
+            "performer": performer,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         })
 
@@ -79,17 +70,30 @@ class Ticket:
         t.state = data.get("state", "active")
         t.created_at = data.get("created_at", "")
         t.metadata = data.get("metadata", {})
-        for entry in t.history:
-            nid = entry["node_id"]
-            t._visit_count[nid] = t._visit_count.get(nid, 0) + 1
         return t
 
 
 # ---------------------------------------------------------------------------
-# Evaluator
+# Condition evaluation
 # ---------------------------------------------------------------------------
 
+def _eval_condition(expression, namespace):
+    """Evaluate a condition expression in a safe namespace."""
+    if not expression:
+        return True
+    namespace.setdefault("int", int)
+    namespace.setdefault("str", str)
+    namespace.setdefault("len", len)
+    namespace.setdefault("bool", bool)
+    try:
+        return bool(eval(expression, {"__builtins__": {}}, namespace))
+    except Exception:
+        return False
+
+
 class Evaluator:
+    """Evaluates edge conditions using ticket state."""
+
     def __init__(self, ticket):
         self.ticket = ticket
 
@@ -99,35 +103,8 @@ class Evaluator:
         ns = dict(self.ticket.responses)
         ns["ticket"] = self.ticket.metadata
         if self.ticket.history:
-            last = self.ticket.history[-1]["response"]
-            ns["response"] = last if isinstance(last, dict) else last
-        ns["int"] = int
-        ns["str"] = str
-        ns["len"] = len
-        ns["bool"] = bool
-
-        # visits_since helper
-        def visits_since(target, since):
-            count = 0
-            for entry in reversed(self.ticket.history):
-                if entry["node_id"] == since:
-                    break
-                if entry["node_id"] == target:
-                    count += 1
-            return count
-        ns["visits_since"] = visits_since
-
-        def last_response(node_id):
-            resp = self.ticket.responses.get(node_id)
-            if isinstance(resp, list):
-                return resp[-1] if resp else {}
-            return resp if resp is not None else {}
-        ns["last_response"] = last_response
-
-        try:
-            return bool(eval(expression, {"__builtins__": {}}, ns))
-        except Exception:
-            return False
+            ns["response"] = self.ticket.history[-1]["response"]
+        return _eval_condition(expression, ns)
 
 
 # ---------------------------------------------------------------------------
@@ -234,6 +211,76 @@ def resolve_next(graph, ticket, evaluator):
     return None
 
 
+def spawn_retry(graph, node, response):
+    """If node has a retry spec and condition is met, spawn cloned nodes.
+
+    Clones the specified nodes with an incremented suffix, wires them
+    between the current node and its forward target. The graph grows
+    forward (stays acyclic). Returns the first spawned node ID, or None.
+    """
+    if not node.retry:
+        return None
+
+    condition = node.retry.get("when", "")
+    ns = dict(response)
+    ns["response"] = response
+    if not _eval_condition(condition, ns):
+        return None
+
+    base_node_names = node.retry["nodes"]
+    prefix = node.id.rsplit(".", 1)[0]
+
+    # Find next available suffix
+    suffix = 2
+    while f"{prefix}.{base_node_names[0]}-{suffix}" in graph.nodes:
+        suffix += 1
+
+    # Find the forward target (first unconditional edge)
+    forward_target = None
+    for edge in node.edges:
+        if not edge.get("condition"):
+            forward_target = edge["to"]
+            break
+    if forward_target is None:
+        return None
+
+    # Clone nodes
+    cloned_ids = []
+    for base_name in base_node_names:
+        original = graph.nodes.get(f"{prefix}.{base_name}")
+        if not original:
+            continue
+        new_id = f"{prefix}.{base_name}-{suffix}"
+        clone = Node(
+            id=new_id, prompt=original.prompt, context=original.context,
+            evidence_schema=dict(original.evidence_schema),
+            performer=original.performer, terminal=False,
+            hooks=dict(original.hooks), locked=original.locked,
+            edges=[], gate=original.gate,
+            retry=dict(original.retry) if original.retry else None,
+        )
+        graph.nodes[new_id] = clone
+        cloned_ids.append(new_id)
+
+    if not cloned_ids:
+        return None
+
+    # Wire clones: linear chain, last one points to original forward target
+    for i, cid in enumerate(cloned_ids):
+        if i + 1 < len(cloned_ids):
+            graph.nodes[cid].edges = [{"to": cloned_ids[i + 1]}]
+        else:
+            graph.nodes[cid].edges = [{"to": forward_target}]
+
+    # Splice: replace current node's forward edge with edge to first clone
+    node.edges = [
+        {"to": cloned_ids[0]} if (not e.get("condition") and e.get("to") == forward_target) else e
+        for e in node.edges
+    ]
+
+    return cloned_ids[0]
+
+
 def do_respond(graph, ticket, response):
     """Record response, advance cursor, return status."""
     if ticket.state == "complete":
@@ -257,21 +304,11 @@ def do_respond(graph, ticket, response):
             result["warnings"] = warnings
         return result
 
-    # Check gate condition (if present, response must satisfy it to advance)
+    # Check gate condition
     if node.gate:
-        # Evaluate gate with response data available
         gate_ns = dict(response)
         gate_ns["response"] = response
-        gate_ns["int"] = int
-        gate_ns["str"] = str
-        gate_ns["len"] = len
-        gate_ns["bool"] = bool
-        gate_ns["__builtins__"] = {}
-        try:
-            gate_pass = bool(eval(node.gate, {"__builtins__": {}}, gate_ns))
-        except Exception:
-            gate_pass = False
-        if not gate_pass:
+        if not _eval_condition(node.gate, gate_ns):
             result = {
                 "gate_blocked": True,
                 "gate": node.gate,
@@ -285,7 +322,7 @@ def do_respond(graph, ticket, response):
     # Record
     ticket.record(ticket.cursor, response, node.performer)
 
-    # Advance
+    # Terminal check
     if node.terminal:
         ticket.state = "complete"
         result = {"cursor": ticket.cursor, "state": "complete", "steps": len(ticket.history)}
@@ -293,11 +330,17 @@ def do_respond(graph, ticket, response):
             result["warnings"] = warnings
         return result
 
-    next_id = resolve_next(graph, ticket, evaluator)
-    if next_id:
-        ticket.cursor = next_id
+    # Check retry — may spawn new nodes and redirect cursor
+    spawned = spawn_retry(graph, node, response)
+    if spawned:
+        ticket.cursor = spawned
     else:
-        ticket.state = "complete"
+        # Normal edge resolution
+        next_id = resolve_next(graph, ticket, evaluator)
+        if next_id:
+            ticket.cursor = next_id
+        else:
+            ticket.state = "complete"
 
     result = {
         "cursor": ticket.cursor,
@@ -394,11 +437,16 @@ def render_map(graph, ticket=None, use_color=True):
 # ---------------------------------------------------------------------------
 
 def auto_run(graph, responses_by_node, ticket_id="auto"):
-    """Run through a graph with scripted responses. Returns result dict."""
+    """Run through a graph with scripted responses. Returns result dict.
+
+    Responses are looked up by exact node ID first, then by base name
+    (stripping -N suffix from spawned retry clones). List values are
+    indexed by how many times that base name has been consumed.
+    """
     ticket = Ticket(ticket_id, graph)
-    evaluator = Evaluator(ticket)
     steps = 0
     max_steps = 200
+    base_response_counts = {}  # base_id -> times consumed
 
     while ticket.cursor and ticket.state == "active" and steps < max_steps:
         node = graph.get(ticket.cursor)
@@ -406,19 +454,28 @@ def auto_run(graph, responses_by_node, ticket_id="auto"):
             break
 
         nid = node.id
-        resp_source = responses_by_node.get(nid, {})
+        # Map spawned clone IDs back to their base name
+        base_id = re.sub(r'-\d+$', '', nid)
 
-        # Handle list (for repeated visits)
-        if isinstance(resp_source, list):
-            visit = ticket._visit_count.get(nid, 0)
-            if visit < len(resp_source):
-                response = resp_source[visit]
-            else:
-                response = resp_source[-1] if resp_source else {}
+        # Look up response: exact ID first, then base name
+        if nid in responses_by_node:
+            resp_source = responses_by_node[nid]
         else:
-            response = resp_source
+            resp_source = responses_by_node.get(base_id, {})
 
-        # Fill in defaults for required fields
+        # Handle list responses (indexed by base name visit count)
+        visit_idx = base_response_counts.get(base_id, 0)
+        if isinstance(resp_source, list):
+            if visit_idx < len(resp_source):
+                response = dict(resp_source[visit_idx])
+            else:
+                response = dict(resp_source[-1]) if resp_source else {}
+        else:
+            response = dict(resp_source) if resp_source else {}
+
+        base_response_counts[base_id] = visit_idx + 1
+
+        # Auto-fill required fields not already provided
         for fname, field in node.evidence_schema.items():
             req = field.required if isinstance(field, Field) else field.get("required", False)
             if req and fname not in response:
@@ -433,18 +490,12 @@ def auto_run(graph, responses_by_node, ticket_id="auto"):
                 else:
                     response[fname] = "auto"
 
-        ticket.record(nid, response, node.performer)
+        result = do_respond(graph, ticket, response)
         steps += 1
 
-        if node.terminal:
-            ticket.state = "complete"
+        # Stop on errors or gate blocks
+        if result.get("errors") or result.get("gate_blocked"):
             break
-
-        next_id = resolve_next(graph, ticket, evaluator)
-        if next_id:
-            ticket.cursor = next_id
-        else:
-            ticket.state = "complete"
 
     return {
         "steps": steps,
@@ -452,6 +503,7 @@ def auto_run(graph, responses_by_node, ticket_id="auto"):
         "history": ticket.history,
         "responses": ticket.responses,
         "ticket": ticket,
+        "graph": graph,
     }
 
 

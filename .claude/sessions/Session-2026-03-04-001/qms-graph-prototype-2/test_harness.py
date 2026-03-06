@@ -18,7 +18,7 @@ from graph import Graph, Node, Field, Template, _GraphBuilder
 from engine import (
     Ticket, Evaluator, auto_run, save_document, load_document,
     validate_response, do_respond, get_status, resolve_next,
-    render_map, load_template_class,
+    render_map, load_template_class, spawn_retry,
 )
 
 PASS = 0
@@ -318,10 +318,8 @@ ev = Evaluator(ticket)
 check("simple true", ev.evaluate("True"))
 check("simple false", not ev.evaluate("False"))
 check("empty is true", ev.evaluate(""))
-check("visits_since works", ev.evaluate(
-    "visits_since('diagnostic.observe', 'diagnostic.start') == 1"))
-check("last_response works", ev.evaluate(
-    "last_response('diagnostic.start').get('ready') == 'yes'"))
+check("response access works", ev.evaluate(
+    "response.get('symptoms') == 'X'"))
 check("int available", ev.evaluate("int('42') == 42"))
 check("len available", ev.evaluate("len('abc') == 3"))
 check("bad expr is false", not ev.evaluate("undefined_var"))
@@ -372,22 +370,28 @@ check("advances after gate pass", gated_ticket.cursor == "gated.done")
 check("1 step after gate pass", len(gated_ticket.history) == 1)
 
 # ===========================================================================
-# Test 11a2: Conditional loop-back
+# Test 11a2: Acyclic retry (spawn forward)
 # ===========================================================================
-print("\n=== Test 11a2: Conditional loop-back ===\n")
+print("\n=== Test 11a2: Acyclic retry (spawn forward) ===\n")
 
-from templates.diagnostic import Diagnostic as DiagForLoop
-diag_loop = DiagForLoop().build()
+from templates.diagnostic import Diagnostic as DiagForRetry
+diag_retry = DiagForRetry().build()
 
-# Verify test node has the loop-back edge
-test_node_edges = diag_loop.nodes["diagnostic.test"].edges
-check("test has 2 edges", len(test_node_edges) == 2, str(test_node_edges))
-check("first edge is loopback", test_node_edges[0].get("to") == "diagnostic.hypothesize")
-check("loopback is conditional", "condition" in test_node_edges[0])
-check("second edge is forward", test_node_edges[1].get("to") == "diagnostic.conclude")
+# Verify test node has retry spec (not loop-back edges)
+test_node = diag_retry.nodes["diagnostic.test"]
+check("test has retry spec", test_node.retry is not None)
+check("retry names correct", test_node.retry["nodes"] == ["hypothesize", "test"])
+# Test should have exactly 1 edge (forward to conclude), no loop-back
+test_node_edges = test_node.edges
+check("test has 1 edge", len(test_node_edges) == 1, str(test_node_edges))
+check("test forward to conclude", test_node_edges[0].get("to") == "diagnostic.conclude")
 
-# Run with a failed hypothesis — should loop back
-loop_result = auto_run(diag_loop, {
+# Validate the graph is acyclic
+errors = diag_retry.validate()
+check("diagnostic is acyclic", len(errors) == 0, str(errors))
+
+# Run with a failed hypothesis — should spawn retry nodes forward
+retry_result = auto_run(diag_retry, {
     "diagnostic.start": {"objective": "test", "ready": "yes"},
     "diagnostic.observe": {"symptoms": "X", "onset": "now"},
     "diagnostic.hypothesize": [
@@ -401,22 +405,29 @@ loop_result = auto_run(diag_loop, {
          "hypothesis_confirmed": "yes"},
     ],
 })
-check("loopback completes", loop_result["state"] == "complete")
-check("loopback takes 9 steps", loop_result["steps"] == 9,
-      f"steps={loop_result['steps']}")
-# Should visit: start, observe, hypothesize, test (no), hypothesize, test (yes), conclude, verify, close
-visited_nodes = [h["node_id"] for h in loop_result["history"]]
-check("loopback visits hypothesize twice",
-      visited_nodes.count("diagnostic.hypothesize") == 2)
-check("loopback visits test twice",
-      visited_nodes.count("diagnostic.test") == 2)
+check("retry completes", retry_result["state"] == "complete")
+check("retry takes 9 steps", retry_result["steps"] == 9,
+      f"steps={retry_result['steps']}")
 
-# Also verify incident inherits the loop-back
-inc_loop = Incident().build()
-inc_test_edges = inc_loop.nodes["incident.test"].edges
-check("incident test has loopback", len(inc_test_edges) >= 2)
+# Verify spawned nodes exist in the graph
+retry_graph = retry_result["graph"]
+check("hypothesize-2 spawned", "diagnostic.hypothesize-2" in retry_graph.nodes)
+check("test-2 spawned", "diagnostic.test-2" in retry_graph.nodes)
+
+# Verify traversal path includes spawned nodes
+visited_nodes = [h["node_id"] for h in retry_result["history"]]
+check("visits hypothesize-2", "diagnostic.hypothesize-2" in visited_nodes)
+check("visits test-2", "diagnostic.test-2" in visited_nodes)
+# Original hypothesize and test visited once each
+check("original hypothesize once", visited_nodes.count("diagnostic.hypothesize") == 1)
+check("original test once", visited_nodes.count("diagnostic.test") == 1)
+
+# Also verify incident inherits the retry spec
+inc_retry = Incident().build()
+inc_test = inc_retry.nodes["incident.test"]
+check("incident test has retry", inc_test.retry is not None)
 # Forward from incident's test should go to contain (not conclude)
-forward_targets = [e["to"] for e in inc_test_edges if not e.get("condition")]
+forward_targets = [e["to"] for e in inc_test.edges if not e.get("condition")]
 check("incident test forward to contain", "incident.contain" in forward_targets,
       str(forward_targets))
 
@@ -462,6 +473,75 @@ check("inline respond works", result.returncode == 0, result.stderr[:200] if res
 if result.returncode == 0:
     data = json.loads(result.stdout)
     check("inline advances cursor", "puzzle.work" in data.get("cursor", ""), data.get("cursor", ""))
+
+
+# ===========================================================================
+# Test 11d: Cycle detection
+# ===========================================================================
+print("\n=== Test 11d: Cycle detection ===\n")
+
+# Build a graph with a deliberate cycle
+cyclic = Graph("cyclic-test")
+cyclic.entry_point = "a"
+cyclic.nodes["a"] = Node(id="a", prompt="Step A", edges=[{"to": "b"}])
+cyclic.nodes["b"] = Node(id="b", prompt="Step B", edges=[{"to": "c"}])
+cyclic.nodes["c"] = Node(id="c", prompt="Step C", edges=[{"to": "a"}])  # cycle!
+errors = cyclic.validate()
+check("cycle detected", any("cycle" in e.lower() for e in errors), str(errors))
+
+# Acyclic should pass
+acyclic = Graph("acyclic-test")
+acyclic.entry_point = "x"
+acyclic.nodes["x"] = Node(id="x", prompt="X", edges=[{"to": "y"}])
+acyclic.nodes["y"] = Node(id="y", prompt="Y", edges=[{"to": "z"}])
+acyclic.nodes["z"] = Node(id="z", prompt="Z", terminal=True, edges=[])
+errors = acyclic.validate()
+check("acyclic passes", len(errors) == 0, str(errors))
+
+# All templates must be acyclic
+for tpl_path in ["templates.diagnostic", "templates.repair",
+                  "templates.incident", "templates.logic_puzzle",
+                  "templates.code_review", "templates.safety_incident"]:
+    cls = load_template_class(tpl_path)
+    g = cls().build()
+    errors = g.validate()
+    check(f"{tpl_path} acyclic", len(errors) == 0, str(errors))
+
+
+# ===========================================================================
+# Test 11e: spawn_retry mechanics
+# ===========================================================================
+print("\n=== Test 11e: spawn_retry mechanics ===\n")
+
+# Build a minimal graph with retry
+retry_g = Graph("retry-mech")
+retry_g.entry_point = "retry-mech.a"
+retry_g.nodes["retry-mech.a"] = Node(
+    id="retry-mech.a", prompt="A",
+    evidence_schema={"ok": Field("enum", required=True, values=["yes", "no"])},
+    retry={"when": "response.get('ok') != 'yes'", "nodes": ["a"]},
+    edges=[{"to": "retry-mech.b"}],
+)
+retry_g.nodes["retry-mech.b"] = Node(
+    id="retry-mech.b", prompt="B", terminal=True, edges=[],
+)
+
+# Trigger retry
+first = spawn_retry(retry_g, retry_g.nodes["retry-mech.a"], {"ok": "no"})
+check("spawn returns first clone", first == "retry-mech.a-2", str(first))
+check("clone exists", "retry-mech.a-2" in retry_g.nodes)
+check("clone points to b", retry_g.nodes["retry-mech.a-2"].edges == [{"to": "retry-mech.b"}])
+check("original redirected to clone", retry_g.nodes["retry-mech.a"].edges[0]["to"] == "retry-mech.a-2")
+check("clone inherits retry", retry_g.nodes["retry-mech.a-2"].retry is not None)
+
+# Trigger again — should get suffix 3
+second = spawn_retry(retry_g, retry_g.nodes["retry-mech.a-2"], {"ok": "no"})
+check("second spawn suffix 3", second == "retry-mech.a-3", str(second))
+check("a-3 points to b", retry_g.nodes["retry-mech.a-3"].edges == [{"to": "retry-mech.b"}])
+
+# No trigger when condition not met
+no_spawn = spawn_retry(retry_g, retry_g.nodes["retry-mech.a-3"], {"ok": "yes"})
+check("no spawn on pass", no_spawn is None)
 
 
 # ===========================================================================

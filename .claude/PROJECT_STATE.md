@@ -30,7 +30,7 @@
 
 **Workflow Engine Design Pivot** (Mar 4-5, Session-2026-03-04-001). After building and testing the DocuBuilder prototype (20 usability tests), Lead identified that the document metaphor was constraining workflow thinking. Comprehensive research effort (5 parallel agents, 10+ external systems analyzed) produced a design proposal that reframes DocuBuilder from document editor to workflow engine. Key design decisions: 5 primitives (WorkflowTemplate, WorkflowInstance, Step, Gate, Signal), template inheritance with invariant steps, three-layer mutability model (template → instance drafting → instance execution), multi-workflow orchestration with lifecycle policies, ALCOA+ by construction.
 
-**QMS Graph Prototyping** (Mar 4-5, Session-2026-03-04-001, continued). Exploratory prototyping of graph-based workflow engine. Two prototypes built: `qms-graph-prototype` (YAML-based, 19 tests) and `qms-graph-prototype-2` (Python class inheritance, 117 tests). Prototype-2 uses native Python inheritance for templates (the "Copernican insight" — inheritance is the hard problem, and Python solves it natively). Features: gate conditions, conditional loop-backs, deep diff, template locking, fill-based extension points. Five rounds of agent usability testing validated the design. **All provisional/exploratory** — no design decisions finalized, no production code affected.
+**QMS Graph Prototyping** (Mar 4-5, Session-2026-03-04-001, continued). Exploratory prototyping of graph-based workflow engine. Two prototypes built: `qms-graph-prototype` (YAML-based, 19 tests) and `qms-graph-prototype-2` (Python class inheritance, 137 tests, 7 templates). Prototype-2 uses native Python inheritance for templates (the "Copernican insight" — inheritance is the hard problem, and Python solves it natively). Features: gate conditions, acyclic DAG enforcement with forward-only retry spawning, deep diff, template locking, fill-based extension points, evidence schemas with typed validation. Five rounds of agent usability testing plus critical analysis against real QMS structures (interact_engine, TEMPLATE-CR/VR, SOPs). Analysis identified structural DNA as sound (inheritance, fill points, schemas, diff, acyclic invariant) with operational gaps (amendments, append-only responses, compilation, child documents). **All provisional/exploratory** — no design decisions finalized, no production code affected.
 
 ---
 
@@ -115,7 +115,7 @@ CR-107's Jinja2/source infrastructure becomes the rendering layer for the workfl
 | Document DNA | `.claude/sessions/Session-2026-03-03-001/document_dna.json` | Partially superseded — audit trail and enforce/locked concepts carry forward |
 | DocuBuilder prototype | `docu-builder/docubuilder/` | Operational (20 tests) — direction depends on design decision |
 | QMS Graph prototype 1 | `.claude/sessions/Session-2026-03-04-001/qms-graph-prototype/` | Exploratory — YAML-based, 19 tests, subgraph support |
-| QMS Graph prototype 2 | `.claude/sessions/Session-2026-03-04-001/qms-graph-prototype-2/` | Exploratory — Python templates, 117 tests, 7 templates, 5 usability rounds |
+| QMS Graph prototype 2 | `.claude/sessions/Session-2026-03-04-001/qms-graph-prototype-2/` | Exploratory — Python templates, 137 tests, 7 templates, acyclic DAG, critical analysis complete |
 | Workspace mockup | `prompt.txt` (project root) | Partially superseded by workflow rendered view concept |
 
 ---

@@ -46,6 +46,7 @@ class Node:
     locked: bool = False
     edges: list = datafield(default_factory=list)
     gate: str = ""
+    retry: Optional[dict] = None  # {"when": "condition", "nodes": ["id1", "id2"]}
 
     def to_dict(self):
         d = {
@@ -67,6 +68,8 @@ class Node:
             d["hooks"] = self.hooks
         if self.gate:
             d["gate"] = self.gate
+        if self.retry:
+            d["retry"] = self.retry
         return d
 
 
@@ -110,6 +113,10 @@ class Graph:
             for nid in self.nodes:
                 if nid not in reachable:
                     errors.append(f"Unreachable: '{nid}'")
+
+            # Cycle detection
+            if self._has_cycle():
+                errors.append("Graph contains a cycle (must be acyclic)")
         return errors
 
     def _walk(self, nid, visited):
@@ -121,6 +128,30 @@ class Graph:
             for edge in node.edges:
                 target = edge["to"] if isinstance(edge, dict) else edge.to
                 self._walk(target, visited)
+
+    def _has_cycle(self):
+        UNVISITED, VISITING, VISITED = 0, 1, 2
+        state = {nid: UNVISITED for nid in self.nodes}
+
+        def dfs(nid):
+            if state.get(nid) == VISITING:
+                return True
+            if state.get(nid) == VISITED:
+                return False
+            state[nid] = VISITING
+            node = self.nodes.get(nid)
+            if node:
+                for edge in node.edges:
+                    target = edge["to"] if isinstance(edge, dict) else edge
+                    if dfs(target):
+                        return True
+            state[nid] = VISITED
+            return False
+
+        for nid in self.nodes:
+            if dfs(nid):
+                return True
+        return False
 
     def to_dict(self):
         return {
@@ -157,6 +188,7 @@ class Graph:
                 edges=nd.get("edges", []),
                 hooks=nd.get("hooks", {}),
                 gate=nd.get("gate", ""),
+                retry=nd.get("retry"),
             )
             g.nodes[nid] = node
         return g
@@ -210,7 +242,7 @@ class _GraphBuilder:
 
     def node(self, id, *, prompt, context="", evidence=None,
              performer="initiator", terminal=False, hooks=None,
-             gate="", locked=False):
+             gate="", locked=False, retry=None):
         full_id = f"{self.template_id}.{id}"
         ev = {}
         if evidence:
@@ -225,7 +257,7 @@ class _GraphBuilder:
             id=full_id, prompt=prompt, context=context,
             evidence_schema=ev, performer=performer,
             terminal=terminal, hooks=hooks or {},
-            locked=locked, gate=gate,
+            locked=locked, gate=gate, retry=retry,
         )
         self._nodes.append(n)
         return n
