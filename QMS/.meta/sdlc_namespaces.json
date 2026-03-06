@@ -1,5 +1,8 @@
 {
   "CQ": {
     "path": "SDLC-CQ"
+  },
+  "WFE": {
+    "path": "SDLC-WFE"
   }
 }
