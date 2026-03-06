@@ -1,0 +1,25 @@
+node:
+  id: m.define-edges
+  prompt: "Define where this step goes next."
+  context: >
+    Each edge connects this step to the next one. If the step has only
+    one unconditional edge, it flows linearly. If it has multiple edges
+    with conditions, the workflow branches.
+
+    Conditions are Python expressions evaluated against the step's response.
+    Example: response.get('severity') == 'critical'
+
+  evidence_schema:
+    target_step:
+      type: text
+      required: true
+      hint: "The step_id this edge leads to (e.g., 'analyze', 'fix', 'end')"
+    condition:
+      type: text
+      required: false
+      hint: "Condition for this edge (leave empty for unconditional/default edge)"
+
+  edges:
+    - to: m.define-edges
+      condition: "visits_since('m.define-edges', 'm.define-step') < int(last_response('m.define-step').get('num_edges', 0))"
+    - to: m.more-steps

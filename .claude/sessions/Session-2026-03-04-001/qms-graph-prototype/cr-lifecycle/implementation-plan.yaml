@@ -1,0 +1,22 @@
+node:
+  id: cr.implementation-plan
+  prompt: "Define the implementation plan."
+  context: "List the execution items (EIs) that will carry out this change. Each EI should be a discrete, verifiable task. These become the execution checklist after approval."
+
+  evidence_schema:
+    ei_description:
+      type: text
+      required: true
+      hint: "Describe this execution item — what will be done"
+    ei_expected_outcome:
+      type: text
+      required: true
+      hint: "What does success look like? Must be verifiable."
+    ei_needs_vr:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Does this EI require a formal Verification Record?"
+
+  edges:
+    - to: cr.add-more-eis

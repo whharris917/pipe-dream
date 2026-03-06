@@ -1,0 +1,23 @@
+graph:
+  id: deviation-handling
+  name: "Deviation Handling Decision Tree"
+  version: "0.1.0"
+  entry_point: dh.start
+  description: >
+    Decision tree for handling deviations during execution. Routes to the correct
+    child document type: Exception Report (ER) for test failures, Variance Report (VAR)
+    for execution deviations, or Investigation (INV) for systemic/unclear issues.
+    Type 1 VARs block parent closure; Type 2 VARs allow parent to proceed.
+
+  invoked_by:
+    - graph: cr-lifecycle
+      trigger: "When an EI fails (cr.ei-failed)"
+    - graph: inv-lifecycle
+      trigger: "When a CAPA fails (inv.capa-failed)"
+
+  invokes:
+    - graph: inv-lifecycle
+      trigger: "When deviation is systemic (dh.is-systemic -> dh.create-inv)"
+
+  performer_map:
+    initiator: "Agent handling the deviation"

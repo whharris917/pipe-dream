@@ -1,0 +1,18 @@
+node:
+  id: cr.post-review-wait
+  prompt: "Waiting for post-execution review."
+  context: "Reviewers are evaluating: Were all EIs executed? Is evidence adequate? Are deviations captured in VARs? Are child documents in acceptable states?"
+  performer: system
+
+  wait: "All post-reviewers have submitted their review"
+
+  evidence_schema:
+    all_recommend:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: cr.post-revision
+      condition: "response.get('all_recommend') == 'no'"
+    - to: cr.post-approval-route

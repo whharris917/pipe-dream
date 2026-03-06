@@ -1,0 +1,10 @@
+graph:
+  id: lp
+  name: "Logic Puzzle Solver"
+  version: "1.0"
+  entry_point: lp.start
+  description: >
+    A structured workflow for solving a logic/constraint satisfaction puzzle.
+    The solver reads the puzzle, extracts constraints, builds a solution
+    incrementally, validates each deduction, and handles contradictions
+    by backtracking.

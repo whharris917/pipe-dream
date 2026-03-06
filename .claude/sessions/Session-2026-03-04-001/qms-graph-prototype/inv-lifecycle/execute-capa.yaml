@@ -1,0 +1,31 @@
+node:
+  id: inv.execute-capa
+  prompt: "Execute the next CAPA."
+  context: "Implement the corrective or preventive action. If this CAPA spawned a child CR, track its progress. Record evidence of completion."
+
+  evidence_schema:
+    capa_id:
+      type: text
+      required: true
+      hint: "Which CAPA? (e.g., CAPA-001)"
+    action_taken:
+      type: text
+      required: true
+      hint: "What was done to implement this CAPA"
+    evidence:
+      type: text
+      required: true
+      hint: "Evidence of completion: child CR status, commit hash, test results"
+    outcome:
+      type: enum
+      values: ["pass", "fail"]
+      required: true
+    child_cr_reference:
+      type: text
+      required: false
+      hint: "Child CR ID if applicable (e.g., CR-055)"
+
+  edges:
+    - to: inv.capa-failed
+      condition: "response.get('outcome') == 'fail'"
+    - to: inv.more-capas

@@ -1,0 +1,19 @@
+node:
+  context: 'Document the incident: summary, timeline, root cause, fix, contributing
+    factors, action items. Action items must be concrete, assigned, and time-bound.'
+  evidence_schema:
+    action_items:
+      hint: Concrete, assigned, time-bound items to prevent recurrence
+      required: true
+      type: text
+    lessons_learned:
+      hint: What did the team learn from this incident?
+      required: true
+      type: text
+    summary:
+      hint: One-paragraph incident summary
+      required: true
+      type: text
+  id: rca.postmortem
+  prompt: Write the post-incident report.
+  terminal: true

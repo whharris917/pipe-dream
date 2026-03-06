@@ -1,0 +1,19 @@
+node:
+  id: cr.check-children
+  prompt: "Checking child document states."
+  context: "Before closing, all child documents must be in acceptable states. Type 1 VARs must be CLOSED. Type 2 VARs must be at least PRE_APPROVED. TPs and VRs must be CLOSED."
+  performer: system
+
+  gate: "all_children_resolved == True"
+
+  evidence_schema:
+    children_status:
+      type: enum
+      values: ["all-resolved", "blocking-children-exist"]
+      required: true
+      hint: "System verifies child document states"
+
+  edges:
+    - to: cr.resolve-children
+      condition: "response.get('children_status') == 'blocking-children-exist'"
+    - to: cr.closed

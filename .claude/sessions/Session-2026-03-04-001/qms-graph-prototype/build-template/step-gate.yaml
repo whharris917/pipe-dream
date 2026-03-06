@@ -1,0 +1,17 @@
+node:
+  id: bt.step-gate
+  prompt: "Does this step have any prerequisites (gates)?"
+  context: "Gates block the cursor until a condition is met. Leave blank if this step has no prerequisites."
+
+  evidence_schema:
+    has_gate:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    gate_description:
+      type: text
+      required: false
+      hint: "e.g., CI must pass, RS must be EFFECTIVE, Previous step must complete"
+
+  edges:
+    - to: bt.step-hook

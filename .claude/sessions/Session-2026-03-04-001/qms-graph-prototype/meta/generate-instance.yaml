@@ -1,0 +1,23 @@
+node:
+  id: m.generate-instance
+  prompt: "Generating your instance."
+  context: >
+    The system will now generate the instance workflow by applying your
+    specializations to the template.
+
+  hooks:
+    on_enter:
+      - command: "python generate.py instance {ticket_file} generated-templates/{template_id} {instance_dir}"
+        on_failure: block
+
+  evidence_schema:
+    instance_looks_correct:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Run 'engine.py map <instance-dir>' to verify. Does it look right?"
+
+  edges:
+    - to: m.inst-specialize
+      condition: "response.get('instance_looks_correct') == 'no'"
+    - to: m.execute

@@ -1,0 +1,35 @@
+node:
+  id: rca.reproduce
+  prompt: "Reproduce the 504 timeouts in staging."
+  context: >
+    Reproduction strategy: Load the production database snapshot from Monday
+    morning (post-index-rebuild) into staging. Run a load test simulating 3x
+    normal order submission traffic. Compare behavior against a staging DB
+    with the pre-rebuild index state under the same load.
+
+    Expected: post-rebuild DB + 3x load should reproduce the 504s.
+    Control: pre-rebuild DB + 3x load should remain healthy.
+
+  evidence_schema:
+    environment_used:
+      type: text
+      required: true
+      hint: "Staging with Monday morning DB snapshot"
+    reproduction_steps:
+      type: text
+      required: true
+      hint: "Load test at 3x traffic against post-rebuild and pre-rebuild DBs"
+    reproduced:
+      type: enum
+      values: ["yes", "intermittent", "no"]
+      required: true
+      hint: "Did the 504s appear under load with the post-rebuild DB?"
+    reproduction_notes:
+      type: text
+      required: false
+      hint: "How did the pre-rebuild control compare? Latency numbers?"
+
+  edges:
+    - to: rca.isolate
+      condition: "response.get('reproduced') in ['yes', 'intermittent']"
+    - to: rca.reproduce-failed

@@ -1,0 +1,40 @@
+node:
+  id: rca.fix
+  prompt: "Develop and validate the fix for stale statistics."
+  context: >
+    Immediate fix: Run ANALYZE products; on the production database to
+    refresh table statistics and restore the optimal query plan.
+
+    Validation: In staging, run ANALYZE products; then re-run the 3x load
+    test. p99 should drop from 18s to ~1.8s with no 504s.
+
+    Preventive fix: Update the index rebuild runbook to require ANALYZE
+    after every REINDEX. Write an integration test that runs EXPLAIN on
+    critical queries before and after index operations and fails if the
+    plan shape changes.
+
+  evidence_schema:
+    fix_description:
+      type: text
+      required: true
+      hint: "ANALYZE products; to refresh statistics + runbook update"
+    fix_validated:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Did ANALYZE + load test confirm the fix in staging?"
+    regression_tested:
+      type: enum
+      values: ["yes", "no", "not-applicable"]
+      required: true
+      hint: "Load test serves as regression test; existing suite also passes?"
+    new_test_written:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Query plan regression test added to DB maintenance suite?"
+
+  edges:
+    - to: rca.fix-failed
+      condition: "response.get('fix_validated') == 'no'"
+    - to: rca.deploy

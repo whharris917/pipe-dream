@@ -1,0 +1,27 @@
+node:
+  id: ts.resolved
+  prompt: "Incident resolved. Write the postmortem summary."
+  context: "The issue is confirmed fixed. Document the timeline, root cause, impact, and lessons learned for the incident record."
+  terminal: true
+
+  evidence_schema:
+    timeline:
+      type: text
+      required: true
+      hint: "When was the issue detected, diagnosed, and resolved?"
+    root_cause_summary:
+      type: text
+      required: true
+      hint: "One-paragraph root cause explanation"
+    impact:
+      type: text
+      required: true
+      hint: "What was the user/business impact?"
+    lessons_learned:
+      type: text
+      required: true
+      hint: "What will you change to prevent recurrence or detect it faster?"
+    severity:
+      type: enum
+      values: ["sev1", "sev2", "sev3"]
+      required: true

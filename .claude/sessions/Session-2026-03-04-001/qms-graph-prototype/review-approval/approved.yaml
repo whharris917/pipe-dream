@@ -1,0 +1,14 @@
+node:
+  id: ra.approved
+  prompt: "Document approved."
+  context: "The document has been approved. Pre-approved content is now locked. The document is ready for the next phase."
+  terminal: true
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms approve {ticket.doc_id}"
+        on_failure: block
+
+  edges: []

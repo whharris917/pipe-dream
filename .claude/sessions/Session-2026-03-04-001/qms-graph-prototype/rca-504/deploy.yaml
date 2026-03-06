@@ -1,0 +1,40 @@
+node:
+  id: rca.deploy
+  prompt: "Deploy the fix and monitor the order endpoint."
+  context: >
+    Run ANALYZE products; on production. Revert the temporary nginx timeout
+    from 25s back to 10s. Monitor the Grafana dashboard for /api/v2/orders
+    p99 latency. Expected: p99 drops from 18s to ~1.1s within minutes.
+    504 error rate drops to 0%.
+
+    The flash sale continues through Tuesday, providing a natural load test.
+    Maintain heightened monitoring for 48 hours (through Wednesday 16:00 UTC).
+
+  evidence_schema:
+    deploy_timestamp:
+      type: text
+      required: true
+      hint: "When was ANALYZE products; run on production?"
+    containment_reverted:
+      type: enum
+      values: ["yes", "no", "not-applicable"]
+      required: true
+      hint: "Was the nginx timeout reverted from 25s to 10s?"
+    monitoring_signals:
+      type: text
+      required: true
+      hint: "Grafana p99 latency, 504 error rate, order completion rate"
+    observation_period:
+      type: text
+      required: true
+      hint: "48 hours through Wednesday 16:00 UTC"
+    fix_confirmed:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Did p99 drop and 504s stop after ANALYZE?"
+
+  edges:
+    - to: rca.fix-failed
+      condition: "response.get('fix_confirmed') == 'no'"
+    - to: rca.postmortem

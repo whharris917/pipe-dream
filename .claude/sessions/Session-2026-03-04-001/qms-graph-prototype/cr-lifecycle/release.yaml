@@ -1,0 +1,16 @@
+node:
+  id: cr.release
+  prompt: "Release CR for execution."
+  context: "This transitions the CR to IN_EXECUTION. From this point, you will execute each approved EI, collecting evidence as you go."
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms release {ticket.doc_id}"
+        on_failure: block
+      - command: "git checkout -b {ticket.doc_id}/execution"
+        on_failure: log
+
+  edges:
+    - to: cr.execute-ei

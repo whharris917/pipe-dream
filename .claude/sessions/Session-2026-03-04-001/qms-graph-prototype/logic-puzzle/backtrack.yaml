@@ -1,0 +1,29 @@
+node:
+  id: lp.backtrack
+  prompt: "Contradiction found! Backtrack and try a different assumption."
+  context: >
+    Your current line of reasoning led to a contradiction. Identify which
+    assumption caused it, undo that assumption, and try the alternative.
+    This is normal in constraint satisfaction - contradictions eliminate
+    possibilities and are actually progress.
+
+  evidence_schema:
+    failed_assumption:
+      type: text
+      required: true
+      hint: "What assumption led to the contradiction?"
+    contradiction_detail:
+      type: text
+      required: true
+      hint: "Describe the specific contradiction (which constraints conflict?)"
+    corrected_grid_state:
+      type: text
+      required: true
+      hint: "Grid state after undoing the bad assumption"
+    new_knowledge:
+      type: text
+      required: true
+      hint: "What did the contradiction tell you? (e.g., 'X cannot be in position Y')"
+
+  edges:
+    - to: lp.deduction-step

@@ -1,0 +1,34 @@
+node:
+  id: cr.execute-ei
+  prompt: "Execute the next Execution Item."
+  context: "Perform the approved task. Record the actual outcome, collect evidence, and determine whether this EI passed or failed. Evidence must be specific, contemporaneous, and traceable (ALCOA+ standard)."
+  performer: initiator
+
+  evidence_schema:
+    ei_number:
+      type: text
+      required: true
+      hint: "Which EI are you executing? (e.g., EI-1, EI-2)"
+    actual_outcome:
+      type: text
+      required: true
+      hint: "What actually happened? Be specific — include commands run, output observed"
+    evidence:
+      type: text
+      required: true
+      hint: "Traceable evidence: commit hash, test output, screenshot path, doc reference"
+    outcome:
+      type: enum
+      values: ["pass", "fail"]
+      required: true
+      hint: "pass = expected outcome achieved; fail = deviation from plan"
+
+  hooks:
+    on_exit:
+      - command: "qms checkout {ticket.doc_id} && qms checkin {ticket.doc_id}"
+        on_failure: log
+
+  edges:
+    - to: cr.ei-failed
+      condition: "response.get('outcome') == 'fail'"
+    - to: cr.more-eis

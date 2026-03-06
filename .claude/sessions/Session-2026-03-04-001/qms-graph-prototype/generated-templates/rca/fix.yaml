@@ -1,0 +1,20 @@
+node:
+  context: Write the minimal change that addresses the root cause. Verify it resolves
+    the reproduced failure and does not introduce regressions. Write a new test covering
+    the failure mode.
+  edges:
+  - to: rca.deploy
+  evidence_schema:
+    fix_description:
+      hint: What is the fix? Describe the change.
+      required: true
+      type: text
+    fix_validated:
+      hint: Does the fix resolve the reproduced failure?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - 'no'
+  id: rca.fix
+  prompt: Develop and validate the fix.

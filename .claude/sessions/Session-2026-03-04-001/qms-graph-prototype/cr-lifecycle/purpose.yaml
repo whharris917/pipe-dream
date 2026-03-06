@@ -1,0 +1,22 @@
+node:
+  id: cr.purpose
+  prompt: "What is the purpose of this change?"
+  context: "Explain WHY this change is needed. Reference the triggering event — a defect, a feature request, a process improvement, or a CAPA from an investigation."
+
+  evidence_schema:
+    purpose:
+      type: text
+      required: true
+      hint: "1-3 sentences explaining the motivation for this change"
+    trigger:
+      type: enum
+      values: ["feature", "defect", "process-improvement", "capa", "other"]
+      required: true
+      hint: "What triggered this change?"
+    trigger_reference:
+      type: text
+      required: false
+      hint: "Reference to triggering document (e.g., INV-003-CAPA-001, GitHub issue #42)"
+
+  edges:
+    - to: cr.scope

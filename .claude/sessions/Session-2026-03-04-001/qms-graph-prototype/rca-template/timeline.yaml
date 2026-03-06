@@ -1,0 +1,34 @@
+node:
+  id: rca.timeline
+  prompt: "Establish the incident timeline."
+  context: >
+    Determine when the problem started by correlating multiple data sources:
+    monitoring alerts, deployment logs, user reports, error rate graphs.
+    Identify the last known good state and the first known bad state.
+    Narrow the window as tightly as possible. Flag any deployments,
+    configuration changes, or external events within the window.
+
+  evidence_schema:
+    last_known_good:
+      type: text
+      required: true
+      hint: "Timestamp and description of last known healthy state"
+    first_known_bad:
+      type: text
+      required: true
+      hint: "Timestamp and description of first observed failure"
+    data_sources_consulted:
+      type: text
+      required: true
+      hint: "What sources did you check? (logs, dashboards, alerts, user reports)"
+    changes_in_window:
+      type: text
+      required: true
+      hint: "Deployments, config changes, infra events in the failure window"
+    primary_suspect:
+      type: text
+      required: true
+      hint: "Based on correlation, what is your leading hypothesis?"
+
+  edges:
+    - to: rca.reproduce

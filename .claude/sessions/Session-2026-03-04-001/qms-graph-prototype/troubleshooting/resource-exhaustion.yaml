@@ -1,0 +1,24 @@
+node:
+  id: ts.resource-exhaustion
+  prompt: "Resource exhaustion detected. Free resources and identify the leak."
+  context: "A critical resource is exhausted. Identify what's consuming it (log files filling disk, memory leak, connection leak) and fix both the immediate problem and the root cause."
+
+  evidence_schema:
+    exhausted_resource:
+      type: enum
+      values: ["disk", "memory", "cpu", "connections"]
+      required: true
+    immediate_fix:
+      type: text
+      required: true
+      hint: "What did you do to free the resource right now?"
+    root_cause:
+      type: text
+      required: true
+      hint: "What caused the resource to be exhausted?"
+    long_term_fix:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.verify-fix

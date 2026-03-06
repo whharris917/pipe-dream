@@ -1,0 +1,13 @@
+node:
+  id: bt.submit
+  prompt: "Template submitted for review."
+  context: "Your template definition has been submitted. It will go through the standard review and approval cycle before becoming available for use."
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges: []

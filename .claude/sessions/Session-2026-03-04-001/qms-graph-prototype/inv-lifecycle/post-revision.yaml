@@ -1,0 +1,22 @@
+node:
+  id: inv.post-revision
+  prompt: "Post-review feedback requires additional work."
+  performer: initiator
+
+  evidence_schema:
+    revision_summary:
+      type: text
+      required: true
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: inv.post-review-wait

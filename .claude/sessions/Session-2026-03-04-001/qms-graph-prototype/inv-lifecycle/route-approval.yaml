@@ -1,0 +1,14 @@
+node:
+  id: inv.route-approval
+  prompt: "All reviewers recommend. Routing for approval."
+  gate: "all_reviewers_recommend == True"
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms route {ticket.doc_id} --approval"
+        on_failure: block
+
+  edges:
+    - to: inv.approval-decision

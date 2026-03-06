@@ -1,0 +1,26 @@
+node:
+  id: lp.initial-placements
+  prompt: "Apply all constraints that give definite placements."
+  context: >
+    Start with the constraints that immediately fix a value to a position.
+    Clue 9 tells us the Norwegian is in house 1. Clue 8 tells us the center
+    house (house 3) drinks milk. Apply these and any other definite placements.
+
+    Show your grid state after applying these.
+
+  evidence_schema:
+    definite_placements:
+      type: text
+      required: true
+      hint: "List each definite placement: 'House N: [attribute] = [value]'"
+    grid_state:
+      type: text
+      required: true
+      hint: "Current grid state (5 houses x 5 categories) showing what's known"
+    remaining_unknowns:
+      type: integer
+      required: true
+      hint: "How many cells in the grid are still unknown?"
+
+  edges:
+    - to: lp.deduction-step

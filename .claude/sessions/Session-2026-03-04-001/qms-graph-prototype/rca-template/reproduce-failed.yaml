@@ -1,0 +1,30 @@
+node:
+  id: rca.reproduce-failed
+  prompt: "Reproduction failed. Gather more information or adjust approach."
+  context: >
+    You could not reproduce the failure. This means either the reproduction
+    conditions are incomplete, the failure depends on production-specific state,
+    or the issue is environmental. Consider: reviewing production-only
+    configurations, adding targeted instrumentation to production, or
+    analyzing production logs more deeply. You may also proceed to isolation
+    using observational evidence if reproduction proves impossible.
+
+  evidence_schema:
+    what_was_tried:
+      type: text
+      required: true
+      hint: "What reproduction approaches were attempted and failed?"
+    next_approach:
+      type: enum
+      values: ["retry-with-new-info", "proceed-without-reproduction"]
+      required: true
+      hint: "Try again with new information, or proceed using observational evidence?"
+    additional_info:
+      type: text
+      required: false
+      hint: "New information gathered that might help reproduction"
+
+  edges:
+    - to: rca.reproduce
+      condition: "response.get('next_approach') == 'retry-with-new-info'"
+    - to: rca.isolate

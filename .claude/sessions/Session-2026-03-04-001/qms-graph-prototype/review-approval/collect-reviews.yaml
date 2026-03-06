@@ -1,0 +1,28 @@
+node:
+  id: ra.collect-reviews
+  prompt: "Submit your review of this document."
+  context: "Evaluate the document for technical correctness, completeness, and compliance with applicable SOPs. You must either recommend approval or request updates with specific feedback."
+  performer: reviewer
+
+  wait: "All assigned reviewers have submitted their review"
+
+  evidence_schema:
+    outcome:
+      type: enum
+      values: ["recommend", "request-updates"]
+      required: true
+      hint: "recommend = approve for next stage; request-updates = author must revise"
+    comment:
+      type: text
+      required: true
+      hint: "Specific feedback — what was evaluated, what needs attention"
+
+  hooks:
+    on_exit:
+      - command: "qms review {ticket.doc_id} --{response.outcome} --comment \"{response.comment}\""
+        on_failure: block
+
+  edges:
+    - to: ra.revision-needed
+      condition: "response.get('outcome') == 'request-updates'"
+    - to: ra.route-approval

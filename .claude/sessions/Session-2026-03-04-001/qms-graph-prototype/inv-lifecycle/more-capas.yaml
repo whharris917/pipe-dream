@@ -1,0 +1,15 @@
+node:
+  id: inv.more-capas
+  prompt: "More CAPAs to execute?"
+  context: "Check your CAPA plan — have all approved CAPAs been executed? Every CAPA must have a documented outcome with evidence."
+
+  evidence_schema:
+    more:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: inv.execute-capa
+      condition: "response.get('more') == 'yes'"
+    - to: inv.execution-complete

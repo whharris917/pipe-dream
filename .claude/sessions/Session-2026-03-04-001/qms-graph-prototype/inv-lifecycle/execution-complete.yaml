@@ -1,0 +1,20 @@
+node:
+  id: inv.execution-complete
+  prompt: "All CAPAs executed. Ready for post-review."
+  context: "Verify every CAPA has documented outcome and evidence. Child CRs must be in acceptable states."
+
+  evidence_schema:
+    capa_integrity:
+      type: enum
+      values: ["all-complete", "gap-exists"]
+      required: true
+
+  hooks:
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: inv.post-review-wait

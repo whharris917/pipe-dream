@@ -1,0 +1,16 @@
+node:
+  id: dh.is-systemic
+  prompt: "Is this deviation systemic or is the root cause unclear?"
+  context: "Systemic deviations or those with unclear root causes require a full Investigation (INV). Isolated, well-understood deviations can be handled with a Variance Report (VAR)."
+
+  evidence_schema:
+    is_systemic:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "yes = needs full investigation; no = isolated variance"
+
+  edges:
+    - to: dh.create-inv
+      condition: "response.get('is_systemic') == 'yes'"
+    - to: dh.var-decision

@@ -1,0 +1,18 @@
+node:
+  id: bt.extension-point
+  prompt: "Should this template include an extension point for author-defined steps?"
+  context: "Extension points allow agents who use this template to add their own custom steps during instance drafting. Template-defined steps remain invariant; author steps fill the extension point."
+
+  evidence_schema:
+    include_extension_point:
+      type: bool
+      required: true
+      hint: "yes = agents can add custom steps; no = template steps are the complete workflow"
+
+  edges:
+    - to: bt.review
+
+  hooks:
+    on_exit:
+      - command: "echo 'Template definition phase complete'"
+        on_failure: log

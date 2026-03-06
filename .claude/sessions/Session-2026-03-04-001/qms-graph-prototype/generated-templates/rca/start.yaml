@@ -1,0 +1,32 @@
+node:
+  context: Before investigating, assess the incident's scope and impact. Determine
+    what systems are affected, what symptoms are visible, and whether active harm
+    is occurring (data loss, cascading failures, revenue impact). This assessment
+    drives the urgency of containment.
+  edges:
+  - condition: response.get('active_harm') == 'yes'
+    to: rca.contain
+  - to: rca.timeline
+  evidence_schema:
+    active_harm:
+      hint: Is the incident actively causing ongoing damage?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - 'no'
+    incident_summary:
+      hint: Brief description of the anomalous behavior observed
+      required: true
+      type: text
+    user_impact:
+      hint: How are users experiencing this?
+      required: true
+      type: enum
+      values:
+      - none
+      - degraded
+      - partial-outage
+      - full-outage
+  id: rca.start
+  prompt: Triage the incident. Assess scope, impact, and severity.

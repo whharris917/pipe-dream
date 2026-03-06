@@ -1,0 +1,19 @@
+node:
+  id: ts.fix-database
+  prompt: "Database connection failure. Diagnose and restore."
+  context: "The application cannot connect to the database. Check if the database server is running, if credentials are valid, if connection pool is exhausted, or if there's a network partition."
+
+  evidence_schema:
+    db_server_running:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    root_cause:
+      type: text
+      required: true
+    fix_applied:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.verify-fix

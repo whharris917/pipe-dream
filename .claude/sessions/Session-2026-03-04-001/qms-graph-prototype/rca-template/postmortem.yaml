@@ -1,0 +1,40 @@
+node:
+  id: rca.postmortem
+  prompt: "Write the post-incident report."
+  context: >
+    Document the incident with: summary, timeline, root cause, fix applied,
+    contributing factors, and action items for preventing recurrence.
+    Contributing factors should address gaps in testing, monitoring, or review
+    that allowed the defect to reach production. Action items must be concrete,
+    assigned, and time-bound — not aspirational.
+  terminal: true
+
+  evidence_schema:
+    summary:
+      type: text
+      required: true
+      hint: "One-paragraph incident summary"
+    timeline_summary:
+      type: text
+      required: true
+      hint: "Key timestamps from trigger to resolution"
+    root_cause_summary:
+      type: text
+      required: true
+      hint: "The root cause in one or two sentences"
+    fix_summary:
+      type: text
+      required: true
+      hint: "What was done to resolve it"
+    contributing_factors:
+      type: text
+      required: true
+      hint: "Process/tooling gaps that allowed this to happen"
+    action_items:
+      type: text
+      required: true
+      hint: "Concrete, assigned, time-bound items to prevent recurrence"
+    lessons_learned:
+      type: text
+      required: true
+      hint: "What did the team learn from this incident?"

@@ -1,0 +1,44 @@
+node:
+  id: m.define-step
+  prompt: "Define the next step in your template."
+  context: >
+    Each step becomes a node in the workflow graph. The agent executing
+    this workflow will see the prompt and context, then fill in the
+    evidence fields you define.
+
+  evidence_schema:
+    step_id:
+      type: text
+      required: true
+      hint: "Short ID for this step (e.g., 'triage', 'analyze', 'fix'). Will be prefixed with template_id."
+    step_prompt:
+      type: text
+      required: true
+      hint: "The prompt shown to the executor — what should they do at this step?"
+    step_context:
+      type: text
+      required: false
+      hint: "Additional guidance, background, or instructions for this step"
+    performer:
+      type: enum
+      values: ["initiator", "quality", "reviewer", "system"]
+      required: true
+      hint: "Who performs this step?"
+    is_terminal:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Is this the final step in the workflow?"
+    num_fields:
+      type: integer
+      required: true
+      hint: "How many evidence fields does this step collect?"
+    num_edges:
+      type: integer
+      required: true
+      hint: "How many outgoing edges? (1 = linear, 2+ = branching)"
+
+  edges:
+    - to: m.define-field
+      condition: "response.get('num_fields', 0) > 0"
+    - to: m.define-edges

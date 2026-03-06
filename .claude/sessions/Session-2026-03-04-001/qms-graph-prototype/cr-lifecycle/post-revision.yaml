@@ -1,0 +1,24 @@
+node:
+  id: cr.post-revision
+  prompt: "Post-review feedback requires additional work."
+  context: "Address the post-review feedback. This may mean adding missing evidence, closing child VARs, or correcting execution documentation. You return to IN_EXECUTION to do this work."
+  performer: initiator
+
+  evidence_schema:
+    revision_summary:
+      type: text
+      required: true
+      hint: "What was done to address post-review feedback"
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: cr.post-review-wait

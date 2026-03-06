@@ -1,0 +1,21 @@
+node:
+  id: inv.purpose
+  prompt: "What triggered this investigation?"
+  context: "Describe the triggering event and why an investigation is warranted. Reference the discovery method and any related documents."
+
+  evidence_schema:
+    triggering_event:
+      type: text
+      required: true
+      hint: "What happened that prompted this investigation?"
+    discovery_method:
+      type: enum
+      values: ["execution-failure", "review-finding", "audit", "user-report", "monitoring"]
+      required: true
+    related_documents:
+      type: text
+      required: false
+      hint: "Related CRs, VARs, or other documents (e.g., CR-042, VAR-001)"
+
+  edges:
+    - to: inv.background

@@ -1,0 +1,16 @@
+node:
+  id: inv.post-review-wait
+  prompt: "Waiting for post-execution review."
+  performer: system
+  wait: "All post-reviewers have submitted their review"
+
+  evidence_schema:
+    all_recommend:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: inv.post-revision
+      condition: "response.get('all_recommend') == 'no'"
+    - to: inv.post-approval-route

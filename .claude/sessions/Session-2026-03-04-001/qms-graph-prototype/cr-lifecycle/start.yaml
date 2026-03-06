@@ -1,0 +1,18 @@
+node:
+  id: cr.start
+  prompt: "Create a new Change Record."
+  context: "A Change Record authorizes modifications to the codebase, SOPs, or other controlled documents. You will define the purpose, scope, impact, and implementation plan."
+
+  evidence_schema:
+    title:
+      type: text
+      required: true
+      hint: "Brief, descriptive title for this change (e.g., 'Add constraint solver caching')"
+
+  hooks:
+    on_exit:
+      - command: "qms create CR --title \"{response.title}\""
+        on_failure: block
+
+  edges:
+    - to: cr.purpose

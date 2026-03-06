@@ -1,0 +1,29 @@
+node:
+  id: ra.rejection
+  prompt: "Document has been rejected."
+  context: "The approver has rejected this document. You must address the rejection rationale, revise the document, and re-route for approval. You may need to go through review again depending on the scope of changes."
+  performer: initiator
+
+  evidence_schema:
+    revision_plan:
+      type: text
+      required: true
+      hint: "How you plan to address the rejection feedback"
+    needs_re_review:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "yes = changes are significant enough to warrant full re-review"
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+
+  edges:
+    - to: ra.start
+      condition: "response.get('needs_re_review') == 'yes'"
+    - to: ra.route-approval

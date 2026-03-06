@@ -1,0 +1,27 @@
+node:
+  id: inv.capa-plan
+  prompt: "Define a Corrective or Preventive Action (CAPA)."
+  context: "At least one corrective action (fixes the immediate issue) and one preventive action (prevents recurrence) are required. CAPAs that require code or SOP changes should reference child CRs."
+
+  evidence_schema:
+    capa_type:
+      type: enum
+      values: ["corrective", "preventive"]
+      required: true
+      hint: "corrective = fixes existing issue; preventive = prevents future occurrence"
+    description:
+      type: text
+      required: true
+      hint: "What this CAPA accomplishes"
+    implementation:
+      type: text
+      required: true
+      hint: "How it will be done — reference child CR if it requires controlled changes"
+    requires_child_cr:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Does this CAPA require a separate Change Record?"
+
+  edges:
+    - to: inv.add-more-capas

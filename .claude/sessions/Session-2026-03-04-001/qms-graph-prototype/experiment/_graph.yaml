@@ -1,0 +1,10 @@
+graph:
+  id: exp
+  name: "Experimental Protocol"
+  version: "1.0"
+  entry_point: exp.start
+  description: >
+    A rigorous experimental protocol for testing a hypothesis.
+    Follows the scientific method: question, hypothesis, experiment design,
+    data collection, analysis, conclusion. Includes controls, sample sizing,
+    and statistical validation.

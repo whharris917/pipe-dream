@@ -1,0 +1,13 @@
+node:
+  id: bt.step-name
+  prompt: "Define a step. What is its name?"
+  context: "Steps are the atomic units of work in the workflow. Agents will see this name in their task list."
+
+  evidence_schema:
+    step_name:
+      type: text
+      required: true
+      hint: "e.g., Document the deviation, Run CI pipeline, Update RS"
+
+  edges:
+    - to: bt.step-performer

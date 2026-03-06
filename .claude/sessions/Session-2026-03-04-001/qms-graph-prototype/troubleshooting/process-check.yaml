@@ -1,0 +1,21 @@
+node:
+  id: ts.process-check
+  prompt: "Server is reachable. Check if the web server process is running."
+  context: "Network is fine, so the issue is on the server itself. Check if nginx/apache/node is running, check process list, check if it crashed."
+
+  evidence_schema:
+    process_running:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Is the web server process (nginx, apache, node, etc.) actually running?"
+    recent_crash:
+      type: enum
+      values: ["yes", "no", "unknown"]
+      required: true
+      hint: "Any evidence of a recent crash in logs or dmesg?"
+
+  edges:
+    - to: ts.restart-process
+      condition: "response.get('process_running') == 'no'"
+    - to: ts.resource-check

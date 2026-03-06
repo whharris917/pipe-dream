@@ -1,0 +1,37 @@
+node:
+  id: rca.timeline
+  prompt: "Establish the timeline for the 504 incident."
+  context: >
+    Key data sources to check:
+    - Grafana dashboard for /api/v2/orders p99 latency
+    - Deployment log (last deploy was Friday 2026-02-28 16:30 UTC)
+    - Database team's maintenance log (scheduled index rebuild on products table Sunday 02:00 UTC)
+    - Marketing campaign schedule (flash sale launched Monday 13:00 UTC, 3x traffic)
+
+    Correlate the latency spike against these events. The p99 was stable at
+    1.2s from Wednesday through Sunday. It jumped to 18s on Monday at 13:47 UTC.
+
+  evidence_schema:
+    last_known_good:
+      type: text
+      required: true
+      hint: "When was p99 latency last normal? What was the value?"
+    first_known_bad:
+      type: text
+      required: true
+      hint: "When did p99 first spike? What did it jump to?"
+    data_sources_consulted:
+      type: text
+      required: true
+      hint: "Grafana, deploy logs, DB maintenance log, marketing schedule"
+    changes_in_window:
+      type: text
+      required: true
+      hint: "Index rebuild on Sunday, flash sale traffic on Monday"
+    primary_suspect:
+      type: text
+      required: true
+      hint: "Two suspects: index rebuild + traffic spike. What's your hypothesis?"
+
+  edges:
+    - to: rca.reproduce

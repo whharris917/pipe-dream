@@ -1,0 +1,15 @@
+node:
+  id: inv.add-more-capas
+  prompt: "Add another CAPA?"
+  context: "You need at least one corrective and one preventive action. Add more CAPAs if the root cause warrants multiple remediation streams."
+
+  evidence_schema:
+    add_more:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: inv.capa-plan
+      condition: "response.get('add_more') == 'yes'"
+    - to: inv.draft-review

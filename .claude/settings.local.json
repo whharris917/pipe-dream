@@ -76,7 +76,10 @@
       "Bash(done)",
       "Bash(git log:*)",
       "Bash(cd:*)",
-      "mcp__qms__qms_withdraw"
+      "mcp__qms__qms_withdraw",
+      "Bash(mkdir:*)",
+      "Bash(python3:*)",
+      "Bash(rm:*)"
     ],
     "deny": [
       "Edit(QMS/**)",

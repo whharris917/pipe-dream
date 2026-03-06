@@ -1,0 +1,14 @@
+node:
+  id: cr.resolve-children
+  prompt: "Blocking child documents must be resolved before closure."
+  context: "One or more child documents are preventing CR closure. Type 1 VARs must be CLOSED; Type 2 VARs must be at least PRE_APPROVED. Complete the child documents and return here."
+  performer: initiator
+
+  evidence_schema:
+    resolution_summary:
+      type: text
+      required: true
+      hint: "What was done to resolve blocking children (e.g., 'Closed VAR-001, advanced VAR-002 to PRE_APPROVED')"
+
+  edges:
+    - to: cr.check-children

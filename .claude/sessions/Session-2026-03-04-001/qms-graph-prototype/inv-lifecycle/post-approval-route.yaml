@@ -1,0 +1,13 @@
+node:
+  id: inv.post-approval-route
+  prompt: "Routing for post-approval."
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms route {ticket.doc_id} --approval"
+        on_failure: block
+
+  edges:
+    - to: inv.post-approval-decision

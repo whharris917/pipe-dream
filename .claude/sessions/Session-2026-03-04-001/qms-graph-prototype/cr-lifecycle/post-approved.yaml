@@ -1,0 +1,18 @@
+node:
+  id: cr.post-approved
+  prompt: "Change Record post-approved (v2.0). Ready to close."
+  context: "All execution is complete, evidence verified, and the approver is satisfied. You may now close the CR."
+
+  hooks:
+    on_enter:
+      - command: "qms approve {ticket.doc_id}"
+        on_failure: block
+
+  evidence_schema:
+    action:
+      type: enum
+      values: ["close"]
+      required: true
+
+  edges:
+    - to: cr.check-children

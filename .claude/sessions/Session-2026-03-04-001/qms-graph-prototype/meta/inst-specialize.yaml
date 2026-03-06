@@ -1,0 +1,29 @@
+node:
+  id: m.inst-specialize
+  prompt: "Specialize a step for this instance."
+  context: >
+    Take one step from the template and provide the specific prompt,
+    context, and hints for this particular scenario. The step's structure
+    (fields, edges, branching) stays the same; you are filling in the
+    domain-specific content.
+
+  evidence_schema:
+    step_id:
+      type: text
+      required: true
+      hint: "Which step are you specializing? (use the step_id from the template)"
+    specialized_prompt:
+      type: text
+      required: true
+      hint: "The specific prompt for this step in this scenario"
+    specialized_context:
+      type: text
+      required: false
+      hint: "Specific context, data, or instructions for this scenario"
+    specialized_hints:
+      type: text
+      required: false
+      hint: "Semicolon-separated hints for each evidence field, in order"
+
+  edges:
+    - to: m.inst-more

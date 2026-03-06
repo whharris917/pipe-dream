@@ -1,0 +1,38 @@
+node:
+  id: exp.conclusion
+  prompt: "Draw your conclusion and make a recommendation."
+  context: >
+    Based on your analysis, state whether you reject or fail to reject the
+    null hypothesis. Then translate the statistical result into a practical
+    recommendation. Consider: Even if statistically significant, is the
+    effect size practically meaningful? Are there trade-offs (memory usage,
+    complexity, maintainability)?
+  terminal: true
+
+  evidence_schema:
+    hypothesis_outcome:
+      type: enum
+      values: ["reject-h0", "fail-to-reject-h0"]
+      required: true
+      hint: "Do you reject the null hypothesis?"
+    conclusion:
+      type: text
+      required: true
+      hint: "Plain-language conclusion about LFU-Aging vs LRU"
+    practical_significance:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Is the effect large enough to matter in practice?"
+    recommendation:
+      type: enum
+      values: ["adopt-treatment", "keep-control", "needs-more-study"]
+      required: true
+    recommendation_rationale:
+      type: text
+      required: true
+      hint: "Why this recommendation? Consider trade-offs."
+    limitations:
+      type: text
+      required: true
+      hint: "What are the limitations of this experiment?"

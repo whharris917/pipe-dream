@@ -1,0 +1,36 @@
+node:
+  id: esc.final-door
+  prompt: "The Final Door: combine everything you've learned."
+  context: >
+    You're at the exit. The door has three keyholes (red, blue, green)
+    and a final keypad.
+
+    Instructions on the door:
+    "Insert keys in the order of the rainbow (ROY G BIV).
+    Then enter: your first room's door code, multiplied by 2."
+
+    You need to recall:
+    1. The three key colors and the correct order
+    2. The door code from the very first room
+    3. The multiplication instruction from the chemistry lab note
+
+  evidence_schema:
+    key_order:
+      type: text
+      required: true
+      hint: "Order to insert the keys (based on rainbow order: red, orange, yellow, green, blue, indigo, violet)"
+    original_door_code:
+      type: text
+      required: true
+      hint: "The 4-digit code from the first room"
+    final_code:
+      type: text
+      required: true
+      hint: "Original door code * 2"
+    reasoning:
+      type: text
+      required: true
+      hint: "Show your work for the final code"
+
+  edges:
+    - to: esc.escaped

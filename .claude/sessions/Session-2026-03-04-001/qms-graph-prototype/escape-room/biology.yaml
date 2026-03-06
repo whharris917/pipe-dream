@@ -1,0 +1,34 @@
+node:
+  id: esc.biology
+  prompt: "Biology Lab: DNA sequence puzzle."
+  context: >
+    The biology lab has a DNA model on the table and a locked cabinet.
+    On the wall: "Complete the complementary strand, then count the
+    hydrogen bonds."
+
+    Given strand: A-T-G-C-C-A-T-G
+
+    Rules:
+    - A pairs with T (2 hydrogen bonds)
+    - G pairs with C (3 hydrogen bonds)
+
+    The cabinet lock needs: total hydrogen bonds as a number.
+    Inside the cabinet you'll find a colored key. The key's color
+    is written on a card: "The key is RED."
+
+  evidence_schema:
+    complementary_strand:
+      type: text
+      required: true
+      hint: "The complementary DNA strand"
+    hydrogen_bond_count:
+      type: integer
+      required: true
+      hint: "Total number of hydrogen bonds"
+    key_color:
+      type: text
+      required: true
+      hint: "What color is the key in the cabinet?"
+
+  edges:
+    - to: esc.next-lab

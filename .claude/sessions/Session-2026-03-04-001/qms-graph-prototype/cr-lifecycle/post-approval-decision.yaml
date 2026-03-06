@@ -1,0 +1,21 @@
+node:
+  id: cr.post-approval-decision
+  prompt: "Post-approval: approve or reject the completed Change Record."
+  context: "Verify all EIs were executed, evidence is adequate, deviations are documented in VARs, and child documents are in acceptable states. Approval increments to v2.0."
+  performer: quality
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["approve", "reject"]
+      required: true
+    rejection_comment:
+      type: text
+      required: false
+      required_when: "decision == 'reject'"
+      hint: "Required if rejecting"
+
+  edges:
+    - to: cr.post-rejection
+      condition: "response.get('decision') == 'reject'"
+    - to: cr.post-approved

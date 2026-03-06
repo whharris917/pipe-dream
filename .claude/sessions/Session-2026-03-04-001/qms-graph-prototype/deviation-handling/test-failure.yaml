@@ -1,0 +1,28 @@
+node:
+  id: dh.test-failure
+  prompt: "Test failure detected. Create an Exception Report (ER)."
+  context: "Exception Reports are children of Test Protocols (TPs). The failed test step must be re-executed after the ER is resolved."
+
+  evidence_schema:
+    parent_tp:
+      type: text
+      required: true
+      hint: "Parent Test Protocol ID (e.g., CR-042-TP-001)"
+    failed_step:
+      type: text
+      required: true
+      hint: "Which test step failed?"
+    failure_description:
+      type: text
+      required: true
+    er_title:
+      type: text
+      required: true
+
+  hooks:
+    on_exit:
+      - command: "qms create ER --parent {response.parent_tp} --title \"{response.er_title}\""
+        on_failure: block
+
+  edges:
+    - to: dh.er-resolution

@@ -1,0 +1,24 @@
+node:
+  id: m.inst-start
+  prompt: "Create an instance of your template."
+  context: >
+    Now you will specialize the template for a specific scenario. The
+    template defines the general procedure; the instance fills in the
+    specific details for one particular case.
+
+  evidence_schema:
+    instance_name:
+      type: text
+      required: true
+      hint: "Name for this specific instance (e.g., '504 Timeout Incident - March 2026')"
+    instance_description:
+      type: text
+      required: true
+      hint: "Describe the specific scenario this instance addresses"
+    instance_dir:
+      type: text
+      required: true
+      hint: "Directory name for the instance (e.g., 'generated-instances/rca-504')"
+
+  edges:
+    - to: m.inst-specialize

@@ -1,0 +1,26 @@
+node:
+  id: rca.fix-failed
+  prompt: "Fix did not resolve the failure. Reassess."
+  context: >
+    If ANALYZE did not restore the optimal query plan, check whether the
+    index itself was corrupted during REINDEX, or whether the statistics
+    are being gathered but the planner still prefers the sequential scan
+    due to cost model parameters (random_page_cost, etc).
+
+  evidence_schema:
+    why_fix_failed:
+      type: text
+      required: true
+      hint: "Why didn't ANALYZE resolve the query plan regression?"
+    next_step:
+      type: enum
+      values: ["revise-fix", "re-examine-root-cause", "re-isolate"]
+      required: true
+      hint: "Try a different fix, re-examine the root cause, or re-isolate?"
+
+  edges:
+    - to: rca.fix
+      condition: "response.get('next_step') == 'revise-fix'"
+    - to: rca.root-cause
+      condition: "response.get('next_step') == 're-examine-root-cause'"
+    - to: rca.isolate

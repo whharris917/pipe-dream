@@ -1,0 +1,8 @@
+node:
+  id: dh.resolution-complete
+  prompt: "Deviation documented. Return to parent workflow."
+  context: "The child document has been created and will follow its own lifecycle. You may now continue with the parent document's remaining execution items."
+  terminal: true
+
+  evidence_schema: {}
+  edges: []

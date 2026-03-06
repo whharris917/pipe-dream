@@ -1,0 +1,21 @@
+node:
+  id: cr.execution-complete
+  prompt: "All execution items completed. Ready for post-execution review."
+  context: "Verify that every approved EI has a documented outcome. Any failed EIs must have associated VARs. Check in the final execution state and route for post-review."
+
+  evidence_schema:
+    scope_integrity_check:
+      type: enum
+      values: ["all-eis-documented", "scope-gap-exists"]
+      required: true
+      hint: "Confirm all approved EIs have outcomes. Scope gaps are critical defects."
+
+  hooks:
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: cr.post-review-wait

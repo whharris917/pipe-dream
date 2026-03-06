@@ -1,0 +1,20 @@
+node:
+  context: 'Immediate: ANALYZE products; on production. Preventive: update runbook,
+    add query plan regression test to CI. Validate in staging: ANALYZE + 3x load test
+    should show p99 drop to ~1.8s.'
+  edges:
+  - to: rca.deploy
+  evidence_schema:
+    fix_description:
+      hint: ANALYZE products
+      required: true
+      type: text
+    fix_validated:
+      hint: + runbook update + regression test
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - 'no'
+  id: rca.fix
+  prompt: Develop and validate the fix for stale statistics.

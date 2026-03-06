@@ -1,0 +1,29 @@
+node:
+  id: m.start
+  prompt: "Define your template."
+  context: >
+    You are creating a reusable workflow template. This template will define
+    a general procedure that can be instantiated for specific scenarios.
+    Think of it like a standard operating procedure — general enough to
+    apply to many cases, specific enough to be useful.
+
+  evidence_schema:
+    template_id:
+      type: text
+      required: true
+      hint: "Short lowercase ID for the template (e.g., 'rca', 'deploy', 'review')"
+    template_name:
+      type: text
+      required: true
+      hint: "Human-readable name (e.g., 'Root Cause Analysis')"
+    template_description:
+      type: text
+      required: true
+      hint: "What is this template for? When would someone use it?"
+    estimated_steps:
+      type: integer
+      required: true
+      hint: "Roughly how many steps will this procedure have?"
+
+  edges:
+    - to: m.define-step

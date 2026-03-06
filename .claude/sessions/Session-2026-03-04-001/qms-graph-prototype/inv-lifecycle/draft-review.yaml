@@ -1,0 +1,15 @@
+node:
+  id: inv.draft-review
+  prompt: "Review your Investigation before submitting."
+  context: "Verify: Purpose documented, background complete, deviation described with facts, impact assessed, root cause identified (not symptoms), and at least one corrective + one preventive CAPA defined."
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["submit", "revise"]
+      required: true
+
+  edges:
+    - to: inv.purpose
+      condition: "response.get('decision') == 'revise'"
+    - to: inv.checkin-route

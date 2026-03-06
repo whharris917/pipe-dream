@@ -1,0 +1,13 @@
+node:
+  id: dh.var-type1-warning
+  prompt: "Type 1 VAR created — parent closure is BLOCKED."
+  context: "This VAR must reach CLOSED status before the parent document can close. Plan accordingly. The VAR follows its own full lifecycle (review, approval, execution, closure)."
+
+  evidence_schema:
+    acknowledged:
+      type: enum
+      values: ["understood"]
+      required: true
+
+  edges:
+    - to: dh.resolution-complete

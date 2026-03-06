@@ -1,0 +1,15 @@
+node:
+  id: m.more-steps
+  prompt: "Add another step to the template?"
+  context: "Review your progress. Have you defined all the steps your procedure needs?"
+
+  evidence_schema:
+    add_step:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: m.define-step
+      condition: "response.get('add_step') == 'yes'"
+    - to: m.generate-template

@@ -1,0 +1,36 @@
+node:
+  id: esc.chemistry
+  prompt: "Chemistry Lab: Balance the equation puzzle."
+  context: >
+    The chemistry lab has a large equation on the board that needs balancing:
+
+    _Fe + _O2 -> _Fe2O3
+
+    Below it: "The coefficients, concatenated left-to-right, open the safe."
+
+    Inside the safe you'll find a colored key. The card reads:
+    "The key is BLUE."
+
+    Also on the bench: a note saying "Remember the door code from the first
+    room. You'll need it again, multiplied by 2, in the final room."
+
+  evidence_schema:
+    balanced_equation:
+      type: text
+      required: true
+      hint: "The fully balanced equation with coefficients"
+    safe_code:
+      type: text
+      required: true
+      hint: "The coefficients concatenated (e.g., if 2,3,1 then '231')"
+    key_color:
+      type: text
+      required: true
+      hint: "What color is the key in the safe?"
+    note_about_door_code:
+      type: text
+      required: true
+      hint: "What does the note say to do with the first room's door code?"
+
+  edges:
+    - to: esc.next-lab

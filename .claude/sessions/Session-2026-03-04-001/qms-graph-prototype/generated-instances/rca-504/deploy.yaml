@@ -1,0 +1,20 @@
+node:
+  context: Run ANALYZE products; on production. Revert nginx timeout from 25s to 10s.
+    Monitor Grafana p99 latency. Flash sale continues through Tuesday as natural load
+    test. 48-hour observation period.
+  edges:
+  - to: rca.postmortem
+  evidence_schema:
+    deploy_timestamp:
+      hint: When was ANALYZE run on production?
+      required: true
+      type: text
+    fix_confirmed:
+      hint: Did p99 drop and 504s stop?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - 'no'
+  id: rca.deploy
+  prompt: Deploy the fix and monitor the order endpoint.

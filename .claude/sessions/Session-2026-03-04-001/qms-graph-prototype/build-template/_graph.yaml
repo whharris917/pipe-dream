@@ -1,0 +1,16 @@
+graph:
+  id: build-template
+  name: "Template Builder"
+  version: "0.1.0"
+  entry_point: bt.start
+  description: >
+    Meta-graph for authoring new workflow templates. Walks an agent through
+    defining template metadata, steps, evidence schemas, gates, hooks, and
+    extension points. This is the bootstrap workflow — it creates the graphs
+    that other tickets traverse.
+
+  invoked_by: []  # Top-level entry point (meta-workflow)
+  invokes: []
+
+  performer_map:
+    initiator: "Template author"

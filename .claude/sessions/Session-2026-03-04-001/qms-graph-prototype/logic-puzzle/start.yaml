@@ -1,0 +1,41 @@
+node:
+  id: lp.start
+  prompt: "Read the logic puzzle and state the goal."
+  context: >
+    PUZZLE: Five houses in a row, each a different color. Each owner has a
+    different nationality, drink, pet, and cigarette brand.
+
+    1. The Brit lives in the red house.
+    2. The Swede keeps dogs.
+    3. The Dane drinks tea.
+    4. The green house is immediately to the left of the white house.
+    5. The green house owner drinks coffee.
+    6. The person who smokes Pall Mall keeps birds.
+    7. The owner of the yellow house smokes Dunhill.
+    8. The man in the center house drinks milk.
+    9. The Norwegian lives in the first house.
+    10. The man who smokes Blends lives next to the cat owner.
+    11. The man who keeps horses lives next to the Dunhill smoker.
+    12. The man who smokes Blue Master drinks beer.
+    13. The German smokes Prince.
+    14. The Norwegian lives next to the blue house.
+    15. The man who smokes Blends has a neighbor who drinks water.
+
+    QUESTION: Who owns the fish?
+
+  evidence_schema:
+    goal:
+      type: text
+      required: true
+      hint: "State the goal of the puzzle in your own words"
+    num_constraints:
+      type: integer
+      required: true
+      hint: "How many constraints/clues are given?"
+    categories:
+      type: text
+      required: true
+      hint: "List the categories that need to be assigned (e.g., color, nationality, ...)"
+
+  edges:
+    - to: lp.extract-constraints

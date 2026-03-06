@@ -1,0 +1,22 @@
+node:
+  context: 'EXPLAIN ANALYZE shows: before rebuild, query used idx_products_sku_warehouse
+    (3ms). After rebuild, planner chooses seq scan on 1.2M rows (800ms). REINDEX CONCURRENTLY
+    succeeded but ANALYZE was not run afterward. Stale statistics.'
+  edges:
+  - to: rca.fix
+  evidence_schema:
+    five_whys:
+      hint: Stale stats after REINDEX without ANALYZE
+      required: true
+      type: text
+    root_cause:
+      hint: 3x flash sale traffic amplified per-query cost
+      required: true
+      type: text
+    trigger:
+      hint: Why 504? slow query. Why slow? seq scan. Why? stale stats. Why? no ANALYZE.
+        Why? runbook gap.
+      required: true
+      type: text
+  id: rca.root-cause
+  prompt: Identify the root cause of the slow inventory query.

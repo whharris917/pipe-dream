@@ -1,0 +1,20 @@
+node:
+  context: 'Payment gateway is NOT reached for timed-out requests. Least-invasive
+    containment: increase nginx proxy_read_timeout from 10s to 25s on order-api upstream.'
+  edges:
+  - to: rca.timeline
+  evidence_schema:
+    containment_action:
+      hint: Describe the nginx timeout adjustment applied
+      required: true
+      type: text
+    containment_effective:
+      hint: Did the timeout increase reduce the 504 error rate?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - partial
+      - 'no'
+  id: rca.contain
+  prompt: Contain the 504 timeout impact.

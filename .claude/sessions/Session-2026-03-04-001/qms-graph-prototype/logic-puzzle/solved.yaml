@@ -1,0 +1,23 @@
+node:
+  id: lp.solved
+  prompt: "Puzzle solved! Summarize your solution and method."
+  context: "Congratulations. Provide the final answer and reflect on the solving process."
+  terminal: true
+
+  evidence_schema:
+    answer:
+      type: text
+      required: true
+      hint: "The answer to 'Who owns the fish?'"
+    total_deduction_steps:
+      type: integer
+      required: true
+      hint: "How many deduction steps did you take?"
+    hardest_step:
+      type: text
+      required: true
+      hint: "Which deduction was the most difficult and why?"
+    did_you_backtrack:
+      type: enum
+      values: ["yes", "no"]
+      required: true

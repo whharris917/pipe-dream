@@ -1,0 +1,22 @@
+node:
+  id: ra.revision-needed
+  prompt: "Review feedback requires revisions."
+  context: "One or more reviewers have requested updates. You must address all feedback, check in your changes, and re-route for review."
+  performer: initiator
+
+  evidence_schema:
+    revision_summary:
+      type: text
+      required: true
+      hint: "Describe what was changed to address reviewer feedback"
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+
+  edges:
+    - to: ra.start

@@ -1,0 +1,32 @@
+node:
+  id: esc.next-lab
+  prompt: "Choose the next lab to visit."
+  context: >
+    You've completed one lab. Check which labs you still need to visit.
+    Remember your visit order from the hallway.
+
+  evidence_schema:
+    labs_completed:
+      type: text
+      required: true
+      hint: "Which labs have you completed so far?"
+    all_done:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Have you visited all three labs?"
+    next_lab:
+      type: enum
+      values: ["biology", "chemistry", "physics", "n/a"]
+      required: true
+      hint: "Which lab to visit next (n/a if all done)"
+
+  edges:
+    - to: esc.biology
+      condition: "response.get('next_lab') == 'biology'"
+    - to: esc.chemistry
+      condition: "response.get('next_lab') == 'chemistry'"
+    - to: esc.physics
+      condition: "response.get('next_lab') == 'physics'"
+    - to: esc.final-door
+      condition: "response.get('all_done') == 'yes'"

@@ -1,0 +1,33 @@
+node:
+  id: exp.hypothesis
+  prompt: "State your hypothesis and define success criteria."
+  context: >
+    A good hypothesis is specific, measurable, and falsifiable.
+    Define both the null hypothesis (H0) and alternative hypothesis (H1).
+    Specify the significance level and minimum effect size you care about.
+
+  evidence_schema:
+    null_hypothesis:
+      type: text
+      required: true
+      hint: "H0: The hypothesis of no effect (e.g., 'LFU-Aging hit rate <= LRU hit rate')"
+    alt_hypothesis:
+      type: text
+      required: true
+      hint: "H1: Your prediction (e.g., 'LFU-Aging hit rate > LRU hit rate')"
+    significance_level:
+      type: enum
+      values: ["0.01", "0.05", "0.10"]
+      required: true
+      hint: "Alpha level for statistical significance"
+    minimum_effect_size:
+      type: text
+      required: true
+      hint: "The smallest difference you consider practically meaningful"
+    success_threshold:
+      type: text
+      required: true
+      hint: "Specific numeric threshold for the dependent variable"
+
+  edges:
+    - to: exp.design

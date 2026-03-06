@@ -1,0 +1,25 @@
+node:
+  id: inv.root-cause-analysis
+  prompt: "Perform Root Cause Analysis."
+  context: "Identify the FUNDAMENTAL reason for the deviation, not just symptoms. Use 5-Whys, fishbone diagram, or other structured analysis. Contributing factors should be distinguished from root causes."
+
+  evidence_schema:
+    analysis_method:
+      type: enum
+      values: ["5-whys", "fishbone", "fault-tree", "other"]
+      required: true
+    root_cause:
+      type: text
+      required: true
+      hint: "The fundamental reason this deviation occurred — must be actionable"
+    contributing_factors:
+      type: text
+      required: false
+      hint: "Factors that made the deviation more likely or severe, but are not the root cause"
+    analysis_detail:
+      type: text
+      required: true
+      hint: "Show your work: the chain of reasoning from symptom to root cause"
+
+  edges:
+    - to: inv.capa-plan

@@ -1,0 +1,20 @@
+node:
+  context: 'Key facts: 12% failures for 26 hours. Root cause: stale stats after REINDEX
+    without ANALYZE. Trigger: 3x flash sale. Fix: ANALYZE products;. Action items:
+    runbook, CI checks, latency alerts, marketing coordination.'
+  evidence_schema:
+    action_items:
+      hint: One-paragraph summary of the 504 incident
+      required: true
+      type: text
+    lessons_learned:
+      hint: '4 items: runbook, CI checks, alerts, coordination'
+      required: true
+      type: text
+    summary:
+      hint: Index maintenance side effects, monitoring gaps, cross-team communication
+      required: true
+      type: text
+  id: rca.postmortem
+  prompt: Write the post-incident report for the 504 timeout incident.
+  terminal: true

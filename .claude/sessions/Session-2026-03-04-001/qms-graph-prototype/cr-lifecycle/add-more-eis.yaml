@@ -1,0 +1,15 @@
+node:
+  id: cr.add-more-eis
+  prompt: "Add another execution item?"
+  context: "Each EI should be a discrete, verifiable task. Consider whether the implementation can be broken into smaller steps for better traceability."
+
+  evidence_schema:
+    add_more:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: cr.implementation-plan
+      condition: "response.get('add_more') == 'yes'"
+    - to: cr.testing-summary

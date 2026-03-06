@@ -1,0 +1,15 @@
+node:
+  id: inv.checkin-route
+  prompt: "Checking in and routing for review."
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: inv.assign-reviewers

@@ -1,0 +1,9 @@
+graph:
+  id: m
+  name: "Workflow Lifecycle"
+  version: "1.0"
+  entry_point: m.start
+  description: >
+    The meta-workflow that guides the full lifecycle: author a reusable
+    template, instantiate it for a specific scenario, then execute the
+    instance. All through graph traversal.

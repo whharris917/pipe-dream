@@ -1,0 +1,16 @@
+node:
+  id: inv.post-approval-decision
+  prompt: "Post-approve this Investigation."
+  context: "Verify CAPAs were executed as planned, evidence shows root cause was addressed, and child documents are resolved."
+  performer: quality
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["approve", "reject"]
+      required: true
+
+  edges:
+    - to: inv.post-revision
+      condition: "response.get('decision') == 'reject'"
+    - to: inv.close

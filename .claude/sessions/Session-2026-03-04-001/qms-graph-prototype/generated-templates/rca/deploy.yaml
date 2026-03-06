@@ -1,0 +1,20 @@
+node:
+  context: Apply the fix to production. Monitor the same signals used to establish
+    the timeline. Maintain heightened monitoring for a defined observation period.
+    Revert any temporary containment.
+  edges:
+  - to: rca.postmortem
+  evidence_schema:
+    deploy_timestamp:
+      hint: When was the fix deployed to production?
+      required: true
+      type: text
+    fix_confirmed:
+      hint: Has monitoring confirmed the incident is resolved?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - 'no'
+  id: rca.deploy
+  prompt: Deploy the fix and monitor.

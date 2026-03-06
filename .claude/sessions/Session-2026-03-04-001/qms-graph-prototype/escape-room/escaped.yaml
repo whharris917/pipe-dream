@@ -1,0 +1,23 @@
+node:
+  id: esc.escaped
+  prompt: "You escaped! Rate the experience."
+  context: "Congratulations, you've escaped the laboratory! Reflect on the puzzle."
+  terminal: true
+
+  evidence_schema:
+    total_puzzles_solved:
+      type: integer
+      required: true
+    hardest_puzzle:
+      type: text
+      required: true
+      hint: "Which puzzle was the most challenging?"
+    any_mistakes:
+      type: text
+      required: false
+      hint: "Did you make any errors along the way?"
+    overall_rating:
+      type: enum
+      values: ["1", "2", "3", "4", "5"]
+      required: true
+      hint: "Rate the escape room 1-5"

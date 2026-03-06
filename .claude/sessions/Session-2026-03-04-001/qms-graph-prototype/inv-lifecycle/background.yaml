@@ -1,0 +1,21 @@
+node:
+  id: inv.background
+  prompt: "Describe the background and timeline of events."
+  context: "Provide chronological context: What was the expected behavior? What actually happened? When was the deviation discovered?"
+
+  evidence_schema:
+    expected_behavior:
+      type: text
+      required: true
+      hint: "What should have happened?"
+    actual_behavior:
+      type: text
+      required: true
+      hint: "What actually happened?"
+    timeline:
+      type: text
+      required: true
+      hint: "Key dates/events leading to and following the deviation"
+
+  edges:
+    - to: inv.deviation-description

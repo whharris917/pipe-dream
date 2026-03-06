@@ -1,0 +1,17 @@
+node:
+  id: ra.route-approval
+  prompt: "All reviewers recommend. Route for approval."
+  context: "All assigned reviewers have recommended approval. The document will now be routed to the approver."
+  performer: initiator
+
+  gate: "all_reviewers_recommend == True"
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms route {ticket.doc_id} --approval"
+        on_failure: block
+
+  edges:
+    - to: ra.approve

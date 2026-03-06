@@ -1,0 +1,13 @@
+node:
+  id: bt.name
+  prompt: "Give this template a title."
+  context: "This will be the display name shown when agents select this workflow type."
+
+  evidence_schema:
+    title:
+      type: text
+      required: true
+      hint: "e.g., Code Change Record, Process Investigation"
+
+  edges:
+    - to: bt.inherit

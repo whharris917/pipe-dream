@@ -1,0 +1,17 @@
+node:
+  context: Narrow down which component, service, or layer is responsible. Use binary
+    search reasoning, instrumentation, mocking, or log analysis to isolate the faulty
+    component.
+  edges:
+  - to: rca.root-cause
+  evidence_schema:
+    faulty_component:
+      hint: Which component is the source of the failure?
+      required: true
+      type: text
+    isolation_evidence:
+      hint: What evidence confirms this component is responsible?
+      required: true
+      type: text
+  id: rca.isolate
+  prompt: Isolate the fault domain.

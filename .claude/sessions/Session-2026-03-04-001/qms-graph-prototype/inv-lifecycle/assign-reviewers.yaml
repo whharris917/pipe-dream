@@ -1,0 +1,19 @@
+node:
+  id: inv.assign-reviewers
+  prompt: "Assign reviewers for this Investigation."
+  context: "Reviewers should have expertise relevant to the deviation type. QA is always required. Domain TUs should evaluate the RCA rigor and CAPA adequacy."
+  performer: quality
+
+  evidence_schema:
+    reviewers:
+      type: text
+      required: true
+      hint: "Comma-separated reviewer IDs"
+
+  hooks:
+    on_exit:
+      - command: "qms assign {ticket.doc_id} --add {response.reviewers}"
+        on_failure: block
+
+  edges:
+    - to: inv.wait-reviews

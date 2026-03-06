@@ -1,0 +1,20 @@
+node:
+  id: inv.capa-failed
+  prompt: "CAPA execution failed. Create a Variance Report."
+  context: "When a CAPA fails, you must create a child VAR to document and resolve the deviation. The VAR follows its own lifecycle independently."
+
+  evidence_schema:
+    var_title:
+      type: text
+      required: true
+    deviation_description:
+      type: text
+      required: true
+
+  hooks:
+    on_exit:
+      - command: "qms create VAR --parent {ticket.doc_id} --title \"{response.var_title}\""
+        on_failure: block
+
+  edges:
+    - to: inv.more-capas

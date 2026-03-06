@@ -1,0 +1,29 @@
+node:
+  id: cr.pre-rejection
+  prompt: "Change Record rejected by approver."
+  context: "The approver has rejected this CR. You must address the rejection rationale, revise, and determine whether re-review is needed before re-routing for approval."
+  performer: initiator
+
+  hooks:
+    on_enter:
+      - command: "qms reject {ticket.doc_id} --comment \"{ticket.metadata.get('rejection_comment', 'See audit trail')}\""
+        on_failure: block
+    on_exit:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+
+  evidence_schema:
+    revision_plan:
+      type: text
+      required: true
+      hint: "How you will address the rejection feedback"
+    needs_re_review:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Are changes significant enough to warrant full re-review?"
+
+  edges:
+    - to: cr.checkin-for-review
+      condition: "response.get('needs_re_review') == 'yes'"
+    - to: cr.route-approval

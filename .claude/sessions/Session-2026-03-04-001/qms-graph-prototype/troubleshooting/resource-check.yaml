@@ -1,0 +1,32 @@
+node:
+  id: ts.resource-check
+  prompt: "Process is running but not responding. Check system resources."
+  context: "The web server is running but returning errors. Check CPU, memory, disk space, open file descriptors, and connection limits. A resource exhaustion is the most common cause."
+
+  evidence_schema:
+    cpu_usage:
+      type: text
+      required: true
+      hint: "Current CPU usage (e.g., '95% user, 3% system')"
+    memory_usage:
+      type: text
+      required: true
+      hint: "Memory usage (e.g., '7.2GB / 8GB')"
+    disk_usage_pct:
+      type: integer
+      required: true
+      hint: "Disk usage as a number 0-100 for the fullest partition"
+    open_connections:
+      type: text
+      required: true
+      hint: "Number of open connections/file descriptors"
+    resource_alarm:
+      type: enum
+      values: ["disk", "memory", "cpu", "connections", "none"]
+      required: true
+      hint: "Which resource, if any, is critically exhausted?"
+
+  edges:
+    - to: ts.resource-exhaustion
+      condition: "response.get('resource_alarm') != 'none'"
+    - to: ts.app-level-check

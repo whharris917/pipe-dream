@@ -1,0 +1,189 @@
+{
+  "id": "rca-504-exec",
+  "cursor": "rca.postmortem",
+  "state": "complete",
+  "responses": {
+    "rca.start": {
+      "incident_summary": "The /api/v2/orders POST endpoint is returning 504 Gateway Timeout errors for approximately 12% of requests. Errors began Monday 2026-03-03 at 13:47 UTC. Customer support has received 47 tickets from users unable to complete purchases. The nginx proxy_read_timeout of 10s is being exceeded by order-api response times that have spiked to 18s at p99.",
+      "affected_systems": "The order submission flow is affected: nginx (returning 504), order-api (Node.js, responding slowly), and the PostgreSQL database (inventory-check query against the products table). The payment-service is NOT affected because the timeout occurs before the payment processing step is reached.",
+      "user_impact": "partial-outage",
+      "data_integrity_risk": "none",
+      "active_harm": "yes"
+    },
+    "rca.contain": {
+      "containment_action": "Increased nginx proxy_read_timeout from 10s to 25s on the order-api upstream block. This allows the slow requests to complete rather than being terminated by nginx. The change was applied via ansible playbook to all 3 nginx frontend nodes simultaneously.",
+      "containment_timestamp": "2026-03-03T14:35:00Z",
+      "containment_effective": "partial",
+      "residual_impact": "504 error rate dropped from 12% to approximately 2%. Most requests now complete within 25s, but the slowest queries under peak load still exceed the new timeout. User experience remains degraded (18s wait for an order submission) but most orders are completing."
+    },
+    "rca.timeline": {
+      "last_known_good": "Sunday 2026-03-02 23:59 UTC. The Grafana dashboard shows /api/v2/orders p99 latency was stable at 1.2s from Wednesday 2026-02-26 through Sunday 2026-03-02.",
+      "first_known_bad": "Monday 2026-03-03 at 13:47 UTC. The p99 latency jumped from 1.2s to 18s within a 5-minute window. The first 504 alerts fired at 13:52 UTC.",
+      "data_sources_consulted": "Grafana /api/v2/orders latency dashboard, deployment pipeline log (CI/CD), database team Confluence maintenance log, marketing campaign calendar in Asana, PagerDuty alert timeline.",
+      "changes_in_window": "Two events fall within the failure window: (1) The database team ran a scheduled REINDEX CONCURRENTLY on the products table Sunday 2026-03-02 at 02:00 UTC. (2) The marketing team launched a flash sale campaign Monday 2026-03-03 at 13:00 UTC, driving approximately 3x normal order submission traffic. No code deployments occurred between Friday 16:30 and Monday.",
+      "primary_suspect": "The index rebuild changed something about the products table that only becomes visible under load. The 3x traffic spike is the trigger, but the underlying vulnerability was introduced by the Sunday index rebuild. Hypothesis: the index rebuild affected query performance on the products table, and the 3x traffic amplified latency to the point of triggering timeouts."
+    },
+    "rca.reproduce": {
+      "environment_used": "Staging environment with two database configurations: (A) Monday morning production DB snapshot taken at 06:00 UTC (post-index-rebuild), and (B) Friday evening DB snapshot at 17:00 UTC (pre-index-rebuild). Both loaded into identical staging PostgreSQL instances.",
+      "reproduction_steps": "Used k6 load testing tool to simulate 3x normal order submission traffic (450 req/s vs normal 150 req/s) against both staging instances for 10 minutes each. Sent realistic order payloads sampled from production access logs. Monitored p99 latency and error rates.",
+      "reproduced": "yes",
+      "reproduction_notes": "Post-rebuild DB (A): After 4 minutes at 3x load, p99 climbed to 14s and 504s began appearing (8% error rate). Pre-rebuild DB (B): p99 stayed at 2.1s under identical 3x load for the full 10-minute test, zero 504s. The index rebuild is clearly implicated as a necessary condition; the traffic spike is the trigger."
+    },
+    "rca.isolate": {
+      "system_components": "nginx (reverse proxy) -> order-api (Node.js application server) -> inventory-check query (PostgreSQL products table) -> payment-service (external Stripe API) -> order-write (PostgreSQL orders table)",
+      "isolation_method": "Added OpenTelemetry span instrumentation at each service boundary in the order-api code. Measured elapsed time for: (1) nginx-to-order-api handoff, (2) inventory-check DB query, (3) payment-service call, (4) order-write DB query. Ran the 3x load test against the post-rebuild staging DB and collected timing breakdowns for 1000 requests.",
+      "faulty_component": "The inventory-check query against the PostgreSQL products table. This single query accounts for 16.2s of the 18s total request latency under load.",
+      "evidence_for_isolation": "Timing breakdown (p99 under 3x load): nginx overhead: 12ms, order-api processing: 45ms, inventory-check query: 16,200ms, payment-service: never reached for timed-out requests, order-write: never reached. The inventory query is consuming 90% of the total request time. All other components are operating normally."
+    },
+    "rca.root-cause": {
+      "root_cause": "Stale table statistics on the products table after REINDEX CONCURRENTLY. The reindex operation completed successfully Sunday at 02:00, but the DBA team's runbook does not include a post-rebuild ANALYZE step. Without refreshed statistics, the PostgreSQL query planner's row count estimates for the products table became stale, causing it to believe a sequential scan (1.2M rows) was cheaper than using the idx_products_sku_warehouse composite index. The inventory-check query went from 3ms (index scan) to 800ms (seq scan) per execution.",
+      "trigger": "The marketing team's flash sale campaign launched Monday at 13:00 UTC, driving 3x normal traffic (450 req/s). At normal load (150 req/s), the 800ms per-query cost was uncomfortable but survivable. At 3x load, connection pool exhaustion and query queueing amplified the per-query latency to 16+ seconds, exceeding the nginx 10s timeout.",
+      "contributing_factors": "Three contributing factors: (1) The index rebuild runbook does not include an ANALYZE step after REINDEX. (2) There is no automated monitoring for query plan regressions \u2014 the shift from index scan to sequential scan went undetected for 36 hours. (3) Marketing launched a 3x traffic campaign without notifying engineering, so no capacity planning was done.",
+      "five_whys": "Why 504 errors? Because order-api response time exceeded nginx 10s timeout. Why was order-api slow? Because the inventory-check query took 16s under load. Why was the query slow? Because PostgreSQL chose a sequential scan instead of using the composite index. Why did it choose seq scan? Because table statistics were stale \u2014 the planner's row estimates were wrong. Why were statistics stale? Because REINDEX CONCURRENTLY was run without a follow-up ANALYZE, and the runbook doesn't require it.",
+      "confidence": "high"
+    },
+    "rca.fix": {
+      "fix_description": "Immediate fix: Run ANALYZE products; on the production database to refresh table statistics and restore the optimal query plan (index scan via idx_products_sku_warehouse). Preventive fix: (1) Update the index rebuild runbook to require ANALYZE <table> as a mandatory post-rebuild step. (2) Add a query plan regression test to the database maintenance CI suite that runs EXPLAIN on the 5 most critical queries before and after any index operation and fails if the plan shape changes (e.g., index scan becomes seq scan).",
+      "fix_validated": "yes",
+      "regression_tested": "yes",
+      "new_test_written": "yes"
+    },
+    "rca.deploy": {
+      "deploy_timestamp": "2026-03-04T16:00:00Z \u2014 Ran ANALYZE products; on production primary via psql session. Execution completed in 4.2 seconds.",
+      "containment_reverted": "yes",
+      "monitoring_signals": "Grafana dashboard for /api/v2/orders: p99 latency (target: < 2s), 504 error rate (target: 0%), order completion rate (target: > 99.5%). Also monitoring PostgreSQL query duration for the inventory-check query via pg_stat_statements.",
+      "observation_period": "48 hours: heightened monitoring from 2026-03-04 16:00 UTC through 2026-03-06 16:00 UTC. The flash sale continues through Tuesday, providing a natural high-traffic validation.",
+      "fix_confirmed": "yes"
+    },
+    "rca.postmortem": {
+      "summary": "From Monday 2026-03-03 13:47 UTC through Tuesday 2026-03-04 16:00 UTC (26 hours), approximately 12% of POST requests to /api/v2/orders returned 504 Gateway Timeout errors. The root cause was stale table statistics on the PostgreSQL products table following a scheduled REINDEX CONCURRENTLY operation that did not include a post-rebuild ANALYZE step. The stale statistics caused the query planner to choose a sequential scan (800ms) over the optimal composite index scan (3ms). This latent regression was exposed by a 3x traffic spike from a flash sale campaign. The fix \u2014 running ANALYZE products; \u2014 restored normal query plans within seconds. 47 customer support tickets were generated; no data was lost or corrupted.",
+      "timeline_summary": "Sunday 2026-03-02 02:00 UTC: REINDEX CONCURRENTLY on products table (no ANALYZE). Monday 2026-03-03 13:00 UTC: Flash sale launched (3x traffic). Monday 13:47 UTC: p99 latency spiked to 18s, 504 errors began. Monday 14:35 UTC: Temporary containment (nginx timeout 10s -> 25s, reduced errors from 12% to 2%). Tuesday 2026-03-04 16:00 UTC: ANALYZE products; run on production, p99 dropped to 1.1s within 5 minutes, 504 rate to 0%. Nginx timeout reverted to 10s. Wednesday 2026-03-06 16:00 UTC: 48-hour observation period completed, no recurrence.",
+      "root_cause_summary": "REINDEX CONCURRENTLY on the products table completed without a follow-up ANALYZE, leaving the query planner with stale row count estimates. The planner chose sequential scan over the idx_products_sku_warehouse composite index, increasing per-query cost from 3ms to 800ms. Under 3x flash sale traffic, this caused connection pool exhaustion and 504 timeouts.",
+      "fix_summary": "Ran ANALYZE products; on production to refresh table statistics (4.2s execution). Query planner immediately reverted to the optimal index scan plan. Reverted temporary nginx timeout increase. Updated index rebuild runbook to mandate ANALYZE after every REINDEX. Added automated query plan regression tests to database maintenance CI pipeline.",
+      "contributing_factors": "1) Index rebuild runbook lacked a mandatory ANALYZE step after REINDEX operations. 2) No automated monitoring for query plan regressions \u2014 the shift from index scan to seq scan went undetected for 36 hours. 3) No cross-team coordination process \u2014 marketing launched a 3x traffic campaign without notifying engineering for capacity planning. 4) No p99 latency alerting \u2014 alerts were configured only for error rates, missing the gradual performance degradation.",
+      "action_items": "1) [DBA team, due Friday 2026-03-07] Update index maintenance runbook to require ANALYZE after every REINDEX operation. 2) [Platform team, due 2026-03-18] Add automated query plan regression checks to database CI pipeline \u2014 EXPLAIN on top 5 critical queries before/after index operations, fail on plan shape changes. 3) [SRE team, due Friday 2026-03-07] Add p99 latency alert at 5s threshold for all API endpoints, not just error rate alerts. 4) [Marketing/Engineering, due 2026-03-12] Establish process for marketing to notify engineering 48 hours before campaigns expected to drive >2x normal traffic.",
+      "lessons_learned": "Database maintenance operations can have silent side effects that only manifest under load. REINDEX is not an atomic, side-effect-free operation \u2014 it interacts with the query planner through table statistics. Monitoring must cover performance metrics (latency percentiles), not just availability metrics (error rates). Cross-team communication is a reliability concern, not just a nice-to-have \u2014 the 3x traffic spike without advance notice turned a latent issue into an incident."
+    }
+  },
+  "history": [
+    {
+      "node_id": "rca.start",
+      "response": {
+        "incident_summary": "The /api/v2/orders POST endpoint is returning 504 Gateway Timeout errors for approximately 12% of requests. Errors began Monday 2026-03-03 at 13:47 UTC. Customer support has received 47 tickets from users unable to complete purchases. The nginx proxy_read_timeout of 10s is being exceeded by order-api response times that have spiked to 18s at p99.",
+        "affected_systems": "The order submission flow is affected: nginx (returning 504), order-api (Node.js, responding slowly), and the PostgreSQL database (inventory-check query against the products table). The payment-service is NOT affected because the timeout occurs before the payment processing step is reached.",
+        "user_impact": "partial-outage",
+        "data_integrity_risk": "none",
+        "active_harm": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:20:52Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.contain",
+      "response": {
+        "containment_action": "Increased nginx proxy_read_timeout from 10s to 25s on the order-api upstream block. This allows the slow requests to complete rather than being terminated by nginx. The change was applied via ansible playbook to all 3 nginx frontend nodes simultaneously.",
+        "containment_timestamp": "2026-03-03T14:35:00Z",
+        "containment_effective": "partial",
+        "residual_impact": "504 error rate dropped from 12% to approximately 2%. Most requests now complete within 25s, but the slowest queries under peak load still exceed the new timeout. User experience remains degraded (18s wait for an order submission) but most orders are completing."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:21:10Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.timeline",
+      "response": {
+        "last_known_good": "Sunday 2026-03-02 23:59 UTC. The Grafana dashboard shows /api/v2/orders p99 latency was stable at 1.2s from Wednesday 2026-02-26 through Sunday 2026-03-02.",
+        "first_known_bad": "Monday 2026-03-03 at 13:47 UTC. The p99 latency jumped from 1.2s to 18s within a 5-minute window. The first 504 alerts fired at 13:52 UTC.",
+        "data_sources_consulted": "Grafana /api/v2/orders latency dashboard, deployment pipeline log (CI/CD), database team Confluence maintenance log, marketing campaign calendar in Asana, PagerDuty alert timeline.",
+        "changes_in_window": "Two events fall within the failure window: (1) The database team ran a scheduled REINDEX CONCURRENTLY on the products table Sunday 2026-03-02 at 02:00 UTC. (2) The marketing team launched a flash sale campaign Monday 2026-03-03 at 13:00 UTC, driving approximately 3x normal order submission traffic. No code deployments occurred between Friday 16:30 and Monday.",
+        "primary_suspect": "The index rebuild changed something about the products table that only becomes visible under load. The 3x traffic spike is the trigger, but the underlying vulnerability was introduced by the Sunday index rebuild. Hypothesis: the index rebuild affected query performance on the products table, and the 3x traffic amplified latency to the point of triggering timeouts."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:21:32Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.reproduce",
+      "response": {
+        "environment_used": "Staging environment with two database configurations: (A) Monday morning production DB snapshot taken at 06:00 UTC (post-index-rebuild), and (B) Friday evening DB snapshot at 17:00 UTC (pre-index-rebuild). Both loaded into identical staging PostgreSQL instances.",
+        "reproduction_steps": "Used k6 load testing tool to simulate 3x normal order submission traffic (450 req/s vs normal 150 req/s) against both staging instances for 10 minutes each. Sent realistic order payloads sampled from production access logs. Monitored p99 latency and error rates.",
+        "reproduced": "yes",
+        "reproduction_notes": "Post-rebuild DB (A): After 4 minutes at 3x load, p99 climbed to 14s and 504s began appearing (8% error rate). Pre-rebuild DB (B): p99 stayed at 2.1s under identical 3x load for the full 10-minute test, zero 504s. The index rebuild is clearly implicated as a necessary condition; the traffic spike is the trigger."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:21:53Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.isolate",
+      "response": {
+        "system_components": "nginx (reverse proxy) -> order-api (Node.js application server) -> inventory-check query (PostgreSQL products table) -> payment-service (external Stripe API) -> order-write (PostgreSQL orders table)",
+        "isolation_method": "Added OpenTelemetry span instrumentation at each service boundary in the order-api code. Measured elapsed time for: (1) nginx-to-order-api handoff, (2) inventory-check DB query, (3) payment-service call, (4) order-write DB query. Ran the 3x load test against the post-rebuild staging DB and collected timing breakdowns for 1000 requests.",
+        "faulty_component": "The inventory-check query against the PostgreSQL products table. This single query accounts for 16.2s of the 18s total request latency under load.",
+        "evidence_for_isolation": "Timing breakdown (p99 under 3x load): nginx overhead: 12ms, order-api processing: 45ms, inventory-check query: 16,200ms, payment-service: never reached for timed-out requests, order-write: never reached. The inventory query is consuming 90% of the total request time. All other components are operating normally."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:22:14Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.root-cause",
+      "response": {
+        "root_cause": "Stale table statistics on the products table after REINDEX CONCURRENTLY. The reindex operation completed successfully Sunday at 02:00, but the DBA team's runbook does not include a post-rebuild ANALYZE step. Without refreshed statistics, the PostgreSQL query planner's row count estimates for the products table became stale, causing it to believe a sequential scan (1.2M rows) was cheaper than using the idx_products_sku_warehouse composite index. The inventory-check query went from 3ms (index scan) to 800ms (seq scan) per execution.",
+        "trigger": "The marketing team's flash sale campaign launched Monday at 13:00 UTC, driving 3x normal traffic (450 req/s). At normal load (150 req/s), the 800ms per-query cost was uncomfortable but survivable. At 3x load, connection pool exhaustion and query queueing amplified the per-query latency to 16+ seconds, exceeding the nginx 10s timeout.",
+        "contributing_factors": "Three contributing factors: (1) The index rebuild runbook does not include an ANALYZE step after REINDEX. (2) There is no automated monitoring for query plan regressions \u2014 the shift from index scan to sequential scan went undetected for 36 hours. (3) Marketing launched a 3x traffic campaign without notifying engineering, so no capacity planning was done.",
+        "five_whys": "Why 504 errors? Because order-api response time exceeded nginx 10s timeout. Why was order-api slow? Because the inventory-check query took 16s under load. Why was the query slow? Because PostgreSQL chose a sequential scan instead of using the composite index. Why did it choose seq scan? Because table statistics were stale \u2014 the planner's row estimates were wrong. Why were statistics stale? Because REINDEX CONCURRENTLY was run without a follow-up ANALYZE, and the runbook doesn't require it.",
+        "confidence": "high"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:22:42Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.fix",
+      "response": {
+        "fix_description": "Immediate fix: Run ANALYZE products; on the production database to refresh table statistics and restore the optimal query plan (index scan via idx_products_sku_warehouse). Preventive fix: (1) Update the index rebuild runbook to require ANALYZE <table> as a mandatory post-rebuild step. (2) Add a query plan regression test to the database maintenance CI suite that runs EXPLAIN on the 5 most critical queries before and after any index operation and fails if the plan shape changes (e.g., index scan becomes seq scan).",
+        "fix_validated": "yes",
+        "regression_tested": "yes",
+        "new_test_written": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:23:00Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.deploy",
+      "response": {
+        "deploy_timestamp": "2026-03-04T16:00:00Z \u2014 Ran ANALYZE products; on production primary via psql session. Execution completed in 4.2 seconds.",
+        "containment_reverted": "yes",
+        "monitoring_signals": "Grafana dashboard for /api/v2/orders: p99 latency (target: < 2s), 504 error rate (target: 0%), order completion rate (target: > 99.5%). Also monitoring PostgreSQL query duration for the inventory-check query via pg_stat_statements.",
+        "observation_period": "48 hours: heightened monitoring from 2026-03-04 16:00 UTC through 2026-03-06 16:00 UTC. The flash sale continues through Tuesday, providing a natural high-traffic validation.",
+        "fix_confirmed": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:23:18Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.postmortem",
+      "response": {
+        "summary": "From Monday 2026-03-03 13:47 UTC through Tuesday 2026-03-04 16:00 UTC (26 hours), approximately 12% of POST requests to /api/v2/orders returned 504 Gateway Timeout errors. The root cause was stale table statistics on the PostgreSQL products table following a scheduled REINDEX CONCURRENTLY operation that did not include a post-rebuild ANALYZE step. The stale statistics caused the query planner to choose a sequential scan (800ms) over the optimal composite index scan (3ms). This latent regression was exposed by a 3x traffic spike from a flash sale campaign. The fix \u2014 running ANALYZE products; \u2014 restored normal query plans within seconds. 47 customer support tickets were generated; no data was lost or corrupted.",
+        "timeline_summary": "Sunday 2026-03-02 02:00 UTC: REINDEX CONCURRENTLY on products table (no ANALYZE). Monday 2026-03-03 13:00 UTC: Flash sale launched (3x traffic). Monday 13:47 UTC: p99 latency spiked to 18s, 504 errors began. Monday 14:35 UTC: Temporary containment (nginx timeout 10s -> 25s, reduced errors from 12% to 2%). Tuesday 2026-03-04 16:00 UTC: ANALYZE products; run on production, p99 dropped to 1.1s within 5 minutes, 504 rate to 0%. Nginx timeout reverted to 10s. Wednesday 2026-03-06 16:00 UTC: 48-hour observation period completed, no recurrence.",
+        "root_cause_summary": "REINDEX CONCURRENTLY on the products table completed without a follow-up ANALYZE, leaving the query planner with stale row count estimates. The planner chose sequential scan over the idx_products_sku_warehouse composite index, increasing per-query cost from 3ms to 800ms. Under 3x flash sale traffic, this caused connection pool exhaustion and 504 timeouts.",
+        "fix_summary": "Ran ANALYZE products; on production to refresh table statistics (4.2s execution). Query planner immediately reverted to the optimal index scan plan. Reverted temporary nginx timeout increase. Updated index rebuild runbook to mandate ANALYZE after every REINDEX. Added automated query plan regression tests to database maintenance CI pipeline.",
+        "contributing_factors": "1) Index rebuild runbook lacked a mandatory ANALYZE step after REINDEX operations. 2) No automated monitoring for query plan regressions \u2014 the shift from index scan to seq scan went undetected for 36 hours. 3) No cross-team coordination process \u2014 marketing launched a 3x traffic campaign without notifying engineering for capacity planning. 4) No p99 latency alerting \u2014 alerts were configured only for error rates, missing the gradual performance degradation.",
+        "action_items": "1) [DBA team, due Friday 2026-03-07] Update index maintenance runbook to require ANALYZE after every REINDEX operation. 2) [Platform team, due 2026-03-18] Add automated query plan regression checks to database CI pipeline \u2014 EXPLAIN on top 5 critical queries before/after index operations, fail on plan shape changes. 3) [SRE team, due Friday 2026-03-07] Add p99 latency alert at 5s threshold for all API endpoints, not just error rate alerts. 4) [Marketing/Engineering, due 2026-03-12] Establish process for marketing to notify engineering 48 hours before campaigns expected to drive >2x normal traffic.",
+        "lessons_learned": "Database maintenance operations can have silent side effects that only manifest under load. REINDEX is not an atomic, side-effect-free operation \u2014 it interacts with the query planner through table statistics. Monitoring must cover performance metrics (latency percentiles), not just availability metrics (error rates). Cross-team communication is a reliability concern, not just a nice-to-have \u2014 the 3x traffic spike without advance notice turned a latent issue into an incident."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:23:52Z",
+      "performer": "initiator"
+    }
+  ],
+  "metadata": {},
+  "children": [],
+  "parent": null,
+  "created_at": "2026-03-05T16:20:33Z"
+}

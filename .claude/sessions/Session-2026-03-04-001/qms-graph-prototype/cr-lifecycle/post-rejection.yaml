@@ -1,0 +1,19 @@
+node:
+  id: cr.post-rejection
+  prompt: "Post-approval rejected. Additional execution work needed."
+  context: "The approver has rejected the post-approval. You must address the feedback and return to execution."
+  performer: initiator
+
+  evidence_schema:
+    revision_plan:
+      type: text
+      required: true
+      hint: "What additional work is needed to satisfy the approver"
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+
+  edges:
+    - to: cr.execute-ei

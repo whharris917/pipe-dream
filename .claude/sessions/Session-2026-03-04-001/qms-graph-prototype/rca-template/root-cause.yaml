@@ -1,0 +1,36 @@
+node:
+  id: rca.root-cause
+  prompt: "Identify the root cause."
+  context: >
+    Within the isolated component, trace the exact code path or configuration
+    that produces the failure. Distinguish between the root cause (the actual
+    defect), the trigger (what activated it), and the contributing factors
+    (why it was not caught earlier). Apply the '5 Whys' technique: ask why
+    each intermediate cause exists until you reach something that, if fixed,
+    would prevent the entire class of failure.
+
+  evidence_schema:
+    root_cause:
+      type: text
+      required: true
+      hint: "The actual defect, misconfiguration, or design flaw"
+    trigger:
+      type: text
+      required: true
+      hint: "What activated or exposed the root cause? (load, timing, data pattern)"
+    contributing_factors:
+      type: text
+      required: true
+      hint: "Why was this not caught earlier? (testing gaps, monitoring blind spots)"
+    five_whys:
+      type: text
+      required: true
+      hint: "Walk through the chain of whys from symptom to root cause"
+    confidence:
+      type: enum
+      values: ["high", "medium", "low"]
+      required: true
+      hint: "How confident are you this is the actual root cause?"
+
+  edges:
+    - to: rca.fix

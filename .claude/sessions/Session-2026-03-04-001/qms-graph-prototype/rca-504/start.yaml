@@ -1,0 +1,42 @@
+node:
+  id: rca.start
+  prompt: "Triage the 504 timeout incident on /api/v2/orders."
+  context: >
+    INCIDENT: Starting Monday 2026-03-03 at approximately 14:00 UTC, the
+    /api/v2/orders POST endpoint began returning 504 Gateway Timeout errors
+    for roughly 12% of requests. Customer support has received 47 tickets.
+
+    Assess: Are failed orders resulting in partial state (money charged but
+    order not recorded)? Check the payment service logs to determine whether
+    the timeout occurs before or after payment processing. Determine the
+    severity of user impact and whether data corruption is occurring.
+
+  evidence_schema:
+    incident_summary:
+      type: text
+      required: true
+      hint: "Describe the 504 timeout behavior on /api/v2/orders"
+    affected_systems:
+      type: text
+      required: true
+      hint: "Which services in the order flow are affected? (nginx, order-api, payment-service, DB)"
+    user_impact:
+      type: enum
+      values: ["none", "degraded", "partial-outage", "full-outage"]
+      required: true
+      hint: "12% failure rate on order submission — what level of impact?"
+    data_integrity_risk:
+      type: enum
+      values: ["none", "possible", "confirmed"]
+      required: true
+      hint: "Check payment logs: are payments being charged for timed-out orders?"
+    active_harm:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Users are actively losing orders. Is this causing ongoing harm?"
+
+  edges:
+    - to: rca.contain
+      condition: "response.get('active_harm') == 'yes'"
+    - to: rca.timeline

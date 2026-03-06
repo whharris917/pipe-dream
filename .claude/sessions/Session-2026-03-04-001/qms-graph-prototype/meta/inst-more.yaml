@@ -1,0 +1,15 @@
+node:
+  id: m.inst-more
+  prompt: "Specialize another step?"
+  context: "Have you specialized all the steps that need specific content for this scenario? Steps you don't specialize will use the template's generic text."
+
+  evidence_schema:
+    more:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: m.inst-specialize
+      condition: "response.get('more') == 'yes'"
+    - to: m.generate-instance

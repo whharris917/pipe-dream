@@ -1,0 +1,19 @@
+node:
+  id: cr.scope-revision
+  prompt: "Scope revision: re-opening approved CR for changes."
+  context: "WARNING: This resets the CR to DRAFT status. All pre-approved content will be unlocked. You will need to go through the full review and approval cycle again. Only do this if the approved scope is fundamentally wrong."
+  performer: initiator
+
+  evidence_schema:
+    revision_justification:
+      type: text
+      required: true
+      hint: "Why is a scope revision necessary? What changed since approval?"
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+
+  edges:
+    - to: cr.purpose

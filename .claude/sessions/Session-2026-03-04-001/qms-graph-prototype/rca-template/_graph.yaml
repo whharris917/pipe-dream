@@ -1,0 +1,11 @@
+graph:
+  id: rca
+  name: "Root Cause Analysis - Production Incident"
+  version: "1.0"
+  entry_point: rca.start
+  description: >
+    A systematic procedure for diagnosing and resolving production incidents.
+    Guides the investigator from initial triage through containment, timeline
+    establishment, reproduction, fault isolation, root cause identification,
+    fix validation, deployment, and post-incident reporting. Designed to ensure
+    root causes are addressed rather than symptoms.

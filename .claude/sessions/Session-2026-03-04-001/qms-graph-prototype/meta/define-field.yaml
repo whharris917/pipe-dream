@@ -1,0 +1,34 @@
+node:
+  id: m.define-field
+  prompt: "Define an evidence field for this step."
+  context: >
+    Each field captures one piece of structured evidence from the executor.
+    Types: text (free text), enum (pick from values), bool (yes/no),
+    integer (whole number), doc_id (document reference).
+
+  evidence_schema:
+    field_name:
+      type: text
+      required: true
+      hint: "Field name in snake_case (e.g., 'root_cause', 'risk_level')"
+    field_type:
+      type: enum
+      values: ["text", "enum", "bool", "integer", "doc_id"]
+      required: true
+    field_required:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    field_values:
+      type: text
+      required: false
+      hint: "For enum type only: comma-separated values (e.g., 'low, medium, high')"
+    field_hint:
+      type: text
+      required: false
+      hint: "Help text shown to the executor for this field"
+
+  edges:
+    - to: m.define-field
+      condition: "visits_since('m.define-field', 'm.define-step') < int(last_response('m.define-step').get('num_fields', 0))"
+    - to: m.define-edges

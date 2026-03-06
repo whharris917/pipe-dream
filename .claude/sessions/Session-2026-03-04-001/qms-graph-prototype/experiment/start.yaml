@@ -1,0 +1,32 @@
+node:
+  id: exp.start
+  prompt: "Define the research question."
+  context: >
+    SCENARIO: You are testing whether a new caching algorithm (LFU-Aging)
+    outperforms the standard LRU cache for a web application's database
+    query layer. The current system uses LRU with a 10,000-entry cache
+    and achieves a 72% hit rate. The team claims LFU-Aging should achieve
+    85%+ hit rate on the same workload.
+
+    State the research question precisely and identify the key variables.
+
+  evidence_schema:
+    research_question:
+      type: text
+      required: true
+      hint: "A precise, testable question"
+    independent_variable:
+      type: text
+      required: true
+      hint: "What you are changing (the treatment)"
+    dependent_variable:
+      type: text
+      required: true
+      hint: "What you are measuring (the outcome)"
+    controlled_variables:
+      type: text
+      required: true
+      hint: "What you are keeping constant"
+
+  edges:
+    - to: exp.hypothesis

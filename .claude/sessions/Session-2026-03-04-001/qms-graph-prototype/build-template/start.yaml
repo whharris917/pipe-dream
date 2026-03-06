@@ -1,0 +1,15 @@
+node:
+  id: bt.start
+  prompt: "What kind of workflow template would you like to build?"
+  context: "You are creating a new workflow template that will define the steps, gates, and evidence requirements for a type of QMS document."
+
+  evidence_schema:
+    template_type:
+      type: text
+      required: true
+      hint: "e.g., Investigation, Change Record, Variance Report"
+
+  performer: initiator
+
+  edges:
+    - to: bt.name

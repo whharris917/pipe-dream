@@ -1,0 +1,31 @@
+node:
+  id: m.summary
+  prompt: "Lifecycle complete. Summarize the experience."
+  context: >
+    You have completed the full lifecycle: authored a reusable template,
+    instantiated it for a specific scenario, and executed the instance.
+    Reflect on the process.
+  terminal: true
+
+  evidence_schema:
+    template_steps:
+      type: integer
+      required: true
+      hint: "How many steps in the template?"
+    instance_specializations:
+      type: integer
+      required: true
+      hint: "How many steps did you specialize?"
+    what_worked:
+      type: text
+      required: true
+      hint: "What worked well about this lifecycle?"
+    what_didnt:
+      type: text
+      required: true
+      hint: "What was awkward, missing, or could be improved?"
+    would_reuse_template:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Would you use this template for another incident?"

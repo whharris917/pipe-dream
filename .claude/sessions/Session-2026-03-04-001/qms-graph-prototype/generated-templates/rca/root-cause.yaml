@@ -1,0 +1,21 @@
+node:
+  context: Within the isolated component, trace the exact code path or configuration
+    producing the failure. Distinguish between root cause, trigger, and contributing
+    factors. Apply the 5 Whys technique.
+  edges:
+  - to: rca.fix
+  evidence_schema:
+    five_whys:
+      hint: Chain of whys from symptom to root cause
+      required: true
+      type: text
+    root_cause:
+      hint: The actual defect, misconfiguration, or design flaw
+      required: true
+      type: text
+    trigger:
+      hint: What activated or exposed the root cause?
+      required: true
+      type: text
+  id: rca.root-cause
+  prompt: Identify the root cause.

@@ -1,0 +1,15 @@
+node:
+  id: cr.closed
+  prompt: "Change Record CLOSED."
+  context: "The Change Record is now in its terminal state. No further modifications are possible. If corrections are needed, create an Addendum Report (ADD) as a child document."
+  terminal: true
+
+  hooks:
+    on_enter:
+      - command: "qms close {ticket.doc_id}"
+        on_failure: block
+      - command: "git checkout main && git merge {ticket.doc_id}/execution"
+        on_failure: log
+
+  evidence_schema: {}
+  edges: []

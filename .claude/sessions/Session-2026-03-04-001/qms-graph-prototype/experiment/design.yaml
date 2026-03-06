@@ -1,0 +1,42 @@
+node:
+  id: exp.design
+  prompt: "Design the experiment."
+  context: >
+    Define the experimental setup. Consider:
+    - What workload will you use? (real traffic replay, synthetic, mixed?)
+    - How will you control for confounds? (same hardware, same data, same time window?)
+    - How many trials do you need for statistical power?
+    - What's your warm-up strategy? (cold cache vs pre-warmed)
+    - How will you measure? (instrumentation, sampling, logging)
+
+  evidence_schema:
+    workload_source:
+      type: text
+      required: true
+      hint: "Where does the test workload come from?"
+    control_setup:
+      type: text
+      required: true
+      hint: "How is the control (LRU) configured?"
+    treatment_setup:
+      type: text
+      required: true
+      hint: "How is the treatment (LFU-Aging) configured?"
+    num_trials:
+      type: integer
+      required: true
+      hint: "Number of independent trials to run"
+    warmup_strategy:
+      type: text
+      required: true
+    measurement_method:
+      type: text
+      required: true
+      hint: "How will you measure hit rate, latency, etc.?"
+    confounds_addressed:
+      type: text
+      required: true
+      hint: "List potential confounds and how you're controlling for them"
+
+  edges:
+    - to: exp.pre-check

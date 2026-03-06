@@ -1,0 +1,15 @@
+node:
+  id: bt.inherit
+  prompt: "Should this template inherit from a base template?"
+  context: "Base templates provide invariant bookend steps (e.g., pre-execution commit, post-execution commit) that all derived templates share. Your custom steps will be inserted between the invariant steps."
+
+  evidence_schema:
+    inherit:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: bt.select-base
+      condition: "response.get('inherit') == 'yes'"
+    - to: bt.step-name

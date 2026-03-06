@@ -1,0 +1,15 @@
+node:
+  id: ts.fix-network
+  prompt: "General network issue. Investigate firewall, security groups, routing."
+  context: "DNS resolves but the server is unreachable. Check firewall rules, security groups, routing tables, and whether the network interface is up."
+
+  evidence_schema:
+    root_cause:
+      type: text
+      required: true
+    fix_applied:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.verify-fix

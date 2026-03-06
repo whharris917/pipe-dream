@@ -1,0 +1,23 @@
+node:
+  id: inv.rejection
+  prompt: "Investigation rejected. Revision required."
+  performer: initiator
+
+  evidence_schema:
+    revision_plan:
+      type: text
+      required: true
+    needs_re_review:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+
+  edges:
+    - to: inv.checkin-route
+      condition: "response.get('needs_re_review') == 'yes'"
+    - to: inv.route-approval

@@ -1,0 +1,25 @@
+node:
+  id: ts.infra-problem
+  prompt: "Network layer failure detected. Identify the infrastructure issue."
+  context: "The server is unreachable at the network level. This could be a DNS issue, firewall change, hardware failure, or cloud provider outage."
+
+  evidence_schema:
+    dns_resolves:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Does the hostname resolve to an IP address?"
+    cloud_status_page:
+      type: enum
+      values: ["all-operational", "incident-reported", "not-checked"]
+      required: true
+    probable_cause:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.escalate-infra
+      condition: "response.get('cloud_status_page') == 'incident-reported'"
+    - to: ts.fix-dns
+      condition: "response.get('dns_resolves') == 'no'"
+    - to: ts.fix-network

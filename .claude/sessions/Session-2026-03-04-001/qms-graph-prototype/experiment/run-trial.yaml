@@ -1,0 +1,34 @@
+node:
+  id: exp.run-trial
+  prompt: "Run a trial and record results."
+  context: >
+    Execute one trial of the experiment. Run both control (LRU) and treatment
+    (LFU-Aging) under identical conditions. Record all measurements.
+
+  evidence_schema:
+    trial_number:
+      type: integer
+      required: true
+    control_hit_rate:
+      type: text
+      required: true
+      hint: "LRU hit rate for this trial (e.g., '73.2%')"
+    treatment_hit_rate:
+      type: text
+      required: true
+      hint: "LFU-Aging hit rate for this trial (e.g., '86.1%')"
+    control_p99_latency:
+      type: text
+      required: true
+      hint: "LRU p99 latency (e.g., '42ms')"
+    treatment_p99_latency:
+      type: text
+      required: true
+      hint: "LFU-Aging p99 latency (e.g., '38ms')"
+    anomalies_observed:
+      type: text
+      required: false
+      hint: "Any unexpected behavior during this trial?"
+
+  edges:
+    - to: exp.more-trials

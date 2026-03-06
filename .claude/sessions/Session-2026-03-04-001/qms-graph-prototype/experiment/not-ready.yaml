@@ -1,0 +1,17 @@
+node:
+  id: exp.not-ready
+  prompt: "Prerequisites not met. Fix the issues before proceeding."
+  context: "One or more pre-checks failed. Address each issue and re-verify."
+
+  evidence_schema:
+    issues_fixed:
+      type: text
+      required: true
+      hint: "What did you fix?"
+    all_resolved:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: exp.pre-check

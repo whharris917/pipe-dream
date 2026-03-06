@@ -1,0 +1,24 @@
+graph:
+  id: review-approval
+  name: "Review and Approval Cycle"
+  version: "0.1.0"
+  entry_point: ra.start
+  description: >
+    Reusable review-approval subgraph. Handles reviewer assignment, review collection
+    (recommend / request-updates), revision loops, approval routing, and approval/rejection.
+    Used as a reference pattern — CR and INV lifecycles embed their own review steps
+    with the same structure.
+
+  invoked_by:
+    - graph: cr-lifecycle
+      trigger: "Embedded at cr.checkin-for-review through cr.approval-decision"
+    - graph: inv-lifecycle
+      trigger: "Embedded at inv.checkin-route through inv.approval-decision"
+
+  invokes: []
+
+  performer_map:
+    initiator: "Document owner"
+    quality: "QA (assigns reviewers, approves/rejects)"
+    reviewer: "Assigned reviewer(s)"
+    system: "Engine waits for external state"

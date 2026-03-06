@@ -1,0 +1,17 @@
+node:
+  id: bt.step-evidence
+  prompt: "What evidence must the agent provide when this step completes?"
+  context: "Describe the evidence in plain language. The engine will prompt the agent for it during execution."
+
+  evidence_schema:
+    evidence_description:
+      type: text
+      required: true
+      hint: "e.g., Commit hash and description of changes, Root cause analysis text"
+    evidence_required:
+      type: bool
+      required: true
+      hint: "Must the agent provide this evidence, or is it optional?"
+
+  edges:
+    - to: bt.step-gate

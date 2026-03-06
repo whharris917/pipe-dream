@@ -1,0 +1,19 @@
+node:
+  id: cr.assign-reviewers
+  prompt: "Assign reviewers to this Change Record."
+  context: "Select reviewers based on affected_systems from the scope. At least one QA-group reviewer is required. Reviewer mapping: sketch/solver → tu_sketch, simulation/physics → tu_sim, ui/tools → tu_ui, commands/scene → tu_scene, qms/sops → qa."
+  performer: quality
+
+  evidence_schema:
+    reviewers:
+      type: text
+      required: true
+      hint: "Comma-separated reviewer IDs, e.g.: qa, tu_ui, tu_sim"
+
+  hooks:
+    on_exit:
+      - command: "qms assign {ticket.doc_id} --add {response.reviewers}"
+        on_failure: block
+
+  edges:
+    - to: cr.wait-for-reviews

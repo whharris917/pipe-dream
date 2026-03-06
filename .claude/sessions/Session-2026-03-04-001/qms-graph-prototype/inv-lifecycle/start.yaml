@@ -1,0 +1,23 @@
+node:
+  id: inv.start
+  prompt: "Create a new Investigation."
+  context: "An Investigation documents a deviation, identifies the root cause, and defines Corrective and Preventive Actions (CAPAs). Use this when a deviation is systemic, the root cause is unclear, or the issue could recur."
+
+  evidence_schema:
+    title:
+      type: text
+      required: true
+      hint: "Brief description (e.g., 'Investigation of repeated solver convergence failures')"
+    deviation_type:
+      type: enum
+      values: ["procedural", "product"]
+      required: true
+      hint: "procedural = process/SOP violation; product = code/output defect"
+
+  hooks:
+    on_exit:
+      - command: "qms create INV --title \"{response.title}\""
+        on_failure: block
+
+  edges:
+    - to: inv.purpose

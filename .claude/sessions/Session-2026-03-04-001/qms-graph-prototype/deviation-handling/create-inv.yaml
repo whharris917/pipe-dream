@@ -1,0 +1,17 @@
+node:
+  id: dh.create-inv
+  prompt: "Creating an Investigation for this systemic deviation."
+  context: "The Investigation will identify the root cause and define CAPAs. It follows the full INV lifecycle."
+
+  evidence_schema:
+    inv_title:
+      type: text
+      required: true
+
+  hooks:
+    on_exit:
+      - command: "qms create INV --title \"{response.inv_title}\""
+        on_failure: block
+
+  edges:
+    - to: dh.resolution-complete

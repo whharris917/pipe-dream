@@ -1,0 +1,32 @@
+node:
+  id: rca.contain
+  prompt: "Stabilize and contain the incident."
+  context: >
+    Active harm is occurring. Apply the least-invasive containment measure
+    available: feature flag toggle, traffic rerouting, rollback, rate limiting,
+    or scaling. The goal is to stop the bleeding, not to fix the underlying cause.
+    Document exactly what action was taken and when.
+
+  evidence_schema:
+    containment_action:
+      type: text
+      required: true
+      hint: "What specific action did you take? (e.g., rollback, feature flag, traffic shift)"
+    containment_timestamp:
+      type: text
+      required: true
+      hint: "When was containment applied? (ISO 8601 or similar)"
+    containment_effective:
+      type: enum
+      values: ["yes", "partial", "no"]
+      required: true
+      hint: "Did the containment action reduce or stop the active harm?"
+    residual_impact:
+      type: text
+      required: false
+      hint: "Any remaining impact after containment?"
+
+  edges:
+    - to: rca.contain-failed
+      condition: "response.get('containment_effective') == 'no'"
+    - to: rca.timeline

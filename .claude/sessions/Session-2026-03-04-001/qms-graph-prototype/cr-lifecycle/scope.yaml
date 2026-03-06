@@ -1,0 +1,21 @@
+node:
+  id: cr.scope
+  prompt: "Define the scope of this change."
+  context: "What systems, files, or documents will be affected? Be specific — reviewers use this to determine which TU reviewers are needed."
+
+  evidence_schema:
+    current_state:
+      type: text
+      required: true
+      hint: "Describe the current state of the system before this change"
+    proposed_state:
+      type: text
+      required: true
+      hint: "Describe the desired end state after this change is implemented"
+    affected_systems:
+      type: text
+      required: true
+      hint: "Comma-separated list: sketch, simulation, ui, commands, solver, compiler, qms, sops"
+
+  edges:
+    - to: cr.impact

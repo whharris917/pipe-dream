@@ -1,0 +1,19 @@
+node:
+  id: dh.er-resolution
+  prompt: "Document the exception resolution."
+  context: "The ER must document what went wrong, why, and how it was fixed. The failed test step must be re-executed after resolution."
+
+  evidence_schema:
+    root_cause:
+      type: text
+      required: true
+    resolution:
+      type: text
+      required: true
+    re_execution_plan:
+      type: text
+      required: true
+      hint: "How and when the failed step will be re-executed"
+
+  edges:
+    - to: dh.resolution-complete

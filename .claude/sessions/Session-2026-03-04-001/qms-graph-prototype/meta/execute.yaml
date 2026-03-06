@@ -1,0 +1,34 @@
+node:
+  id: m.execute
+  prompt: "Execute your document."
+  context: >
+    Your instance workflow has been generated. Now execute it by starting
+    a new ticket on the generated workflow:
+
+    1. python engine.py start <instance-dir> --ticket <name> --ticket-dir .tickets
+    2. python engine.py respond <instance-dir> --ticket-file <path> --response-file <file>
+    3. Repeat until the workflow reaches completion.
+    4. python engine.py history <instance-dir> --ticket-file <path>
+
+    When execution is complete, return here and confirm.
+
+  evidence_schema:
+    execution_ticket_id:
+      type: text
+      required: true
+      hint: "The ticket ID you used for execution"
+    execution_completed:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    steps_traversed:
+      type: integer
+      required: true
+      hint: "How many steps did you traverse?"
+    execution_notes:
+      type: text
+      required: false
+      hint: "Any observations about the execution experience"
+
+  edges:
+    - to: m.summary

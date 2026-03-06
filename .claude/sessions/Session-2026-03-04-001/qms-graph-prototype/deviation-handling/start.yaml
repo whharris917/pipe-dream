@@ -1,0 +1,25 @@
+node:
+  id: dh.start
+  prompt: "A deviation has occurred. What type of deviation is this?"
+  context: "A deviation is any departure from the approved plan. The type of deviation determines the child document to create and the resolution path."
+
+  evidence_schema:
+    parent_doc:
+      type: text
+      required: true
+      hint: "Parent document ID (e.g., CR-042)"
+    deviation_description:
+      type: text
+      required: true
+      hint: "Brief description of what went wrong"
+    deviation_category:
+      type: enum
+      values: ["execution-failure", "test-failure", "scope-change", "process-violation"]
+      required: true
+
+  edges:
+    - to: dh.test-failure
+      condition: "response.get('deviation_category') == 'test-failure'"
+    - to: dh.is-systemic
+      condition: "response.get('deviation_category') == 'process-violation'"
+    - to: dh.var-decision

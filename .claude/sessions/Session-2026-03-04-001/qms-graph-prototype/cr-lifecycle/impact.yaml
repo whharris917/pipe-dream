@@ -1,0 +1,22 @@
+node:
+  id: cr.impact
+  prompt: "Assess the impact of this change."
+  context: "Consider backwards compatibility, performance implications, and risk. This helps reviewers evaluate whether the change is safe to approve."
+
+  evidence_schema:
+    risk_level:
+      type: enum
+      values: ["low", "medium", "high"]
+      required: true
+      hint: "low = isolated change; medium = touches multiple systems; high = architectural change"
+    backwards_compatible:
+      type: enum
+      values: ["yes", "no", "n/a"]
+      required: true
+    impact_description:
+      type: text
+      required: true
+      hint: "Specific impact details — what could go wrong, what depends on this"
+
+  edges:
+    - to: cr.implementation-plan

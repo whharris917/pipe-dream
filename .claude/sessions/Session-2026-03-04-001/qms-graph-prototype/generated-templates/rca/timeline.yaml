@@ -1,0 +1,21 @@
+node:
+  context: Correlate multiple data sources (monitoring, deploys, user reports) to
+    determine when the problem started. Identify last known good state, first known
+    bad state, and any changes in the window.
+  edges:
+  - to: rca.reproduce
+  evidence_schema:
+    first_known_bad:
+      hint: Timestamp and description of first observed failure
+      required: true
+      type: text
+    last_known_good:
+      hint: Timestamp and description of last healthy state
+      required: true
+      type: text
+    primary_suspect:
+      hint: Based on correlation, what is your leading hypothesis?
+      required: true
+      type: text
+  id: rca.timeline
+  prompt: Establish the incident timeline.

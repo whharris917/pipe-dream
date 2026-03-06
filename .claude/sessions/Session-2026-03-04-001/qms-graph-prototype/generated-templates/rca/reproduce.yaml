@@ -1,0 +1,21 @@
+node:
+  context: Try to reproduce the failure in a non-production environment using the
+    conditions identified in the timeline. Define inputs, state, and sequence. A failure
+    you cannot reproduce is a failure you cannot confidently fix.
+  edges:
+  - to: rca.isolate
+  evidence_schema:
+    reproduced:
+      hint: Were you able to reproduce the failure?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - intermittent
+      - 'no'
+    reproduction_steps:
+      hint: Exact steps taken to reproduce
+      required: true
+      type: text
+  id: rca.reproduce
+  prompt: Attempt to reproduce the failure.

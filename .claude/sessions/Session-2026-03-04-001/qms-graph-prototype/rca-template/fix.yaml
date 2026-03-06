@@ -1,0 +1,34 @@
+node:
+  id: rca.fix
+  prompt: "Develop and validate the fix."
+  context: >
+    Write the minimal change that addresses the root cause. Verify it resolves
+    the reproduced failure. Confirm it does not introduce regressions by running
+    the existing test suite. Write a new test that specifically covers the failure
+    mode — the new test should fail without the fix and pass with it.
+
+  evidence_schema:
+    fix_description:
+      type: text
+      required: true
+      hint: "What is the fix? Describe the change."
+    fix_validated:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Does the fix resolve the reproduced failure?"
+    regression_tested:
+      type: enum
+      values: ["yes", "no", "not-applicable"]
+      required: true
+      hint: "Did you run the existing test suite? Any regressions?"
+    new_test_written:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Did you write a test that covers the specific failure mode?"
+
+  edges:
+    - to: rca.fix-failed
+      condition: "response.get('fix_validated') == 'no'"
+    - to: rca.deploy

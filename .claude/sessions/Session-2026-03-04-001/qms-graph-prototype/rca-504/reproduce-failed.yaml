@@ -1,0 +1,27 @@
+node:
+  id: rca.reproduce-failed
+  prompt: "Reproduction failed. Gather more information or adjust approach."
+  context: >
+    If reproduction failed, check whether the staging DB snapshot is truly
+    from after the index rebuild. Verify the load test is hitting the same
+    code paths as production (same API version, same order payload shapes).
+
+  evidence_schema:
+    what_was_tried:
+      type: text
+      required: true
+      hint: "What reproduction approaches were attempted and failed?"
+    next_approach:
+      type: enum
+      values: ["retry-with-new-info", "proceed-without-reproduction"]
+      required: true
+      hint: "Try again with corrected conditions, or proceed observationally?"
+    additional_info:
+      type: text
+      required: false
+      hint: "New information gathered"
+
+  edges:
+    - to: rca.reproduce
+      condition: "response.get('next_approach') == 'retry-with-new-info'"
+    - to: rca.isolate

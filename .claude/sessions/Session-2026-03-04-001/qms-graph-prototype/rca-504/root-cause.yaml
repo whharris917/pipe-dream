@@ -1,0 +1,40 @@
+node:
+  id: rca.root-cause
+  prompt: "Identify the root cause of the slow inventory query."
+  context: >
+    The inventory-check query against the products table accounts for 16.2s
+    of the 18s total latency. Run EXPLAIN ANALYZE on the query.
+
+    Before the index rebuild, the query used idx_products_sku_warehouse
+    (composite index) and completed in 3ms. After the rebuild, the planner
+    chooses a sequential scan on 1.2M rows, taking 800ms per query.
+
+    The REINDEX CONCURRENTLY succeeded, but ANALYZE was not run afterward.
+    The planner's row count estimates are stale. Check the index rebuild
+    runbook for whether it includes a post-rebuild ANALYZE step.
+
+  evidence_schema:
+    root_cause:
+      type: text
+      required: true
+      hint: "Stale table statistics after REINDEX CONCURRENTLY without ANALYZE"
+    trigger:
+      type: text
+      required: true
+      hint: "3x flash sale traffic amplified the per-query cost into timeouts"
+    contributing_factors:
+      type: text
+      required: true
+      hint: "Runbook missing ANALYZE step; no query plan regression monitoring"
+    five_whys:
+      type: text
+      required: true
+      hint: "Why 504? -> slow query. Why slow? -> seq scan. Why seq scan? -> stale stats. Why stale? -> no ANALYZE after REINDEX. Why no ANALYZE? -> runbook gap."
+    confidence:
+      type: enum
+      values: ["high", "medium", "low"]
+      required: true
+      hint: "EXPLAIN ANALYZE confirms the plan regression; pre/post comparison proves it"
+
+  edges:
+    - to: rca.fix

@@ -1,0 +1,15 @@
+node:
+  id: ts.fix-dns
+  prompt: "DNS resolution failure. Investigate and fix."
+  context: "The hostname doesn't resolve. Check if the DNS record was accidentally deleted, if the registrar is having issues, or if there's a propagation delay from a recent change."
+
+  evidence_schema:
+    root_cause:
+      type: text
+      required: true
+    fix_applied:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.verify-fix

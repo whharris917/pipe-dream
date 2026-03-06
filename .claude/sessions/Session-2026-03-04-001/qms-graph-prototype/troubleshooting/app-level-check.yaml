@@ -1,0 +1,31 @@
+node:
+  id: ts.app-level-check
+  prompt: "Resources look normal. Check application-level issues."
+  context: "The server is running, resources are available, but it's still returning errors. Check application logs, database connectivity, upstream service dependencies, and configuration."
+
+  evidence_schema:
+    error_in_logs:
+      type: text
+      required: true
+      hint: "What errors appear in the application logs?"
+    database_connected:
+      type: enum
+      values: ["yes", "no", "n/a"]
+      required: true
+    upstream_services_healthy:
+      type: enum
+      values: ["yes", "no", "some-degraded"]
+      required: true
+    config_recently_changed:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: ts.fix-database
+      condition: "response.get('database_connected') == 'no'"
+    - to: ts.fix-upstream
+      condition: "response.get('upstream_services_healthy') != 'yes'"
+    - to: ts.fix-config
+      condition: "response.get('config_recently_changed') == 'yes'"
+    - to: ts.deep-dive

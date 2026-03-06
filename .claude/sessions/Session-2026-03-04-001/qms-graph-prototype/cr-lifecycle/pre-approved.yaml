@@ -1,0 +1,21 @@
+node:
+  id: cr.pre-approved
+  prompt: "Change Record approved (v1.0). Ready for execution."
+  context: "Sections 1-9 are now locked. The CR is PRE_APPROVED. You may now release it to begin execution, or review the approved plan one more time."
+
+  hooks:
+    on_enter:
+      - command: "qms approve {ticket.doc_id}"
+        on_failure: block
+
+  evidence_schema:
+    action:
+      type: enum
+      values: ["release", "scope-revision"]
+      required: true
+      hint: "release = begin execution; scope-revision = re-open for changes (resets to DRAFT)"
+
+  edges:
+    - to: cr.scope-revision
+      condition: "response.get('action') == 'scope-revision'"
+    - to: cr.release

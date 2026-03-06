@@ -1,0 +1,21 @@
+node:
+  context: 'Check: Grafana p99 latency (stable at 1.2s Wed-Sun, spiked to 18s Monday
+    13:47). Last deploy Friday 16:30. DB team ran REINDEX CONCURRENTLY on products
+    table Sunday 02:00. Marketing flash sale Monday 13:00 (3x traffic).'
+  edges:
+  - to: rca.reproduce
+  evidence_schema:
+    first_known_bad:
+      hint: When was p99 last normal?
+      required: true
+      type: text
+    last_known_good:
+      hint: When did p99 first spike to 18s?
+      required: true
+      type: text
+    primary_suspect:
+      hint: Index rebuild Sunday + flash sale Monday - hypothesis?
+      required: true
+      type: text
+  id: rca.timeline
+  prompt: Establish the timeline for the 504 incident.

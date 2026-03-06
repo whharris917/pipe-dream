@@ -1,0 +1,21 @@
+node:
+  id: inv.approval-decision
+  prompt: "Approve or reject this Investigation."
+  context: "Evaluate: Is the root cause analysis sound? Are CAPAs adequate? Is there both corrective and preventive action?"
+  performer: quality
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["approve", "reject"]
+      required: true
+    rejection_comment:
+      type: text
+      required: false
+      required_when: "decision == 'reject'"
+      hint: "Required if rejecting — specific rationale"
+
+  edges:
+    - to: inv.rejection
+      condition: "response.get('decision') == 'reject'"
+    - to: inv.release

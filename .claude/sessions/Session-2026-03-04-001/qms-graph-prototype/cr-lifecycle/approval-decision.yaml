@@ -1,0 +1,21 @@
+node:
+  id: cr.approval-decision
+  prompt: "Approve or reject this Change Record."
+  context: "As approver, verify the change is justified, the scope is clear, the implementation plan is sound, and the testing approach is adequate. Approval locks Sections 1-9 and increments to version 1.0."
+  performer: quality
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["approve", "reject"]
+      required: true
+    rejection_comment:
+      type: text
+      required: false
+      required_when: "decision == 'reject'"
+      hint: "Required if rejecting — specific rationale"
+
+  edges:
+    - to: cr.pre-rejection
+      condition: "response.get('decision') == 'reject'"
+    - to: cr.pre-approved

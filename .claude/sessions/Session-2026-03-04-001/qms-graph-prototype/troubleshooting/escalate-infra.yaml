@@ -1,0 +1,20 @@
+node:
+  id: ts.escalate-infra
+  prompt: "Cloud provider incident confirmed. Escalate and monitor."
+  context: "The outage is caused by the cloud provider. Document the incident, set up monitoring for their status page, and notify stakeholders. Since this is external, verify resolution once the provider reports recovery."
+
+  evidence_schema:
+    provider_incident_id:
+      type: text
+      required: true
+      hint: "The incident ID from the provider's status page"
+    stakeholders_notified:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    eta_if_available:
+      type: text
+      required: false
+
+  edges:
+    - to: ts.verify-fix

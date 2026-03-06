@@ -1,0 +1,29 @@
+node:
+  id: ts.deep-dive
+  prompt: "Standard checks exhausted. Perform a deep investigation."
+  context: "None of the common causes matched. This requires creative debugging. Check for edge cases: kernel bugs, corrupted state, race conditions, certificate expiration, time drift, etc."
+
+  evidence_schema:
+    investigation_notes:
+      type: text
+      required: true
+      hint: "Document everything you tried and what you found"
+    root_cause:
+      type: text
+      required: true
+    fix_applied:
+      type: text
+      required: true
+    was_this_predictable:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Could monitoring or alerting have caught this earlier?"
+    monitoring_improvement:
+      type: text
+      required: false
+      required_when: "was_this_predictable == 'yes'"
+      hint: "What monitoring would you add to detect this in the future?"
+
+  edges:
+    - to: ts.verify-fix

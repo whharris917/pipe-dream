@@ -1,0 +1,21 @@
+node:
+  context: 'Active harm is occurring. Apply the least-invasive containment measure:
+    feature flag, traffic rerouting, rollback, or rate limiting. Document the action
+    and timestamp.'
+  edges:
+  - to: rca.timeline
+  evidence_schema:
+    containment_action:
+      hint: What containment action was taken and when?
+      required: true
+      type: text
+    containment_effective:
+      hint: Did containment reduce or stop the harm?
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - partial
+      - 'no'
+  id: rca.contain
+  prompt: Stabilize and contain the incident.

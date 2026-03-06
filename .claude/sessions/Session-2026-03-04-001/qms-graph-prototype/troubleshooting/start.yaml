@@ -1,0 +1,18 @@
+node:
+  id: ts.start
+  prompt: "A production web server has stopped responding. Begin diagnosis."
+  context: "Users report 503 errors. The server was working 30 minutes ago. No deployments have occurred in the last 2 hours. You need to systematically identify the root cause."
+
+  evidence_schema:
+    initial_symptom:
+      type: text
+      required: true
+      hint: "Describe the symptom as reported (e.g., 503 errors, timeout, connection refused)"
+    urgency:
+      type: enum
+      values: ["critical", "high", "medium"]
+      required: true
+      hint: "How urgent is this? Critical = revenue impact, High = user-facing, Medium = internal only"
+
+  edges:
+    - to: ts.network-check

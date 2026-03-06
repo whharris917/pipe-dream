@@ -1,0 +1,13 @@
+node:
+  id: bt.step-performer
+  prompt: "Who performs this step?"
+
+  evidence_schema:
+    performer:
+      type: enum
+      values: [initiator, quality, reviewer]
+      required: true
+      hint: "initiator = document owner, quality = QA, reviewer = assigned TU/BU"
+
+  edges:
+    - to: bt.step-evidence

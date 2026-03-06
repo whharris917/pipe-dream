@@ -1,0 +1,1653 @@
+{
+  "id": "lifecycle-001",
+  "cursor": "m.summary",
+  "state": "complete",
+  "responses": {
+    "m.start": {
+      "template_id": "rca",
+      "template_name": "Root Cause Analysis - Production Incident",
+      "template_description": "A systematic procedure for diagnosing and resolving production incidents. Guides the investigator from triage through containment, timeline, reproduction, isolation, root cause identification, fix validation, deployment, and post-incident reporting.",
+      "estimated_steps": 9
+    },
+    "m.define-step": [
+      {
+        "step_id": "start",
+        "step_prompt": "Triage the incident. Assess scope, impact, and severity.",
+        "step_context": "Before investigating, assess the incident's scope and impact. Determine what systems are affected, what symptoms are visible, and whether active harm is occurring (data loss, cascading failures, revenue impact). This assessment drives the urgency of containment.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 3,
+        "num_edges": 2
+      },
+      {
+        "step_id": "contain",
+        "step_prompt": "Stabilize and contain the incident.",
+        "step_context": "Active harm is occurring. Apply the least-invasive containment measure: feature flag, traffic rerouting, rollback, or rate limiting. Document the action and timestamp.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      {
+        "step_id": "timeline",
+        "step_prompt": "Establish the incident timeline.",
+        "step_context": "Correlate multiple data sources (monitoring, deploys, user reports) to determine when the problem started. Identify last known good state, first known bad state, and any changes in the window.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 3,
+        "num_edges": 1
+      },
+      {
+        "step_id": "reproduce",
+        "step_prompt": "Attempt to reproduce the failure.",
+        "step_context": "Try to reproduce the failure in a non-production environment using the conditions identified in the timeline. Define inputs, state, and sequence. A failure you cannot reproduce is a failure you cannot confidently fix.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      {
+        "step_id": "isolate",
+        "step_prompt": "Isolate the fault domain.",
+        "step_context": "Narrow down which component, service, or layer is responsible. Use binary search reasoning, instrumentation, mocking, or log analysis to isolate the faulty component.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      {
+        "step_id": "root-cause",
+        "step_prompt": "Identify the root cause.",
+        "step_context": "Within the isolated component, trace the exact code path or configuration producing the failure. Distinguish between root cause, trigger, and contributing factors. Apply the 5 Whys technique.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 3,
+        "num_edges": 1
+      },
+      {
+        "step_id": "fix",
+        "step_prompt": "Develop and validate the fix.",
+        "step_context": "Write the minimal change that addresses the root cause. Verify it resolves the reproduced failure and does not introduce regressions. Write a new test covering the failure mode.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      {
+        "step_id": "deploy",
+        "step_prompt": "Deploy the fix and monitor.",
+        "step_context": "Apply the fix to production. Monitor the same signals used to establish the timeline. Maintain heightened monitoring for a defined observation period. Revert any temporary containment.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      {
+        "step_id": "postmortem",
+        "step_prompt": "Write the post-incident report.",
+        "step_context": "Document the incident: summary, timeline, root cause, fix, contributing factors, action items. Action items must be concrete, assigned, and time-bound.",
+        "performer": "initiator",
+        "is_terminal": "yes",
+        "num_fields": 3,
+        "num_edges": 0
+      }
+    ],
+    "m.define-field": [
+      {
+        "field_name": "incident_summary",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Brief description of the anomalous behavior observed"
+      },
+      {
+        "field_name": "user_impact",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "none, degraded, partial-outage, full-outage",
+        "field_hint": "How are users experiencing this?"
+      },
+      {
+        "field_name": "active_harm",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, no",
+        "field_hint": "Is the incident actively causing ongoing damage?"
+      },
+      {
+        "field_name": "containment_action",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What containment action was taken and when?"
+      },
+      {
+        "field_name": "containment_effective",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, partial, no",
+        "field_hint": "Did containment reduce or stop the harm?"
+      },
+      {
+        "field_name": "last_known_good",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Timestamp and description of last healthy state"
+      },
+      {
+        "field_name": "first_known_bad",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Timestamp and description of first observed failure"
+      },
+      {
+        "field_name": "primary_suspect",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Based on correlation, what is your leading hypothesis?"
+      },
+      {
+        "field_name": "reproduction_steps",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Exact steps taken to reproduce"
+      },
+      {
+        "field_name": "reproduced",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, intermittent, no",
+        "field_hint": "Were you able to reproduce the failure?"
+      },
+      {
+        "field_name": "faulty_component",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Which component is the source of the failure?"
+      },
+      {
+        "field_name": "isolation_evidence",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What evidence confirms this component is responsible?"
+      },
+      {
+        "field_name": "root_cause",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "The actual defect, misconfiguration, or design flaw"
+      },
+      {
+        "field_name": "trigger",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What activated or exposed the root cause?"
+      },
+      {
+        "field_name": "five_whys",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Chain of whys from symptom to root cause"
+      },
+      {
+        "field_name": "fix_description",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What is the fix? Describe the change."
+      },
+      {
+        "field_name": "fix_validated",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, no",
+        "field_hint": "Does the fix resolve the reproduced failure?"
+      },
+      {
+        "field_name": "deploy_timestamp",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "When was the fix deployed to production?"
+      },
+      {
+        "field_name": "fix_confirmed",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, no",
+        "field_hint": "Has monitoring confirmed the incident is resolved?"
+      },
+      {
+        "field_name": "summary",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "One-paragraph incident summary"
+      },
+      {
+        "field_name": "action_items",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Concrete, assigned, time-bound items to prevent recurrence"
+      },
+      {
+        "field_name": "lessons_learned",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What did the team learn from this incident?"
+      }
+    ],
+    "m.more-fields": [
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "yes"
+      },
+      {
+        "add_field": "no"
+      }
+    ],
+    "m.define-edges": [
+      {
+        "target_step": "contain",
+        "condition": "response.get('active_harm') == 'yes'"
+      },
+      {
+        "target_step": "timeline",
+        "condition": ""
+      },
+      {
+        "target_step": "timeline",
+        "condition": ""
+      },
+      {
+        "target_step": "reproduce",
+        "condition": ""
+      },
+      {
+        "target_step": "isolate",
+        "condition": ""
+      },
+      {
+        "target_step": "root-cause",
+        "condition": ""
+      },
+      {
+        "target_step": "fix",
+        "condition": ""
+      },
+      {
+        "target_step": "deploy",
+        "condition": ""
+      },
+      {
+        "target_step": "postmortem",
+        "condition": ""
+      },
+      {
+        "target_step": "",
+        "condition": ""
+      }
+    ],
+    "m.more-edges": [
+      {
+        "add_edge": "yes"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      },
+      {
+        "add_edge": "no"
+      }
+    ],
+    "m.more-steps": [
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "yes"
+      },
+      {
+        "add_step": "no"
+      }
+    ],
+    "m.generate-template": {
+      "output_dir": "generated-templates/rca",
+      "template_looks_correct": "yes"
+    },
+    "m.inst-start": {
+      "instance_name": "RCA: Intermittent 504 Timeouts on Order Submission",
+      "instance_description": "Root cause analysis for intermittent 504 Gateway Timeout errors on /api/v2/orders POST endpoint. ~12% request failure rate starting Monday 2026-03-03. Caused by stale PostgreSQL table statistics after REINDEX CONCURRENTLY, amplified by 3x flash sale traffic.",
+      "instance_dir": "generated-instances/rca-504"
+    },
+    "m.inst-specialize": [
+      {
+        "step_id": "start",
+        "specialized_prompt": "Triage the 504 timeout incident on /api/v2/orders.",
+        "specialized_context": "INCIDENT: Starting Monday 2026-03-03 at ~14:00 UTC, /api/v2/orders POST returns 504 for ~12% of requests. 47 support tickets received. Check payment logs to determine if timeout occurs before or after payment processing.",
+        "specialized_hints": "Describe the 504 timeout on /api/v2/orders; 12% failure rate on orders - what impact level?; Users losing orders - ongoing harm?"
+      },
+      {
+        "step_id": "contain",
+        "specialized_prompt": "Contain the 504 timeout impact.",
+        "specialized_context": "Payment gateway is NOT reached for timed-out requests. Least-invasive containment: increase nginx proxy_read_timeout from 10s to 25s on order-api upstream.",
+        "specialized_hints": "Describe the nginx timeout adjustment applied; Did the timeout increase reduce the 504 error rate?"
+      },
+      {
+        "step_id": "timeline",
+        "specialized_prompt": "Establish the timeline for the 504 incident.",
+        "specialized_context": "Check: Grafana p99 latency (stable at 1.2s Wed-Sun, spiked to 18s Monday 13:47). Last deploy Friday 16:30. DB team ran REINDEX CONCURRENTLY on products table Sunday 02:00. Marketing flash sale Monday 13:00 (3x traffic).",
+        "specialized_hints": "When was p99 last normal?; When did p99 first spike to 18s?; Index rebuild Sunday + flash sale Monday - hypothesis?"
+      },
+      {
+        "step_id": "reproduce",
+        "specialized_prompt": "Reproduce the 504 timeouts in staging.",
+        "specialized_context": "Strategy: Load Monday morning DB snapshot (post-rebuild) into staging. Run 3x load test. Compare against pre-rebuild DB snapshot under same load. Expected: post-rebuild fails, pre-rebuild survives.",
+        "specialized_hints": "Load test at 3x traffic against post-rebuild and pre-rebuild DBs; Did 504s appear under load with post-rebuild DB?"
+      },
+      {
+        "step_id": "isolate",
+        "specialized_prompt": "Isolate which component in the order flow is slow.",
+        "specialized_context": "Order flow: nginx -> order-api (Node.js) -> inventory-check (PostgreSQL products table) -> payment-service -> order-write. Add timing at each boundary under 3x load.",
+        "specialized_hints": "Which component accounts for the latency?; Timing breakdown showing where the 18s is spent"
+      },
+      {
+        "step_id": "root-cause",
+        "specialized_prompt": "Identify the root cause of the slow inventory query.",
+        "specialized_context": "EXPLAIN ANALYZE shows: before rebuild, query used idx_products_sku_warehouse (3ms). After rebuild, planner chooses seq scan on 1.2M rows (800ms). REINDEX CONCURRENTLY succeeded but ANALYZE was not run afterward. Stale statistics.",
+        "specialized_hints": "Stale stats after REINDEX without ANALYZE; 3x flash sale traffic amplified per-query cost; Why 504? slow query. Why slow? seq scan. Why? stale stats. Why? no ANALYZE. Why? runbook gap."
+      },
+      {
+        "step_id": "fix",
+        "specialized_prompt": "Develop and validate the fix for stale statistics.",
+        "specialized_context": "Immediate: ANALYZE products; on production. Preventive: update runbook, add query plan regression test to CI. Validate in staging: ANALYZE + 3x load test should show p99 drop to ~1.8s.",
+        "specialized_hints": "ANALYZE products; + runbook update + regression test; Does ANALYZE + load test confirm fix in staging?"
+      },
+      {
+        "step_id": "deploy",
+        "specialized_prompt": "Deploy the fix and monitor the order endpoint.",
+        "specialized_context": "Run ANALYZE products; on production. Revert nginx timeout from 25s to 10s. Monitor Grafana p99 latency. Flash sale continues through Tuesday as natural load test. 48-hour observation period.",
+        "specialized_hints": "When was ANALYZE run on production?; Did p99 drop and 504s stop?"
+      },
+      {
+        "step_id": "postmortem",
+        "specialized_prompt": "Write the post-incident report for the 504 timeout incident.",
+        "specialized_context": "Key facts: 12% failures for 26 hours. Root cause: stale stats after REINDEX without ANALYZE. Trigger: 3x flash sale. Fix: ANALYZE products;. Action items: runbook, CI checks, latency alerts, marketing coordination.",
+        "specialized_hints": "One-paragraph summary of the 504 incident; 4 items: runbook, CI checks, alerts, coordination; Index maintenance side effects, monitoring gaps, cross-team communication"
+      }
+    ],
+    "m.inst-more": [
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "yes"
+      },
+      {
+        "more": "no"
+      }
+    ],
+    "m.generate-instance": {
+      "instance_looks_correct": "yes"
+    },
+    "m.execute": {
+      "execution_ticket_id": "rca-504-meta-exec",
+      "execution_completed": "yes",
+      "steps_traversed": 9,
+      "execution_notes": "All 9 steps traversed on the happy path (with containment branch). Branching at start correctly routed to contain when active_harm=yes. Generated evidence schemas matched expectations. The simplified template (no error-recovery loops) worked cleanly for this scenario."
+    },
+    "m.summary": {
+      "template_steps": 9,
+      "instance_specializations": 9,
+      "what_worked": "The meta-workflow successfully decomposed template authoring into atomic steps. Each step definition was fully specified through structured prompts. The generator correctly assembled the YAML from the collected evidence. The instance specialization phase cleanly separated structure (kept from template) from content (overridden per instance). The full lifecycle from authoring through execution ran without errors.",
+      "what_didnt": "The field-by-field and edge-by-edge definition loop is extremely verbose \u2014 83 meta-workflow steps just to define a 9-node template. The more-fields/more-edges yes/no confirmation nodes add significant friction. The specialized_hints mechanism (semicolon-separated, positionally applied) is fragile and not intuitive. YAML key ordering by the serializer caused hints to land on different fields than intended. The num_fields/num_edges pre-declaration creates coupling between the step definition and the subsequent loop count.",
+      "would_reuse_template": "yes"
+    }
+  },
+  "history": [
+    {
+      "node_id": "m.start",
+      "response": {
+        "template_id": "rca",
+        "template_name": "Root Cause Analysis - Production Incident",
+        "template_description": "A systematic procedure for diagnosing and resolving production incidents. Guides the investigator from triage through containment, timeline, reproduction, isolation, root cause identification, fix validation, deployment, and post-incident reporting.",
+        "estimated_steps": 9
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:44:11Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "start",
+        "step_prompt": "Triage the incident. Assess scope, impact, and severity.",
+        "step_context": "Before investigating, assess the incident's scope and impact. Determine what systems are affected, what symptoms are visible, and whether active harm is occurring (data loss, cascading failures, revenue impact). This assessment drives the urgency of containment.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 3,
+        "num_edges": 2
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:44:30Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "incident_summary",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Brief description of the anomalous behavior observed"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:44:48Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:45:52Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "user_impact",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "none, degraded, partial-outage, full-outage",
+        "field_hint": "How are users experiencing this?"
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:45:53Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:45:53Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "active_harm",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, no",
+        "field_hint": "Is the incident actively causing ongoing damage?"
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:45:53Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:45:54Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "contain",
+        "condition": "response.get('active_harm') == 'yes'"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:45:54Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:45:54Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "timeline",
+        "condition": ""
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:45:54Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:45:55Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:45:55Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "contain",
+        "step_prompt": "Stabilize and contain the incident.",
+        "step_context": "Active harm is occurring. Apply the least-invasive containment measure: feature flag, traffic rerouting, rollback, or rate limiting. Document the action and timestamp.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:45:55Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "containment_action",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What containment action was taken and when?"
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:45:56Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:45:56Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "containment_effective",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, partial, no",
+        "field_hint": "Did containment reduce or stop the harm?"
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:45:56Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:45:57Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "timeline",
+        "condition": ""
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:45:57Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:45:57Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:45:58Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "timeline",
+        "step_prompt": "Establish the incident timeline.",
+        "step_context": "Correlate multiple data sources (monitoring, deploys, user reports) to determine when the problem started. Identify last known good state, first known bad state, and any changes in the window.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 3,
+        "num_edges": 1
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:45:58Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "last_known_good",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Timestamp and description of last healthy state"
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:45:58Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:45:59Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "first_known_bad",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Timestamp and description of first observed failure"
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:45:59Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:45:59Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "primary_suspect",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Based on correlation, what is your leading hypothesis?"
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:46:00Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:46:00Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "reproduce",
+        "condition": ""
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:46:01Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:46:01Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:46:01Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "reproduce",
+        "step_prompt": "Attempt to reproduce the failure.",
+        "step_context": "Try to reproduce the failure in a non-production environment using the conditions identified in the timeline. Define inputs, state, and sequence. A failure you cannot reproduce is a failure you cannot confidently fix.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:46:01Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "reproduction_steps",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Exact steps taken to reproduce"
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:46:02Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:46:02Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "reproduced",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, intermittent, no",
+        "field_hint": "Were you able to reproduce the failure?"
+      },
+      "visit": 10,
+      "timestamp": "2026-03-05T16:46:02Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 10,
+      "timestamp": "2026-03-05T16:46:03Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "isolate",
+        "condition": ""
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:46:03Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:46:03Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:46:04Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "isolate",
+        "step_prompt": "Isolate the fault domain.",
+        "step_context": "Narrow down which component, service, or layer is responsible. Use binary search reasoning, instrumentation, mocking, or log analysis to isolate the faulty component.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:46:04Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "faulty_component",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Which component is the source of the failure?"
+      },
+      "visit": 11,
+      "timestamp": "2026-03-05T16:46:04Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 11,
+      "timestamp": "2026-03-05T16:46:05Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "isolation_evidence",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What evidence confirms this component is responsible?"
+      },
+      "visit": 12,
+      "timestamp": "2026-03-05T16:46:05Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 12,
+      "timestamp": "2026-03-05T16:46:05Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "root-cause",
+        "condition": ""
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:46:06Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:46:06Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:46:06Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "root-cause",
+        "step_prompt": "Identify the root cause.",
+        "step_context": "Within the isolated component, trace the exact code path or configuration producing the failure. Distinguish between root cause, trigger, and contributing factors. Apply the 5 Whys technique.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 3,
+        "num_edges": 1
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:46:06Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "root_cause",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "The actual defect, misconfiguration, or design flaw"
+      },
+      "visit": 13,
+      "timestamp": "2026-03-05T16:46:07Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 13,
+      "timestamp": "2026-03-05T16:46:07Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "trigger",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What activated or exposed the root cause?"
+      },
+      "visit": 14,
+      "timestamp": "2026-03-05T16:46:07Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 14,
+      "timestamp": "2026-03-05T16:46:08Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "five_whys",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Chain of whys from symptom to root cause"
+      },
+      "visit": 15,
+      "timestamp": "2026-03-05T16:46:08Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 15,
+      "timestamp": "2026-03-05T16:46:08Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "fix",
+        "condition": ""
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:46:09Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:46:09Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:46:09Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "fix",
+        "step_prompt": "Develop and validate the fix.",
+        "step_context": "Write the minimal change that addresses the root cause. Verify it resolves the reproduced failure and does not introduce regressions. Write a new test covering the failure mode.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:46:10Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "fix_description",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What is the fix? Describe the change."
+      },
+      "visit": 16,
+      "timestamp": "2026-03-05T16:46:10Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 16,
+      "timestamp": "2026-03-05T16:46:10Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "fix_validated",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, no",
+        "field_hint": "Does the fix resolve the reproduced failure?"
+      },
+      "visit": 17,
+      "timestamp": "2026-03-05T16:46:11Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 17,
+      "timestamp": "2026-03-05T16:46:11Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "deploy",
+        "condition": ""
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:46:11Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:46:11Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:46:12Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "deploy",
+        "step_prompt": "Deploy the fix and monitor.",
+        "step_context": "Apply the fix to production. Monitor the same signals used to establish the timeline. Maintain heightened monitoring for a defined observation period. Revert any temporary containment.",
+        "performer": "initiator",
+        "is_terminal": "no",
+        "num_fields": 2,
+        "num_edges": 1
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:46:12Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "deploy_timestamp",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "When was the fix deployed to production?"
+      },
+      "visit": 18,
+      "timestamp": "2026-03-05T16:46:12Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 18,
+      "timestamp": "2026-03-05T16:46:13Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "fix_confirmed",
+        "field_type": "enum",
+        "field_required": "yes",
+        "field_values": "yes, no",
+        "field_hint": "Has monitoring confirmed the incident is resolved?"
+      },
+      "visit": 19,
+      "timestamp": "2026-03-05T16:46:13Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 19,
+      "timestamp": "2026-03-05T16:46:13Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "postmortem",
+        "condition": ""
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:46:14Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:46:14Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "yes"
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:46:14Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-step",
+      "response": {
+        "step_id": "postmortem",
+        "step_prompt": "Write the post-incident report.",
+        "step_context": "Document the incident: summary, timeline, root cause, fix, contributing factors, action items. Action items must be concrete, assigned, and time-bound.",
+        "performer": "initiator",
+        "is_terminal": "yes",
+        "num_fields": 3,
+        "num_edges": 0
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:46:15Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "summary",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "One-paragraph incident summary"
+      },
+      "visit": 20,
+      "timestamp": "2026-03-05T16:46:15Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 20,
+      "timestamp": "2026-03-05T16:46:15Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "action_items",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "Concrete, assigned, time-bound items to prevent recurrence"
+      },
+      "visit": 21,
+      "timestamp": "2026-03-05T16:46:15Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "yes"
+      },
+      "visit": 21,
+      "timestamp": "2026-03-05T16:46:16Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-field",
+      "response": {
+        "field_name": "lessons_learned",
+        "field_type": "text",
+        "field_required": "yes",
+        "field_hint": "What did the team learn from this incident?"
+      },
+      "visit": 22,
+      "timestamp": "2026-03-05T16:46:16Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-fields",
+      "response": {
+        "add_field": "no"
+      },
+      "visit": 22,
+      "timestamp": "2026-03-05T16:46:16Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.define-edges",
+      "response": {
+        "target_step": "",
+        "condition": ""
+      },
+      "visit": 10,
+      "timestamp": "2026-03-05T16:46:35Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-edges",
+      "response": {
+        "add_edge": "no"
+      },
+      "visit": 10,
+      "timestamp": "2026-03-05T16:46:50Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.more-steps",
+      "response": {
+        "add_step": "no"
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:47:06Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.generate-template",
+      "response": {
+        "output_dir": "generated-templates/rca",
+        "template_looks_correct": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:48:21Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-start",
+      "response": {
+        "instance_name": "RCA: Intermittent 504 Timeouts on Order Submission",
+        "instance_description": "Root cause analysis for intermittent 504 Gateway Timeout errors on /api/v2/orders POST endpoint. ~12% request failure rate starting Monday 2026-03-03. Caused by stale PostgreSQL table statistics after REINDEX CONCURRENTLY, amplified by 3x flash sale traffic.",
+        "instance_dir": "generated-instances/rca-504"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:48:40Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "start",
+        "specialized_prompt": "Triage the 504 timeout incident on /api/v2/orders.",
+        "specialized_context": "INCIDENT: Starting Monday 2026-03-03 at ~14:00 UTC, /api/v2/orders POST returns 504 for ~12% of requests. 47 support tickets received. Check payment logs to determine if timeout occurs before or after payment processing.",
+        "specialized_hints": "Describe the 504 timeout on /api/v2/orders; 12% failure rate on orders - what impact level?; Users losing orders - ongoing harm?"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:49:30Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:49:31Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "contain",
+        "specialized_prompt": "Contain the 504 timeout impact.",
+        "specialized_context": "Payment gateway is NOT reached for timed-out requests. Least-invasive containment: increase nginx proxy_read_timeout from 10s to 25s on order-api upstream.",
+        "specialized_hints": "Describe the nginx timeout adjustment applied; Did the timeout increase reduce the 504 error rate?"
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:49:31Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 2,
+      "timestamp": "2026-03-05T16:49:31Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "timeline",
+        "specialized_prompt": "Establish the timeline for the 504 incident.",
+        "specialized_context": "Check: Grafana p99 latency (stable at 1.2s Wed-Sun, spiked to 18s Monday 13:47). Last deploy Friday 16:30. DB team ran REINDEX CONCURRENTLY on products table Sunday 02:00. Marketing flash sale Monday 13:00 (3x traffic).",
+        "specialized_hints": "When was p99 last normal?; When did p99 first spike to 18s?; Index rebuild Sunday + flash sale Monday - hypothesis?"
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:49:32Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 3,
+      "timestamp": "2026-03-05T16:49:32Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "reproduce",
+        "specialized_prompt": "Reproduce the 504 timeouts in staging.",
+        "specialized_context": "Strategy: Load Monday morning DB snapshot (post-rebuild) into staging. Run 3x load test. Compare against pre-rebuild DB snapshot under same load. Expected: post-rebuild fails, pre-rebuild survives.",
+        "specialized_hints": "Load test at 3x traffic against post-rebuild and pre-rebuild DBs; Did 504s appear under load with post-rebuild DB?"
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:49:32Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 4,
+      "timestamp": "2026-03-05T16:49:33Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "isolate",
+        "specialized_prompt": "Isolate which component in the order flow is slow.",
+        "specialized_context": "Order flow: nginx -> order-api (Node.js) -> inventory-check (PostgreSQL products table) -> payment-service -> order-write. Add timing at each boundary under 3x load.",
+        "specialized_hints": "Which component accounts for the latency?; Timing breakdown showing where the 18s is spent"
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:49:33Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 5,
+      "timestamp": "2026-03-05T16:49:33Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "root-cause",
+        "specialized_prompt": "Identify the root cause of the slow inventory query.",
+        "specialized_context": "EXPLAIN ANALYZE shows: before rebuild, query used idx_products_sku_warehouse (3ms). After rebuild, planner chooses seq scan on 1.2M rows (800ms). REINDEX CONCURRENTLY succeeded but ANALYZE was not run afterward. Stale statistics.",
+        "specialized_hints": "Stale stats after REINDEX without ANALYZE; 3x flash sale traffic amplified per-query cost; Why 504? slow query. Why slow? seq scan. Why? stale stats. Why? no ANALYZE. Why? runbook gap."
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:49:34Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 6,
+      "timestamp": "2026-03-05T16:49:34Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "fix",
+        "specialized_prompt": "Develop and validate the fix for stale statistics.",
+        "specialized_context": "Immediate: ANALYZE products; on production. Preventive: update runbook, add query plan regression test to CI. Validate in staging: ANALYZE + 3x load test should show p99 drop to ~1.8s.",
+        "specialized_hints": "ANALYZE products; + runbook update + regression test; Does ANALYZE + load test confirm fix in staging?"
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:49:34Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 7,
+      "timestamp": "2026-03-05T16:49:35Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "deploy",
+        "specialized_prompt": "Deploy the fix and monitor the order endpoint.",
+        "specialized_context": "Run ANALYZE products; on production. Revert nginx timeout from 25s to 10s. Monitor Grafana p99 latency. Flash sale continues through Tuesday as natural load test. 48-hour observation period.",
+        "specialized_hints": "When was ANALYZE run on production?; Did p99 drop and 504s stop?"
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:49:35Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "yes"
+      },
+      "visit": 8,
+      "timestamp": "2026-03-05T16:49:35Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-specialize",
+      "response": {
+        "step_id": "postmortem",
+        "specialized_prompt": "Write the post-incident report for the 504 timeout incident.",
+        "specialized_context": "Key facts: 12% failures for 26 hours. Root cause: stale stats after REINDEX without ANALYZE. Trigger: 3x flash sale. Fix: ANALYZE products;. Action items: runbook, CI checks, latency alerts, marketing coordination.",
+        "specialized_hints": "One-paragraph summary of the 504 incident; 4 items: runbook, CI checks, alerts, coordination; Index maintenance side effects, monitoring gaps, cross-team communication"
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:49:36Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.inst-more",
+      "response": {
+        "more": "no"
+      },
+      "visit": 9,
+      "timestamp": "2026-03-05T16:49:36Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.generate-instance",
+      "response": {
+        "instance_looks_correct": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:50:20Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.execute",
+      "response": {
+        "execution_ticket_id": "rca-504-meta-exec",
+        "execution_completed": "yes",
+        "steps_traversed": 9,
+        "execution_notes": "All 9 steps traversed on the happy path (with containment branch). Branching at start correctly routed to contain when active_harm=yes. Generated evidence schemas matched expectations. The simplified template (no error-recovery loops) worked cleanly for this scenario."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:56Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "m.summary",
+      "response": {
+        "template_steps": 9,
+        "instance_specializations": 9,
+        "what_worked": "The meta-workflow successfully decomposed template authoring into atomic steps. Each step definition was fully specified through structured prompts. The generator correctly assembled the YAML from the collected evidence. The instance specialization phase cleanly separated structure (kept from template) from content (overridden per instance). The full lifecycle from authoring through execution ran without errors.",
+        "what_didnt": "The field-by-field and edge-by-edge definition loop is extremely verbose \u2014 83 meta-workflow steps just to define a 9-node template. The more-fields/more-edges yes/no confirmation nodes add significant friction. The specialized_hints mechanism (semicolon-separated, positionally applied) is fragile and not intuitive. YAML key ordering by the serializer caused hints to land on different fields than intended. The num_fields/num_edges pre-declaration creates coupling between the step definition and the subsequent loop count.",
+        "would_reuse_template": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:52:18Z",
+      "performer": "initiator"
+    }
+  ],
+  "metadata": {},
+  "children": [],
+  "parent": null,
+  "created_at": "2026-03-05T16:43:37Z"
+}

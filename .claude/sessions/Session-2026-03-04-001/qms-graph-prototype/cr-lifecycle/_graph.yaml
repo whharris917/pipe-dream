@@ -1,0 +1,35 @@
+graph:
+  id: cr-lifecycle
+  name: "Change Record Lifecycle"
+  version: "0.1.0"
+  entry_point: cr.start
+  description: >
+    Complete lifecycle for a Change Record (CR) — from creation through drafting,
+    review, approval, execution, post-review, post-approval, and closure.
+    Handles deviations (EI failures create VARs), rejection loops at both
+    pre-approval and post-approval stages, scope revision, and child document
+    resolution gates.
+
+  invoked_by: []  # Top-level entry point
+  invokes:
+    - graph: deviation-handling
+      trigger: "When an EI outcome is 'fail' at cr.ei-failed"
+      mechanism: "Hook creates child VAR; agent traverses deviation-handling graph separately"
+
+  performer_map:
+    initiator: "Document owner / author"
+    quality: "QA representative (assigns reviewers, approves)"
+    reviewer: "Assigned domain reviewer (TU agents)"
+    system: "Automated engine action (wait for external state)"
+
+  reviewer_assignment_guide:
+    sketch: tu_sketch
+    solver: tu_sketch
+    simulation: tu_sim
+    physics: tu_sim
+    ui: tu_ui
+    tools: tu_ui
+    commands: tu_scene
+    scene: tu_scene
+    qms: qa
+    sops: qa

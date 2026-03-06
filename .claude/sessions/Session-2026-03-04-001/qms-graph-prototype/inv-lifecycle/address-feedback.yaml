@@ -1,0 +1,22 @@
+node:
+  id: inv.address-feedback
+  prompt: "Address reviewer feedback on the Investigation."
+  context: "Reviewers may challenge the RCA rigor or CAPA adequacy. Revise accordingly."
+
+  evidence_schema:
+    revision_summary:
+      type: text
+      required: true
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: inv.wait-reviews

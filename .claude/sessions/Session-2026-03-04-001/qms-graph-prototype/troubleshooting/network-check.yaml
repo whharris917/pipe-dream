@@ -1,0 +1,19 @@
+node:
+  id: ts.network-check
+  prompt: "Can you reach the server at all? (ping, traceroute, SSH)"
+  context: "Before checking the application, verify basic network connectivity. If you can't even reach the machine, the problem is infrastructure, not application."
+
+  evidence_schema:
+    ping_result:
+      type: enum
+      values: ["success", "timeout", "host-unreachable"]
+      required: true
+    ssh_access:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: ts.infra-problem
+      condition: "response.get('ping_result') != 'success'"
+    - to: ts.process-check

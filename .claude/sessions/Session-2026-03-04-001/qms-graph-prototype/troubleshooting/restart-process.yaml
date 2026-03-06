@@ -1,0 +1,23 @@
+node:
+  id: ts.restart-process
+  prompt: "Web server process is down. Attempt restart and investigate why it stopped."
+  context: "The process isn't running. Before blindly restarting, check why it died. Look at the last log entries, check for OOM killer, segfaults, or configuration errors."
+
+  evidence_schema:
+    crash_reason:
+      type: text
+      required: true
+      hint: "What caused the process to stop? (OOM, segfault, config error, manual stop, unknown)"
+    restart_successful:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    prevention_plan:
+      type: text
+      required: true
+      hint: "What will you do to prevent this from happening again?"
+
+  edges:
+    - to: ts.verify-fix
+      condition: "response.get('restart_successful') == 'yes'"
+    - to: ts.deep-dive

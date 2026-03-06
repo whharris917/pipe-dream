@@ -1,0 +1,10 @@
+graph:
+  id: rca
+  name: "RCA: Intermittent 504 Timeouts on Order Submission"
+  version: "1.0"
+  entry_point: rca.start
+  description: >
+    Root cause analysis for intermittent 504 Gateway Timeout errors on the
+    /api/v2/orders POST endpoint. Approximately 12% of requests are failing.
+    Started Monday 2026-03-03 at ~14:00 UTC. No deployment occurred Monday.
+    Last deployment was Friday 2026-02-28 at 16:30 UTC.

@@ -1,0 +1,26 @@
+node:
+  id: exp.more-trials
+  prompt: "Run another trial?"
+  context: >
+    Consider: Have you run enough trials for statistical significance?
+    Check your planned number of trials from the design phase.
+    Are the results consistent so far, or is there high variance
+    that suggests you need more data?
+
+  evidence_schema:
+    trials_completed:
+      type: integer
+      required: true
+    trials_planned:
+      type: integer
+      required: true
+    run_another:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Do you need more trials?"
+
+  edges:
+    - to: exp.run-trial
+      condition: "response.get('run_another') == 'yes'"
+    - to: exp.analyze

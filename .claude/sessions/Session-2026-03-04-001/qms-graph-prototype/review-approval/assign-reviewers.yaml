@@ -1,0 +1,19 @@
+node:
+  id: ra.assign-reviewers
+  prompt: "Assign reviewers to this document."
+  context: "At least one QA-group reviewer is required. TU reviewers should be assigned based on the document's scope (code changes → tu_ui, physics → tu_sim, geometry → tu_sketch, orchestration → tu_scene)."
+  performer: quality
+
+  evidence_schema:
+    reviewers:
+      type: text
+      required: true
+      hint: "Comma-separated reviewer IDs, e.g.: qa, tu_ui, tu_sim"
+
+  hooks:
+    on_exit:
+      - command: "qms assign {ticket.doc_id} --add {response.reviewers}"
+        on_failure: block
+
+  edges:
+    - to: ra.collect-reviews

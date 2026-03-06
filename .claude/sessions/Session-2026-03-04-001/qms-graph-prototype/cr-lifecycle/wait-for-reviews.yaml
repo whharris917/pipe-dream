@@ -1,0 +1,19 @@
+node:
+  id: cr.wait-for-reviews
+  prompt: "Waiting for all reviewers to submit their reviews."
+  context: "Each assigned reviewer will evaluate the CR independently. The cursor waits here until all reviews are collected."
+  performer: system
+
+  wait: "All assigned reviewers have submitted their review outcome"
+
+  evidence_schema:
+    all_recommend:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Did all reviewers recommend? (system determines this)"
+
+  edges:
+    - to: cr.address-feedback
+      condition: "response.get('all_recommend') == 'no'"
+    - to: cr.route-approval

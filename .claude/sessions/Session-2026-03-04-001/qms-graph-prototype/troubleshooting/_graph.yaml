@@ -1,0 +1,9 @@
+graph:
+  id: ts
+  name: "Server Outage Diagnostic"
+  version: "1.0"
+  entry_point: ts.start
+  description: >
+    A diagnostic troubleshooting tree for a web server that has stopped
+    responding to requests. Walk through systematic diagnosis to identify
+    the root cause and apply the correct fix.

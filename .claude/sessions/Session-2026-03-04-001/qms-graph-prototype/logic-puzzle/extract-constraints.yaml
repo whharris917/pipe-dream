@@ -1,0 +1,32 @@
+node:
+  id: lp.extract-constraints
+  prompt: "Classify each constraint by type."
+  context: >
+    Go through each clue and classify it as one of:
+    - DIRECT: "X has Y" (e.g., "The Brit lives in the red house")
+    - POSITIONAL: "X is in position N" (e.g., "center house drinks milk")
+    - ADJACENT: "X is next to Y" (e.g., "Norwegian lives next to blue house")
+    - RELATIVE: "X is left/right of Y" (e.g., "green is left of white")
+
+    This classification will guide the solving strategy.
+
+  evidence_schema:
+    direct_constraints:
+      type: text
+      required: true
+      hint: "List all DIRECT constraints (clue numbers)"
+    positional_constraints:
+      type: text
+      required: true
+      hint: "List all POSITIONAL constraints (clue numbers)"
+    adjacent_constraints:
+      type: text
+      required: true
+      hint: "List all ADJACENT constraints (clue numbers)"
+    relative_constraints:
+      type: text
+      required: true
+      hint: "List all RELATIVE constraints (clue numbers)"
+
+  edges:
+    - to: lp.initial-placements

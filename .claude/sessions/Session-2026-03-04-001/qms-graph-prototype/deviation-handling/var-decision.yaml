@@ -1,0 +1,28 @@
+node:
+  id: dh.var-decision
+  prompt: "Create a Variance Report. Choose the VAR type."
+  context: "Type 1 VARs BLOCK parent closure until the VAR itself is CLOSED. Type 2 VARs only need to reach PRE_APPROVED before the parent can close. Choose based on whether the resolution is a prerequisite for the parent's objectives."
+
+  evidence_schema:
+    var_type:
+      type: enum
+      values: ["type-1", "type-2"]
+      required: true
+      hint: "type-1 = resolution is prerequisite (blocks parent); type-2 = resolution can follow independently"
+    var_title:
+      type: text
+      required: true
+    scope_handoff:
+      type: text
+      required: true
+      hint: "What work moved from parent to this VAR? Confirm no scope was lost."
+
+  hooks:
+    on_exit:
+      - command: "qms create VAR --parent {response.parent_doc} --title \"{response.var_title}\""
+        on_failure: block
+
+  edges:
+    - to: dh.var-type1-warning
+      condition: "response.get('var_type') == 'type-1'"
+    - to: dh.resolution-complete

@@ -1,0 +1,9 @@
+graph:
+  description: Root cause analysis for intermittent 504 Gateway Timeout errors on
+    /api/v2/orders POST endpoint. ~12% request failure rate starting Monday 2026-03-03.
+    Caused by stale PostgreSQL table statistics after REINDEX CONCURRENTLY, amplified
+    by 3x flash sale traffic.
+  entry_point: rca.start
+  id: rca
+  name: 'RCA: Intermittent 504 Timeouts on Order Submission'
+  version: '1.0'

@@ -1,0 +1,30 @@
+node:
+  id: rca.isolate
+  prompt: "Isolate the fault domain."
+  context: >
+    Systematically narrow down which component, service, or layer is
+    responsible. Use binary search reasoning: if the system has components
+    A, B, and C in sequence, determine whether the problem is between A-B
+    or B-C. Examine logs, add targeted instrumentation, and test with mocked
+    or stubbed dependencies to isolate the faulty component.
+
+  evidence_schema:
+    system_components:
+      type: text
+      required: true
+      hint: "List the components in the affected request path"
+    isolation_method:
+      type: text
+      required: true
+      hint: "How did you narrow down the fault? (instrumentation, mocking, log analysis)"
+    faulty_component:
+      type: text
+      required: true
+      hint: "Which specific component or layer is the source of the failure?"
+    evidence_for_isolation:
+      type: text
+      required: true
+      hint: "What evidence confirms this component is responsible?"
+
+  edges:
+    - to: rca.root-cause

@@ -1,0 +1,21 @@
+node:
+  context: 'Strategy: Load Monday morning DB snapshot (post-rebuild) into staging.
+    Run 3x load test. Compare against pre-rebuild DB snapshot under same load. Expected:
+    post-rebuild fails, pre-rebuild survives.'
+  edges:
+  - to: rca.isolate
+  evidence_schema:
+    reproduced:
+      hint: Load test at 3x traffic against post-rebuild and pre-rebuild DBs
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - intermittent
+      - 'no'
+    reproduction_steps:
+      hint: Did 504s appear under load with post-rebuild DB?
+      required: true
+      type: text
+  id: rca.reproduce
+  prompt: Reproduce the 504 timeouts in staging.

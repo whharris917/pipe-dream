@@ -1,0 +1,25 @@
+node:
+  id: ts.fix-config
+  prompt: "Recent configuration change suspected. Investigate and roll back if needed."
+  context: "A configuration change was made recently. Determine what changed, whether it's the cause, and whether rolling back is safe."
+
+  evidence_schema:
+    what_changed:
+      type: text
+      required: true
+    is_cause:
+      type: enum
+      values: ["confirmed", "unlikely", "unknown"]
+      required: true
+    action_taken:
+      type: enum
+      values: ["rolled-back", "fixed-forward", "no-action"]
+      required: true
+    justification:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.verify-fix
+      condition: "response.get('is_cause') == 'confirmed'"
+    - to: ts.deep-dive

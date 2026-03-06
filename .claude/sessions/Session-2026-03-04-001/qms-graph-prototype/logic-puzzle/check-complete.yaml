@@ -1,0 +1,30 @@
+node:
+  id: lp.check-complete
+  prompt: "Grid is full. Verify the solution against ALL constraints."
+  context: >
+    You've filled in every cell. Now verify that your solution satisfies
+    every single one of the 15 constraints. Go through them one by one.
+    If any constraint is violated, you have an error.
+
+  evidence_schema:
+    final_grid:
+      type: text
+      required: true
+      hint: "The complete 5x5 grid with all assignments"
+    verification:
+      type: text
+      required: true
+      hint: "Check each of the 15 clues against your grid. List pass/fail for each."
+    all_valid:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    answer:
+      type: text
+      required: true
+      hint: "Answer the puzzle question: Who owns the fish?"
+
+  edges:
+    - to: lp.solved
+      condition: "response.get('all_valid') == 'yes'"
+    - to: lp.backtrack

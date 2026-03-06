@@ -1,0 +1,22 @@
+node:
+  id: inv.impact-assessment
+  prompt: "Assess the impact of this deviation."
+  context: "Identify all affected systems, documents, and processes. Rate the severity. This determines the urgency and scope of CAPAs."
+
+  evidence_schema:
+    affected_systems:
+      type: text
+      required: true
+      hint: "Which systems/documents/processes are affected?"
+    severity:
+      type: enum
+      values: ["critical", "major", "minor"]
+      required: true
+      hint: "critical = blocks operation; major = significant degradation; minor = cosmetic/isolated"
+    scope_of_impact:
+      type: text
+      required: true
+      hint: "How widespread is the impact? Single document, single subsystem, or system-wide?"
+
+  edges:
+    - to: inv.root-cause-analysis

@@ -1,0 +1,14 @@
+node:
+  id: bt.add-another
+  prompt: "Add another step to this template?"
+
+  evidence_schema:
+    add_another:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: bt.step-name
+      condition: "response.get('add_another') == 'yes'"
+    - to: bt.extension-point

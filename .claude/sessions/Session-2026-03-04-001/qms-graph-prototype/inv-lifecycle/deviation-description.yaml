@@ -1,0 +1,17 @@
+node:
+  id: inv.deviation-description
+  prompt: "Document the facts and observations."
+  context: "Record only facts — what was observed, what evidence exists. Do not include conclusions or speculation here. That comes in the Root Cause Analysis."
+
+  evidence_schema:
+    facts:
+      type: text
+      required: true
+      hint: "Objective observations — what was seen, what data shows"
+    evidence_reviewed:
+      type: text
+      required: true
+      hint: "What artifacts were examined (logs, code, audit trails, test results)"
+
+  edges:
+    - to: inv.impact-assessment

@@ -1,0 +1,15 @@
+node:
+  id: inv.close
+  prompt: "Investigation CLOSED."
+  context: "The deviation is fully investigated, root cause identified, and all CAPAs implemented. This is a terminal state."
+  terminal: true
+
+  hooks:
+    on_enter:
+      - command: "qms approve {ticket.doc_id}"
+        on_failure: block
+      - command: "qms close {ticket.doc_id}"
+        on_failure: block
+
+  evidence_schema: {}
+  edges: []

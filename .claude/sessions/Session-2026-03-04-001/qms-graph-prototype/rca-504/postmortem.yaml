@@ -1,0 +1,45 @@
+node:
+  id: rca.postmortem
+  prompt: "Write the post-incident report for the 504 timeout incident."
+  context: >
+    Document the full incident. Key facts:
+    - 12% of order submissions failed for 26 hours
+    - Root cause: stale table statistics after REINDEX CONCURRENTLY without ANALYZE
+    - Trigger: 3x flash sale traffic amplified per-query cost into timeouts
+    - Fix: ANALYZE products; restored optimal query plan
+    - Contributing factors: runbook gap, no plan regression monitoring, no
+      cross-team coordination for high-traffic campaigns
+
+    Action items should address: runbook update, automated plan regression
+    checks, latency alerting, and marketing/engineering coordination process.
+  terminal: true
+
+  evidence_schema:
+    summary:
+      type: text
+      required: true
+      hint: "One-paragraph summary of the 504 timeout incident"
+    timeline_summary:
+      type: text
+      required: true
+      hint: "Sunday 02:00 rebuild -> Monday 13:00 traffic -> Monday 13:47 errors -> Tuesday 16:00 fix"
+    root_cause_summary:
+      type: text
+      required: true
+      hint: "REINDEX without ANALYZE left stale stats, causing seq scan on 1.2M row table"
+    fix_summary:
+      type: text
+      required: true
+      hint: "Ran ANALYZE products; on production, reverted nginx timeout"
+    contributing_factors:
+      type: text
+      required: true
+      hint: "Runbook gap, no plan monitoring, no marketing-eng coordination"
+    action_items:
+      type: text
+      required: true
+      hint: "4 items: runbook, CI plan checks, latency alerts, campaign coordination"
+    lessons_learned:
+      type: text
+      required: true
+      hint: "What the team learned about index maintenance, monitoring, and cross-team communication"

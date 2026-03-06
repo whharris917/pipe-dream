@@ -1,0 +1,24 @@
+node:
+  id: cr.address-feedback
+  prompt: "Address reviewer feedback."
+  context: "One or more reviewers have requested updates. Check out the document, address all feedback, check in, and re-route for review."
+  performer: initiator
+
+  evidence_schema:
+    revision_summary:
+      type: text
+      required: true
+      hint: "Describe what was changed to address each piece of reviewer feedback"
+
+  hooks:
+    on_enter:
+      - command: "qms checkout {ticket.doc_id}"
+        on_failure: block
+    on_exit:
+      - command: "qms checkin {ticket.doc_id}"
+        on_failure: block
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: cr.wait-for-reviews

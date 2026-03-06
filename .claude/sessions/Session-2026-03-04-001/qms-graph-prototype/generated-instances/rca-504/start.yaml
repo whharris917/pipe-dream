@@ -1,0 +1,31 @@
+node:
+  context: 'INCIDENT: Starting Monday 2026-03-03 at ~14:00 UTC, /api/v2/orders POST
+    returns 504 for ~12% of requests. 47 support tickets received. Check payment logs
+    to determine if timeout occurs before or after payment processing.'
+  edges:
+  - condition: response.get('active_harm') == 'yes'
+    to: rca.contain
+  - to: rca.timeline
+  evidence_schema:
+    active_harm:
+      hint: Describe the 504 timeout on /api/v2/orders
+      required: true
+      type: enum
+      values:
+      - 'yes'
+      - 'no'
+    incident_summary:
+      hint: 12% failure rate on orders - what impact level?
+      required: true
+      type: text
+    user_impact:
+      hint: Users losing orders - ongoing harm?
+      required: true
+      type: enum
+      values:
+      - none
+      - degraded
+      - partial-outage
+      - full-outage
+  id: rca.start
+  prompt: Triage the 504 timeout incident on /api/v2/orders.

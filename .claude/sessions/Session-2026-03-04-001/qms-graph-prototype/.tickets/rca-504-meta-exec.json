@@ -1,0 +1,147 @@
+{
+  "id": "rca-504-meta-exec",
+  "cursor": "rca.postmortem",
+  "state": "complete",
+  "responses": {
+    "rca.start": {
+      "incident_summary": "The /api/v2/orders POST endpoint is returning 504 Gateway Timeout errors for ~12% of requests since Monday 2026-03-03 13:47 UTC. 47 customer support tickets. nginx proxy_read_timeout of 10s exceeded by 18s p99 latency.",
+      "user_impact": "partial-outage",
+      "active_harm": "yes"
+    },
+    "rca.contain": {
+      "containment_action": "Increased nginx proxy_read_timeout from 10s to 25s on order-api upstream via ansible at 2026-03-03T14:35:00Z. Error rate dropped from 12% to ~2%.",
+      "containment_effective": "partial"
+    },
+    "rca.timeline": {
+      "last_known_good": "Sunday 2026-03-02 23:59 UTC. p99 latency stable at 1.2s from Wednesday through Sunday.",
+      "first_known_bad": "Monday 2026-03-03 13:47 UTC. p99 jumped from 1.2s to 18s. First 504 alerts at 13:52.",
+      "primary_suspect": "Two events in the window: (1) REINDEX CONCURRENTLY on products table Sunday 02:00, (2) flash sale Monday 13:00 driving 3x traffic. Hypothesis: index rebuild changed query performance, traffic amplified it."
+    },
+    "rca.reproduce": {
+      "reproduction_steps": "Loaded post-rebuild DB snapshot into staging. k6 load test at 3x (450 req/s) for 10 min. After 4 min, p99 hit 14s with 8% 504s. Control (pre-rebuild DB) stayed at 2.1s p99, zero 504s.",
+      "reproduced": "yes"
+    },
+    "rca.isolate": {
+      "faulty_component": "Inventory-check query against PostgreSQL products table. Accounts for 16.2s of 18s total latency under 3x load.",
+      "isolation_evidence": "OpenTelemetry spans at each boundary: nginx 12ms, order-api 45ms, inventory-check 16200ms, payment-service never reached. All other components normal."
+    },
+    "rca.root-cause": {
+      "root_cause": "Stale table statistics on products after REINDEX CONCURRENTLY without follow-up ANALYZE. Planner chose seq scan (800ms) over idx_products_sku_warehouse index scan (3ms) due to incorrect row estimates.",
+      "trigger": "3x flash sale traffic amplified 800ms per-query cost into connection pool exhaustion and 16s+ queue times, exceeding nginx 10s timeout.",
+      "five_whys": "Why 504? Request exceeded 10s timeout. Why slow? Inventory query took 16s under load. Why? Seq scan on 1.2M rows instead of index. Why seq scan? Stale statistics misled the planner. Why stale? REINDEX ran without ANALYZE; runbook omits this step."
+    },
+    "rca.fix": {
+      "fix_description": "Immediate: ANALYZE products; to refresh statistics. Preventive: update runbook to mandate ANALYZE after REINDEX; add query plan regression test to DB CI pipeline.",
+      "fix_validated": "yes"
+    },
+    "rca.deploy": {
+      "deploy_timestamp": "2026-03-04T16:00:00Z. ANALYZE products; completed in 4.2s. Nginx timeout reverted 10s.",
+      "fix_confirmed": "yes"
+    },
+    "rca.postmortem": {
+      "summary": "12% of order submissions failed with 504 for 26 hours due to stale PostgreSQL table statistics after REINDEX CONCURRENTLY without ANALYZE, amplified by 3x flash sale traffic. ANALYZE products; resolved the issue. No data loss.",
+      "action_items": "1) [DBA, Fri] Runbook: ANALYZE after REINDEX. 2) [Platform, 2wk] CI query plan regression checks. 3) [SRE, Fri] p99 latency alerts at 5s. 4) [Mktg/Eng, 1wk] 48h advance notice for >2x traffic campaigns.",
+      "lessons_learned": "DB maintenance has silent side effects under load. Monitor latency percentiles, not just error rates. Cross-team communication is a reliability concern."
+    }
+  },
+  "history": [
+    {
+      "node_id": "rca.start",
+      "response": {
+        "incident_summary": "The /api/v2/orders POST endpoint is returning 504 Gateway Timeout errors for ~12% of requests since Monday 2026-03-03 13:47 UTC. 47 customer support tickets. nginx proxy_read_timeout of 10s exceeded by 18s p99 latency.",
+        "user_impact": "partial-outage",
+        "active_harm": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:22Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.contain",
+      "response": {
+        "containment_action": "Increased nginx proxy_read_timeout from 10s to 25s on order-api upstream via ansible at 2026-03-03T14:35:00Z. Error rate dropped from 12% to ~2%.",
+        "containment_effective": "partial"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:22Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.timeline",
+      "response": {
+        "last_known_good": "Sunday 2026-03-02 23:59 UTC. p99 latency stable at 1.2s from Wednesday through Sunday.",
+        "first_known_bad": "Monday 2026-03-03 13:47 UTC. p99 jumped from 1.2s to 18s. First 504 alerts at 13:52.",
+        "primary_suspect": "Two events in the window: (1) REINDEX CONCURRENTLY on products table Sunday 02:00, (2) flash sale Monday 13:00 driving 3x traffic. Hypothesis: index rebuild changed query performance, traffic amplified it."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:23Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.reproduce",
+      "response": {
+        "reproduction_steps": "Loaded post-rebuild DB snapshot into staging. k6 load test at 3x (450 req/s) for 10 min. After 4 min, p99 hit 14s with 8% 504s. Control (pre-rebuild DB) stayed at 2.1s p99, zero 504s.",
+        "reproduced": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:23Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.isolate",
+      "response": {
+        "faulty_component": "Inventory-check query against PostgreSQL products table. Accounts for 16.2s of 18s total latency under 3x load.",
+        "isolation_evidence": "OpenTelemetry spans at each boundary: nginx 12ms, order-api 45ms, inventory-check 16200ms, payment-service never reached. All other components normal."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:23Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.root-cause",
+      "response": {
+        "root_cause": "Stale table statistics on products after REINDEX CONCURRENTLY without follow-up ANALYZE. Planner chose seq scan (800ms) over idx_products_sku_warehouse index scan (3ms) due to incorrect row estimates.",
+        "trigger": "3x flash sale traffic amplified 800ms per-query cost into connection pool exhaustion and 16s+ queue times, exceeding nginx 10s timeout.",
+        "five_whys": "Why 504? Request exceeded 10s timeout. Why slow? Inventory query took 16s under load. Why? Seq scan on 1.2M rows instead of index. Why seq scan? Stale statistics misled the planner. Why stale? REINDEX ran without ANALYZE; runbook omits this step."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:23Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.fix",
+      "response": {
+        "fix_description": "Immediate: ANALYZE products; to refresh statistics. Preventive: update runbook to mandate ANALYZE after REINDEX; add query plan regression test to DB CI pipeline.",
+        "fix_validated": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:24Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.deploy",
+      "response": {
+        "deploy_timestamp": "2026-03-04T16:00:00Z. ANALYZE products; completed in 4.2s. Nginx timeout reverted 10s.",
+        "fix_confirmed": "yes"
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:24Z",
+      "performer": "initiator"
+    },
+    {
+      "node_id": "rca.postmortem",
+      "response": {
+        "summary": "12% of order submissions failed with 504 for 26 hours due to stale PostgreSQL table statistics after REINDEX CONCURRENTLY without ANALYZE, amplified by 3x flash sale traffic. ANALYZE products; resolved the issue. No data loss.",
+        "action_items": "1) [DBA, Fri] Runbook: ANALYZE after REINDEX. 2) [Platform, 2wk] CI query plan regression checks. 3) [SRE, Fri] p99 latency alerts at 5s. 4) [Mktg/Eng, 1wk] 48h advance notice for >2x traffic campaigns.",
+        "lessons_learned": "DB maintenance has silent side effects under load. Monitor latency percentiles, not just error rates. Cross-team communication is a reliability concern."
+      },
+      "visit": 1,
+      "timestamp": "2026-03-05T16:51:24Z",
+      "performer": "initiator"
+    }
+  ],
+  "metadata": {},
+  "children": [],
+  "parent": null,
+  "created_at": "2026-03-05T16:50:33Z"
+}

@@ -1,0 +1,27 @@
+node:
+  id: m.generate-template
+  prompt: "Generating your template."
+  context: >
+    The system will now generate YAML workflow files from your step
+    definitions. The template will be created in a new directory.
+
+  hooks:
+    on_enter:
+      - command: "python generate.py template {ticket_file} generated-templates/{template_id}"
+        on_failure: block
+
+  evidence_schema:
+    output_dir:
+      type: text
+      required: true
+      hint: "Confirm the output directory (e.g., 'generated-templates/rca')"
+    template_looks_correct:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Run 'engine.py map <dir>' to verify. Does the topology look right?"
+
+  edges:
+    - to: m.define-step
+      condition: "response.get('template_looks_correct') == 'no'"
+    - to: m.inst-start

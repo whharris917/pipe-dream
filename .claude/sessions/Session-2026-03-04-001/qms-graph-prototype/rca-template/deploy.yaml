@@ -1,0 +1,39 @@
+node:
+  id: rca.deploy
+  prompt: "Deploy the fix and monitor."
+  context: >
+    Apply the fix to production through the normal deployment process.
+    Monitor the same signals used to establish the timeline to confirm the
+    anomalous behavior has ceased. Maintain heightened monitoring for a
+    defined observation period (typically 2x the incident window) to catch
+    delayed recurrence or side effects. Revert any temporary containment
+    measures once the fix is confirmed.
+
+  evidence_schema:
+    deploy_timestamp:
+      type: text
+      required: true
+      hint: "When was the fix deployed to production?"
+    containment_reverted:
+      type: enum
+      values: ["yes", "no", "not-applicable"]
+      required: true
+      hint: "Were temporary containment measures reverted?"
+    monitoring_signals:
+      type: text
+      required: true
+      hint: "What signals are you watching to confirm the fix?"
+    observation_period:
+      type: text
+      required: true
+      hint: "How long will heightened monitoring continue?"
+    fix_confirmed:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Has monitoring confirmed the incident is resolved?"
+
+  edges:
+    - to: rca.fix-failed
+      condition: "response.get('fix_confirmed') == 'no'"
+    - to: rca.postmortem

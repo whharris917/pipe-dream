@@ -1,0 +1,27 @@
+node:
+  id: rca.contain-failed
+  prompt: "Containment failed. Escalate and try a different approach."
+  context: >
+    The nginx timeout increase did not reduce errors. Consider: adding
+    replicas to the order-api service, enabling a circuit breaker, or
+    temporarily routing to a backup endpoint. Escalate to the platform team.
+
+  evidence_schema:
+    escalation_target:
+      type: text
+      required: true
+      hint: "Who or what team was escalated to?"
+    revised_action:
+      type: text
+      required: true
+      hint: "What stronger containment action was applied?"
+    now_contained:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: rca.timeline
+      condition: "response.get('now_contained') == 'yes'"
+    - to: rca.contain-failed
+      condition: "response.get('now_contained') == 'no'"

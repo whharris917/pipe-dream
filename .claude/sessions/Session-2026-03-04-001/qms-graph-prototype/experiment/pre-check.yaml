@@ -1,0 +1,33 @@
+node:
+  id: exp.pre-check
+  prompt: "Pre-experiment checklist. Verify readiness."
+  context: >
+    Before running the experiment, verify that all prerequisites are met.
+    This prevents wasted effort on invalid runs.
+
+  evidence_schema:
+    environment_ready:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Is the test environment set up and isolated?"
+    instrumentation_tested:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Have you verified that measurements are working correctly?"
+    baseline_established:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Do you have a current baseline measurement for the control?"
+    data_pipeline_ready:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Can you collect and store results reliably?"
+
+  edges:
+    - to: exp.not-ready
+      condition: "'no' in [response.get('environment_ready'), response.get('instrumentation_tested'), response.get('baseline_established'), response.get('data_pipeline_ready')]"
+    - to: exp.run-trial

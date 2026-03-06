@@ -1,0 +1,36 @@
+node:
+  id: esc.start
+  prompt: "You wake up in a locked laboratory. Look around."
+  context: >
+    You're in a small, dimly lit lab. The door behind you is locked with a
+    4-digit keypad. On the workbench you see:
+    - A periodic table poster with three elements circled in red: Helium (2),
+      Nitrogen (7), and Oxygen (8)
+    - A clock on the wall showing 3:14 (the clock has stopped)
+    - A whiteboard with the equation: "DOOR = SUM(circled) * CLOCK_HOUR"
+
+    Figure out the 4-digit door code to escape this room.
+
+  evidence_schema:
+    circled_elements:
+      type: text
+      required: true
+      hint: "List the circled elements and their atomic numbers"
+    sum_of_atomic_numbers:
+      type: integer
+      required: true
+      hint: "What is the sum of the circled atomic numbers?"
+    clock_hour:
+      type: integer
+      required: true
+      hint: "What hour does the stopped clock show?"
+    door_code:
+      type: text
+      required: true
+      hint: "The 4-digit code: SUM * CLOCK_HOUR"
+    reasoning:
+      type: text
+      required: true
+
+  edges:
+    - to: esc.hallway

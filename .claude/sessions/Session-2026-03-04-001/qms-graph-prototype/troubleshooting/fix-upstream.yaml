@@ -1,0 +1,20 @@
+node:
+  id: ts.fix-upstream
+  prompt: "Upstream service dependency is unhealthy. Investigate."
+  context: "One or more upstream services the application depends on are down or degraded. Identify which service, determine if it's within your control, and decide on mitigation."
+
+  evidence_schema:
+    affected_service:
+      type: text
+      required: true
+    within_our_control:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    mitigation:
+      type: text
+      required: true
+      hint: "Can you fail gracefully, enable a circuit breaker, or switch to a fallback?"
+
+  edges:
+    - to: ts.verify-fix

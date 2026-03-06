@@ -1,0 +1,17 @@
+node:
+  context: 'Order flow: nginx -> order-api (Node.js) -> inventory-check (PostgreSQL
+    products table) -> payment-service -> order-write. Add timing at each boundary
+    under 3x load.'
+  edges:
+  - to: rca.root-cause
+  evidence_schema:
+    faulty_component:
+      hint: Which component accounts for the latency?
+      required: true
+      type: text
+    isolation_evidence:
+      hint: Timing breakdown showing where the 18s is spent
+      required: true
+      type: text
+  id: rca.isolate
+  prompt: Isolate which component in the order flow is slow.

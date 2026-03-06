@@ -1,0 +1,16 @@
+node:
+  id: cr.draft-review
+  prompt: "Review your Change Record before submitting for review."
+  context: "Verify all sections are complete: Purpose, Scope, Current/Proposed State, Impact Assessment, Implementation Plan (EIs), and Testing Summary. Once submitted, the document enters the review cycle."
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["submit", "revise"]
+      required: true
+      hint: "submit = route for review; revise = go back and edit"
+
+  edges:
+    - to: cr.purpose
+      condition: "response.get('decision') == 'revise'"
+    - to: cr.checkin-for-review

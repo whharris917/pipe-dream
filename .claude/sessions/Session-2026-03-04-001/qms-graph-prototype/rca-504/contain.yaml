@@ -1,0 +1,33 @@
+node:
+  id: rca.contain
+  prompt: "Contain the 504 timeout impact."
+  context: >
+    Users are failing to submit orders. The payment gateway is NOT being
+    reached for timed-out requests (timeout occurs upstream), so no data
+    corruption. The least-invasive containment: increase the nginx
+    proxy_read_timeout from 10s to 25s on the order-api upstream to allow
+    slow requests to complete rather than fail. This is a temporary measure.
+
+  evidence_schema:
+    containment_action:
+      type: text
+      required: true
+      hint: "Describe the nginx timeout adjustment or other containment applied"
+    containment_timestamp:
+      type: text
+      required: true
+      hint: "When was the timeout increase applied?"
+    containment_effective:
+      type: enum
+      values: ["yes", "partial", "no"]
+      required: true
+      hint: "Did increasing the timeout reduce the 504 error rate?"
+    residual_impact:
+      type: text
+      required: false
+      hint: "Are some requests still timing out even at 25s?"
+
+  edges:
+    - to: rca.contain-failed
+      condition: "response.get('containment_effective') == 'no'"
+    - to: rca.timeline

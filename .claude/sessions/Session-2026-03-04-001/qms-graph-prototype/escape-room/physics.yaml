@@ -1,0 +1,41 @@
+node:
+  id: esc.physics
+  prompt: "Physics Lab: Circuit puzzle."
+  context: >
+    The physics lab has a circuit diagram:
+
+    A battery (V=12V) connected to two resistors in series:
+    R1 = 4 ohms, R2 = 8 ohms.
+
+    Question on the board: "What is the current through the circuit (in amps)?
+    And what is the voltage drop across R2?"
+
+    The exit lock needs: current (whole number) and voltage drop (whole number),
+    concatenated. E.g., if current=2A and drop=8V, code is "28".
+
+    Inside you find a colored key. The card: "The key is GREEN."
+
+  evidence_schema:
+    total_resistance:
+      type: text
+      required: true
+      hint: "Total resistance of the series circuit"
+    current:
+      type: text
+      required: true
+      hint: "Current through the circuit (I = V/R)"
+    voltage_drop_r2:
+      type: text
+      required: true
+      hint: "Voltage drop across R2 (V = IR)"
+    exit_code:
+      type: text
+      required: true
+      hint: "Current and voltage drop concatenated"
+    key_color:
+      type: text
+      required: true
+      hint: "What color is the key in this lab?"
+
+  edges:
+    - to: esc.next-lab

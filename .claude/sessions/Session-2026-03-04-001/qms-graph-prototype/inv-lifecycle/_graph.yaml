@@ -1,0 +1,23 @@
+graph:
+  id: inv-lifecycle
+  name: "Investigation Lifecycle"
+  version: "0.1.0"
+  entry_point: inv.start
+  description: >
+    Complete lifecycle for an Investigation (INV) — from deviation discovery
+    through root cause analysis, CAPA definition, review/approval, CAPA execution,
+    post-review, post-approval, and closure. CAPAs may spawn child CRs.
+
+  invoked_by:
+    - graph: deviation-handling
+      trigger: "When deviation is systemic (dh.create-inv)"
+
+  invokes:
+    - graph: cr-lifecycle
+      trigger: "When a CAPA requires controlled changes (requires_child_cr: yes)"
+      mechanism: "Hook creates child CR; agent traverses cr-lifecycle for the child"
+
+  performer_map:
+    initiator: "Investigation author"
+    quality: "QA representative"
+    system: "Automated engine action"

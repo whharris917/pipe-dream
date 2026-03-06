@@ -1,0 +1,9 @@
+graph:
+  id: esc
+  name: "Escape Room: The Locked Laboratory"
+  version: "1.0"
+  entry_point: esc.start
+  description: >
+    A multi-room escape room puzzle. Each room contains clues that unlock
+    the next. Evidence collected in earlier rooms is needed to solve
+    later puzzles. Requires combining information across steps.

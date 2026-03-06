@@ -1,0 +1,17 @@
+node:
+  id: cr.testing-summary
+  prompt: "Describe the testing approach."
+  context: "How will you verify that the change works correctly and doesn't break existing functionality?"
+
+  evidence_schema:
+    testing_approach:
+      type: text
+      required: true
+      hint: "Unit tests, integration tests, manual verification, etc."
+    test_plan_reference:
+      type: text
+      required: false
+      hint: "Reference to formal test protocol if applicable (e.g., TP-001)"
+
+  edges:
+    - to: cr.draft-review

@@ -1,0 +1,13 @@
+node:
+  id: bt.select-base
+  prompt: "Which base template should this inherit from?"
+
+  evidence_schema:
+    base_template:
+      type: enum
+      values: [executable-base, code-cr-base, process-cr-base]
+      required: true
+      hint: "executable-base provides pre/post-execution commits; code-cr-base adds SDLC steps"
+
+  edges:
+    - to: bt.step-name

@@ -1,0 +1,41 @@
+node:
+  id: lp.deduction-step
+  prompt: "Make the next logical deduction."
+  context: >
+    Look at your current grid state and the remaining constraints. Find the
+    next deduction you can make with certainty. Show your reasoning chain.
+
+    If you get stuck, you may need to try case analysis: assume a value and
+    see if it leads to a contradiction.
+
+  evidence_schema:
+    clues_used:
+      type: text
+      required: true
+      hint: "Which clue numbers did you use for this deduction?"
+    reasoning:
+      type: text
+      required: true
+      hint: "Step-by-step logical reasoning for this deduction"
+    new_placements:
+      type: text
+      required: true
+      hint: "What new assignments did you determine?"
+    grid_state:
+      type: text
+      required: true
+      hint: "Updated grid state after this deduction"
+    contradiction_found:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    remaining_unknowns:
+      type: integer
+      required: true
+
+  edges:
+    - to: lp.backtrack
+      condition: "response.get('contradiction_found') == 'yes'"
+    - to: lp.check-complete
+      condition: "response.get('remaining_unknowns', 99) == 0"
+    - to: lp.deduction-step

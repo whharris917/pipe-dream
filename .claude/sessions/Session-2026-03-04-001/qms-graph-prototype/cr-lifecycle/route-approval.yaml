@@ -1,0 +1,17 @@
+node:
+  id: cr.route-approval
+  prompt: "All reviewers recommend. Routing for approval."
+  context: "The document has passed review. It will now be sent to the approver (QA) for final pre-approval."
+  performer: initiator
+
+  gate: "all_reviewers_recommend == True"
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms route {ticket.doc_id} --approval"
+        on_failure: block
+
+  edges:
+    - to: cr.approval-decision

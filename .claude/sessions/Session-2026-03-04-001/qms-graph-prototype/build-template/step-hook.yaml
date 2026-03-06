@@ -1,0 +1,22 @@
+node:
+  id: bt.step-hook
+  prompt: "Should a command run automatically when this step completes?"
+  context: "Hooks automate what an agent would otherwise type manually — CLI commands, git commands, test runners, etc. Leave blank for no hook."
+
+  evidence_schema:
+    has_hook:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+    hook_command:
+      type: text
+      required: false
+      hint: "e.g., python -m pytest, git checkout -b {ticket.doc_id}/execution"
+    hook_on_failure:
+      type: enum
+      values: ["block", "log"]
+      required: false
+      hint: "block = cursor waits until hook succeeds; log = continue on failure"
+
+  edges:
+    - to: bt.add-another

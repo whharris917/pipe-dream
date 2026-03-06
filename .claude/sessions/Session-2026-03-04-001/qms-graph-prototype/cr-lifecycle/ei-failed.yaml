@@ -1,0 +1,27 @@
+node:
+  id: cr.ei-failed
+  prompt: "Execution item failed. A deviation must be recorded."
+  context: "When an EI fails, you MUST create a child Variance Report (VAR) to document and resolve the deviation. The VAR type determines whether it blocks CR closure."
+
+  evidence_schema:
+    var_type:
+      type: enum
+      values: ["type-1", "type-2"]
+      required: true
+      hint: "type-1 = blocks CR closure until VAR is CLOSED; type-2 = unblocks when VAR is PRE_APPROVED"
+    var_title:
+      type: text
+      required: true
+      hint: "Title for the Variance Report"
+    deviation_description:
+      type: text
+      required: true
+      hint: "What went wrong and why"
+
+  hooks:
+    on_exit:
+      - command: "qms create VAR --parent {ticket.doc_id} --title \"{response.var_title}\""
+        on_failure: block
+
+  edges:
+    - to: cr.more-eis

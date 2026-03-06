@@ -1,0 +1,16 @@
+node:
+  id: bt.review
+  prompt: "Review your template definition."
+  context: "All steps have been defined. Review the summary above. If everything looks correct, proceed to submit. If not, you can revise."
+
+  evidence_schema:
+    decision:
+      type: enum
+      values: ["submit", "revise"]
+      required: true
+      hint: "submit = send for review and approval; revise = go back and redefine steps"
+
+  edges:
+    - to: bt.step-name
+      condition: "response.get('decision') == 'revise'"
+    - to: bt.submit

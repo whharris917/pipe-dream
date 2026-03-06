@@ -1,0 +1,14 @@
+node:
+  id: ra.start
+  prompt: "Document is ready for review."
+  context: "The document will now enter the review cycle. Reviewers will be assigned by QA and each will evaluate the document independently."
+
+  evidence_schema: {}
+
+  hooks:
+    on_enter:
+      - command: "qms route {ticket.doc_id} --review"
+        on_failure: block
+
+  edges:
+    - to: ra.assign-reviewers

@@ -1,0 +1,15 @@
+node:
+  id: ts.still-broken
+  prompt: "Fix did not resolve the issue. Re-evaluate."
+  context: "The applied fix didn't work. There may be multiple contributing causes, or the diagnosis was wrong. Step back and reconsider."
+
+  evidence_schema:
+    what_was_wrong_with_diagnosis:
+      type: text
+      required: true
+    new_hypothesis:
+      type: text
+      required: true
+
+  edges:
+    - to: ts.resource-check

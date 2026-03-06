@@ -1,0 +1,41 @@
+node:
+  id: exp.analyze
+  prompt: "Analyze the collected data."
+  context: >
+    Apply statistical analysis to your trial results. Calculate means,
+    standard deviations, confidence intervals, and perform the appropriate
+    statistical test (e.g., paired t-test, Wilcoxon signed-rank).
+
+  evidence_schema:
+    control_mean:
+      type: text
+      required: true
+      hint: "Mean hit rate across all control trials"
+    treatment_mean:
+      type: text
+      required: true
+      hint: "Mean hit rate across all treatment trials"
+    effect_size:
+      type: text
+      required: true
+      hint: "Difference between treatment and control means"
+    statistical_test:
+      type: text
+      required: true
+      hint: "Which test did you use and why?"
+    p_value:
+      type: text
+      required: true
+      hint: "The p-value from your statistical test"
+    confidence_interval:
+      type: text
+      required: true
+      hint: "95% CI for the difference"
+    significant:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+      hint: "Is the result statistically significant at your chosen alpha?"
+
+  edges:
+    - to: exp.conclusion

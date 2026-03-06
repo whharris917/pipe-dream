@@ -1,0 +1,32 @@
+node:
+  id: rca.isolate
+  prompt: "Isolate which component in the order flow is slow."
+  context: >
+    The order submission flow is:
+      nginx -> order-api (Node.js) -> inventory-check query (PostgreSQL)
+      -> payment-service (external) -> order-write (PostgreSQL)
+
+    Add timing instrumentation at each boundary. Measure where the 18s
+    latency is being consumed. The inventory-check query against the
+    products table is the primary suspect given the index rebuild.
+
+  evidence_schema:
+    system_components:
+      type: text
+      required: true
+      hint: "nginx, order-api, inventory-check (PG), payment-service, order-write (PG)"
+    isolation_method:
+      type: text
+      required: true
+      hint: "Timing instrumentation at each service boundary under load"
+    faulty_component:
+      type: text
+      required: true
+      hint: "Which component accounts for the latency?"
+    evidence_for_isolation:
+      type: text
+      required: true
+      hint: "Timing breakdown showing where the 18s is spent"
+
+  edges:
+    - to: rca.root-cause

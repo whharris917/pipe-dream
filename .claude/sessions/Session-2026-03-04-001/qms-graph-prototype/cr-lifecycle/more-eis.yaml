@@ -1,0 +1,15 @@
+node:
+  id: cr.more-eis
+  prompt: "Are there more execution items to complete?"
+  context: "Check your implementation plan — have all approved EIs been executed? Every approved EI must have a documented outcome (pass or fail with evidence)."
+
+  evidence_schema:
+    more_eis:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: cr.execute-ei
+      condition: "response.get('more_eis') == 'yes'"
+    - to: cr.execution-complete

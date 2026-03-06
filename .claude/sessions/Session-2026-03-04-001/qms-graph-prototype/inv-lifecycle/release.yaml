@@ -1,0 +1,16 @@
+node:
+  id: inv.release
+  prompt: "Investigation approved. Release for CAPA execution."
+  context: "The investigation analysis and CAPA plan are approved (v1.0). Release to begin executing CAPAs."
+
+  hooks:
+    on_enter:
+      - command: "qms approve {ticket.doc_id}"
+        on_failure: block
+      - command: "qms release {ticket.doc_id}"
+        on_failure: block
+
+  evidence_schema: {}
+
+  edges:
+    - to: inv.execute-capa

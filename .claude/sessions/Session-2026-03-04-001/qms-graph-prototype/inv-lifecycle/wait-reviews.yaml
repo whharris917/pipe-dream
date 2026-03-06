@@ -1,0 +1,16 @@
+node:
+  id: inv.wait-reviews
+  prompt: "Waiting for reviewers."
+  performer: system
+  wait: "All assigned reviewers have submitted their review"
+
+  evidence_schema:
+    all_recommend:
+      type: enum
+      values: ["yes", "no"]
+      required: true
+
+  edges:
+    - to: inv.address-feedback
+      condition: "response.get('all_recommend') == 'no'"
+    - to: inv.route-approval
