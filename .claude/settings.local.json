@@ -79,7 +79,14 @@
       "mcp__qms__qms_withdraw",
       "Bash(mkdir:*)",
       "Bash(python3:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(cat:*)",
+      "Bash(wfe load:*)",
+      "Bash(wfe advance:*)",
+      "Bash(wfe fill:*)",
+      "Bash(wfe:*)",
+      "Bash(WFE_SESSION=default python:*)",
+      "Bash(WFE_SESSION=compile-test python:*)"
     ],
     "deny": [
       "Edit(QMS/**)",

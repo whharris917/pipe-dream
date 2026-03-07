@@ -1,7 +1,7 @@
 ---
 title: Workflow Engine Requirements Specification
 revision_summary: Cornerstone requirements — graph primitives, lifecycle, construction,
-  navigation, rendering, persistence, CLI
+  navigation, rendering, persistence, CLI, execution mode (fill, advance, edge evaluation)
 ---
 
 # SDLC-WFE-RS: Workflow Engine Requirements Specification
@@ -18,9 +18,9 @@ These requirements serve as the authoritative specification for workflow engine 
 
 This specification covers:
 
-- Graph primitives (Slot, Node, Edge)
+- Graph primitives (Field, Node, Edge)
 - DAG construction and validation
-- Workflow execution (scheduling, slot-filling, edge evaluation)
+- Workflow execution (scheduling, field-filling, edge evaluation)
 - Workflow definition storage and loading
 - Agent tool surface (construction and execution modes)
 - Rendering (graph state to agent-readable view)
@@ -40,14 +40,14 @@ This specification does not cover:
 
 ### 3.1 What the Workflow Engine Does
 
-The workflow engine executes directed acyclic graphs (DAGs) where each node represents a step in a workflow and edges define the flow between steps. Nodes contain typed slots that hold data. Edges may have conditions that control which paths are taken.
+The workflow engine executes directed acyclic graphs (DAGs) where each node represents a step in a workflow and edges define the flow between steps. Nodes contain typed fields that hold data. Edges may have conditions that control which paths are taken.
 
 ### 3.2 Bedrock Primitives
 
 The engine is built on three primitives:
 
-- **Slot** — `{name, type, value?, writable}` — the atomic unit of data within a node
-- **Node** — `{id, slots, edges, prompt?}` — a step in a workflow containing slots and outgoing edges
+- **Field** — `{name, type, value?, writable}` — the atomic unit of data within a node
+- **Node** — `{id, fields, edges, prompt?}` — a step in a workflow containing fields and outgoing edges
 - **Edge** — `{to, when?}` — a conditional connection from one node to another
 
 Everything else — prompts, schemas, gates, templates, documents — is emergent from these three.
@@ -56,14 +56,14 @@ Everything else — prompts, schemas, gates, templates, documents — is emergen
 
 The engine operates in two modes:
 
-- **Construction mode** — modify graph structure (add/remove nodes, edges, slots)
-- **Execution mode** — fill slots, evaluate edges, advance through the DAG
+- **Construction mode** — modify graph structure (add/remove nodes, edges, fields)
+- **Execution mode** — fill fields, evaluate edges, advance through the DAG
 
-During execution, the scheduler evaluates node readiness (all required input slots filled), activates ready nodes, evaluates outgoing edges when a node completes, and handles fork/join semantics. Multiple true outgoing edges all fire (fork). Downstream nodes with multiple incoming edges wait for all active incoming paths (AND-join).
+During execution, the scheduler evaluates node readiness (all required input fields filled), activates ready nodes, evaluates outgoing edges when a node completes, and handles fork/join semantics. Multiple true outgoing edges all fire (fork). Downstream nodes with multiple incoming edges wait for all active incoming paths (AND-join).
 
 ### 3.4 Storage
 
-Workflow definitions are stored in YAML. Definitions (templates) are separate from instances (active executions with filled slot values).
+Workflow definitions are stored in YAML. Definitions (templates) are separate from instances (active executions with filled field values).
 
 ---
 
@@ -73,9 +73,9 @@ Workflow definitions are stored in YAML. Definitions (templates) are separate fr
 
 ### 4.1 Graph Primitives
 
-**REQ-WFE-001:** A Slot shall have a name, a type, an optional value, and a writable flag.
+**REQ-WFE-001:** A Field shall have a name, a type, an optional value, and a writable flag.
 
-**REQ-WFE-002:** A Node shall have a unique identifier, a collection of Slots, and a collection of outgoing Edges.
+**REQ-WFE-002:** A Node shall have a unique identifier, a collection of Fields, and a collection of outgoing Edges.
 
 **REQ-WFE-003:** An Edge shall have a target Node reference and an optional condition.
 
@@ -103,9 +103,9 @@ Workflow definitions are stored in YAML. Definitions (templates) are separate fr
 
 **REQ-WFE-013:** The engine shall prevent deletion of the home node.
 
-**REQ-WFE-014:** The engine shall support adding a slot to a node in a draft graph.
+**REQ-WFE-014:** The engine shall support adding a field to a node in a draft graph.
 
-**REQ-WFE-015:** The engine shall support removing a slot from a node in a draft graph.
+**REQ-WFE-015:** The engine shall support removing a field from a node in a draft graph.
 
 **REQ-WFE-016:** The engine shall support creating an edge between two nodes in a draft graph.
 
@@ -123,19 +123,29 @@ Workflow definitions are stored in YAML. Definitions (templates) are separate fr
 
 ### 4.5 Rendering
 
-**REQ-WFE-022:** The engine shall render the current node showing its identifier, its slots (with names, types, and values), and its outgoing edges (with targets and conditions).
+**REQ-WFE-022:** The engine shall render the current node showing its identifier, its fields (with names, types, and values), and its outgoing edges (with targets and conditions).
 
 **REQ-WFE-023:** The rendered view shall indicate whether the graph is in draft or committed state.
 
 ### 4.6 Persistence
 
-**REQ-WFE-024:** The engine shall save a graph to a YAML file preserving all nodes, slots, edges, the home node identity, and the lifecycle state.
+**REQ-WFE-024:** The engine shall save a graph to a YAML file preserving all nodes, fields, edges, the home node identity, and the lifecycle state.
 
 **REQ-WFE-025:** The engine shall load a graph from a YAML file, restoring the full graph structure and lifecycle state.
 
 ### 4.7 CLI Entry Point
 
 **REQ-WFE-026:** The engine shall provide a command-line entry point that creates or loads a graph and positions the user at the home node in construction mode (if draft) or read-only mode (if committed).
+
+### 4.8 Execution Mode
+
+**REQ-WFE-027:** The engine shall support filling a field value on the current node during execution. This operation shall be permitted on committed graphs.
+
+**REQ-WFE-028:** The engine shall evaluate outgoing edges from a given node, returning the subset whose conditions are satisfied by the node's current field values.
+
+**REQ-WFE-029:** Edge condition evaluation shall support: no condition (always satisfied), `name==value` (field equals value), and `name!=value` (field does not equal value).
+
+**REQ-WFE-030:** The engine shall support advancing from the current node by evaluating outgoing edges and navigating to the single true target. If no edges are true, the operation shall fail with an informative error. If multiple edges are true, the operation shall fail and indicate which targets are available for manual selection.
 
 ---
 

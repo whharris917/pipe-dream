@@ -1,10 +1,10 @@
 # Session-2026-03-06-001
 
-## Current State (last updated: 2026-03-07 post-compaction session)
+## Current State (last updated: 2026-03-07 end of session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current EI:** EI-4 complete; EI-5 (RS update), EI-6 (submodule push), EI-7 (post-exec commit) pending
+- **Current EI:** EI-4 complete; EI-5 (RS update), EI-6 (submodule push + pipe-dream pointer), EI-7 (post-exec commit) pending
 - **Blocking on:** Nothing
-- **Next:** EI-5 — update SDLC-WFE-RS with new requirements; then EI-6/7, route for post-review
+- **Next session:** EI-5 — update SDLC-WFE-RS with new requirements discovered during development (multi-agent isolation, nodelist/text types, form-based input, hook/template systems, compile); then EI-6/7, route for post-review
 - **Subagent IDs:** qa=a8e1bcbe1c60a3c5c (may need to respawn)
 
 ## Progress Log
@@ -102,3 +102,15 @@
 **Reference CR studied:** CR-104 (qms init hardening, SDLC-QMS-RS v21.0, SDLC-QMS-RTM v26.0)
 
 **CR-110 EI table updated:** EI-1 through EI-4 recorded as Pass. Checked in as v1.1.
+
+**compile redesign — pure convention renderer:**
+- Realized first compile.py was domain-specific (CR section names baked in)
+- Lead insight: same-template nodes project naturally to a table; this is the universal primitive
+- Added `template_id: Optional[str]` to Node (set by instantiate(), round-tripped through YAML)
+- Added `label: Optional[str]` to Node and Template (display name for compiled output)
+  - prompt excluded from compile entirely — it's execution instruction, not document content
+  - label: "Execution Items" added to ei.yaml; inline nodes accept `label:` key
+- Rewrote compile.py: BFS traversal, group by template_id, tables for groups, sections for singletons
+- Fallback: ID-derived label (snake → Title Case) when no label set
+- Committed in qms-workflow-engine: d538b66 (template_id/compile), 435763c (label)
+- Example output: qms-workflow-engine/compiled/example-cr.md
