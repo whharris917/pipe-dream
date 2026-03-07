@@ -1,11 +1,11 @@
 # Session-2026-03-06-001
 
-## Current State (last updated: CR-110 EI-3 complete)
-- **Active document:** CR-110 (IN_EXECUTION v1.0)
-- **Current EI:** EI-3 complete, awaiting Lead input on cornerstone requirements
-- **Blocking on:** Lead direction on initial REQs for SDLC-WFE-RS
-- **Next:** Discuss cornerstone requirements, then EI-4 (implementation)
-- **Subagent IDs:** qa=a8e1bcbe1c60a3c5c
+## Current State (last updated: 2026-03-07 post-compaction session)
+- **Active document:** CR-110 (IN_EXECUTION v1.1)
+- **Current EI:** EI-4 complete; EI-5 (RS update), EI-6 (submodule push), EI-7 (post-exec commit) pending
+- **Blocking on:** Nothing
+- **Next:** EI-5 — update SDLC-WFE-RS with new requirements; then EI-6/7, route for post-review
+- **Subagent IDs:** qa=a8e1bcbe1c60a3c5c (may need to respawn)
 
 ## Progress Log
 
@@ -13,41 +13,92 @@
 - Previous session: Session-2026-03-05-001
 - Read SELF.md, PROJECT_STATE.md, previous session notes
 - Read QMS-Policy, START_HERE, QMS-Glossary
-- Project state: CR-108 CLOSED, CR-109 drafted and checked in
 
-### CR-109 Pre-Review Correction
-- Lead noted CR-109 incorrectly stated two submodules (should be four)
-- Checked out CR-109, fixed four references (Sections 2.3, 3, 4, 5.2, 8)
-- QA also found Section 2.3 missing CLAUDE.md — fixed and re-routed
-- QA re-review: COMPLIANT, recommended
-- QA pre-approval: APPROVED (v1.0)
-- Released for execution
-
-### CR-109 Execution (all EIs Pass)
-- EI-1: Pre-execution baseline commit `26302a0`, pushed
-- EI-2: Created github.com/whharris917/qms-workflow-engine, initial commit `7731a8d`
-- EI-3: Added as fifth submodule, all five submodules healthy
-- EI-4: Updated CLAUDE.md project structure (also corrected pre-existing omission of claude-qms and Quality-Manual)
-- EI-5: Verified submodule integration — contents correct, all submodules clean
-- EI-6: Post-execution commit `d474951`, pushed
-
-### CR-109 Closure (commit `fefd882`)
-- Post-review: QA COMPLIANT, recommended
-- Post-approval: QA APPROVED (v2.0)
-- CR-109 CLOSED
+### CR-109 (CLOSED)
+- Fixed submodule count (4 not 2) + missing CLAUDE.md in Section 2.3
+- Full lifecycle: pre-review -> pre-approval -> execution (6/6 EIs Pass) -> post-review -> post-approval -> CLOSED
+- Key commits: baseline `26302a0`, repo `7731a8d`, execution `d474951`, closure `fefd882`
 
 ### CR-110 Drafted and Approved
-- Created CR-110: workflow engine initial development
-- Key design: containment boundaries (Section 5.4) protect existing QMS
-- Authorizes free-form dev in qms-workflow-engine/, draft RS only, no qualification
-- QA pre-review: COMPLIANT, recommended (clean pass)
-- QA pre-approval: APPROVED (v1.0)
+- Workflow engine initial development CR
+- Containment boundaries protect existing QMS
+- QA pre-review: COMPLIANT (clean pass), pre-approval: APPROVED (v1.0)
 - Released for execution
 
-### CR-110 Execution (EI-1 through EI-3)
-- EI-1: Pre-execution baseline commit `22cf37d`, pushed
-- EI-2: Registered WFE SDLC namespace (WFE-RS, WFE-RTM types now available)
-- EI-3: Created SDLC-WFE-RS (v0.1 DRAFT), populated with document structure:
-  - Purpose, Scope, System Overview (informative), Requirements (empty), Assumptions
-  - Section 3 captures bedrock primitives, execution model, storage approach
-  - No requirements yet — awaiting Lead direction on cornerstone REQs
+### CR-110 Execution
+- EI-1: Pre-execution baseline commit `22cf37d`
+- EI-2: Registered WFE SDLC namespace
+- EI-3: Created SDLC-WFE-RS with 26 cornerstone requirements (7 categories)
+- EI-4 (in progress): Built workflow engine implementation
+  - graph.py: Slot, Node, Edge, Graph with lifecycle + construction + DAG invariant
+  - session.py: Navigation (current node, go, home)
+  - render.py: Text rendering of current node
+  - persistence.py: YAML save/load
+  - cli.py: Interactive REPL with all commands
+  - Submodule commit `70054a4`, pipe-dream commit `07fabac`
+  - All smoke tests pass (graph creation, construction, navigation, lifecycle guards, cycle detection, persistence)
+
+### Usability Test
+- Launched naive agent with minimal context ("there's a tool called wfe, figure it out")
+- Agent prohibited from reading source code — can only interact with the CLI
+- Testing: discoverability, intuitiveness, pain points
+- Result: agent used REPL piping (wrong), then rebuilt CLI as stateless commands
+
+### EI-5: SDLC-WFE-RS updated
+- Checked out, added REQ-WFE-027 through REQ-WFE-030 (Section 4.8 Execution Mode)
+- Revision summary updated; checked back in (v0.1)
+
+### EI-4 Continued: Slot->Field rename + execution mode
+- Renamed Slot->Field throughout: graph.py, persistence.py, render.py, cli.py, __init__.py
+- YAML key "slots" -> "fields"; SDLC-WFE-RS updated via QMS checkout/checkin
+- Added execution mode:
+  - graph.py: fill_field(), evaluate_edges(), _condition_satisfied() (==, !=)
+  - session.py: fill(), advance()
+  - render.py: Execute section in committed mode
+  - cli.py: wfe fill, wfe advance commands
+- Submodule commit: 8c6c7b3
+- Smoke tested: approval workflow with conditional edges, fill+advance navigates correctly
+
+### Workflow Building Exploration (deleted)
+- Read all SOPs (001-007) and all TEMPLATE/ files to understand CR/VAR structure
+- Built 4 workflow YAMLs in workflows/: cr-base (14 nodes), cr-code (21 nodes), var-type1 (19 nodes), var-type2 (21 nodes)
+- Lead asked whether code CR includes EIs -- identified design gap: execution phase nodes
+  function as EIs but don't carry standard EI schema (task_outcome Pass/Fail, performed_by, date)
+- Lead deleted the workflows; clarification on EI modeling approach pending
+- Key design question: model each EI as a node with standardized fields, or treat the
+  workflow as lifecycle-stage tracking with EIs living inside the document?
+
+### Post-Compaction Work (2026-03-07)
+
+**nodelist field type + form-based input:**
+- New `nodelist` type for multi-node YAML input (list-of-dicts)
+- wfe/form.py: draft/submit workflow — engine writes form.yaml with inline hints, agent edits, submits
+- wfe draft + wfe submit commands in CLI
+- Full semantic validation (template param checking, required field detection)
+
+**create-workflow as prime mover (bootstrap redesign):**
+- Removed redundant bare home node — first real node promoted to home via `Graph.set_home()`
+- Replaced semicolon/bookend chain_template approach with `nodes: nodelist` field
+- Two-pass build in `build_node_chain`: Pass 1 create all nodes → Pass 2 wire edges
+- Supports both template-based (`template: ei`) and inline (`id: define, fields: [...]`) entries
+- create-template workflow created via create-workflow using inline nodes (templates are derived)
+
+**Multi-agent isolation:**
+- WFE_SESSION env var namespaces all state under `.wfe/sessions/<id>/`
+- `Session._make_ctx()` injects `_session_dir` into workspace for hooks
+
+**compile feature:**
+- wfe/compile.py: `compile_graph()` — BFS traversal, maps define/EI/done nodes to CR markdown
+- Renders sections 1-9 from define node fields, section 10 execution table from EI nodes
+- Partial execution supported: pending EI nodes show blank rows
+- wfe compile [path] CLI command; compile_cr hook
+
+**Artifacts committed (qms-workflow-engine `524d33c`):**
+- wfe/hooks.py, wfe/template.py, wfe/database.py, wfe/form.py, wfe/compile.py
+- workflow_hooks.py (build_node_chain, save_template, compile_cr, etc.)
+- workflows/: create-workflow.yaml (hand-authored), create-template.yaml (engine-created), sample-ei-cr.yaml
+- templates/: ei.yaml, commit-ei.yaml (both created via create-template)
+
+**Reference CR studied:** CR-104 (qms init hardening, SDLC-QMS-RS v21.0, SDLC-QMS-RTM v26.0)
+
+**CR-110 EI table updated:** EI-1 through EI-4 recorded as Pass. Checked in as v1.1.
