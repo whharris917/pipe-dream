@@ -1,0 +1,1 @@
+2026-03-08T13:37:34 | COMPACTION (auto) | transcript: C:\Users\wilha\.claude\projects\C--Users-wilha-projects-pipe-dream\45b85977-dc14-4aed-b227-bc95b64b2f06.jsonl

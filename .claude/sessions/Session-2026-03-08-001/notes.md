@@ -1,10 +1,10 @@
 # Session-2026-03-08-001
 
-## Current State (last updated: mid-session)
+## Current State (last updated: late session — post context compaction)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** WFE redesign — building web UI as primary development driver
+- **Current task:** WFE UI — CR authoring workflow with staged persistence + Implementation Plan table builder
 - **Blocking on:** Nothing
-- **Next:** Continue building CR authoring flow; wire up form submission and next steps
+- **Next:** Continue Implementation Plan builder refinement; execution view; other document types
 - **Subagent IDs:** None active
 
 ## Key Decision: UI-Driven Redesign
@@ -55,15 +55,34 @@ Full design document: `wfe-redesign.md` in this session folder.
   - Title, Purpose, Scope (Context/Changes Summary/Files Affected), Current State, Proposed State, Change Description, Justification, Impact Assessment (Files/Documents/Other), Testing Summary, Implementation Plan
   - No SOP references in UI — guidance stands on its own
 
+### CR Authoring Workflow (post-compaction)
+- **Staged workflow:** Initiation → Change Definition, with persistence to JSON in `wfe-ui/data/`
+- **Initiation stage:** Title, Code Impact decision tree (affects code → controlled submodule → which one → SDLC indicator), Purpose. "Initiate Change Record" assigns CR ID.
+- **Change Definition stage:** All fields visible/editable, incremental saves (no `required` on definition fields)
+- **Stage banner:** Full 8-stage progress indicator: Initiation → Change Definition → Pre-Review → Pre-Approval → Execution → Post-Review → Post-Approval → Closure
+- **QMS page:** Table view of all documents with ID, title, stage tag
+- **Workspace page:** Card view of active documents with purpose snippet
+- **Implementation Plan:** Dedicated page (`/cr/<id>/plan`) with full table builder:
+  - Add/delete rows and columns, insert relative to selection
+  - Column types: Non-Executable (Free Text, Prerequisite) and Executable (Free Text, Choice List, Cross Reference, Signature)
+  - Choice List type has inline options editor in the type picker dropdown
+  - Executable columns render as locked/grey cells (not editable during authoring)
+  - Prerequisite columns show a checkbox dropdown picker listing all other rows as EI-N
+  - Auto-Sequential action fills prerequisites as a linear chain (each row depends on previous)
+  - Tab navigation between cells, Escape to close dropdowns
+  - Save persists to JSON via POST, "Saved" flash confirmation
+
 ### Files Created/Modified
-- `qms-workflow-engine/wfe-ui/app.py` — Flask app with routes for all pages + Quality Manual renderer
+- `qms-workflow-engine/wfe-ui/app.py` — Flask app: routes, persistence helpers, Quality Manual renderer
 - `qms-workflow-engine/wfe-ui/templates/base.html` — Layout with sidebar
 - `qms-workflow-engine/wfe-ui/templates/index.html` — Home page
-- `qms-workflow-engine/wfe-ui/templates/qms.html` — Placeholder
-- `qms-workflow-engine/wfe-ui/templates/workspace.html` — Placeholder
+- `qms-workflow-engine/wfe-ui/templates/qms.html` — Document table view
+- `qms-workflow-engine/wfe-ui/templates/workspace.html` — Active document cards
 - `qms-workflow-engine/wfe-ui/templates/inbox.html` — Placeholder
 - `qms-workflow-engine/wfe-ui/templates/manual_index.html` — Quality Manual index
 - `qms-workflow-engine/wfe-ui/templates/manual_page.html` — Quality Manual page viewer
 - `qms-workflow-engine/wfe-ui/templates/initiate.html` — Initiate workflow with decision tree
-- `qms-workflow-engine/wfe-ui/templates/create_cr.html` — CR authoring form
+- `qms-workflow-engine/wfe-ui/templates/create_cr.html` — Staged CR authoring form
+- `qms-workflow-engine/wfe-ui/templates/edit_plan.html` — Implementation Plan table builder
+- `qms-workflow-engine/wfe-ui/.gitignore` — Excludes `data/` directory
 - `qms-workflow-engine/wfe-ui/static/` — Empty (CSS is inline for now)
