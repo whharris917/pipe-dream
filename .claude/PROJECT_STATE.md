@@ -1,26 +1,24 @@
 # Project State
 
-*Last updated: Session-2026-03-06-001 (2026-03-08)*
+*Last updated: Session-2026-03-08-001 (2026-03-08)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Workflow engine built — experimental/provisional.** CR-110 is IN_EXECUTION (v1.1). EI-1 through EI-4 are complete (Pass). The engine has gone from nothing to a fully functional graph-based workflow system with construction/execution modes, hooks, templates, form-based input, multi-agent isolation, and a pure-convention compile renderer.
+**WFE redesign in progress — UI-driven development.** The v1 CLI-based workflow engine is being redesigned from first principles. A Kneat-like web UI (`qms-workflow-engine/wfe-ui/`) is now the primary development driver. The engine primitives will be rebuilt to serve what the UI needs, not the other way around.
 
-**Provisional status:** All WFE development artifacts (engine code, domain content, CR type templates, create-cr wizard, db.json) are provisional. SDLC-WFE-RS is still DRAFT. No WFE workflow has been used to manage an actual QMS document in production. Post-review under CR-110 and real-world validation are required before the engine is considered stable.
+**The pivot:** Design discussions revealed fundamental problems with v1 (context gap, phase tangle, meta-workflows as wrong pattern). Rather than continuing abstract redesign, the Lead decided to build a visual UI and let concrete interaction drive the architecture.
 
-**Key design decisions (finalized):**
-- Primitives: **Field** {name, type, value?, writable, parameter}, **Node** {id, fields, edges, prompt?, label?, template_id?}, **Edge** {target, condition?, traverse_hooks?}
-- Two modes: construction (modify graph structure) and execution (fill fields, advance)
-- Acyclic DAG always valid; replication pattern for repeating steps
-- YAML storage: workflow definitions + live session state
-- Multi-agent isolation via `WFE_SESSION` env var — all state under `.wfe/sessions/<id>/`
-- Template system: templates define node structure; instantiation stamps `template_id` and `label` onto nodes for compile provenance
-- Form-based input: `wfe draft` + `wfe submit` for structured multi-field YAML editing
-- Compile: pure convention renderer — same-template nodes → table, templateless nodes → section; no domain knowledge in engine
+**What's running now:** Flask web app at `http://127.0.0.1:5000` with:
+- Sidebar navigation (Home, QMS, Workspace, Inbox, Quality Manual)
+- Quality Manual browser rendering actual markdown files with working cross-references
+- Initiate Workflow page with interactive decision tree + direct document creation buttons
+- CR authoring form with all pre-approval sections and authoring guidance
 
-**65 CRs CLOSED (CR-042 through CR-105, CR-108, CR-109, plus CR-091-ADD-001). 5 INVs CLOSED.**
+**CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
+
+**65 CRs CLOSED. 5 INVs CLOSED.**
 
 ---
 
@@ -28,12 +26,9 @@
 
 **Foundation through Quality Manual** (Feb 1-24, CR-042 through CR-105).
 
-**DocuBuilder Genesis Sandbox** (Mar 3, CR-108). Table-primitive model proved concept, revealed design limits.
+**Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine with hooks, templates, compile. Proved concepts but revealed design limits: meta-workflows create phase confusion, context gap for agent execution, rendering hints leak into data model.
 
-**Workflow Engine Design and Build** (Mar 3 - present, Sessions 2026-03-03 through 2026-03-07):
-- Bedrock primitives distilled (Field, Node, Edge — everything else emergent)
-- CR-109 executed: `qms-workflow-engine` submodule established under formal control
-- CR-110: initial development CR — requirements + implementation
+**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document.
 
 ---
 
@@ -47,7 +42,7 @@
 | SDLC-QMS-RTM | v27.0 EFFECTIVE | 687 tests, qualified commit 918984d |
 | SDLC-CQ-RS | v2.0 EFFECTIVE | 6 requirements |
 | SDLC-CQ-RTM | v2.0 EFFECTIVE | Inspection-based, qualified commit d3c34e5 |
-| SDLC-WFE-RS | v0.1 DRAFT | 30 requirements (7 categories + 4 execution mode reqs) |
+| SDLC-WFE-RS | v0.1 DRAFT | 30 requirements (needs rewrite for v2) |
 | Qualified Baseline | CLI-18.0 | qms-cli commit 309f217 (main) |
 
 ### Controlled Document State
@@ -60,25 +55,21 @@
 | TEMPLATE-ADD | v2.0 EFFECTIVE |
 | TEMPLATE-VR | v3.0 EFFECTIVE |
 
-### Workflow Engine Capabilities (qms-workflow-engine) — *Experimental/Provisional*
+### WFE v1 (Experimental/Provisional — being superseded by v2)
 
-| Module | Description |
-|--------|-------------|
-| `wfe/graph.py` | Field (block hint), Node (scaffold flag), Edge, Graph; lifecycle + reopen(); DAG invariant |
-| `wfe/session.py` | Navigation (go, home); fill(), advance(); WFE_SESSION multi-agent isolation |
-| `wfe/render.py` | Text rendering of current node state |
-| `wfe/persistence.py` | YAML save/load; round-trips all field/edge/node attributes |
-| `wfe/template.py` | Template struct; instantiate() stamps template_id + label; default field values |
-| `wfe/form.py` | draft/submit workflow for structured multi-field YAML input |
-| `wfe/hooks.py` | Hook registry; fire() with parameterized hook names (name:p1:p2) |
-| `wfe/builtin_hooks.py` | Engine hooks: init_target_graph, build_node_chain, save_workflow, save_template, compile_to_file; generic parameterized hooks: validate_field_in_db, lookup_entity_props, set_workspace, pull_from_workspace, load_workflow, extend_chain |
-| `wfe/compile.py` | BFS traversal; scaffold nodes excluded; same-template → table; templateless → section |
-| `wfe/database.py` | MockDatabase backed by db.json |
-| `wfe/cli.py` | Stateless CLI; loads builtins then local workflow_hooks.py (if present) |
-| `db.json` | Domain entity data: controlled_submodules, submodule_properties (cr_type, is_sdlc_governed) |
-| `workflows/` | create-workflow.yaml, create-template.yaml, create-cr.yaml (routing wizard), cr-non-code.yaml, cr-code-no-submodule.yaml, cr-non-sdlc-submodule.yaml, cr-sdlc.yaml |
-| `templates/` | ei.yaml (vr_required writable), commit-ei.yaml |
-| `compiled/` | example-cr.md, create-cr.md |
+CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but design is being replaced by UI-driven approach.
+
+### WFE v2 UI (Active Development)
+
+| Component | Description |
+|-----------|-------------|
+| `wfe-ui/app.py` | Flask app — routes, Quality Manual renderer with link rewriting |
+| `wfe-ui/templates/base.html` | Layout with sidebar (Home, QMS, Workspace, Inbox, Quality Manual) |
+| `wfe-ui/templates/index.html` | Home page with project info + Quick Start |
+| `wfe-ui/templates/initiate.html` | Decision tree + direct create buttons for document initiation |
+| `wfe-ui/templates/create_cr.html` | CR authoring form — all pre-approval sections with guidance |
+| `wfe-ui/templates/manual_*.html` | Quality Manual browser with cross-reference navigation |
+| Placeholder pages | QMS, Workspace, Inbox — ready for content |
 
 ---
 
@@ -86,7 +77,7 @@
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1–4 Pass. EI-5 (RS update), EI-6 (push + pointer), EI-7 (post-exec) pending. |
+| CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1–4 Pass. UI-driven redesign is within scope — all work in the authorized sandbox repo. |
 | CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold — superseded by engine. |
 | CR-106 | DRAFT v0.1 | System Governance. Depends on CR-107. On hold. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. VR title bug + SOP-004/TEMPLATE-VR alignment gap. |
@@ -99,39 +90,21 @@
 
 ## 5. Forward Plan
 
-### Immediate: CR-110 EI-5, 6, 7
+### Immediate: WFE v2 UI Development
 
-**EI-5 — Update SDLC-WFE-RS:** Add requirements discovered during development (all provisional):
-- Multi-agent session isolation (`WFE_SESSION`, namespaced state under `.wfe/sessions/<id>/`)
-- `nodelist` field type (YAML list-of-dicts for structured multi-node input)
-- Form-based input (`wfe draft`, `wfe submit`)
-- Hook system (register/dispatch, HookContext, HookResult, enter/exit/traverse hooks; parameterized names)
-- Builtin hooks: engine construction hooks + generic parameterized domain hooks
-- Template system (Template struct, instantiate(), template_id provenance, label, defaults)
-- Compile feature (`wfe compile`, compile_graph(), BFS traversal, convention-based rendering)
-- `Node.scaffold`: authoring-only nodes excluded from compiled output
-- `Field.block`: paragraph-body display hint for compiled sections
-- `Graph.reopen()`: COMMITTED → DRAFT for pre-approval revision
-- First-principles authoring model: generated CR graphs start as DRAFT with blank fields
-- CR type workflow templates (cr-non-code, cr-code-no-submodule, cr-non-sdlc-submodule, cr-sdlc)
-- `db.json`: external domain entity data consumed by generic hooks
+All focus is on the web UI. Build out the complete document lifecycle visually:
 
-**EI-6 — Push submodule + update pointer:**
-- Push all qms-workflow-engine commits to GitHub (head: `e5e3df4`)
-- Update pipe-dream submodule pointer
-- Commit pipe-dream
+1. **CR authoring flow** — form submission, preview, next steps after "Continue"
+2. **Execution view** — EI table with fill/advance interaction
+3. **Document lifecycle** — review, approval, rejection flows in the UI
+4. **Workspace & Inbox** — wire up to actual QMS state
+5. **Other document types** — INV, VAR, ADD creation flows
 
-**EI-7 — Post-execution commit and route:**
-- Final commit, route CR-110 for post-review
-- QA reviews execution evidence
+The UI will surface what the engine needs to support. Engine primitives will be rebuilt as the UI demands them.
 
-### Next Arc: QMS Workflow Integration (Post CR-110)
+### CR-110 Remaining EIs
 
-With the engine built (provisionally), the next questions are validation and integration:
-- Does the create-cr wizard work in real QMS practice? (first real use will surface gaps)
-- `create-var.yaml` — VAR authoring workflow
-- Hook implementations for QMS MCP tools (route, approve, etc.) as traverse/exit hooks
-- Decide whether WFE-authored CRs replace or supplement the existing QMS document flow
+CR-110 authorized workflow engine development in the `qms-workflow-engine` submodule. The UI-driven redesign is fully within that scope — same sandbox repo, same objective. EI-5 (RS update), EI-6 (push + pointer), EI-7 (post-exec) remain valid; the RS will reflect v2 when the time comes.
 
 ### On Hold: CR-107 / CR-106
 
@@ -164,7 +137,7 @@ Both superseded by the engine. May need cancellation or significant revision.
 | Remove EFFECTIVE status / rename to APPROVED | High disruption, low value |
 | Metadata injection into viewable rendition | No current pain point |
 | Consolidate SDLC namespaces into system registry | Depends on CR-106 |
-| Interactive document write protection (REQ-INT-023) | Deferred pending engine-based interaction design |
+| Interactive document write protection (REQ-INT-023) | Deferred pending UI-based interaction design |
 | Remove stdio transport option from MCP servers | Low priority |
 | Propagate Quality Manual cleanup from workshop | Medium effort, not blocking |
 
@@ -172,16 +145,14 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 ## 7. Gaps & Risks
 
-**WFE is experimental/provisional.** The engine and all domain content (create-cr, CR type templates, db.json) were built iteratively during CR-110 EI-4. SDLC-WFE-RS is DRAFT. No WFE workflow has been used in production QMS practice. Post-review (EI-7) and real-world use are required before treating any WFE artifact as stable.
+**WFE v2 is greenfield.** The UI exists but has no backend persistence yet. CR authoring form collects data but doesn't save it. The engine primitives that will back the UI haven't been designed yet.
 
-**SDLC-WFE-RS needs EI-5 updates.** 30 cornerstone requirements written pre-implementation; significant capabilities added during development (hooks, templates, compile, form input, scaffold, block, reopen, builtin hooks, CR templates, db.json) are not yet formally captured.
+**v1 engine is in limbo.** Functional but being superseded. No clear deprecation plan yet.
 
-**qms-workflow-engine has unpushed commits.** Head at `e5e3df4`; pipe-dream submodule pointer stale. Addressed in EI-6.
+**SOPs are being phased out.** The UI will eventually replace SOPs as the authoritative source of process knowledge. During transition, both exist.
+
+**SDLC-WFE-RS needs full rewrite.** v1 requirements don't apply to v2.
 
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
-**Container security.** C3 (root user) remains the last critical code review finding.
-
-**CR-107/CR-106 stale.** Both on hold; interaction design content superseded by engine.
-
-**checkin.py bug fix needs governance.** Commit `532e630` patched an `UnboundLocalError`. Needs a proper CR.
+**qms-workflow-engine has unpushed commits.** Head at `e5e3df4`; pipe-dream submodule pointer stale.
