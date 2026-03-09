@@ -94,6 +94,14 @@ Full design document: `wfe-redesign.md` in this session folder.
   - **Selection:** Click node or edge to select (blue highlight); click canvas to deselect
   - **Edge hit targets:** Wide invisible stroke for easy clicking
 
+### Design Document Refinements (post-compaction #3)
+- **"The Form Is Not the Workflow Step"** — The form (data slots) is a noun; the workflow step (instruction to an actor) is a verb. Every stage needs an explicit instruction distinct from its field list. This is the context gap at granular level.
+- **Worked Example: Implementation Plan** — Resolved earlier confusion. The plan stage is just a stage with a rich instruction + fields (the table). The preceding gate resolves classification, so the instruction can be direct rather than conditional. Protected template EIs prevent omission.
+- **"The Plan Table Is a Workflow Graph"** — Rows=nodes, prerequisites=edges, sequential execution=topological constraint, audit trail=execution history, cascading revert=downstream re-evaluation. The CR workflow is recursive: it contains a nested workflow in tabular notation.
+- **"One Format for All Tables"** — The YAML workflow format serves triple duty: process graphs, nested sub-graphs (tables), and templates. No separate table schema needed.
+- **"Table Features Are Graph Features"** — Audit trail, cascading revert, field execution categories (non-executable/executable/auto-executed), category sequencing — all belong on engine primitives, not on a table widget. One execution semantics, two renderers.
+- **Edge Cases: Minimum Templates and Minimum Workflows** — Minimum template = just fields + default lifecycle (e.g., a memo). Minimum workflow = no template needed (e.g., decision tree, guidance walkthrough). Workflows will proliferate far more than templates — they are the unit of reusable process intelligence, replacing SOPs.
+
 ### Key Architectural Insight: Workflow as Constraint Machine
 - The UI is not a convenience layer on the CLI — it IS the primary process interface for both humans and agents
 - Three layers identified: Document Lifecycle (CLI), Process Definition (workflow graph), Process Interface (UI/agent API)
