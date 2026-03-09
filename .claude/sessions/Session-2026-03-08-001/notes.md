@@ -1,10 +1,10 @@
 # Session-2026-03-08-001
 
-## Current State (last updated: late session — post context compaction)
+## Current State (last updated: mid-session — Workflow Sandbox build)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** WFE UI — CR authoring workflow with staged persistence + Implementation Plan table builder
+- **Current task:** WFE UI — Workflow Sandbox interactive graph builder
 - **Blocking on:** Nothing
-- **Next:** Continue Implementation Plan builder refinement; execution view; other document types
+- **Next:** Right-click actions on annotation symbols; Source tab compiler; node/edge property editing
 - **Subagent IDs:** None active
 
 ## Key Decision: UI-Driven Redesign
@@ -42,47 +42,77 @@ Full design document: `wfe-redesign.md` in this session folder.
 - Established revised design principles
 - Wrote `wfe-redesign.md` design document
 
-### UI Build
+### UI Build — Core Pages
 - Created `qms-workflow-engine/wfe-ui/` with Flask app
 - Built base layout with sidebar navigation (Home, QMS, Workspace, Inbox, Quality Manual)
-- **Quality Manual browser:** Renders actual markdown files from Quality-Manual/ with working cross-references (rewrites .md links to /manual/ routes)
+- **Quality Manual browser:** Renders actual markdown files from Quality-Manual/ with working cross-references
 - **Home page:** Project info cards + Quick Start with "Initiate Workflow" button
-- **Initiate Workflow page:**
-  - Interactive decision tree (client-side JS) for users who don't know what document they need
-  - Direct "Create a Document" buttons for experienced users (CR, INV, SOP, Template)
-  - Child document note explaining VARs/ADDs/VRs/ERs come from parent docs
-- **Create Change Record form:** All pre-approval sections from SOP-002 §6 with authoring guidance:
-  - Title, Purpose, Scope (Context/Changes Summary/Files Affected), Current State, Proposed State, Change Description, Justification, Impact Assessment (Files/Documents/Other), Testing Summary, Implementation Plan
-  - No SOP references in UI — guidance stands on its own
+- **Initiate Workflow page:** Interactive decision tree + direct document creation
+- **Create Change Record form:** All pre-approval sections with authoring guidance
+- **CR Authoring Workflow:** Staged: Initiation → Change Definition, with JSON persistence
+- **QMS page:** Table view of all documents
+- **Workspace page:** Card view of active documents
+- **Implementation Plan:** Dedicated page with full table builder (add/delete rows/cols, column types, choice list, prerequisites, auto-sequential, save)
 
-### CR Authoring Workflow (post-compaction)
-- **Staged workflow:** Initiation → Change Definition, with persistence to JSON in `wfe-ui/data/`
-- **Initiation stage:** Title, Code Impact decision tree (affects code → controlled submodule → which one → SDLC indicator), Purpose. "Initiate Change Record" assigns CR ID.
-- **Change Definition stage:** All fields visible/editable, incremental saves (no `required` on definition fields)
-- **Stage banner:** Full 8-stage progress indicator: Initiation → Change Definition → Pre-Review → Pre-Approval → Execution → Post-Review → Post-Approval → Closure
-- **QMS page:** Table view of all documents with ID, title, stage tag
-- **Workspace page:** Card view of active documents with purpose snippet
-- **Implementation Plan:** Dedicated page (`/cr/<id>/plan`) with full table builder:
-  - Add/delete rows and columns, insert relative to selection
-  - Column types: Non-Executable (Free Text, Prerequisite) and Executable (Free Text, Choice List, Cross Reference, Signature)
-  - Choice List type has inline options editor in the type picker dropdown
-  - Executable columns render as locked/grey cells (not editable during authoring)
-  - Prerequisite columns show a checkbox dropdown picker listing all other rows as EI-N
-  - Auto-Sequential action fills prerequisites as a linear chain (each row depends on previous)
-  - Tab navigation between cells, Escape to close dropdowns
-  - Save persists to JSON via POST, "Saved" flash confirmation
+### Engine API Migration (post-compaction #1)
+- Migrated remaining client-side business logic (markNA, initiateIssue, toggleHistory) to server-backed API
+- Made execution state ephemeral (in-memory dict, not persisted to disk)
+- Fixed audit trail history not updating immediately after changes
+- Fixed cascading revert bug when Sequential Column Execution enabled
+- Deleted CR-002 test data
+
+### Template/Workflow Architecture (post-compaction #2)
+- Conceptual reframing: Templates = pure data schema; Workflows = process state machine referencing template fields
+- Created `CR.template.yaml` — field definitions organized by semantic category
+- Created `CR.workflow.yaml` — 8-stage process: initiation → closure, with actors, field visibility/editability per stage, gates, actions, hooks
+- **Template List page** (`/templates`) — catalog of document type templates
+- **Unified Document Type Editor** (`/template/<slug>`) — two-tab interface:
+  - Template tab: field list + form preview
+  - Workflow tab: interactive SVG flow graph (nodes color-coded by actor, Bezier edges with arrow transitions, action branches as dashed curves) + stage-aware preview panel
+  - Click node to select for preview; double-click to edit stage
+  - Field editor modal, stage editor modal with field inclusion checklist
+  - Save persists both template and workflow YAML
+
+### Workflow Sandbox (current work)
+- Added **Workflow Sandbox** page (`/sandbox`) with sidebar link
+- Two-tab container: **Source** (empty — will hold live YAML later) and **Interactive Editor**
+- Built interactive drag-and-drop graph builder:
+  - **Nodes:** Add via toolbar button or right-click canvas; single-click header to rename
+  - **Fields on nodes:** "+ New Field" button inside each node; inline text input for naming; type badge (color-coded); pencil icon opens properties popover (name, type: String/Text/Boolean/Enum/Number/Date/Signature, delete)
+  - **Dynamic node height:** Nodes grow as fields are added
+  - **Edges:** Drag from output port (bottom) to input port (top) of another node
+  - **Auto-layout:** Full topological layered layout with smooth 300ms animated transitions (ease-in-out quadratic); dynamic gap expansion for edge annotations and tall nodes
+  - **Right-click context menus:**
+    - Canvas → "Add Node"
+    - Node → "Add Connected Node" (creates node + edge in one action)
+    - Edge → "Add Condition" / "Add Hook"
+  - **Edge annotations inline with flow:**
+    - Condition = orange diamond with "?" and "GATE" label, centered ON the edge path
+    - Hook = blue rounded square with lightning bolt and "HOOK" label, centered ON the edge path
+    - Edge segments split around symbols so control flow visually passes *through* them
+    - Auto-layout expands gap between layers to accommodate annotations
+  - **Selection:** Click node or edge to select (blue highlight); click canvas to deselect
+  - **Edge hit targets:** Wide invisible stroke for easy clicking
+
+### Key Architectural Insight: Workflow as Constraint Machine
+- The UI is not a convenience layer on the CLI — it IS the primary process interface for both humans and agents
+- Three layers identified: Document Lifecycle (CLI), Process Definition (workflow graph), Process Interface (UI/agent API)
+- The CLI is insufficient for agents because it lacks the instructional, prompt-guiding, constraint-enforcing layer
+- The Sandbox builds an **executable constraint machine**, not a diagram — nodes/edges/gates/hooks are the program
+- Agent interaction model: query scoped state → receive only permitted affordances → work within bounds → request transition → engine evaluates gate
+- Non-compliance is structurally impossible, not behaviorally discouraged
+- Formalized in `workflow-as-constraint-machine.md`
 
 ### Files Created/Modified
-- `qms-workflow-engine/wfe-ui/app.py` — Flask app: routes, persistence helpers, Quality Manual renderer
-- `qms-workflow-engine/wfe-ui/templates/base.html` — Layout with sidebar
-- `qms-workflow-engine/wfe-ui/templates/index.html` — Home page
-- `qms-workflow-engine/wfe-ui/templates/qms.html` — Document table view
-- `qms-workflow-engine/wfe-ui/templates/workspace.html` — Active document cards
-- `qms-workflow-engine/wfe-ui/templates/inbox.html` — Placeholder
-- `qms-workflow-engine/wfe-ui/templates/manual_index.html` — Quality Manual index
-- `qms-workflow-engine/wfe-ui/templates/manual_page.html` — Quality Manual page viewer
-- `qms-workflow-engine/wfe-ui/templates/initiate.html` — Initiate workflow with decision tree
-- `qms-workflow-engine/wfe-ui/templates/create_cr.html` — Staged CR authoring form
-- `qms-workflow-engine/wfe-ui/templates/edit_plan.html` — Implementation Plan table builder
-- `qms-workflow-engine/wfe-ui/.gitignore` — Excludes `data/` directory
-- `qms-workflow-engine/wfe-ui/static/` — Empty (CSS is inline for now)
+- `wfe-ui/app.py` — Added template editor routes, sandbox route, workflow listing
+- `wfe-ui/templates/base.html` — Added Templates and Workflow Sandbox sidebar links
+- `wfe-ui/templates/template_list.html` — Template catalog with create dialog
+- `wfe-ui/templates/template_editor.html` — Unified document type editor (template + workflow tabs)
+- `wfe-ui/templates/sandbox.html` — Workflow Sandbox with interactive graph builder
+- `wfe-ui/templates/doctypes/CR.template.yaml` — CR data schema
+- `wfe-ui/templates/doctypes/CR.workflow.yaml` — CR workflow process schema
+- `wfe-ui/templates/initiate.html` — Added workflow catalog section
+- `wfe-ui/api.py` — Ephemeral execution state
+- `wfe-ui/engine/persistence.py` — Simplified (removed execution state persistence)
+- `wfe-ui/engine/__init__.py` — Updated exports
+- `.claude/sessions/Session-2026-03-08-001/workflow-as-constraint-machine.md` — Architectural insight document
