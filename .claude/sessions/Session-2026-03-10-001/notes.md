@@ -1,10 +1,10 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: post-commit)
+## Current State (last updated: Focus/FoV split)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal reorganization — committed
+- **Current task:** Agent Portal — Focus/FoV response split implemented
 - **Blocking on:** Nothing
-- **Next:** Awaiting direction from Lead
+- **Next:** Observer rendering of Focus highlights, continue workflow walkthrough
 
 ## Progress Log
 
@@ -58,3 +58,22 @@
 ### Observer Init Fix
 - **Problem:** Observer showed nothing on fresh connect — SSE init event sent raw state dict, but Observer expected a rendered page with `state` key. No history to replay on fresh workflow.
 - **Fix:** SSE init now sends `page: _render_agent_node(workflow_id)` — the fully rendered page — instead of raw state. Observer calls `extractState(ev.page)` immediately on init.
+
+### Focus / Field of View Split
+- **Design:** GET returns full Field of View (FoV). POST returns Focus — the subset that changed.
+- **Focus shape:**
+  ```json
+  {
+    "message": "Set title = \"...\"",
+    "changed": {"Document Title": {"value": "...", "instruction": "..."}},
+    "unlocked": ["Proceed to Change Definition"],
+    "affordances": [<full affordance objects for newly unlocked items>]
+  }
+  ```
+- Focus is a strict subset of the FoV — every key in the Focus exists in the FoV at the same path. Bijective mapping preserved.
+- `message` key added to FoV as well (persisted in state), always shows the most recent action confirmation. Null on fresh state.
+- `_compute_focus(before, after)` diffs fields by value, detects new affordances by label
+- Action processors now set `data["message"]` before saving (was `page["message"]` after render)
+- POST route handler: captures before-FoV, runs action, captures after-FoV, diffs, returns Focus. Pushes full after-FoV to SSE for Observer.
+- Verified: field changes detected, Proceed gate unlock detected, GET still returns full FoV
+- **CR workflow only** — maze not yet updated (will follow same pattern)

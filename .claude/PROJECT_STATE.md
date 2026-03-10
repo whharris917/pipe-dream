@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-09-001 (2026-03-09)*
+*Last updated: Session-2026-03-10-001 (2026-03-10)*
 
 ---
 
@@ -17,10 +17,13 @@
 - CR authoring form with all pre-approval sections and authoring guidance
 - Template Editor and Workflow Sandbox for engine experimentation
 - **Agent Portal** — proof-of-concept for AI agent workflow interaction:
-  - Agent Observer with SSE live state streaming and pluggable renderers (Raw JSON, Map, Terminal, Workflow)
-  - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`) — fields, stages, visibility rules, and metadata are declarative
+  - Dashboard listing all workflows with status, Observe links, and Reset buttons
+  - Per-workflow state persisted to disk as JSON (`data/workflows/<id>.state.json`)
+  - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
+  - Agent Observer with pluggable renderers; renderer availability declared by workflow, not heuristics
+  - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`)
+  - **Focus/FoV split**: GET returns full Field of View, POST returns Focus (changed fields, unlocked affordances, message). Focus is a strict subset of FoV — bijective mapping preserved.
   - Affordance model: every action is a complete API call the agent picks and sends verbatim
-  - 1:1 projection principle: rendered view faithfully maps every key in the raw JSON
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 
@@ -34,7 +37,7 @@
 
 **Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine with hooks, templates, compile. Proved concepts but revealed design limits: meta-workflows create phase confusion, context gap for agent execution, rendering hints leak into data model.
 
-**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document.
+**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox exploring Focus/FoV response model: GET returns full state, POST returns only what changed.
 
 ---
 
@@ -163,4 +166,4 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
-**qms-workflow-engine has unpushed commits.** Head at `e5e3df4`; pipe-dream submodule pointer stale.
+**qms-workflow-engine submodule pointer** should be kept current with pushes.
