@@ -41,6 +41,17 @@ Built the Agent Portal proof-of-concept in `wfe-ui/`:
 - **Verified** full cascade: Code Impact → Affects Submodule → Submodule → SDLC Governed
 - Added CSS for structured field rendering (`.wf-field-*` classes)
 
+### YAML-Driven Affordance Generation
+- **Added** to YAML: `placeholder` on text fields, `annotate_from`/`annotation` on select fields, `navigation`/`proceed`/`actions` on stages
+- **Wrote** `_cr_build_affordances(data, stage)` — generic affordance generator:
+  - text → "Set {label}" with placeholder value and current-value suffix
+  - boolean → toggle with "[Yes/No] {label} — click to set {opposite}"
+  - select → one affordance per option with [Selected] prefix and annotations
+  - computed → no affordance (read-only)
+  - Stage navigation, proceed gates (with required-field checks), and actions all from YAML
+- **Removed** all per-stage `if/elif` affordance blocks, `_aff()`, and `_text_aff()` helpers
+- **Verified** full lifecycle: initiation (conditional cascade + proceed gate) → definition (11 fields + nav + proceed gate) → preflight (nav + submit) → submitted (restart)
+
 ### Key Design Decisions
 - Field visibility logic belongs in YAML, not Python — adding/removing/reordering fields is a YAML-only change
 - Agent sandbox experiments are informed by but isolated from the rest of the UI
