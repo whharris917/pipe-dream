@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-08-001 (2026-03-08)*
+*Last updated: Session-2026-03-09-001 (2026-03-09)*
 
 ---
 
@@ -11,10 +11,16 @@
 **The pivot:** Design discussions revealed fundamental problems with v1 (context gap, phase tangle, meta-workflows as wrong pattern). Rather than continuing abstract redesign, the Lead decided to build a visual UI and let concrete interaction drive the architecture.
 
 **What's running now:** Flask web app at `http://127.0.0.1:5000` with:
-- Sidebar navigation (Home, QMS, Workspace, Inbox, Quality Manual)
+- Sidebar navigation (Home, QMS, Workspace, Inbox, Templates, Workflow Sandbox, Quality Manual, Agent Portal)
 - Quality Manual browser rendering actual markdown files with working cross-references
 - Initiate Workflow page with interactive decision tree + direct document creation buttons
 - CR authoring form with all pre-approval sections and authoring guidance
+- Template Editor and Workflow Sandbox for engine experimentation
+- **Agent Portal** — proof-of-concept for AI agent workflow interaction:
+  - Agent Observer with SSE live state streaming and pluggable renderers (Raw JSON, Map, Terminal, Workflow)
+  - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`) — fields, stages, visibility rules, and metadata are declarative
+  - Affordance model: every action is a complete API call the agent picks and sends verbatim
+  - 1:1 projection principle: rendered view faithfully maps every key in the raw JSON
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 
@@ -69,6 +75,8 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but desig
 | `wfe-ui/templates/initiate.html` | Decision tree + direct create buttons for document initiation |
 | `wfe-ui/templates/create_cr.html` | CR authoring form — all pre-approval sections with guidance |
 | `wfe-ui/templates/manual_*.html` | Quality Manual browser with cross-reference navigation |
+| `wfe-ui/templates/agent_observer.html` | Agent Observer — SSE live view with pluggable renderers |
+| `wfe-ui/data/agent_create_cr.yaml` | Declarative CR workflow definition (fields, stages, visibility) |
 | Placeholder pages | QMS, Workspace, Inbox — ready for content |
 
 ---
