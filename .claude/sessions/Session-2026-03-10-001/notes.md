@@ -1,8 +1,8 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: Observer Focus rendering verified)
+## Current State (last updated: FoV/Focus view toggle + focus shape cleanup)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal — Focus/FoV split complete with Observer rendering
+- **Current task:** Agent Portal — FoV/Focus toggle in Observer, focus shape refined
 - **Blocking on:** Nothing
 - **Next:** Continue Agent Portal experiments (maze Focus/FoV, workflow instances, etc.)
 
@@ -61,13 +61,12 @@
 
 ### Focus / Field of View Split
 - **Design:** GET returns full Field of View (FoV). POST returns Focus — the subset that changed.
-- **Focus shape:**
+- **Focus shape (final):**
   ```json
   {
     "message": "Set title = \"...\"",
     "changed": {"Document Title": {"value": "...", "instruction": "..."}},
-    "unlocked": ["Proceed to Change Definition"],
-    "affordances": [<full affordance objects for newly unlocked items>]
+    "new_affordances": [<full affordance objects for newly available actions>]
   }
   ```
 - Focus is a strict subset of the FoV — every key in the Focus exists in the FoV at the same path. Bijective mapping preserved.
@@ -91,3 +90,13 @@
   - Set purpose → Purpose highlighted, Proceed gate unlocked with accent
   - Proceed to Change Definition → massive cascade: 11 new fields, 11 new affordances all highlighted
 - **Result:** Lead confirmed "It looked perfect!"
+
+### FoV/Focus View Toggle in Observer
+- **Feature:** Second toggle group (FoV | Focus) added to Observer header, next to renderer toggle
+- **Behavior:** Focus mode only affects Raw renderer — shows the focus JSON directly. Workflow renderer always shows full FoV with highlights regardless of toggle.
+- **Design discussion:** Considered making Workflow renderer Focus-aware (sparse FoV), but rejected — agent might misinterpret a partial affordance list as the complete set. Focus is a diff receipt, not a replacement view.
+- **Focus shape refined:**
+  - Dropped `unlocked` key (redundant with `new_affordances`)
+  - Renamed `affordances` → `new_affordances` (eliminates ambiguity about complete vs. new list)
+  - Final shape: `{message, changed, new_affordances}`
+- **Verified by Lead** — full walkthrough: reset → title → code impact → submodule → purpose. Confirmed "Perfect!"
