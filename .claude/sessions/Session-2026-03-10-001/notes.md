@@ -1,10 +1,10 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: stage→node refactor planned)
+## Current State (last updated: node refactor + bug fixes complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal — refactoring stages→nodes, field-centric→node-centric ownership
+- **Current task:** Agent Portal — node-centric refactor complete, multiple bug fixes applied
 - **Blocking on:** Nothing
-- **Next:** Implement node-centric field ownership refactor
+- **Next:** Continue Agent Portal experiments
 
 ## Progress Log
 
@@ -105,10 +105,24 @@
 - Collapsed select-type fields from N affordances (one per option) to 1 affordance with pipe-delimited options in placeholder
 - Fixed `_compute_focus` — was comparing by ID AND label, but sequential IDs shift when affordances appear/disappear. Now compares by label only.
 
-### Stage → Node Refactor (planned)
+### Stage → Node Refactor (implemented)
 - **Problem:** Fields declare `stages: [initiation, definition, preflight, submitted]` — field-centric visibility is clumsy and redundant
 - **Solution:** Fields nest under their owning node in the YAML. Visibility = structural nesting.
   - Initiation owns: title, affects_code, affects_submodule, submodule, sdlc_governed, purpose
   - Definition owns: scope_*, current_state, proposed_state, change_description, justification, impact_*, testing_summary
   - Preflight/Submitted: `show_all_fields: true` to aggregate all fields for review
 - **Terminology:** "stage" → "node" throughout (YAML keys, Python variables, state keys, API responses, Observer JS)
+- Removed hardcoded `review` block from preflight rendering — `show_all_fields` handles it
+- Verified: Initiation shows 3 fields, Change Definition shows 11 fields, no cross-contamination
+
+### Affordance Identity Fix
+- **Problem:** `_compute_focus` compared affordances by label, but text fields append `(current: "...")` causing false positives in `new_affordances`
+- **Fix:** Stable identity using `(action, field)` for `set_field` affordances, `(action, node)` for navigation
+
+### Observer Focus Recovery on Init
+- **Problem:** On page refresh, `currentFocus` was null — highlights missing, Raw Focus mode showed full FoV
+- **Fix:** Init handler scans history for most recent result event with `focus` payload, passes it to `extractState`
+
+### Observer Node Indicator Fix
+- **Problem:** Node indicator in header showed "—" or "create-cr" instead of actual node name
+- **Fix:** GET/POST handlers extract node from rendered state. Observer updates `pathEl` on result events (not just navigate). Init reads node from page state.

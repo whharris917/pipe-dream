@@ -26,7 +26,9 @@
   - **Observer Focus rendering**: Changed fields and new affordances highlighted persistently (blue left border + light blue bg) — verified via live walkthrough
   - **FoV/Focus view toggle**: Observer header toggle; Focus mode shows raw focus JSON in Raw renderer, Workflow renderer always shows full FoV with highlights
   - Affordance model: every action is a complete API call the agent picks and sends verbatim; select fields collapsed to single affordance with pipe-delimited options
-  - **Node-centric field ownership** (in progress): fields nest under their owning node in YAML; "stage" → "node" terminology throughout
+  - **Node-centric field ownership**: fields nest under their owning node in YAML; `show_all_fields` for review nodes; "stage" → "node" terminology throughout
+  - Focus diff uses stable affordance identity `(action, field)` — immune to label changes
+  - Observer recovers focus from history on reconnect; node indicator tracks actual node name
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 
