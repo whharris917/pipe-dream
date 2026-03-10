@@ -1,10 +1,10 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: Focus/FoV split)
+## Current State (last updated: Observer Focus rendering verified)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal — Focus/FoV response split implemented
+- **Current task:** Agent Portal — Focus/FoV split complete with Observer rendering
 - **Blocking on:** Nothing
-- **Next:** Observer rendering of Focus highlights, continue workflow walkthrough
+- **Next:** Continue Agent Portal experiments (maze Focus/FoV, workflow instances, etc.)
 
 ## Progress Log
 
@@ -77,3 +77,17 @@
 - POST route handler: captures before-FoV, runs action, captures after-FoV, diffs, returns Focus. Pushes full after-FoV to SSE for Observer.
 - Verified: field changes detected, Proceed gate unlock detected, GET still returns full FoV
 - **CR workflow only** — maze not yet updated (will follow same pattern)
+
+### Observer Focus Rendering
+- **Design:** Focus highlights persist visually (no fade) until the next action replaces them
+- **CSS classes:** `.wf-focus` (blue left border + light blue bg) for changed fields, `.wf-aff-focus` (blue left border) for unlocked affordances
+- **JS changes:** `currentFocus` variable tracks latest Focus; `broadcastState()` accepts focus parameter; Workflow renderer's `render()` and `renderFields()` apply highlight classes
+- **SSE integration:** Result events now carry `focus` alongside `result`; Observer extracts both and passes to renderer
+- **Live walkthrough verified by Lead** — walked through full CR initiation flow:
+  - Set title → Document Title highlighted
+  - Set affects_code → Code Impact + Affects Submodule highlighted
+  - Set affects_submodule → cascade: Submodule field appeared, 4 select affordances unlocked with accent
+  - Select submodule → SDLC Governed computed field appeared
+  - Set purpose → Purpose highlighted, Proceed gate unlocked with accent
+  - Proceed to Change Definition → massive cascade: 11 new fields, 11 new affordances all highlighted
+- **Result:** Lead confirmed "It looked perfect!"
