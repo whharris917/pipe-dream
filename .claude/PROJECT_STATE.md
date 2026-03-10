@@ -23,8 +23,10 @@
   - Agent Observer with pluggable renderers; renderer availability declared by workflow, not heuristics
   - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`)
   - **Focus/FoV split**: GET returns full Field of View, POST returns Focus (changed fields, unlocked affordances, message). Focus is a strict subset of FoV — bijective mapping preserved.
-  - **Observer Focus rendering**: Changed fields and unlocked affordances highlighted persistently (blue left border + light blue bg) — verified via live walkthrough
-  - Affordance model: every action is a complete API call the agent picks and sends verbatim
+  - **Observer Focus rendering**: Changed fields and new affordances highlighted persistently (blue left border + light blue bg) — verified via live walkthrough
+  - **FoV/Focus view toggle**: Observer header toggle; Focus mode shows raw focus JSON in Raw renderer, Workflow renderer always shows full FoV with highlights
+  - Affordance model: every action is a complete API call the agent picks and sends verbatim; select fields collapsed to single affordance with pipe-delimited options
+  - **Node-centric field ownership** (in progress): fields nest under their owning node in YAML; "stage" → "node" terminology throughout
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 

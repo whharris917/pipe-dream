@@ -1,10 +1,10 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: FoV/Focus view toggle + focus shape cleanup)
+## Current State (last updated: stage→node refactor planned)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal — FoV/Focus toggle in Observer, focus shape refined
+- **Current task:** Agent Portal — refactoring stages→nodes, field-centric→node-centric ownership
 - **Blocking on:** Nothing
-- **Next:** Continue Agent Portal experiments (maze Focus/FoV, workflow instances, etc.)
+- **Next:** Implement node-centric field ownership refactor
 
 ## Progress Log
 
@@ -100,3 +100,15 @@
   - Renamed `affordances` → `new_affordances` (eliminates ambiguity about complete vs. new list)
   - Final shape: `{message, changed, new_affordances}`
 - **Verified by Lead** — full walkthrough: reset → title → code impact → submodule → purpose. Confirmed "Perfect!"
+
+### Select Affordance Collapse
+- Collapsed select-type fields from N affordances (one per option) to 1 affordance with pipe-delimited options in placeholder
+- Fixed `_compute_focus` — was comparing by ID AND label, but sequential IDs shift when affordances appear/disappear. Now compares by label only.
+
+### Stage → Node Refactor (planned)
+- **Problem:** Fields declare `stages: [initiation, definition, preflight, submitted]` — field-centric visibility is clumsy and redundant
+- **Solution:** Fields nest under their owning node in the YAML. Visibility = structural nesting.
+  - Initiation owns: title, affects_code, affects_submodule, submodule, sdlc_governed, purpose
+  - Definition owns: scope_*, current_state, proposed_state, change_description, justification, impact_*, testing_summary
+  - Preflight/Submitted: `show_all_fields: true` to aggregate all fields for review
+- **Terminology:** "stage" → "node" throughout (YAML keys, Python variables, state keys, API responses, Observer JS)
