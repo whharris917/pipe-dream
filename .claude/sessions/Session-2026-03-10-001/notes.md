@@ -1,8 +1,8 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: node refactor + bug fixes complete)
+## Current State (last updated: Impact rename complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal — node-centric refactor complete, multiple bug fixes applied
+- **Current task:** Agent Portal — Impact response model complete
 - **Blocking on:** Nothing
 - **Next:** Continue Agent Portal experiments
 
@@ -126,3 +126,26 @@
 ### Observer Node Indicator Fix
 - **Problem:** Node indicator in header showed "—" or "create-cr" instead of actual node name
 - **Fix:** GET/POST handlers extract node from rendered state. Observer updates `pathEl` on result events (not just navigate). Init reads node from page state.
+
+### Renderer/View Mode Coupling
+- Clicking Impact auto-switches to Raw renderer; clicking non-Raw renderer auto-switches to FoV mode
+- Prevents invalid combinations (Workflow + Impact)
+
+### Focus → Impact Rename + Confirmation/Effects Split
+- **Terminology:** "Focus" → "Impact", "message" → "echo", "changed" split into "confirmation" + "effects"
+- **Impact shape (final):**
+  ```json
+  {
+    "echo": "Set title = \"...\"",
+    "confirmation": {"Document Title": {"value": "...", "instruction": "..."}},
+    "effects": {"Affects Submodule": {"value": true, "instruction": "..."}},
+    "new_affordances": [...]
+  }
+  ```
+- **echo:** Human-readable summary of what the agent attempted (always present, even on error)
+- **confirmation:** Direct result of the action — the field that was set, or `{"error": "..."}` on failure
+- **effects:** Cascading changes — fields that appeared/changed as a consequence
+- **Error responses** use the same four-key shape: echo shows the attempt, confirmation holds the error
+- `_compute_focus` → `_compute_impact` with `action_body` parameter to determine acted field
+- Observer: `currentFocus` → `currentImpact`, button "Focus" → "Impact", all SSE keys updated
+- Verified: direct action, cascading action, and error case all produce correct impact shape

@@ -22,13 +22,13 @@
   - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
   - Agent Observer with pluggable renderers; renderer availability declared by workflow, not heuristics
   - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`)
-  - **Focus/FoV split**: GET returns full Field of View, POST returns Focus (changed fields, unlocked affordances, message). Focus is a strict subset of FoV — bijective mapping preserved.
-  - **Observer Focus rendering**: Changed fields and new affordances highlighted persistently (blue left border + light blue bg) — verified via live walkthrough
-  - **FoV/Focus view toggle**: Observer header toggle; Focus mode shows raw focus JSON in Raw renderer, Workflow renderer always shows full FoV with highlights
+  - **Impact response model**: POST returns structured Impact — `{echo, confirmation, effects, new_affordances}`. Echo = what agent attempted; confirmation = direct result or error; effects = cascading changes. Unified success/error shape.
+  - **FoV/Impact split**: GET returns full Field of View, POST returns Impact (strict subset of FoV). Observer highlights confirmation + effects persistently (blue left border + light blue bg).
+  - **FoV/Impact view toggle**: Observer header toggle with renderer coupling — Impact forces Raw, Workflow forces FoV. Prevents invalid combinations.
   - Affordance model: every action is a complete API call the agent picks and sends verbatim; select fields collapsed to single affordance with pipe-delimited options
   - **Node-centric field ownership**: fields nest under their owning node in YAML; `show_all_fields` for review nodes; "stage" → "node" terminology throughout
-  - Focus diff uses stable affordance identity `(action, field)` — immune to label changes
-  - Observer recovers focus from history on reconnect; node indicator tracks actual node name
+  - Impact diff uses stable affordance identity `(action, field)` — immune to label changes
+  - Observer recovers impact from history on reconnect; node indicator tracks actual node name
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 
