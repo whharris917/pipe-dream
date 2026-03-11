@@ -22,13 +22,13 @@
   - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
   - Agent Observer with pluggable renderers; renderer availability declared by workflow, not heuristics
   - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`)
-  - **Impact response model**: POST returns structured Impact — `{echo, confirmation, effects, new_affordances}`. Echo = what agent attempted; confirmation = direct result or error; effects = cascading changes. Unified success/error shape.
-  - **FoV/Impact split**: GET returns full Field of View, POST returns Impact (strict subset of FoV). Observer highlights confirmation + effects persistently (blue left border + light blue bg).
-  - **FoV/Impact view toggle**: Observer header toggle with renderer coupling — Impact forces Raw, Workflow forces FoV. Prevents invalid combinations.
-  - Affordance model: every action is a complete API call the agent picks and sends verbatim; select fields collapsed to single affordance with pipe-delimited options
+  - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
+  - **FoV/Feedback split**: GET returns full Field of View, POST returns Feedback. Observer renders category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED).
+  - **FoV/Feedback view toggle**: Observer header toggle with renderer coupling — Feedback forces Raw, Workflow forces FoV.
+  - Affordance model: unified `Set {label} (current: {value})` pattern for all field types; body always `"value": "<value>"`; select options exposed via `options` key in FoV field entry
   - **Node-centric field ownership**: fields nest under their owning node in YAML; `show_all_fields` for review nodes; "stage" → "node" terminology throughout
-  - Impact diff uses stable affordance identity `(action, field)` — immune to label changes
-  - Observer recovers impact from history on reconnect; node indicator tracks actual node name
+  - Feedback diff uses stable affordance identity `(action, field)` — immune to label changes
+  - Observer recovers feedback from history on reconnect; node indicator tracks actual node name
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 

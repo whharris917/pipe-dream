@@ -155,5 +155,22 @@
 - **Error responses** use the same three-key shape with empty effects
 - `_compute_impact` → `_compute_feedback` with new_fields/modified_fields split and modified_affordances detection
 - Observer: `currentImpact` → `currentFeedback`, button "Impact" → "Feedback", SSE keys `impact` → `feedback`
-- Workflow renderer merges outcome + all effects fields for highlights; new + modified affordances both highlighted
+- Workflow renderer uses category-specific highlights; distinct visual treatment per feedback category
 - Verified: direct action, cascading action, and error case all produce correct feedback shape
+
+### Unified Affordance Labels
+- **Problem:** Inconsistent affordance presentation — booleans used `[Yes] Label — click to set No`, text used `Set Label (current: "value")`, select used pipe-delimited options in placeholder. Yes/No in labels vs true/false in bodies. "click" is wrong for an agent.
+- **Fix:** All affordances now follow one pattern: `Set {label} (current: {value})` with body `"value": "<value>"`
+- Booleans display `true`/`false` consistently in both FoV fields and affordance labels (was Yes/No)
+- Per-field `placeholder` removed from YAML — all fields use generic `<value>` placeholder
+- Select field options exposed via `options` key in the FoV field entry (with annotations like "(SDLC governed)")
+
+### Category-Specific Feedback Highlights
+- **Problem:** All feedback highlights used the same blue style — no visual distinction between outcome, new, and modified
+- **Fix:** Three distinct visual treatments in the Workflow renderer:
+  - **outcome** (field directly acted on): blue left border + blue bg, superscript tag **SET**
+  - **new** (cascaded appearance): green left border + green bg, superscript tag **NEW**
+  - **modified** (cascaded value change): amber left border + amber bg, superscript tag **CHANGED**
+- Applied to both fields and affordances
+- CSS classes: `.wf-fb-outcome`, `.wf-fb-new`, `.wf-fb-modified` for fields; `.wf-aff-new`, `.wf-aff-modified` for affordances
+- Tag classes: `.wf-tag-outcome`, `.wf-tag-new`, `.wf-tag-modified` — color-matched superscript labels
