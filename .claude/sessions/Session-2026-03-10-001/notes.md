@@ -1,8 +1,8 @@
 # Session-2026-03-10-001
 
-## Current State (last updated: Feedback response model complete)
+## Current State (last updated: Observer cleanup complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Agent Portal — Feedback response model complete
+- **Current task:** Agent Portal — Observer cleanup + unified affordances + feedback highlights
 - **Blocking on:** Nothing
 - **Next:** Continue Agent Portal experiments
 
@@ -174,3 +174,11 @@
 - Applied to both fields and affordances
 - CSS classes: `.wf-fb-outcome`, `.wf-fb-new`, `.wf-fb-modified` for fields; `.wf-aff-new`, `.wf-aff-modified` for affordances
 - Tag classes: `.wf-tag-outcome`, `.wf-tag-new`, `.wf-tag-modified` — color-matched superscript labels
+
+### Observer Cleanup: Redundant UI Elements Removed
+- Removed yellow message banner and green objective banner from Workflow renderer (redundant with feedback highlights)
+- Removed `objective` field from YAML and `_CR_OBJECTIVE` from Python
+- Removed `progress` ("1/4") from FoV state and Workflow renderer header
+- Removed affordance count badge from Affordances card header
+- Removed unused CSS: `.wf-msg`, `.wf-objective`, `.wf-obj-label`, `.wf-progress`, `.wf-count`
+- Added full-width background highlights to affordances (matching field highlight style)
