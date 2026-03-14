@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-14-001 (2026-03-14)*
+*Last updated: Session-2026-03-14-002 (2026-03-14)*
 
 ---
 
@@ -20,8 +20,9 @@
   - Dashboard listing workflows with status, Observe links, and Reset buttons
   - Per-workflow state persisted to disk as JSON (`data/workflows/<id>.state.json`)
   - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
-  - Agent Observer with pluggable renderer registry — 7 views: Raw, Light Mode, Dark Mode, Experimental A–D. Each experimental renderer has its own render function with distinct DOM structure. All satisfy 1:1 JSON projection constraint.
+  - Agent Observer with pluggable renderer registry — 7 views: Raw, Light Mode, Dark Mode, Experimental A–D. Each experimental renderer has its own render function with distinct DOM structure. All satisfy verified 1:1 JSON projection constraint (audited 2026-03-14-002).
   - **Three workflows**, all following a common **handler protocol** (`default_data()`, `render_node()`, `process_action()`, `resolve_resource()`): CR creation (`cr_handler.py`), Implementation Plan with integrated execution (`table_handler.py`, flow: construction → review → executing → done), and standalone Execution (`execution_handler.py` wrapping `engine.PlanEngine` for existing CR files). `app.py` is pure infrastructure — dispatch, SSE, state persistence, feedback computation.
+  - **Implementation Plan workflow** supports all 7 column types: ne-free-text, ne-prerequisite, ex-free-text, ex-choice-list, ex-cross-reference, ex-signature, ae-acceptance-criteria. Construction-phase affordances for `set_choices`, `set_rule`, `set_prerequisites`. Column type descriptions surfaced in affordances. Acceptance criteria rules rendered as human-readable boolean expressions. Sequential execution, prerequisite gating, and cascade revert all functional.
   - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
   - **Full/Feedback scope toggle**: GET returns full state, POST returns Feedback. Rendered view shows category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED). Feedback scope forces Raw view.
   - **Parameterized affordances**: one affordance per action type with `parameters` dict — each body placeholder gets `options` (constrained) and optional `labels` (human-readable). Eliminates O(rows × cols) explosion for table workflows.
@@ -29,7 +30,8 @@
   - Feedback diff uses stable URL-based affordance identity — immune to label changes
   - Observer recovers last feedback on reconnect; node indicator tracks actual node name
   - **Resource-oriented endpoints**: each affordance is a literal HTTP instruction — `POST /agent/<id>/<resource>` with only parameters in body. Translation layer maps resources to internal actions. Legacy single-endpoint preserved for backward compatibility.
-  - **1:1 renderer projection**: Rendered view is a verified 1:1 projection of the JSON — every key rendered, nothing hidden, nothing extra. `attempted_action` derived from request body.
+  - **1:1 renderer projection**: Rendered view is a verified 1:1 projection of the JSON — every key rendered, nothing hidden, nothing extra. `attempted_action` derived from request body. Execution table rendered with full cell properties (status, display_value, value, available_actions, locked_reason, acceptance.reason). Column choices and rule shown in headers.
+  - **Usability tested**: Blind agent testing scored 4/5 — affordance-driven design is self-documenting. Column type descriptions and structured instructions address the main discoverability gap.
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 
@@ -43,7 +45,7 @@
 
 **Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine with hooks, templates, compile. Proved concepts but revealed design limits: meta-workflows create phase confusion, context gap for agent execution, rendering hints leak into data model.
 
-**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneet-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with Full/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction. Pluggable renderer architecture (7 views) with verified 1:1 JSON projection. Maze demo removed; Observer streamlined. Second workflow (Implementation Plan) adds table-based authoring with self-contained Python handler module — YAML defines workflow shell, Python handles table logic.
+**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with Full/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction. Pluggable renderer architecture (7 views) with verified 1:1 JSON projection. Maze demo removed; Observer streamlined. Implementation Plan workflow adds table-based authoring with all 7 column types, acceptance criteria rules, prerequisite gating, sequential execution. Usability-tested with blind agents (4/5).
 
 ---
 
@@ -80,17 +82,14 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but desig
 |-----------|-------------|
 | `wfe-ui/app.py` | Flask app — infrastructure (SSE, state persistence, feedback, routing). No workflow logic. |
 | `wfe-ui/cr_handler.py` | CR workflow handler — fields, visibility, affordances, actions, resource routing |
-| `wfe-ui/utils.py` | Shared display helpers (`trunc`, `field`) |
-| `wfe-ui/templates/base.html` | Layout with sidebar (Home, QMS, Workspace, Inbox, Quality Manual) |
-| `wfe-ui/templates/index.html` | Home page with project info + Quick Start |
-| `wfe-ui/templates/initiate.html` | Decision tree + direct create buttons for document initiation |
-| `wfe-ui/templates/create_cr.html` | CR authoring form — all pre-approval sections with guidance |
-| `wfe-ui/templates/manual_*.html` | Quality Manual browser with cross-reference navigation |
-| `wfe-ui/templates/agent_observer.html` | Agent Observer — SSE live view, 7 pluggable renderers, table projection |
-| `wfe-ui/data/agent_create_cr.yaml` | Declarative CR workflow definition (fields, nodes, visibility) |
-| `wfe-ui/data/agent_create_implementation_plan.yaml` | Implementation Plan workflow definition (nodes, lifecycle, column types) |
-| `wfe-ui/table_handler.py` | Self-contained table workflow handler (state, affordances, actions, resource routing) |
+| `wfe-ui/table_handler.py` | Implementation Plan handler — table construction, all 7 column types, choices/rules/prerequisites, integrated execution |
 | `wfe-ui/execution_handler.py` | Execution workflow handler — wraps PlanEngine for agent-driven EI execution |
+| `wfe-ui/utils.py` | Shared display helpers (`trunc`, `field`) |
+| `wfe-ui/templates/agent_observer.html` | Agent Observer — SSE live view, 7 pluggable renderers, verified 1:1 projection, execution table rendering |
+| `wfe-ui/data/agent_create_cr.yaml` | Declarative CR workflow definition (fields, nodes, visibility) |
+| `wfe-ui/data/agent_create_implementation_plan.yaml` | Implementation Plan workflow definition (nodes, lifecycle, column type catalog with descriptions) |
+| `wfe-ui/templates/base.html` | Layout with sidebar |
+| `wfe-ui/templates/edit_plan.html` | CR plan authoring UI — spreadsheet editor with type picker, choice editor, rule builder, prerequisite picker, execution preview |
 | Placeholder pages | QMS, Workspace, Inbox — ready for content |
 
 ---
