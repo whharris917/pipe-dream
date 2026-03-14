@@ -20,8 +20,8 @@
   - Dashboard listing workflows with status, Observe links, and Reset buttons
   - Per-workflow state persisted to disk as JSON (`data/workflows/<id>.state.json`)
   - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
-  - Agent Observer with pluggable renderers (Raw + Rendered); view toggle Raw/Rendered, scope toggle Full/Feedback
-  - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`)
+  - Agent Observer with pluggable renderer registry — 7 views: Raw, Light Mode, Dark Mode, Experimental A–D. Each experimental renderer has its own render function with distinct DOM structure. All satisfy 1:1 JSON projection constraint.
+  - **Two workflows**: CR creation (`data/agent_create_cr.yaml`) and Implementation Plan (`data/agent_create_implementation_plan.yaml` + `table_handler.py`)
   - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
   - **Full/Feedback scope toggle**: GET returns full state, POST returns Feedback. Rendered view shows category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED). Feedback scope forces Raw view.
   - Affordance model: unified `Set {label} (current: {value})` pattern for all field types; body always `"value": "<value>"`; `options` key on affordances for constrained types (boolean, select)
@@ -43,7 +43,7 @@
 
 **Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine with hooks, templates, compile. Proved concepts but revealed design limits: meta-workflows create phase confusion, context gap for agent execution, rendering hints leak into data model.
 
-**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with Full/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction, Rendered view is a verified 1:1 projection of the JSON. Maze demo workflow removed; Observer streamlined (event log removed, terminology normalized to Raw/Rendered views + Full/Feedback scope).
+**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneet-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with Full/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction. Pluggable renderer architecture (7 views) with verified 1:1 JSON projection. Maze demo removed; Observer streamlined. Second workflow (Implementation Plan) adds table-based authoring with self-contained Python handler module — YAML defines workflow shell, Python handles table logic.
 
 ---
 
@@ -84,8 +84,10 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but desig
 | `wfe-ui/templates/initiate.html` | Decision tree + direct create buttons for document initiation |
 | `wfe-ui/templates/create_cr.html` | CR authoring form — all pre-approval sections with guidance |
 | `wfe-ui/templates/manual_*.html` | Quality Manual browser with cross-reference navigation |
-| `wfe-ui/templates/agent_observer.html` | Agent Observer — SSE live view with pluggable renderers |
-| `wfe-ui/data/agent_create_cr.yaml` | Declarative CR workflow definition (fields, stages, visibility) |
+| `wfe-ui/templates/agent_observer.html` | Agent Observer — SSE live view, 7 pluggable renderers, table projection |
+| `wfe-ui/data/agent_create_cr.yaml` | Declarative CR workflow definition (fields, nodes, visibility) |
+| `wfe-ui/data/agent_create_implementation_plan.yaml` | Implementation Plan workflow definition (nodes, lifecycle, column types) |
+| `wfe-ui/table_handler.py` | Self-contained table workflow handler (state, affordances, actions, resource routing) |
 | Placeholder pages | QMS, Workspace, Inbox — ready for content |
 
 ---

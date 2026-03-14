@@ -1,6 +1,6 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: renderer expansion complete)
+## Current State (last updated: all tasks committed and pushed)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
@@ -59,3 +59,27 @@
 
 ### Agent Portal Interaction
 - Set Document Title to "Agent Observer Renderer Architecture" via `POST /agent/create-cr/title`
+
+### Observer Polish
+- Removed "Agent View" panel title bar (`.panel-title` CSS + HTML) — redundant after event log removal
+- Fixed Feedback scope showing full JSON on fresh workflow: `dispatchRender()` now shows `(no feedback yet)` placeholder when `currentFeedback` is null instead of falling through to full state render
+
+### Implementation Plan Workflow (create-implementation-plan)
+- **Design decision:** Option 3 — YAML defines workflow shell, Python module handles table logic
+- Created `data/agent_create_implementation_plan.yaml` — nodes (construction, review), lifecycle, column type catalog
+- Created `table_handler.py` — self-contained Python module:
+  - State model: `{node, completed_nodes, columns: [{name, type}], rows: [[cell,...]], properties: {sequential_execution}}`
+  - Renders `state.table` (not `state.fields`) so renderers can project as visual table
+  - Generates dynamic affordances: add_column, add_row, set_cell, rename_column, set_column_type, remove_column, remove_row, set_property, proceed, go_back, submit, restart
+  - Resource-oriented endpoint translation via `resolve_resource()`
+  - Human-readable action labels via `_action_label()` for feedback
+- Updated `app.py`:
+  - Imported `table_handler`, added `_WORKFLOWS` entry
+  - Delegated in `_render_agent_node()`, `_process_agent_action()`, `agent_resource_post()`
+  - Generalized `_compute_feedback()` with `acted_label` parameter
+  - Generalized `_execute_and_feedback()` with `acted_label` parameter
+- Updated all 7 renderers with table rendering:
+  - Shared `wfRenderTable()` function for Light/Dark/Exp-A/B/D (HTML `<table>` with column headers, types, cell values, properties)
+  - Exp-C (tree): custom tree-character rendering of table structure (columns, rows, cells, properties as tree nodes)
+  - Table color CSS added to all 6 non-raw renderers
+- Verified end-to-end: add column, add row, set cell, proceed, reset all working via resource-oriented API
