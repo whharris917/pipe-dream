@@ -1,8 +1,8 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: all tasks complete)
+## Current State (last updated: renderer expansion complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** All three cleanup tasks complete — ready to commit and push
+- **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
 - **Next:** Awaiting direction from Lead
 
@@ -39,3 +39,23 @@
   - Added `_workflow_last_feedback` dict for reconnect feedback recovery
   - SSE init event sends `last_feedback` directly instead of full history array
   - `agent_reset()` clears `_workflow_last_feedback` instead of `_workflow_history`
+
+### Redundant Element Removal
+- Removed `state.completed_nodes` display (`.wf-meta*` CSS) — redundant with lifecycle banner
+- Removed `state.node` subtitle (`.wf-node-id` CSS) — redundant with section heading
+
+### Renderer Architecture Expansion
+- Renamed "Rendered" to "Light Mode - Simple" (id: `light`)
+- Added "Dark Mode - Simple" (id: `dark`) — same `wfRenderPage()`, dark color CSS
+- Extracted shared rendering logic to module-scope functions: `wfEsc()`, `wfRenderValue()`, `wfRenderObject()`, `wfRenderFields()`, `wfRenderBanner()`, `wfRenderPage()`
+- Separated `WF_STRUCTURAL_CSS` (layout) from per-renderer color CSS
+- Renamed "Experimental" to "Experimental - A" (id: `exp-a`)
+- Added three new experimental renderers, each with its own render function:
+  - **Experimental - B** (`exp-b`): Card grid layout — 2-col CSS grid of field cards, pill-shaped affordances, filled progress bar, purple palette
+  - **Experimental - C** (`exp-c`): Tree outline — monospace `<pre>` with `├──`/`└──` tree chars, no HTML structure, green terminal palette
+  - **Experimental - D** (`exp-d`): Stats dashboard — metrics bar with counters, `key=value` dense rows, command-palette affordances with keyboard-key styling, warm parchment palette
+- Updated `_WORKFLOWS["create-cr"]["renderers"]` to `["raw", "light", "dark", "exp-a", "exp-b", "exp-c", "exp-d"]`
+- Verified 1:1 mapping constraint satisfied across all renderers
+
+### Agent Portal Interaction
+- Set Document Title to "Agent Observer Renderer Architecture" via `POST /agent/create-cr/title`
