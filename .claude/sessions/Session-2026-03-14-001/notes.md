@@ -1,6 +1,6 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: all tasks committed and pushed)
+## Current State (last updated: parameterized affordances committed and pushed)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
@@ -83,3 +83,16 @@
   - Exp-C (tree): custom tree-character rendering of table structure (columns, rows, cells, properties as tree nodes)
   - Table color CSS added to all 6 non-raw renderers
 - Verified end-to-end: add column, add row, set cell, proceed, reset all working via resource-oriented API
+
+### Parameterized Affordances
+- **Problem:** Per-instance affordances (one per cell, row, column) caused O(rows × cols) explosion — 25 affordances for a 3×3 table
+- **Solution:** Collapsed to one affordance per action type with `parameters` dict describing each body placeholder
+- Updated `table_handler.py` `_build_affordances()`:
+  - Constrained params get `options` (valid values) and optional `labels` (human-readable names)
+  - Free-text params get empty `{}` in parameters
+  - 3×3 table now produces 9 affordances (constant regardless of table size)
+- Migrated CR workflow (`app.py`): `a["options"]` → `a["parameters"] = {"value": {"options": [...]}}`
+- Updated `agent_observer.html`:
+  - Added shared `wfRenderParams(a)` helper — renders parameters compactly (`key=options (labels)`)
+  - All 6 non-raw renderers updated from `a.options` to `wfRenderParams(a)`
+- Verified both workflows: CR and implementation plan both use `parameters` consistently

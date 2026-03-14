@@ -24,7 +24,7 @@
   - **Two workflows**: CR creation (`data/agent_create_cr.yaml`) and Implementation Plan (`data/agent_create_implementation_plan.yaml` + `table_handler.py`)
   - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
   - **Full/Feedback scope toggle**: GET returns full state, POST returns Feedback. Rendered view shows category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED). Feedback scope forces Raw view.
-  - Affordance model: unified `Set {label} (current: {value})` pattern for all field types; body always `"value": "<value>"`; `options` key on affordances for constrained types (boolean, select)
+  - **Parameterized affordances**: one affordance per action type with `parameters` dict — each body placeholder gets `options` (constrained) and optional `labels` (human-readable). Eliminates O(rows × cols) explosion for table workflows.
   - **Node-centric field ownership**: fields nest under their owning node in YAML; `show_all_fields` for review nodes; "stage" → "node" terminology throughout
   - Feedback diff uses stable URL-based affordance identity — immune to label changes
   - Observer recovers last feedback on reconnect; node indicator tracks actual node name
