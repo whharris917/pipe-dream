@@ -1,6 +1,6 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: execution merged into implementation plan workflow)
+## Current State (last updated: lifecycle banner fix)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
@@ -148,3 +148,17 @@
 - Go_back works at every stage: done → executing → review → construction
 - Also fixed pre-existing bug: `done` node was missing from YAML (caused KeyError on submit)
 - Verified full flow: construction → review → executing (fill/sign cells) → done → go_back → restart
+
+### Lifecycle Banner Rendering Fix
+- **Bug:** On the Done node (4-step lifecycle), banner connector to current step was inactive, progress showed 75% instead of 100%
+- **Root cause:** Renderers were overfit to the original 3-step CR workflow where the final node ("submitted") was always in `completed_nodes`. The new 4-step workflow exposed that the current step was not counted.
+- Fixed shared `wfRenderBanner()` (Light/Dark): added `isCurrent` to connector active condition
+- Fixed Exp-b: progress bar percentage now includes current step in count
+- Fixed Exp-d: phase counter now includes current step ("4/4" not "3/4")
+- Exp-a and Exp-c unaffected — no connector/percentage logic
+
+### Complicated Implementation Plan Demo
+- Built an 8-EI, 7-column plan via agent API (authentication/RBAC system refactor scenario)
+- Column types: ne-free-text, ne-prerequisite, ex-free-text, ex-choice-list, ex-cross-reference, ex-signature, ae-acceptance-criteria
+- Complex dependency graph: EI-1 is root, EI-4 depends on 3 predecessors, EI-8 depends on EI-6+7
+- Sequential execution enabled
