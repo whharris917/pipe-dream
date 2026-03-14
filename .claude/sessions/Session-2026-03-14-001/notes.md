@@ -1,6 +1,6 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: workflow handler protocol extraction)
+## Current State (last updated: execution workflow handler)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
@@ -119,3 +119,18 @@
   - Deleted `_trunc()` and `_field()` (moved to `utils.py`)
   - No `if wf_type ==` branches remain — all dispatch is handler-based
 - Verified: all routes return 200, resource endpoints resolve correctly, legacy POST works
+
+### Execution Workflow Handler (execute-plan)
+- **Third handler** following the proven handler protocol
+- Created `data/agent_execute_plan.yaml` (~35 lines) — 3 nodes: loading → executing → completed
+- Created `execution_handler.py` (~330 lines):
+  - Wraps existing `PlanEngine` from `engine/` package — no business logic duplication
+  - `loading` node: set CR ID (with options from available CRs), set actor, start gate
+  - `executing` node: dynamic affordances from `PlanEngine.get_plan_state().next_actions` — fill, sign, mark_na, initiate_issue. Choice-list columns get parameterized options. Auto-advances to completed when all acceptance criteria pass.
+  - `completed` node: go back, restart
+  - Progress stats: total/completed rows, total/filled cells
+  - State rendered with `state.table` (columns + rows with cell states) for observer projection
+  - Execution state persisted in workflow state JSON (survives server restart, unlike api.py's in-memory engines)
+- Registered in `app.py`: +1 import, +5 lines in `_WORKFLOWS` dict
+- Verified end-to-end: set_cr, start, fill (free-text + choice-list), sign, mark_na, go_back, restart all working
+- Sequential locking works correctly: CR-001 has `sequentialExecution: true`, engine surfaces only next actionable cell per row
