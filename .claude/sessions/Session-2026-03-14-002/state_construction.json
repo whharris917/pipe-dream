@@ -1,0 +1,314 @@
+{
+  "affordances": [
+    {
+      "body": {
+        "name": "<name>",
+        "type": "<type>"
+      },
+      "id": 1,
+      "label": "Add column",
+      "method": "POST",
+      "parameters": {
+        "name": {},
+        "type": {
+          "descriptions": [
+            {
+              "category": "non-executable",
+              "description": "Plain text content, not executed.",
+              "label": "Free Text",
+              "value": "ne-free-text"
+            },
+            {
+              "category": "non-executable",
+              "description": "References to rows that must complete before this row.",
+              "label": "Prerequisite",
+              "value": "ne-prerequisite"
+            },
+            {
+              "category": "executable",
+              "description": "Free-form text filled during execution.",
+              "label": "Free Text",
+              "value": "ex-free-text"
+            },
+            {
+              "category": "executable",
+              "description": "Selection from predefined options.",
+              "label": "Choice List",
+              "value": "ex-choice-list"
+            },
+            {
+              "category": "executable",
+              "description": "Link to an external document or artifact.",
+              "label": "Cross Reference",
+              "value": "ex-cross-reference"
+            },
+            {
+              "category": "executable",
+              "description": "Electronic signature capture.",
+              "label": "Signature",
+              "value": "ex-signature"
+            },
+            {
+              "category": "auto-executed",
+              "description": "Boolean expression evaluated automatically.",
+              "label": "Acceptance Criteria",
+              "value": "ae-acceptance-criteria"
+            }
+          ],
+          "options": [
+            "ne-free-text",
+            "ne-prerequisite",
+            "ex-free-text",
+            "ex-choice-list",
+            "ex-cross-reference",
+            "ex-signature",
+            "ae-acceptance-criteria"
+          ]
+        }
+      },
+      "url": "/agent/create-implementation-plan/add_column"
+    },
+    {
+      "body": {},
+      "id": 2,
+      "label": "Add row",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/add_row"
+    },
+    {
+      "body": {
+        "col": "<col>",
+        "name": "<name>"
+      },
+      "id": 3,
+      "label": "Rename column",
+      "method": "POST",
+      "parameters": {
+        "col": {
+          "labels": [
+            "Task",
+            "Output",
+            "AC"
+          ],
+          "options": [
+            0,
+            1,
+            2
+          ]
+        },
+        "name": {}
+      },
+      "url": "/agent/create-implementation-plan/rename_column"
+    },
+    {
+      "body": {
+        "col": "<col>",
+        "type": "<type>"
+      },
+      "id": 4,
+      "label": "Set column type",
+      "method": "POST",
+      "parameters": {
+        "col": {
+          "labels": [
+            "Task",
+            "Output",
+            "AC"
+          ],
+          "options": [
+            0,
+            1,
+            2
+          ]
+        },
+        "type": {
+          "options": [
+            "ne-free-text",
+            "ne-prerequisite",
+            "ex-free-text",
+            "ex-choice-list",
+            "ex-cross-reference",
+            "ex-signature",
+            "ae-acceptance-criteria"
+          ]
+        }
+      },
+      "url": "/agent/create-implementation-plan/set_column_type"
+    },
+    {
+      "body": {
+        "col": "<col>"
+      },
+      "id": 5,
+      "label": "Remove column",
+      "method": "POST",
+      "parameters": {
+        "col": {
+          "labels": [
+            "Task",
+            "Output",
+            "AC"
+          ],
+          "options": [
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      "url": "/agent/create-implementation-plan/remove_column"
+    },
+    {
+      "body": {
+        "col": "<col>",
+        "rule": "<rule>"
+      },
+      "id": 6,
+      "label": "Set acceptance rule for column",
+      "method": "POST",
+      "parameters": {
+        "col": {
+          "labels": [
+            "AC"
+          ],
+          "options": [
+            2
+          ]
+        },
+        "rule": {
+          "description": "Boolean expression tree. Structure: {\"op\": \"AND\"|\"OR\", \"conditions\": [...]}. Leaf conditions: {\"type\": \"all-executed\"} checks all executable columns are filled; {\"type\": \"column\", \"column\": <col_index>, \"operator\": \"is-filled\"|\"is-signed\"|\"equals\"|\"ref-status\", \"value\": \"...\"} checks a specific column. Example: {\"op\": \"AND\", \"conditions\": [{\"type\": \"all-executed\"}]}",
+          "executable_columns": [
+            {
+              "index": 1,
+              "name": "Output",
+              "type": "ex-free-text"
+            }
+          ]
+        }
+      },
+      "url": "/agent/create-implementation-plan/set_rule"
+    },
+    {
+      "body": {
+        "col": "<col>",
+        "row": "<row>",
+        "value": "<value>"
+      },
+      "id": 7,
+      "label": "Set cell",
+      "method": "POST",
+      "parameters": {
+        "col": {
+          "labels": [
+            "Task",
+            "Output",
+            "AC"
+          ],
+          "options": [
+            0,
+            1,
+            2
+          ]
+        },
+        "row": {
+          "options": [
+            0
+          ]
+        },
+        "value": {}
+      },
+      "url": "/agent/create-implementation-plan/set_cell"
+    },
+    {
+      "body": {
+        "row": "<row>"
+      },
+      "id": 8,
+      "label": "Remove row",
+      "method": "POST",
+      "parameters": {
+        "row": {
+          "options": [
+            0
+          ]
+        }
+      },
+      "url": "/agent/create-implementation-plan/remove_row"
+    },
+    {
+      "body": {
+        "key": "sequential_execution",
+        "value": "<value>"
+      },
+      "id": 9,
+      "label": "Set sequential execution (current: false)",
+      "method": "POST",
+      "parameters": {
+        "value": {
+          "options": [
+            true,
+            false
+          ]
+        }
+      },
+      "url": "/agent/create-implementation-plan/set_property"
+    },
+    {
+      "body": {},
+      "id": 10,
+      "label": "Proceed to Review",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/proceed"
+    }
+  ],
+  "instructions": "Build an implementation plan table. Add columns to define the structure, then add rows and fill in cell values. Column types fall into three categories: Non-executable (ne-) columns are filled now during construction and become read-only during execution -- use these for task descriptions, prerequisites, and other plan content. Executable (ex-) columns are left empty now and filled during execution -- use these for evidence, outcomes, signatures, and other execution artifacts. Auto-executed (ae-) columns are evaluated automatically by the system during execution based on rules you define -- use these for acceptance criteria.",
+  "state": {
+    "completed_nodes": [],
+    "lifecycle": [
+      "Construction",
+      "Review",
+      "Execution",
+      "Done"
+    ],
+    "lifecycle_completed": [],
+    "lifecycle_current": "Construction",
+    "node": "construction",
+    "node_title": "Table Construction",
+    "table": {
+      "columns": [
+        {
+          "name": "Task",
+          "type": "ne-free-text"
+        },
+        {
+          "name": "Output",
+          "type": "ex-free-text"
+        },
+        {
+          "name": "AC",
+          "rule": {
+            "conditions": [
+              {
+                "type": "all-executed"
+              }
+            ],
+            "op": "AND"
+          },
+          "type": "ae-acceptance-criteria"
+        }
+      ],
+      "properties": {
+        "sequential_execution": false
+      },
+      "rows": [
+        [
+          "Setup CI",
+          "",
+          ""
+        ]
+      ],
+      "summary": "3 columns, 1 row"
+    },
+    "workflow": "Create Implementation Plan"
+  }
+}

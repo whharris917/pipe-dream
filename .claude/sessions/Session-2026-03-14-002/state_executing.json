@@ -1,0 +1,159 @@
+{
+  "affordances": [
+    {
+      "body": {
+        "cell_action": "fill",
+        "col": 1,
+        "row": 0,
+        "value": "<value>"
+      },
+      "id": 1,
+      "label": "Fill Output for WF-EI-1",
+      "method": "POST",
+      "parameters": {
+        "value": {}
+      },
+      "url": "/agent/create-implementation-plan/cell_action"
+    },
+    {
+      "body": {},
+      "id": 2,
+      "label": "Go back to Review",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/go_back"
+    }
+  ],
+  "instructions": "Execute the implementation plan by filling cells, signing, and recording evidence. Work through EIs in order if sequential execution is enabled. Each row's acceptance criteria are evaluated automatically. All acceptance criteria must pass to complete execution.",
+  "state": {
+    "completed_nodes": [
+      "construction",
+      "review"
+    ],
+    "execution_table": {
+      "columns": [
+        {
+          "name": "Task",
+          "type": "ne-free-text"
+        },
+        {
+          "name": "Output",
+          "type": "ex-free-text"
+        },
+        {
+          "name": "AC",
+          "rule": {
+            "conditions": [
+              {
+                "type": "all-executed"
+              }
+            ],
+            "op": "AND"
+          },
+          "type": "ae-acceptance-criteria"
+        }
+      ],
+      "rows": [
+        {
+          "acceptance": {
+            "passed": false,
+            "reason": "AND((all-executed: col 1 (Output) is empty)) = False"
+          },
+          "cells": [
+            {
+              "available_actions": [],
+              "col": 0,
+              "column_name": "Task",
+              "column_type": "ne-free-text",
+              "display_value": "Setup CI",
+              "row": 0,
+              "status": "static",
+              "value": ""
+            },
+            {
+              "available_actions": [
+                "fill"
+              ],
+              "col": 1,
+              "column_name": "Output",
+              "column_type": "ex-free-text",
+              "display_value": "",
+              "row": 0,
+              "status": "empty",
+              "value": ""
+            },
+            {
+              "available_actions": [],
+              "col": 2,
+              "column_name": "AC",
+              "column_type": "ae-acceptance-criteria",
+              "display_value": "",
+              "row": 0,
+              "status": "pending",
+              "value": ""
+            }
+          ],
+          "gated": false,
+          "gated_by": [],
+          "row": 0,
+          "row_id": "WF-EI-1"
+        }
+      ]
+    },
+    "lifecycle": [
+      "Construction",
+      "Review",
+      "Execution",
+      "Done"
+    ],
+    "lifecycle_completed": [
+      "Construction",
+      "Review"
+    ],
+    "lifecycle_current": "Execution",
+    "node": "executing",
+    "node_title": "Execution",
+    "plan_status": "in-progress",
+    "progress": {
+      "completed_rows": 0,
+      "filled_cells": 0,
+      "total_cells": 1,
+      "total_rows": 1
+    },
+    "table": {
+      "columns": [
+        {
+          "name": "Task",
+          "type": "ne-free-text"
+        },
+        {
+          "name": "Output",
+          "type": "ex-free-text"
+        },
+        {
+          "name": "AC",
+          "rule": {
+            "conditions": [
+              {
+                "type": "all-executed"
+              }
+            ],
+            "op": "AND"
+          },
+          "type": "ae-acceptance-criteria"
+        }
+      ],
+      "properties": {
+        "sequential_execution": false
+      },
+      "rows": [
+        [
+          "Setup CI",
+          "",
+          ""
+        ]
+      ],
+      "summary": "3 columns, 1 row"
+    },
+    "workflow": "Create Implementation Plan"
+  }
+}

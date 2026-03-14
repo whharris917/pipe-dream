@@ -1,0 +1,72 @@
+{
+  "affordances": [
+    {
+      "body": {},
+      "id": 1,
+      "label": "Go back to Table Construction",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/go_back"
+    },
+    {
+      "body": {},
+      "id": 2,
+      "label": "Proceed to Execution",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/submit"
+    }
+  ],
+  "instructions": "Review the complete implementation plan. Go back to make changes, or proceed to execution.",
+  "state": {
+    "completed_nodes": [
+      "construction"
+    ],
+    "lifecycle": [
+      "Construction",
+      "Review",
+      "Execution",
+      "Done"
+    ],
+    "lifecycle_completed": [
+      "Construction"
+    ],
+    "lifecycle_current": "Review",
+    "node": "review",
+    "node_title": "Review",
+    "table": {
+      "columns": [
+        {
+          "name": "Task",
+          "type": "ne-free-text"
+        },
+        {
+          "name": "Output",
+          "type": "ex-free-text"
+        },
+        {
+          "name": "AC",
+          "rule": {
+            "conditions": [
+              {
+                "type": "all-executed"
+              }
+            ],
+            "op": "AND"
+          },
+          "type": "ae-acceptance-criteria"
+        }
+      ],
+      "properties": {
+        "sequential_execution": false
+      },
+      "rows": [
+        [
+          "Setup CI",
+          "",
+          ""
+        ]
+      ],
+      "summary": "3 columns, 1 row"
+    },
+    "workflow": "Create Implementation Plan"
+  }
+}

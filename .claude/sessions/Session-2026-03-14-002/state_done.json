@@ -1,0 +1,153 @@
+{
+  "affordances": [
+    {
+      "body": {},
+      "id": 1,
+      "label": "Go back to Execution",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/go_back"
+    },
+    {
+      "body": {},
+      "id": 2,
+      "label": "Start a new Implementation Plan",
+      "method": "POST",
+      "url": "/agent/create-implementation-plan/restart"
+    }
+  ],
+  "instructions": "All execution items have passed acceptance criteria. You may go back to make corrections or start a new plan.",
+  "state": {
+    "completed_nodes": [
+      "construction",
+      "review",
+      "executing"
+    ],
+    "execution_table": {
+      "columns": [
+        {
+          "name": "Task",
+          "type": "ne-free-text"
+        },
+        {
+          "name": "Output",
+          "type": "ex-free-text"
+        },
+        {
+          "name": "AC",
+          "rule": {
+            "conditions": [
+              {
+                "type": "all-executed"
+              }
+            ],
+            "op": "AND"
+          },
+          "type": "ae-acceptance-criteria"
+        }
+      ],
+      "rows": [
+        {
+          "acceptance": {
+            "passed": true,
+            "reason": "AND((all-executed: all filled)) = True"
+          },
+          "cells": [
+            {
+              "available_actions": [],
+              "col": 0,
+              "column_name": "Task",
+              "column_type": "ne-free-text",
+              "display_value": "Setup CI",
+              "row": 0,
+              "status": "static",
+              "value": ""
+            },
+            {
+              "available_actions": [
+                "fill"
+              ],
+              "col": 1,
+              "column_name": "Output",
+              "column_type": "ex-free-text",
+              "display_value": "Done",
+              "row": 0,
+              "status": "filled",
+              "value": "Done"
+            },
+            {
+              "available_actions": [],
+              "col": 2,
+              "column_name": "AC",
+              "column_type": "ae-acceptance-criteria",
+              "display_value": "PASS",
+              "row": 0,
+              "status": "pass",
+              "value": ""
+            }
+          ],
+          "gated": false,
+          "gated_by": [],
+          "row": 0,
+          "row_id": "WF-EI-1"
+        }
+      ]
+    },
+    "lifecycle": [
+      "Construction",
+      "Review",
+      "Execution",
+      "Done"
+    ],
+    "lifecycle_completed": [
+      "Construction",
+      "Review",
+      "Execution"
+    ],
+    "lifecycle_current": "Done",
+    "node": "done",
+    "node_title": "Complete",
+    "plan_status": "completed",
+    "progress": {
+      "completed_rows": 1,
+      "filled_cells": 1,
+      "total_cells": 1,
+      "total_rows": 1
+    },
+    "table": {
+      "columns": [
+        {
+          "name": "Task",
+          "type": "ne-free-text"
+        },
+        {
+          "name": "Output",
+          "type": "ex-free-text"
+        },
+        {
+          "name": "AC",
+          "rule": {
+            "conditions": [
+              {
+                "type": "all-executed"
+              }
+            ],
+            "op": "AND"
+          },
+          "type": "ae-acceptance-criteria"
+        }
+      ],
+      "properties": {
+        "sequential_execution": false
+      },
+      "rows": [
+        [
+          "Setup CI",
+          "",
+          ""
+        ]
+      ],
+      "summary": "3 columns, 1 row"
+    },
+    "workflow": "Create Implementation Plan"
+  }
+}
