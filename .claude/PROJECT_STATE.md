@@ -21,7 +21,7 @@
   - Per-workflow state persisted to disk as JSON (`data/workflows/<id>.state.json`)
   - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
   - Agent Observer with pluggable renderer registry — 7 views: Raw, Light Mode, Dark Mode, Experimental A–D. Each experimental renderer has its own render function with distinct DOM structure. All satisfy 1:1 JSON projection constraint.
-  - **Two workflows**: CR creation (`data/agent_create_cr.yaml`) and Implementation Plan (`data/agent_create_implementation_plan.yaml` + `table_handler.py`)
+  - **Two workflows**: CR creation (`data/agent_create_cr.yaml` + `cr_handler.py`) and Implementation Plan (`data/agent_create_implementation_plan.yaml` + `table_handler.py`). Both follow a common **handler protocol**: `default_data()`, `render_node()`, `process_action()`, `resolve_resource()`. `app.py` is pure infrastructure — dispatch, SSE, state persistence, feedback computation.
   - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
   - **Full/Feedback scope toggle**: GET returns full state, POST returns Feedback. Rendered view shows category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED). Feedback scope forces Raw view.
   - **Parameterized affordances**: one affordance per action type with `parameters` dict — each body placeholder gets `options` (constrained) and optional `labels` (human-readable). Eliminates O(rows × cols) explosion for table workflows.
@@ -78,7 +78,9 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but desig
 
 | Component | Description |
 |-----------|-------------|
-| `wfe-ui/app.py` | Flask app — routes, Quality Manual renderer with link rewriting |
+| `wfe-ui/app.py` | Flask app — infrastructure (SSE, state persistence, feedback, routing). No workflow logic. |
+| `wfe-ui/cr_handler.py` | CR workflow handler — fields, visibility, affordances, actions, resource routing |
+| `wfe-ui/utils.py` | Shared display helpers (`trunc`, `field`) |
 | `wfe-ui/templates/base.html` | Layout with sidebar (Home, QMS, Workspace, Inbox, Quality Manual) |
 | `wfe-ui/templates/index.html` | Home page with project info + Quick Start |
 | `wfe-ui/templates/initiate.html` | Decision tree + direct create buttons for document initiation |

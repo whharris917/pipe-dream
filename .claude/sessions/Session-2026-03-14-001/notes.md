@@ -1,6 +1,6 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: parameterized affordances committed and pushed)
+## Current State (last updated: workflow handler protocol extraction)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
@@ -96,3 +96,26 @@
   - Added shared `wfRenderParams(a)` helper — renders parameters compactly (`key=options (labels)`)
   - All 6 non-raw renderers updated from `a.options` to `wfRenderParams(a)`
 - Verified both workflows: CR and implementation plan both use `parameters` consistently
+
+### Workflow Handler Protocol Extraction
+- **Plan:** Extract CR-specific logic from `app.py` into `cr_handler.py`, formalizing the handler protocol that `table_handler.py` already follows
+- Created `wfe-ui/utils.py` (16 lines) — shared display helpers `trunc()` and `field()`
+- Created `wfe-ui/cr_handler.py` (367 lines) — all CR-specific code:
+  - YAML loading, constants (`_SUBMODULES`, `_SDLC_GOVERNED`, `_NODES`, etc.)
+  - Field visibility (`_field_visible`), field summary (`_field_summary`), affordance building (`_build_affordances`)
+  - `render_node(data, workflow_id)` — receives data as parameter, no internal state loading
+  - `process_action(data, workflow_id, body)` — mutates data in place, does NOT save (app.py handles persistence)
+  - `resolve_resource(resource, body)` — translates resource URL to `(internal_body, acted_label)`, does field-key-to-label lookup internally
+  - Exports: `WORKFLOW_TITLE`, `VALID_RESOURCES`, `default_data()`, `render_node()`, `process_action()`, `resolve_resource()`
+- Refactored `app.py` (1125 → 728 lines, net -397):
+  - `_WORKFLOWS` registry stores `handler` module reference instead of `type` string
+  - Added `_get_handler(workflow_id)` helper
+  - Unified `_render_agent_node()` — single `handler.render_node(data, workflow_id)` call for all workflows
+  - Unified `_process_agent_action()` — single `handler.process_action(data, workflow_id, body)` call with conditional save
+  - Unified `agent_resource_post()` — single `handler.resolve_resource(resource, body)` call
+  - Removed `acted_field_key` parameter from `_compute_feedback` and `_execute_and_feedback`
+  - Deleted `_build_attempted_action()` — handlers always provide `acted_label` via `resolve_resource`
+  - Deleted all `_CR_*` constants, `_cr_data()`, `_cr_default_data()`, `_cr_field_visible()`, `_cr_field_summary()`, `_cr_build_affordances()`, `_render_cr_node()`, `_process_cr_action()`
+  - Deleted `_trunc()` and `_field()` (moved to `utils.py`)
+  - No `if wf_type ==` branches remain — all dispatch is handler-based
+- Verified: all routes return 200, resource endpoints resolve correctly, legacy POST works
