@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-12-001 (2026-03-12)*
+*Last updated: Session-2026-03-14-001 (2026-03-14)*
 
 ---
 
@@ -17,20 +17,19 @@
 - CR authoring form with all pre-approval sections and authoring guidance
 - Template Editor and Workflow Sandbox for engine experimentation
 - **Agent Portal** — proof-of-concept for AI agent workflow interaction:
-  - Dashboard listing all workflows with status, Observe links, and Reset buttons
+  - Dashboard listing workflows with status, Observe links, and Reset buttons
   - Per-workflow state persisted to disk as JSON (`data/workflows/<id>.state.json`)
   - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
-  - Agent Observer with pluggable renderers; renderer availability declared by workflow, not heuristics
+  - Agent Observer with pluggable renderers (Raw + Rendered); view toggle Raw/Rendered, scope toggle Full/Feedback
   - CR creation workflow driven by YAML definition (`data/agent_create_cr.yaml`)
   - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
-  - **FoV/Feedback split**: GET returns full Field of View, POST returns Feedback. Observer renders category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED).
-  - **FoV/Feedback view toggle**: Observer header toggle with renderer coupling — Feedback forces Raw, Workflow forces FoV.
+  - **Full/Feedback scope toggle**: GET returns full state, POST returns Feedback. Rendered view shows category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED). Feedback scope forces Raw view.
   - Affordance model: unified `Set {label} (current: {value})` pattern for all field types; body always `"value": "<value>"`; `options` key on affordances for constrained types (boolean, select)
   - **Node-centric field ownership**: fields nest under their owning node in YAML; `show_all_fields` for review nodes; "stage" → "node" terminology throughout
   - Feedback diff uses stable URL-based affordance identity — immune to label changes
-  - Observer recovers feedback from history on reconnect; node indicator tracks actual node name
-  - **Resource-oriented endpoints** (done): each affordance is a literal HTTP instruction — `POST /agent/<id>/<resource>` with only parameters in body. Translation layer maps resources to internal actions. Legacy single-endpoint preserved for backward compatibility.
-  - **1:1 renderer projection** (done): Workflow renderer is a verified 1:1 projection of the FoV JSON — every key rendered, nothing hidden, nothing extra. Redundant `message` field removed; `attempted_action` now derived from request body.
+  - Observer recovers last feedback on reconnect; node indicator tracks actual node name
+  - **Resource-oriented endpoints**: each affordance is a literal HTTP instruction — `POST /agent/<id>/<resource>` with only parameters in body. Translation layer maps resources to internal actions. Legacy single-endpoint preserved for backward compatibility.
+  - **1:1 renderer projection**: Rendered view is a verified 1:1 projection of the JSON — every key rendered, nothing hidden, nothing extra. `attempted_action` derived from request body.
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
 
@@ -44,7 +43,7 @@
 
 **Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine with hooks, templates, compile. Proved concepts but revealed design limits: meta-workflows create phase confusion, context gap for agent execution, rendering hints leak into data model.
 
-**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with FoV/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction, renderer is a verified 1:1 projection of the FoV JSON.
+**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with Full/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction, Rendered view is a verified 1:1 projection of the JSON. Maze demo workflow removed; Observer streamlined (event log removed, terminology normalized to Raw/Rendered views + Full/Feedback scope).
 
 ---
 
