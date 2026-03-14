@@ -1,6 +1,6 @@
 # Session-2026-03-14-001
 
-## Current State (last updated: execution workflow handler)
+## Current State (last updated: execution merged into implementation plan workflow)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** All tasks complete — committed and pushed
 - **Blocking on:** Nothing
@@ -134,3 +134,17 @@
 - Registered in `app.py`: +1 import, +5 lines in `_WORKFLOWS` dict
 - Verified end-to-end: set_cr, start, fill (free-text + choice-list), sign, mark_na, go_back, restart all working
 - Sequential locking works correctly: CR-001 has `sequentialExecution: true`, engine surfaces only next actionable cell per row
+
+### Execution Merged into Implementation Plan Workflow
+- Extended `table_handler.py` (455 → 656 lines) to include execution after review
+- Updated YAML: added `executing` and `done` nodes, lifecycle banner now Construction → Review → Execution → Done
+- Review's "Finalize Plan" → "Proceed to Execution" — submit now starts PlanEngine and transitions to executing node
+- Added `_build_plan_def()` — constructs PlanDefinition from in-memory table data (no CR file on disk needed)
+- Added `_load_engine()`, `_execution_progress()` — engine bridge helpers
+- Executing node: dynamic affordances from `PlanEngine.get_plan_state().next_actions` (fill, sign, mark_na, initiate_issue)
+- `cell_action` processing delegates to engine methods, auto-advances to done when all acceptance criteria pass
+- `render_node` adds `state.plan_status`, `state.progress`, `state.execution_table` when in executing/done nodes
+- Resource routing updated: added `cell_action` to `_BODY_ACTIONS`, `complete` to `_SIMPLE_ACTIONS`
+- Go_back works at every stage: done → executing → review → construction
+- Also fixed pre-existing bug: `done` node was missing from YAML (caused KeyError on submit)
+- Verified full flow: construction → review → executing (fill/sign cells) → done → go_back → restart
