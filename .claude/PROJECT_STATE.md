@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-14-003 (2026-03-14)*
+*Last updated: Session-2026-03-15-001 (2026-03-15)*
 
 ---
 
@@ -18,8 +18,9 @@
   - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions. Replaces 4 former handler modules.
   - **3 built-in workflows**: Create CR, Create Executable Table, Create Workflow (builder)
   - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response)
-  - **Agent Observer** — 7 pluggable renderers, verified 1:1 JSON projection, forward-compatible with unknown state keys
+  - **Agent Observer** — 9 renderers with hierarchical selection (format → verbosity → style), forward-compatible with unknown state keys
   - **Content primitives**: Fields (text/boolean/select/computed), Tables (7 column types, execution engine), Lists (add/edit/remove/reorder/focus)
+  - **Execution engine**: Cell action lifecycle (fill → amend, sign → re-sign), cascade revert exemption (cross-refs preserved), sequential issue numbering (per-type), node pause control
   - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards (AND/OR/NOT composites)
   - **Conditional navigation**: `when` guards on nav entries, `target` on proceed for branching
   - **Inter-field dependencies**: `dynamic_options` (options depend on another field), `side_effects` (auto-set on condition)
@@ -41,6 +42,8 @@
 **Workflow Engine v2 — UI-Driven Redesign** (Mar 8-12). Built a web UI and Agent Portal sandbox. Proved field-based and table-based workflow patterns. Four separate handler implementations.
 
 **Unified Workflow Engine** (Mar 14). Clean-room rewrite formalizing the patterns discovered in v2. Single runtime replacing 4 handlers. Added lists, conditional navigation, dynamic options, side effects. Complex demo workflow (Incident Response) exercises all features. Comprehensive documentation (ENGINE.md, TAXONOMY.md).
+
+**Engine Hardening** (Mar 15). Six architectural refinements from test-run feedback: node pause control, sequential issue numbering, cascade revert exemption, cell action lifecycle (fill/amend/re-sign), hierarchical renderer selection, unified cell highlighting.
 
 ---
 
@@ -110,9 +113,9 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 
 ## 5. Forward Plan
 
-### Immediate: Engine Hardening
+### Immediate: Continued Hardening
 
-The unified engine is functionally complete. Next steps:
+Engine hardening round 1 complete (Session-2026-03-15-001). Remaining:
 1. **Hot reload** — Endpoint to re-discover workflows without server restart
 2. **Rate limiter fix** — Move before mutation or remove (see deviation report)
 3. **Builder enhancement** — Support publishing table-based and list-based workflows from the builder
