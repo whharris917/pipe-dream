@@ -1,12 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-03-15-001 (2026-03-15)*
+*Last updated: Session-2026-03-15-003 (2026-03-15)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Unified Workflow Engine complete.** The WFE v2 Agent Portal now runs on a single formalized runtime that interprets YAML workflow definitions. No per-workflow Python code needed. The engine supports fields, tables, lists, conditional navigation, dynamic options, side effects, and an integrated execution engine — all declarative.
+**Unified Workflow Engine with parallel execution.** The WFE v2 Agent Portal runs on a single formalized runtime interpreting YAML workflow definitions. Now supports three control-flow primitives beyond sequential: **router** (automatic conditional branching), **fork** (parallel paths), and **merge** (convergence). The Exp-D visual renderer produces grid-based flowcharts with orthogonal edge routing.
 
 **What's running now:** Flask web app at `http://127.0.0.1:5000` with:
 - Sidebar navigation (Home, QMS, Workspace, Inbox, Templates, Workflow Sandbox, Quality Manual, Agent Portal)
@@ -15,18 +15,17 @@
 - CR authoring form with all pre-approval sections
 - Template Editor and Workflow Sandbox
 - **Agent Portal** with unified workflow engine:
-  - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions. Replaces 4 former handler modules.
+  - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions
   - **3 built-in workflows**: Create CR, Create Executable Table, Create Workflow (builder)
-  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response)
-  - **Agent Observer** — 8 renderers with hierarchical selection (format → verbosity → style), blueprint renderer for workflow definitions, forward-compatible with unknown state keys
+  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response, Parallel Investigation)
+  - **Agent Observer** — 8+ renderers with hierarchical selection, Exp-D flowchart with grid layout
   - **Content primitives**: Fields (text/boolean/select/computed), Tables (7 column types, execution engine), Lists (add/edit/remove/reorder/focus)
-  - **Execution engine**: Cell action lifecycle (fill → amend, sign → re-sign), cascade revert exemption (cross-refs preserved), sequential issue numbering (per-type), node pause control
-  - **Simplified node model**: Progress banner derived from node titles — no lifecycle concept, no phase mapping
-  - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards (AND/OR/NOT composites)
-  - **Conditional navigation**: `when` guards on nav entries, `target` on proceed for branching
-  - **Inter-field dependencies**: `dynamic_options` (options depend on another field), `side_effects` (auto-set on condition)
+  - **Control-flow primitives**: Sequential (proceed), Conditional navigation (when/target), Router (automatic multi-way), Fork (parallel branches), Merge (convergence)
+  - **Execution engine**: Cell action lifecycle (fill/amend, sign/re-sign), cascade revert exemption, sequential issue numbering, node pause control
+  - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards, router conditions, fork gates (AND/OR/NOT composites)
   - **Feedback model**: POST returns structured diff (outcome/new/modified fields + affordances)
   - **HATEOAS API**: Resource-oriented endpoints, parameterized affordances
+  - **Builder**: Supports authoring workflows with router, fork, and merge primitives
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the redesign pivot.
 
@@ -44,9 +43,11 @@
 
 **Unified Workflow Engine** (Mar 14). Clean-room rewrite formalizing the patterns discovered in v2. Single runtime replacing 4 handlers. Added lists, conditional navigation, dynamic options, side effects. Complex demo workflow (Incident Response) exercises all features. Comprehensive documentation (ENGINE.md, TAXONOMY.md).
 
-**Engine Hardening** (Mar 15). Six architectural refinements from test-run feedback: node pause control, sequential issue numbering, cascade revert exemption, cell action lifecycle (fill/amend/re-sign), hierarchical renderer selection, unified cell highlighting. Blueprint renderer for workflow definitions. Removed lifecycle concept entirely — banner derived from node titles. Deep clean of all vestigial code (legacy unprefixed column types, orphaned CSS).
+**Engine Hardening** (Mar 15). Six architectural refinements from test-run feedback: node pause control, sequential issue numbering, cascade revert exemption, cell action lifecycle (fill/amend/re-sign), hierarchical renderer selection, unified cell highlighting. Blueprint renderer for workflow definitions. Removed lifecycle concept entirely — banner derived from node titles. Deep clean of all vestigial code.
 
-**Experimental-D Visual Renderer** (Mar 15). New "Experimental - D" renderer format for the Agent Observer. Flowchart-style visualization of workflow definitions: HTML cards with absolute positioning for node content (natural text wrapping), SVG edge layer for connections (forward/back/goto). Post-render height correction ensures edges align with actual card dimensions. Designed with future conditional branching in mind — nodes assigned to grid slots that can spread to multiple columns.
+**Experimental-D Visual Renderer** (Mar 15). Flowchart-style visualization of workflow definitions. Multiple iterations: HTML+CSS cards → SVG overlay → pure SVG (abandoned) → HTML cards with absolute positioning + SVG edge layer. Post-render height correction.
+
+**Parallel Execution Primitives** (Mar 15). Three new control-flow primitives: router (automatic conditional branching), fork (parallel branch split), merge (implicit convergence). Complete rewrite of Exp-D renderer to grid-based layout with orthogonal-only edge routing. Builder extended to support authoring all three primitives. Demo workflow (Parallel Investigation) exercises router → fork → merge across three severity paths.
 
 ---
 
@@ -82,20 +83,17 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 | Component | Description |
 |-----------|-------------|
 | `wfe-ui/runtime/` | Unified workflow engine — interprets YAML definitions, implements handler protocol |
-| `wfe-ui/builder_handler.py` | Create Workflow meta-tool — builds new workflows via structural editing |
+| `wfe-ui/runtime/schema.py` | Dataclasses: NodeDef, FieldDef, RouteDef, BranchDef, ForkDef, etc. |
+| `wfe-ui/runtime/actions.py` | Action dispatcher — proceed, fork, route, switch_branch, merge |
+| `wfe-ui/runtime/renderer.py` | Page renderer — affordances, fork state, definition serialization |
+| `wfe-ui/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table conditions |
+| `wfe-ui/builder_handler.py` | Create Workflow meta-tool — supports router, fork, merge primitives |
 | `wfe-ui/engine/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
 | `wfe-ui/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
-| `wfe-ui/utils.py` | Shared display helpers |
-| `wfe-ui/templates/agent_observer.html` | Agent Observer — 8 renderers (incl. Experimental-D flowchart), forward-compatible with unknown state keys |
-| `wfe-ui/data/agent_create_cr.yaml` | CR workflow definition |
-| `wfe-ui/data/agent_create_executable_table.yaml` | Table workflow definition (with table + execution components) |
-| `wfe-ui/data/agent_create_workflow.yaml` | Builder workflow definition |
-| `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response) |
+| `wfe-ui/templates/agent_observer.html` | Agent Observer — Exp-D grid flowchart with orthogonal edges |
+| `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation) |
 | `wfe-ui/ENGINE.md` | Comprehensive engine reference documentation |
 | `wfe-ui/TAXONOMY.md` | Taxonomy of workflow building blocks |
-| `wfe-ui/templates/base.html` | Layout with sidebar |
-| `wfe-ui/templates/edit_plan.html` | CR plan authoring UI — spreadsheet editor |
-| Placeholder pages | QMS, Workspace, Inbox — ready for content |
 
 ---
 
@@ -116,13 +114,13 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 
 ## 5. Forward Plan
 
-### Immediate: Continued Hardening
+### Immediate
 
-Engine hardening round 1 complete (Session-2026-03-15-001). Remaining:
-1. **Hot reload** — Endpoint to re-discover workflows without server restart
-2. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-3. **Builder enhancement** — Support publishing table-based and list-based workflows from the builder
-4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+1. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives
+2. **Use builder to create complex workflow** — Dogfood the new primitives via the Create Workflow workflow
+3. **Hot reload** — Endpoint to re-discover workflows without server restart
+4. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+5. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
 
 ### CR-110 Remaining EIs
 
@@ -179,3 +177,5 @@ Both superseded by the engine. May need cancellation or significant revision.
 **qms-workflow-engine submodule pointer** should be kept current with pushes.
 
 **Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
+
+**ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives.
