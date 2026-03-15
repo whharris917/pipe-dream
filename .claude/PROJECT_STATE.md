@@ -1,39 +1,32 @@
 # Project State
 
-*Last updated: Session-2026-03-14-002 (2026-03-14)*
+*Last updated: Session-2026-03-14-003 (2026-03-14)*
 
 ---
 
 ## 1. Where We Are Now
 
-**WFE redesign in progress — UI-driven development.** The v1 CLI-based workflow engine is being redesigned from first principles. A Kneat-like web UI (`qms-workflow-engine/wfe-ui/`) is now the primary development driver. The engine primitives will be rebuilt to serve what the UI needs, not the other way around.
-
-**The pivot:** Design discussions revealed fundamental problems with v1 (context gap, phase tangle, meta-workflows as wrong pattern). Rather than continuing abstract redesign, the Lead decided to build a visual UI and let concrete interaction drive the architecture.
+**Unified Workflow Engine complete.** The WFE v2 Agent Portal now runs on a single formalized runtime that interprets YAML workflow definitions. No per-workflow Python code needed. The engine supports fields, tables, lists, conditional navigation, dynamic options, side effects, and an integrated execution engine — all declarative.
 
 **What's running now:** Flask web app at `http://127.0.0.1:5000` with:
 - Sidebar navigation (Home, QMS, Workspace, Inbox, Templates, Workflow Sandbox, Quality Manual, Agent Portal)
-- Quality Manual browser rendering actual markdown files with working cross-references
-- Initiate Workflow page with interactive decision tree + direct document creation buttons
-- CR authoring form with all pre-approval sections and authoring guidance
-- Template Editor and Workflow Sandbox for engine experimentation
-- **Agent Portal** — proof-of-concept for AI agent workflow interaction:
-  - Dashboard listing workflows with status, Observe links, and Reset buttons
-  - Per-workflow state persisted to disk as JSON (`data/workflows/<id>.state.json`)
-  - Per-workflow SSE streams and API endpoints (`GET/POST /agent/<id>`)
-  - Agent Observer with pluggable renderer registry — 7 views: Raw, Light Mode, Dark Mode, Experimental A–D. Each experimental renderer has its own render function with distinct DOM structure. All satisfy verified 1:1 JSON projection constraint (audited 2026-03-14-002).
-  - **Three workflows**, all following a common **handler protocol** (`default_data()`, `render_node()`, `process_action()`, `resolve_resource()`): CR creation (`cr_handler.py`), Implementation Plan with integrated execution (`table_handler.py`, flow: construction → review → executing → done), and standalone Execution (`execution_handler.py` wrapping `engine.PlanEngine` for existing CR files). `app.py` is pure infrastructure — dispatch, SSE, state persistence, feedback computation.
-  - **Implementation Plan workflow** supports all 7 column types: ne-free-text, ne-prerequisite, ex-free-text, ex-choice-list, ex-cross-reference, ex-signature, ae-acceptance-criteria. Construction-phase affordances for `set_choices`, `set_rule`, `set_prerequisites`. Column type descriptions surfaced in affordances. Acceptance criteria rules rendered as human-readable boolean expressions. Sequential execution, prerequisite gating, and cascade revert all functional.
-  - **Feedback response model**: POST returns structured Feedback — `{attempted_action, outcome, effects: {new_fields, modified_fields, new_affordances, modified_affordances}}`. Unified success/error shape.
-  - **Full/Feedback scope toggle**: GET returns full state, POST returns Feedback. Rendered view shows category-specific highlights: outcome (blue/SET), new (green/NEW), modified (amber/CHANGED). Feedback scope forces Raw view.
-  - **Parameterized affordances**: one affordance per action type with `parameters` dict — each body placeholder gets `options` (constrained) and optional `labels` (human-readable). Eliminates O(rows × cols) explosion for table workflows.
-  - **Node-centric field ownership**: fields nest under their owning node in YAML; `show_all_fields` for review nodes; "stage" → "node" terminology throughout
-  - Feedback diff uses stable URL-based affordance identity — immune to label changes
-  - Observer recovers last feedback on reconnect; node indicator tracks actual node name
-  - **Resource-oriented endpoints**: each affordance is a literal HTTP instruction — `POST /agent/<id>/<resource>` with only parameters in body. Translation layer maps resources to internal actions. Legacy single-endpoint preserved for backward compatibility.
-  - **1:1 renderer projection**: Rendered view is a verified 1:1 projection of the JSON — every key rendered, nothing hidden, nothing extra. `attempted_action` derived from request body. Execution table rendered with full cell properties (status, display_value, value, available_actions, locked_reason, acceptance.reason). Column choices and rule shown in headers.
-  - **Usability tested**: Blind agent testing scored 4/5 — affordance-driven design is self-documenting. Column type descriptions and structured instructions address the main discoverability gap.
+- Quality Manual browser with working cross-references
+- Initiate Workflow page with decision tree + document creation buttons
+- CR authoring form with all pre-approval sections
+- Template Editor and Workflow Sandbox
+- **Agent Portal** with unified workflow engine:
+  - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions. Replaces 4 former handler modules.
+  - **3 built-in workflows**: Create CR, Create Executable Table, Create Workflow (builder)
+  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response)
+  - **Agent Observer** — 7 pluggable renderers, verified 1:1 JSON projection, forward-compatible with unknown state keys
+  - **Content primitives**: Fields (text/boolean/select/computed), Tables (7 column types, execution engine), Lists (add/edit/remove/reorder/focus)
+  - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards (AND/OR/NOT composites)
+  - **Conditional navigation**: `when` guards on nav entries, `target` on proceed for branching
+  - **Inter-field dependencies**: `dynamic_options` (options depend on another field), `side_effects` (auto-set on condition)
+  - **Feedback model**: POST returns structured diff (outcome/new/modified fields + affordances)
+  - **HATEOAS API**: Resource-oriented endpoints, parameterized affordances
 
-**CR-110** is IN_EXECUTION (v1.1). EI-1–4 Pass. Remaining EIs (5–7) will need to be scoped to reflect the redesign pivot.
+**CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the redesign pivot.
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -43,9 +36,11 @@
 
 **Foundation through Quality Manual** (Feb 1-24, CR-042 through CR-105).
 
-**Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine with hooks, templates, compile. Proved concepts but revealed design limits: meta-workflows create phase confusion, context gap for agent execution, rendering hints leak into data model.
+**Workflow Engine v1** (Mar 3-7, CR-108 through CR-110). CLI-based graph engine. Proved concepts but revealed design limits.
 
-**Workflow Engine v2 — UI-Driven Redesign** (Mar 8 - present). Building a Kneat-like web UI as the primary development artifact. The UI embodies the process knowledge previously scattered across SOPs and YAML workflows. Key principles: layered guidance (canvas/authoring/execution), template enforcement (add but can't delete), filled graph IS the document. Agent Portal sandbox with Full/Feedback response model and resource-oriented HATEOAS API — each affordance is a literal HTTP instruction. Pluggable renderer architecture (7 views) with verified 1:1 JSON projection. Maze demo removed; Observer streamlined. Implementation Plan workflow adds table-based authoring with all 7 column types, acceptance criteria rules, prerequisite gating, sequential execution. Usability-tested with blind agents (4/5).
+**Workflow Engine v2 — UI-Driven Redesign** (Mar 8-12). Built a web UI and Agent Portal sandbox. Proved field-based and table-based workflow patterns. Four separate handler implementations.
+
+**Unified Workflow Engine** (Mar 14). Clean-room rewrite formalizing the patterns discovered in v2. Single runtime replacing 4 handlers. Added lists, conditional navigation, dynamic options, side effects. Complex demo workflow (Incident Response) exercises all features. Comprehensive documentation (ENGINE.md, TAXONOMY.md).
 
 ---
 
@@ -72,24 +67,28 @@
 | TEMPLATE-ADD | v2.0 EFFECTIVE |
 | TEMPLATE-VR | v3.0 EFFECTIVE |
 
-### WFE v1 (Experimental/Provisional — being superseded by v2)
+### WFE v1 (Experimental/Provisional — being superseded)
 
-CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but design is being replaced by UI-driven approach.
+CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design replaced.
 
-### WFE v2 UI (Active Development)
+### WFE v2 — Unified Workflow Engine (Active)
 
 | Component | Description |
 |-----------|-------------|
-| `wfe-ui/app.py` | Flask app — infrastructure (SSE, state persistence, feedback, routing). No workflow logic. |
-| `wfe-ui/cr_handler.py` | CR workflow handler — fields, visibility, affordances, actions, resource routing |
-| `wfe-ui/table_handler.py` | Implementation Plan handler — table construction, all 7 column types, choices/rules/prerequisites, integrated execution |
-| `wfe-ui/execution_handler.py` | Execution workflow handler — wraps PlanEngine for agent-driven EI execution |
-| `wfe-ui/utils.py` | Shared display helpers (`trunc`, `field`) |
-| `wfe-ui/templates/agent_observer.html` | Agent Observer — SSE live view, 7 pluggable renderers, verified 1:1 projection, execution table rendering |
-| `wfe-ui/data/agent_create_cr.yaml` | Declarative CR workflow definition (fields, nodes, visibility) |
-| `wfe-ui/data/agent_create_implementation_plan.yaml` | Implementation Plan workflow definition (nodes, lifecycle, column type catalog with descriptions) |
+| `wfe-ui/runtime/` | Unified workflow engine — interprets YAML definitions, implements handler protocol |
+| `wfe-ui/builder_handler.py` | Create Workflow meta-tool — builds new workflows via structural editing |
+| `wfe-ui/engine/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
+| `wfe-ui/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
+| `wfe-ui/utils.py` | Shared display helpers |
+| `wfe-ui/templates/agent_observer.html` | Agent Observer — 7 renderers, forward-compatible with unknown state keys |
+| `wfe-ui/data/agent_create_cr.yaml` | CR workflow definition |
+| `wfe-ui/data/agent_create_executable_table.yaml` | Table workflow definition (with table + execution components) |
+| `wfe-ui/data/agent_create_workflow.yaml` | Builder workflow definition |
+| `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response) |
+| `wfe-ui/ENGINE.md` | Comprehensive engine reference documentation |
+| `wfe-ui/TAXONOMY.md` | Taxonomy of workflow building blocks |
 | `wfe-ui/templates/base.html` | Layout with sidebar |
-| `wfe-ui/templates/edit_plan.html` | CR plan authoring UI — spreadsheet editor with type picker, choice editor, rule builder, prerequisite picker, execution preview |
+| `wfe-ui/templates/edit_plan.html` | CR plan authoring UI — spreadsheet editor |
 | Placeholder pages | QMS, Workspace, Inbox — ready for content |
 
 ---
@@ -98,8 +97,8 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but desig
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1–4 Pass. UI-driven redesign is within scope — all work in the authorized sandbox repo. |
-| CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold — superseded by engine. |
+| CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1-4 Pass. |
+| CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold. |
 | CR-106 | DRAFT v0.1 | System Governance. Depends on CR-107. On hold. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. VR title bug + SOP-004/TEMPLATE-VR alignment gap. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Candidate for cancellation. |
@@ -111,21 +110,17 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Still functional but desig
 
 ## 5. Forward Plan
 
-### Immediate: WFE v2 UI Development
+### Immediate: Engine Hardening
 
-All focus is on the web UI. Build out the complete document lifecycle visually:
-
-1. **CR authoring flow** — form submission, preview, next steps after "Continue"
-2. **Execution view** — EI table with fill/advance interaction
-3. **Document lifecycle** — review, approval, rejection flows in the UI
-4. **Workspace & Inbox** — wire up to actual QMS state
-5. **Other document types** — INV, VAR, ADD creation flows
-
-The UI will surface what the engine needs to support. Engine primitives will be rebuilt as the UI demands them.
+The unified engine is functionally complete. Next steps:
+1. **Hot reload** — Endpoint to re-discover workflows without server restart
+2. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+3. **Builder enhancement** — Support publishing table-based and list-based workflows from the builder
+4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
 
 ### CR-110 Remaining EIs
 
-CR-110 authorized workflow engine development in the `qms-workflow-engine` submodule. The UI-driven redesign is fully within that scope — same sandbox repo, same objective. EI-5 (RS update), EI-6 (push + pointer), EI-7 (post-exec) remain valid; the RS will reflect v2 when the time comes.
+EI-5 (RS update), EI-6 (push + pointer), EI-7 (post-exec) remain valid. The RS will reflect the unified engine.
 
 ### On Hold: CR-107 / CR-106
 
@@ -144,6 +139,7 @@ Both superseded by the engine. May need cancellation or significant revision.
 | Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 |
 | Delete `.QMS-Docs/` | Trivial | CR-103 |
 | Standardize metadata timestamps to UTC ISO 8601 | Small | Session-2026-02-26-001 |
+| Fix rate limiter silent-drop bug | Small | Session-2026-03-14-003 deviation |
 
 ### Bundleable
 
@@ -166,14 +162,14 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 ## 7. Gaps & Risks
 
-**WFE v2 is greenfield.** The UI exists but has no backend persistence yet. CR authoring form collects data but doesn't save it. The engine primitives that will back the UI haven't been designed yet.
-
 **v1 engine is in limbo.** Functional but being superseded. No clear deprecation plan yet.
 
 **SOPs are being phased out.** The UI will eventually replace SOPs as the authoritative source of process knowledge. During transition, both exist.
 
-**SDLC-WFE-RS needs full rewrite.** v1 requirements don't apply to v2.
+**SDLC-WFE-RS needs full rewrite.** v1 requirements don't apply to the unified engine.
 
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
 **qms-workflow-engine submodule pointer** should be kept current with pushes.
+
+**Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
