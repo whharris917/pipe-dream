@@ -1,6 +1,6 @@
 # Session-2026-03-15-001
 
-## Current State (last updated: all changes verified and committed)
+## Current State (last updated: after commit 2)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** Complete
 - **Blocking on:** Nothing
@@ -16,58 +16,37 @@
 
 ### Create Executable Table Walkthrough
 - Reset workflow state, built table with all 7 column types, executed full lifecycle
-- Exercised: sequential execution, cascade revert, prerequisite gating, acceptance criteria, choice-list, cross-reference (mark_na + initiate_issue), signature, failure blocking, auto-completion
-- Found: proceed from Construction auto-advanced through Review (no gate); execution engine not initialized properly
+- Exercised all advanced features: sequential execution, cascade revert, prerequisite gating, acceptance criteria, choice-list, cross-reference, signature, failure blocking, auto-completion
+- Found: proceed from Construction auto-advanced through Review; execution engine not initialized properly
 
-### Refinement Analysis & Implementation
-- Lead provided 6 refinements via prompt.txt
-- Proposed architectural solutions (general, not band-aids)
-- Lead approved all 6 with corrections:
-  - Issue numbering: per-type counters (VAR-001, ER-001, VAR-002)
-  - Signature amend verb: "re-sign" not "amend"
-  - Hierarchical renderers: format defines its own dimensions
+### Commit 1: Engine Hardening (6 refinements)
+- Node traversal control (pause property)
+- Sequential issue numbering (per-type counters)
+- Cascade revert exemption (cross-refs preserved)
+- Cell action lifecycle (fill/amend/re-sign)
+- Hierarchical renderer selection (format/verbosity/style)
+- Unified cell highlighting (data-completed attribute)
+- Removed Experimental-D renderer
+- All verified via dry-run tests and live integration tests
+- Committed: qms-workflow-engine `b7bff6e`, pipe-dream `aa88d9c`
 
-### 6 Changes Implemented & Verified
+### Commit 2: Blueprint renderer + lifecycle removal
 
-#### 1. Node Traversal Control
-- `pause: bool = True` on NodeDef (schema.py)
-- _proceed() respects pause; _cell_action() auto-advance respects pause
-- Verified: proceed stops at Review; execution complete stays at Execution
+#### Blueprint Renderer
+- Built `wfRenderDefinition()` — dedicated visual renderer for workflow definitions
+- Header with title, ID badge, description
+- Node flow banner derived from node titles (step-dot visualization)
+- Node cards with: title + ID, instruction, fields table (colored type pills), proceed gate, navigation, actions, flags
+- Full color tokens for all 4 Simple variants (Default/Verbose × Light/Dark)
+- Fixed `wfRenderStateProps` call order: instructions now render above blueprint
 
-#### 2. Sequential Issue Numbering
-- `issue_counters` dict on ExecutionState; `next_issue_id(type)` method
-- Per-type sequential: WF-VAR-001, WF-ER-001, WF-VAR-002
-- Verified: first VAR = WF-VAR-001
-
-#### 3. Cascade Revert Exemption
-- `cascade_revert` property on ColumnDef; cross-refs default exempt
-- _cascade_revert() checks `should_cascade_revert` per column
-- Verified: amend Evidence reverts Sig but preserves Issue Ref
-
-#### 4. Cell Action Lifecycle (Fill vs Amend)
-- Empty cells: fill/sign/mark_na/initiate_issue
-- Filled cells: amend (or re-sign for signatures)
-- Validation blocks fill on filled cells with clear error
-- Verified: fill blocked, amend works, re-sign shows for signatures
-
-#### 5. Hierarchical Renderer Selection
-- Renderers declare format/verbosity/style metadata
-- Cascading selector UI (format → verbosity → style)
-- Simple: Default/Verbose × Light/Dark = 4 variants
-- Default verbosity: clean exec table ([BLOCKED]/[LOCKED], no metadata)
-- Verified visually by Lead
-
-#### 6. Unified Cell Highlighting
-- `data-completed="true"` attribute on acted-upon cells
-- CSS targets attribute for green background (Light and Dark)
-- Applies to filled, signed, na, issued, pass statuses
-- Verified visually by Lead
-
-### Files Modified (in qms-workflow-engine submodule)
-- `wfe-ui/engine/types.py` — cascade_revert, issue_counters, issued status
-- `wfe-ui/engine/execution.py` — fill/amend lifecycle, cascade exemption, sequential IDs, re-sign
-- `wfe-ui/runtime/schema.py` — pause on NodeDef
-- `wfe-ui/runtime/actions.py` — pause-aware proceed/advance, amend/re-sign dispatch
-- `wfe-ui/runtime/renderer.py` — amend/re-sign affordance labels
-- `wfe-ui/templates/agent_observer.html` — hierarchical renderers, data-completed highlighting
-- `wfe-ui/app.py` — added verbose renderer IDs to allowed list
+#### Lifecycle Concept Removal
+- **Problem:** Nodes had id, title, AND lifecycle_label; the lifecycle_banner was a separate phase list creating confusing indirection (e.g., banner shows "Design" when at node "node_builder")
+- **Solution:** Derive the progress banner from node titles directly. A node is a node.
+- **renderer.py:** lifecycle/lifecycle_current/lifecycle_completed all derived from node titles
+- **builder_handler.py:** Removed lifecycle node, phase state, phase actions/affordances, lifecycle_label from node CRUD
+- **agent_create_workflow.yaml:** Removed lifecycle node (metadata → node_builder → preview → published)
+- **agent_create_executable_table.yaml:** Removed lifecycle_banner and lifecycle_label
+- **agent_create_cr.yaml:** Removed lifecycle_banner and lifecycle_label
+- **Backward compat:** Schema still parses old fields; custom workflows (Create Deviation, Incident Response) still function
+- Built Bug Report workflow to verify blueprint rendering end-to-end

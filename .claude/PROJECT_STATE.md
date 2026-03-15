@@ -18,9 +18,10 @@
   - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions. Replaces 4 former handler modules.
   - **3 built-in workflows**: Create CR, Create Executable Table, Create Workflow (builder)
   - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response)
-  - **Agent Observer** — 9 renderers with hierarchical selection (format → verbosity → style), forward-compatible with unknown state keys
+  - **Agent Observer** — 8 renderers with hierarchical selection (format → verbosity → style), blueprint renderer for workflow definitions, forward-compatible with unknown state keys
   - **Content primitives**: Fields (text/boolean/select/computed), Tables (7 column types, execution engine), Lists (add/edit/remove/reorder/focus)
   - **Execution engine**: Cell action lifecycle (fill → amend, sign → re-sign), cascade revert exemption (cross-refs preserved), sequential issue numbering (per-type), node pause control
+  - **Simplified node model**: Lifecycle banner derived from node titles (no separate phase list or lifecycle_label indirection)
   - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards (AND/OR/NOT composites)
   - **Conditional navigation**: `when` guards on nav entries, `target` on proceed for branching
   - **Inter-field dependencies**: `dynamic_options` (options depend on another field), `side_effects` (auto-set on condition)
@@ -43,7 +44,7 @@
 
 **Unified Workflow Engine** (Mar 14). Clean-room rewrite formalizing the patterns discovered in v2. Single runtime replacing 4 handlers. Added lists, conditional navigation, dynamic options, side effects. Complex demo workflow (Incident Response) exercises all features. Comprehensive documentation (ENGINE.md, TAXONOMY.md).
 
-**Engine Hardening** (Mar 15). Six architectural refinements from test-run feedback: node pause control, sequential issue numbering, cascade revert exemption, cell action lifecycle (fill/amend/re-sign), hierarchical renderer selection, unified cell highlighting.
+**Engine Hardening** (Mar 15). Six architectural refinements from test-run feedback: node pause control, sequential issue numbering, cascade revert exemption, cell action lifecycle (fill/amend/re-sign), hierarchical renderer selection, unified cell highlighting. Blueprint renderer for workflow definitions. Removed lifecycle_label/lifecycle_banner indirection — banner now derived from node titles.
 
 ---
 
