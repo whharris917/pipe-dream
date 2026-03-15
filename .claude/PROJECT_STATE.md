@@ -46,6 +46,8 @@
 
 **Engine Hardening** (Mar 15). Six architectural refinements from test-run feedback: node pause control, sequential issue numbering, cascade revert exemption, cell action lifecycle (fill/amend/re-sign), hierarchical renderer selection, unified cell highlighting. Blueprint renderer for workflow definitions. Removed lifecycle concept entirely — banner derived from node titles. Deep clean of all vestigial code (legacy unprefixed column types, orphaned CSS).
 
+**Experimental-D Visual Renderer** (Mar 15). New "Experimental - D" renderer format for the Agent Observer. Flowchart-style visualization of workflow definitions: HTML cards with absolute positioning for node content (natural text wrapping), SVG edge layer for connections (forward/back/goto). Post-render height correction ensures edges align with actual card dimensions. Designed with future conditional branching in mind — nodes assigned to grid slots that can spread to multiple columns.
+
 ---
 
 ## 3. What's Built
@@ -84,7 +86,7 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 | `wfe-ui/engine/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
 | `wfe-ui/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
 | `wfe-ui/utils.py` | Shared display helpers |
-| `wfe-ui/templates/agent_observer.html` | Agent Observer — 7 renderers, forward-compatible with unknown state keys |
+| `wfe-ui/templates/agent_observer.html` | Agent Observer — 8 renderers (incl. Experimental-D flowchart), forward-compatible with unknown state keys |
 | `wfe-ui/data/agent_create_cr.yaml` | CR workflow definition |
 | `wfe-ui/data/agent_create_executable_table.yaml` | Table workflow definition (with table + execution components) |
 | `wfe-ui/data/agent_create_workflow.yaml` | Builder workflow definition |
