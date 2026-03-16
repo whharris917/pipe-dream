@@ -49,6 +49,8 @@
 
 **Parallel Execution Primitives** (Mar 15). Three new control-flow primitives: router (automatic conditional branching), fork (parallel branch split), merge (implicit convergence). Complete rewrite of Exp-D renderer to grid-based layout with orthogonal-only edge routing. Builder extended to support authoring all three primitives. Demo workflow (Parallel Investigation) exercises router → fork → merge across three severity paths.
 
+**ELK.js Integration + Banner Redesign** (Mar 15). Integrated ELK.js (Eclipse Layout Kernel) for the lifecycle banner — Sugiyama layered algorithm handles layer assignment, crossing minimization, and coordinate placement automatically. Banner uses horizontal layout with collapsed fork placeholders (branch labels stacked in dashed-border cards). Defined edge visual language: solid green (flow), dashed orange (router), dotted purple (goto), dotted blue (back). Full chart retains hand-rolled grid layout; banner delegates to ELK.
+
 ---
 
 ## 3. What's Built
