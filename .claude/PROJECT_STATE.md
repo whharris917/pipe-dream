@@ -1,12 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-03-15-003 (2026-03-15)*
+*Last updated: Session-2026-03-15-004 (2026-03-15)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Unified Workflow Engine with parallel execution.** The WFE v2 Agent Portal runs on a single formalized runtime interpreting YAML workflow definitions. Now supports three control-flow primitives beyond sequential: **router** (automatic conditional branching), **fork** (parallel paths), and **merge** (convergence). The Exp-D visual renderer produces grid-based flowcharts with orthogonal edge routing.
+**Unified Workflow Engine with full-capability builder.** The WFE v2 Agent Portal runs on a single formalized runtime interpreting YAML workflow definitions. Supports three control-flow primitives beyond sequential: **router** (automatic conditional branching), **fork** (parallel paths), and **merge** (convergence). The **Create Workflow builder** can now author 100% of workflows the engine interprets — no hand-editing of YAML required.
 
 **What's running now:** Flask web app at `http://127.0.0.1:5000` with:
 - Sidebar navigation (Home, QMS, Workspace, Inbox, Templates, Workflow Sandbox, Quality Manual, Agent Portal)
@@ -17,7 +17,7 @@
 - **Agent Portal** with unified workflow engine:
   - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions
   - **3 built-in workflows**: Create CR, Create Executable Table, Create Workflow (builder)
-  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response, Parallel Investigation)
+  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment)
   - **Agent Observer** — 8+ renderers with hierarchical selection, Exp-D flowchart with grid layout
   - **Content primitives**: Fields (text/boolean/select/computed), Tables (7 column types, execution engine), Lists (add/edit/remove/reorder/focus)
   - **Control-flow primitives**: Sequential (proceed), Conditional navigation (when/target), Router (automatic multi-way), Fork (parallel branches), Merge (convergence)
@@ -25,7 +25,7 @@
   - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards, router conditions, fork gates (AND/OR/NOT composites)
   - **Feedback model**: POST returns structured diff (outcome/new/modified fields + affordances)
   - **HATEOAS API**: Resource-oriented endpoints, parameterized affordances
-  - **Builder**: Supports authoring workflows with router, fork, and merge primitives
+  - **Builder**: Full engine parity — 44 actions authoring all primitives (option sets, column types, all field types/features, lists, tables, expression gates, conditional navigation, pause/execution flags)
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the redesign pivot.
 
@@ -50,6 +50,8 @@
 **Parallel Execution Primitives** (Mar 15). Three new control-flow primitives: router (automatic conditional branching), fork (parallel branch split), merge (implicit convergence). Complete rewrite of Exp-D renderer to grid-based layout with orthogonal-only edge routing. Builder extended to support authoring all three primitives. Demo workflow (Parallel Investigation) exercises router → fork → merge across three severity paths.
 
 **ELK.js Integration + Banner Redesign** (Mar 15). Integrated ELK.js (Eclipse Layout Kernel) for the lifecycle banner — Sugiyama layered algorithm handles layer assignment, crossing minimization, and coordinate placement automatically. Banner uses horizontal layout with collapsed fork placeholders (branch labels stacked in dashed-border cards). Defined edge visual language: solid green (flow), dashed orange (router), dotted purple (goto), dotted blue (back). Full chart retains hand-rolled grid layout; banner delegates to ELK.
+
+**Builder Full Engine Parity** (Mar 15). Rewrote `builder_handler.py` to close all gaps between the Create Workflow builder and the runtime engine. 44 actions (was 29): 15 new + 6 modified. Builder now authors option sets, column types, all 4 field types, dynamic options, side effects, computed fields, visible_when, lists with item_schema, tables with column_type_catalog, expression-tree gates, conditional navigation, pause/execution flags. Dogfooded by building and executing a 12-node Comprehensive Change Assessment workflow through the live API.
 
 ---
 
@@ -89,11 +91,11 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 | `wfe-ui/runtime/actions.py` | Action dispatcher — proceed, fork, route, switch_branch, merge |
 | `wfe-ui/runtime/renderer.py` | Page renderer — affordances, fork state, definition serialization |
 | `wfe-ui/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table conditions |
-| `wfe-ui/builder_handler.py` | Create Workflow meta-tool — supports router, fork, merge primitives |
+| `wfe-ui/builder_handler.py` | Create Workflow meta-tool — full engine parity (44 actions) |
 | `wfe-ui/engine/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
 | `wfe-ui/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
 | `wfe-ui/templates/agent_observer.html` | Agent Observer — Exp-D grid flowchart with orthogonal edges |
-| `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation) |
+| `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment) |
 | `wfe-ui/ENGINE.md` | Comprehensive engine reference documentation |
 | `wfe-ui/TAXONOMY.md` | Taxonomy of workflow building blocks |
 
@@ -118,11 +120,12 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 
 ### Immediate
 
-1. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives
-2. **Use builder to create complex workflow** — Dogfood the new primitives via the Create Workflow workflow
-3. **Hot reload** — Endpoint to re-discover workflows without server restart
-4. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-5. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+1. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives + builder expansion
+2. **Banner rendering redesign** — Current ELK.js banner with collapsed forks is a compromise; need a concise representation for complex branching workflows
+3. **Flowchart scoping** — Exp-D full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
+4. **Hot reload** — Endpoint to re-discover workflows without server restart
+5. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+6. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
 
 ### CR-110 Remaining EIs
 
@@ -180,4 +183,8 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
 
-**ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives.
+**ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
+
+**Banner rendering for branching workflows.** No conclusion on how to concisely represent router/fork/merge in the lifecycle banner. ELK.js collapsed forks are a design compromise.
+
+**Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
