@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-15-004 (2026-03-15)*
+*Last updated: Session-2026-03-16-001 (2026-03-16)*
 
 ---
 
@@ -53,6 +53,8 @@
 
 **Builder Full Engine Parity** (Mar 15). Rewrote `builder_handler.py` to close all gaps between the Create Workflow builder and the runtime engine. 44 actions (was 29): 15 new + 6 modified. Builder now authors option sets, column types, all 4 field types, dynamic options, side effects, computed fields, visible_when, lists with item_schema, tables with column_type_catalog, expression-tree gates, conditional navigation, pause/execution flags. Dogfooded by building and executing a 12-node Comprehensive Change Assessment workflow through the live API.
 
+**Spine Model Schematic Renderer** (Mar 16). Designed a canonical representation for workflow topology: three recursive segment types (Step, Gate/OR, Split/AND). Built a canvas-based schematic renderer at `/workshop` using electrical schematic conventions — reference markers connect divergence and convergence points, dotted amber vertical bars for conditional branches, solid blue for parallel forks. Custom layout engine with iterative alignment resolves nested cross-column dependencies. Five example workflows from simple sequential to deeply nested router-inside-fork. Established key structural guarantee: all branches must converge (every workflow bounded by final Close).
+
 ---
 
 ## 3. What's Built
@@ -96,6 +98,7 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 | `wfe-ui/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
 | `wfe-ui/templates/agent_observer.html` | Agent Observer — Exp-D grid flowchart with orthogonal edges |
 | `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment) |
+| `wfe-ui/templates/workshop.html` | Spine model schematic renderer — canvas-based, electrical schematic conventions |
 | `wfe-ui/ENGINE.md` | Comprehensive engine reference documentation |
 | `wfe-ui/TAXONOMY.md` | Taxonomy of workflow building blocks |
 
@@ -120,8 +123,8 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 
 ### Immediate
 
-1. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives + builder expansion
-2. **Banner rendering redesign** — Current ELK.js banner with collapsed forks is a compromise; need a concise representation for complex branching workflows
+1. **Integrate spine schematic into Agent Observer** — Replace ELK.js banner with the canvas-based schematic renderer; add execution state (completed/current/pending) coloring
+2. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives + builder expansion
 3. **Flowchart scoping** — Exp-D full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
 4. **Hot reload** — Endpoint to re-discover workflows without server restart
 5. **Rate limiter fix** — Move before mutation or remove (see deviation report)
@@ -185,6 +188,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
-**Banner rendering for branching workflows.** No conclusion on how to concisely represent router/fork/merge in the lifecycle banner. ELK.js collapsed forks are a design compromise.
+**Banner rendering for branching workflows.** Spine model schematic renderer built and validated at `/workshop`. Needs integration into Agent Observer to replace ELK.js banner.
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
