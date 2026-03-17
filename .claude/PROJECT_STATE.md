@@ -188,6 +188,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
-**Banner rendering for branching workflows.** Spine model schematic renderer built and validated at `/workshop`. Needs integration into Agent Observer to replace ELK.js banner.
+**Banner rendering for branching workflows.** Spine model schematic renderer built at `/workshop`. Ref label anchors are vestigial and need redesign — convergence bars should anchor to node centers, not invisible ref elements. Integration into Agent Observer pending this redesign.
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.

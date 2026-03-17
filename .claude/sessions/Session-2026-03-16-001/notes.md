@@ -1,10 +1,10 @@
 # Session-2026-03-16-001
 
-## Current State (last updated: post-commit)
+## Current State (last updated: commit 022e236)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Session complete
+- **Current task:** Schematic renderer redesign planning
 - **Blocking on:** Nothing
-- **Next:** Polish remaining schematic edge cases, consider integrating into Agent Observer
+- **Next:** Redesign anchor system — replace invisible ref anchors with node-center-based anchoring
 
 ## Progress Log
 
@@ -63,6 +63,17 @@ Replaced CSS/SVG hybrid with a single-canvas renderer after persistent alignment
 - **Continuation lines escape nesting:** Drop to parent depth after branch resolution
 - **Avoid intersection:** Reorder continuation lines to prevent convergence bars crossing content
 
+### Post-Commit Refinements (commits 2b0dd17, 022e236)
+
+1. **Continuation reorder + row sharing** — Post-merge continuation lines moved above routes and share Y with branch-point line (no extra vertical gap)
+2. **Ref labels removed** — Circles with A/B/C/D labels made invisible; vertical bars and visual structure communicate the same information
+3. **Condition labels on divergence bar** — Branch labels (risk=low, Compliance) centered on the vertical bar, saving horizontal space
+4. **Wire stripping** — Post-merge nodes sit directly at convergence point, no connecting wire
+
+### Known Issue: Convergence Bar Alignment
+
+The convergence bar meets post-merge nodes at their left edge, not center. Root cause: the layout system uses invisible zero-width ref anchors (vestigial from the label era) as positioning targets. The convergence bar X is computed from these refs, and nodes are placed after them. A centering post-pass was attempted but is a band-aid — the correct fix is to remove ref anchors entirely and use node centers as the canonical anchor points for bar positioning.
+
 ### Commits
-- Submodule: qms-workflow-engine (workshop route + canvas schematic renderer)
-- Parent: pipe-dream (submodule pointer + session notes + project state)
+- Submodule: qms-workflow-engine `2f9d8f0` (workshop route + canvas schematic renderer), `2b0dd17` (row sharing), `022e236` (ref removal + bar alignment)
+- Parent: pipe-dream `26ffc2a` (submodule pointer + session notes)
