@@ -1,10 +1,10 @@
 # Session-2026-03-16-001
 
-## Current State (last updated: post even-spacing commit)
+## Current State (last updated: end of session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Schematic renderer — feature-complete for workshop
+- **Current task:** Schematic renderer — Y-assignment redesign needed
 - **Blocking on:** Nothing
-- **Next:** Commit 3 of ref removal (cleanup dead ref code), integration into Agent Observer
+- **Next:** Implement Y-assignment fix for sequential branch-points (see plan-y-assignment-redesign.md), then Commit 3 of ref removal (cleanup dead ref code), then integration into Agent Observer
 
 ## Progress Log
 
@@ -89,6 +89,16 @@ Three-phase plan executed:
 4. **Condition label borders** — all pills now have consistent borders
 5. **Even node spacing** — nodes distributed evenly across available span between divergence and convergence points; wires become elastic gaps
 
+### Stress Test: Enterprise Change Assessment
+
+Added a 4-level nesting stress test (router inside fork inside router inside fork, plus sequential fork after router on same spine). Revealed a fundamental limitation:
+
+**Sequential branch-points on the same spine create convergence coupling.** When `reorderContinuations` moves a continuation that contains a branch-point, the two convergence systems fight over the shared line. Moving the branch children along with the continuation creates a feedback loop where each convergence pass inflates the other's convergenceX.
+
+**Root cause:** Y-assignment is purely sequential (array order). `reorderContinuations` patches order post-hoc but can't handle continuations with branch-point children.
+
+**Plan drafted:** `plan-y-assignment-redesign.md` — two options: (1) simple fix: don't row-share continuations with branch-points, (2) full fix: tree-based Y-assignment.
+
 ### Commits
-- Submodule: qms-workflow-engine `2f9d8f0` → `2b0dd17` → `022e236` → `86d8586` → `b718692` → `93090c1` → `df43dfa` → current
-- Parent: pipe-dream `26ffc2a` → `3ba806a` → `6f3a7ed` → `cd9522b` → `fe4cb09` → current
+- Submodule: qms-workflow-engine `2f9d8f0` → `2b0dd17` → `022e236` → `86d8586` → `b718692` → `93090c1` → `df43dfa` → `f95d23e` → `5e6d14c`
+- Parent: pipe-dream `26ffc2a` → `3ba806a` → `6f3a7ed` → `cd9522b` → `fe4cb09` → `9a1ce95` → `ce6fc7d`

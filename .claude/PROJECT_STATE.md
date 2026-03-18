@@ -123,7 +123,8 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 
 ### Immediate
 
-1. **Integrate spine schematic into Agent Observer** — Replace ELK.js banner with the canvas-based schematic renderer; add execution state (completed/current/pending) coloring
+1. **Schematic Y-assignment redesign** — Fix sequential branch-point coupling (see Session-2026-03-16-001/plan-y-assignment-redesign.md)
+2. **Integrate spine schematic into Agent Observer** — Replace ELK.js banner with the canvas-based schematic renderer; add execution state (completed/current/pending) coloring
 2. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives + builder expansion
 3. **Flowchart scoping** — Exp-D full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
 4. **Hot reload** — Endpoint to re-discover workflows without server restart
@@ -188,6 +189,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
-**Banner rendering for branching workflows.** Spine model schematic renderer built at `/workshop` with node-center convergence. Ref elements still present as invisible anchors (Commit 3 cleanup pending). Ready for integration into Agent Observer.
+**Banner rendering for branching workflows.** Spine model schematic renderer built at `/workshop` with node-center convergence, monochrome palette, shape-based semantics (hexagon gates, double-bar forks), even node spacing. Ref elements still present as invisible anchors (Commit 3 cleanup pending). Stress test revealed Y-assignment limitation: sequential branch-points on the same spine create convergence coupling. Plan drafted for tree-based Y-assignment redesign. Integration into Agent Observer pending these fixes.
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
