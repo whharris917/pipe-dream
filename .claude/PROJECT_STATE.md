@@ -53,7 +53,7 @@
 
 **Builder Full Engine Parity** (Mar 15). Rewrote `builder_handler.py` to close all gaps between the Create Workflow builder and the runtime engine. 44 actions (was 29): 15 new + 6 modified. Builder now authors option sets, column types, all 4 field types, dynamic options, side effects, computed fields, visible_when, lists with item_schema, tables with column_type_catalog, expression-tree gates, conditional navigation, pause/execution flags. Dogfooded by building and executing a 12-node Comprehensive Change Assessment workflow through the live API.
 
-**Spine Model Schematic Renderer** (Mar 16). Designed a canonical representation for workflow topology: three recursive segment types (Step, Gate/OR, Split/AND). Built a canvas-based schematic renderer at `/workshop` using electrical schematic conventions — reference markers connect divergence and convergence points, dotted amber vertical bars for conditional branches, solid blue for parallel forks. Custom layout engine with iterative alignment resolves nested cross-column dependencies. Five example workflows from simple sequential to deeply nested router-inside-fork. Established key structural guarantee: all branches must converge (every workflow bounded by final Close).
+**Spine Model Schematic Renderer** (Mar 16). Designed a canonical representation for workflow topology: three recursive segment types (Step, Gate/OR, Split/AND). Built a canvas-based schematic renderer at `/workshop` using electrical schematic conventions. Monochrome palette with shape-based semantics: hexagons for decision gates, double-bar rectangles for parallel forks, rounded pills for steps. Dotted vertical bars for conditional branches, solid for parallel. Iterative layout engine with node-center convergence, per-label convergenceX maps, and even node spacing across branch spans. Five example workflows from simple sequential to deeply nested router-inside-fork. Established key structural guarantee: all branches must converge (every workflow bounded by final Close).
 
 ---
 
@@ -188,6 +188,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
-**Banner rendering for branching workflows.** Spine model schematic renderer built at `/workshop`. Ref label anchors are vestigial and need redesign — convergence bars should anchor to node centers, not invisible ref elements. Integration into Agent Observer pending this redesign.
+**Banner rendering for branching workflows.** Spine model schematic renderer built at `/workshop` with node-center convergence. Ref elements still present as invisible anchors (Commit 3 cleanup pending). Ready for integration into Agent Observer.
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
