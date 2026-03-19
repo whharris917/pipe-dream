@@ -124,7 +124,7 @@ CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design repl
 ### Immediate
 
 1. ~~**Schematic Y-assignment redesign**~~ — DONE (Session-2026-03-18-001)
-2. **Integrate spine schematic into Agent Observer** — Replace ELK.js banner with the canvas-based schematic renderer; add execution state (completed/current/pending) coloring
+2. ~~**Integrate spine schematic into Agent Observer**~~ — DONE (Session-2026-03-18-001). Schematic banner replaces ELK.js. Detailed flowchart uses schematic layout with HTML cards. Variable row heights, execution state coloring.
 2. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives + builder expansion
 3. **Flowchart scoping** — Exp-D full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
 4. **Hot reload** — Endpoint to re-discover workflows without server restart
@@ -189,6 +189,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
-**Banner rendering for branching workflows.** Spine model schematic renderer built at `/workshop` with node-center convergence, monochrome palette, shape-based semantics (hexagon gates, double-bar forks), even node spacing. Y-assignment redesign complete: recursive tree-based assignment with overlapping Y space for sequential branch-points. Ref elements still present as invisible anchors (cleanup pending). Integration into Agent Observer is next.
+**Schematic renderer fully integrated.** Shared module (`static/schematic.js`) drives workshop, lifecycle banner, standalone renderer (exp-e), and Exp-D detailed flowchart. Variable row heights native in the layout engine. Definition-to-spine converter bridges flat YAML definitions to hierarchical spine model. Ref elements still present as invisible anchors (cleanup pending).
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
