@@ -55,6 +55,8 @@
 
 **Spine Model Schematic Renderer** (Mar 16). Designed a canonical representation for workflow topology: three recursive segment types (Step, Gate/OR, Split/AND). Built a canvas-based schematic renderer at `/workshop` using electrical schematic conventions. Monochrome palette with shape-based semantics: hexagons for decision gates, double-bar rectangles for parallel forks, rounded pills for steps. Dotted vertical bars for conditional branches, solid for parallel. Iterative layout engine with node-center convergence, per-label convergenceX maps, and even node spacing across branch spans. Five example workflows from simple sequential to deeply nested router-inside-fork. Established key structural guarantee: all branches must converge (every workflow bounded by final Close).
 
+**Unified HTML-over-Canvas Rendering** (Mar 18). Replaced pure-canvas schematic rendering with `renderHybrid()` — nodes are real HTML divs positioned by the layout engine over a canvas that draws only topology wires/bars. Callers provide a `nodeRenderer(item, status)` callback returning arbitrary HTML. Two built-in renderers: compact pills (banner, standalone, workshop) and rich cards (detailed flowchart). CSS lives in `schematic.js`, injected once on first use. Measurement-first approach: DOM heights and widths measured in hidden container, injected into spine, layout adapts. Implicit sequential proceed targets resolved during definition serialization.
+
 ---
 
 ## 3. What's Built
@@ -189,6 +191,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
-**Schematic renderer fully integrated.** Shared module (`static/schematic.js`) drives workshop, lifecycle banner, standalone renderer (exp-e), and Exp-D detailed flowchart. Variable row heights native in the layout engine. Definition-to-spine converter bridges flat YAML definitions to hierarchical spine model. Ref elements still present as invisible anchors (cleanup pending).
+**Schematic renderer unified.** All four consumers (banner, detailed flowchart, exp-e standalone, workshop) use `renderHybrid()` with HTML nodes over canvas wires. Node CSS lives in `schematic.js` (single source). Purple debug overlay (`::after` on `.sch-node-wrap`) currently active for visual validation — remove when done. Ref elements still present as invisible anchors (cleanup pending).
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
