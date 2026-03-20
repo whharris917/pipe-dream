@@ -1,12 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-03-19-002 (2026-03-19)*
+*Last updated: Session-2026-03-20-002 (2026-03-20)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Unified Workflow Engine with full-capability builder.** The WFE v2 Agent Portal runs on a single formalized runtime interpreting YAML workflow definitions. Supports three control-flow primitives beyond sequential: **router** (automatic conditional branching), **fork** (parallel paths), and **merge** (convergence). The **Create Workflow builder** can now author 100% of workflows the engine interprets — no hand-editing of YAML required.
+**Unified Workflow Engine with external state provider framework.** The WFE v2 Agent Portal runs on a single formalized runtime interpreting YAML workflow definitions. Supports three control-flow primitives beyond sequential: **router** (automatic conditional branching), **fork** (parallel paths), and **merge** (convergence). The **Create Workflow builder** can author 100% of workflows the engine interprets. **External state providers** can now be plugged in — providers conform to the engine's affordance protocol and are referenced declaratively from YAML.
 
 **What's running now:** Flask web app at `http://127.0.0.1:5000` with:
 - Sidebar navigation (Home, QMS, Workspace, Inbox, Templates, Workflow Sandbox, Quality Manual, Agent Portal, Workshop)
@@ -15,18 +15,20 @@
 - CR authoring form with all pre-approval sections
 - Template Editor and Workflow Sandbox
 - **Agent Portal** with unified workflow engine:
-  - **Unified Runtime** (`runtime/`) — single engine interpreting YAML definitions
+  - **Unified Runtime** (`engine/runtime/`) — single engine interpreting YAML definitions
   - **3 built-in workflows**: Create CR, Create Executable Table, Create Workflow (builder)
-  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment)
-  - **Agent Observer** — 4 renderers (Simple light/dark × default/verbose) + 3 experimental + Raw. Simple is the new default (promoted from Experimental-D).
+  - **Custom workflows**: Published to `data/custom_workflows/`, discovered at startup (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test)
+  - **Agent Observer** — 4 renderers (Simple light/dark × default/verbose) + 3 experimental + Raw
   - **Content primitives**: Fields (text/boolean/select/computed), Tables (7 column types, execution engine), Lists (add/edit/remove/reorder/focus)
   - **Control-flow primitives**: Sequential (proceed), Conditional navigation (when/target), Router (automatic multi-way), Fork (parallel branches), Merge (convergence)
   - **Execution engine**: Cell action lifecycle (fill/amend, sign/re-sign), cascade revert exemption, sequential issue numbering, node pause control
-  - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards, router conditions, fork gates (AND/OR/NOT composites)
+  - **Expression language**: Unified gates, visibility, acceptance criteria, navigation guards, router conditions, fork gates, **provider_state** conditions (AND/OR/NOT composites)
+  - **Affordance generation**: Delegated via AffordanceSource protocol — each primitive answers "What is possible?" for itself; node collects and numbers
+  - **External state providers**: ExternalStateProvider protocol (query/get_affordances/execute/evaluate), ProviderRegistry, workflow-level declaration with `$field_ref` bindings, node-level expose/affordances, dot-separated resource URLs (`ext.{provider}.{action}`)
   - **Feedback model**: POST returns structured diff (outcome/new/modified fields + affordances)
   - **HATEOAS API**: Resource-oriented endpoints, parameterized affordances
   - **Builder**: Full engine parity — 44 actions authoring all primitives
-- **Schematic Layout Engine** (`static/schematic.js`):
+- **Schematic Layout Engine** (`app/static/schematic.js`):
   - Unified pipeline: `definitionToSpine → flattenSpine → treeOrderLines → layout → renderHybrid`
   - Content-agnostic: callers provide `nodeRenderer(item, status)` callback returning arbitrary HTML
   - DOM measurement drives layout — nodes expand to fit any content
@@ -34,7 +36,6 @@
   - Interactive collapse/expand: branch-points clickable to hide/show descendants (default on)
   - Auto-collapse: `focusNode` option shows only the path to the current node (used by workflow banner)
   - Gate nodes use inline SVG hexagons; split nodes use CSS border-radius + bars
-  - Collapse-wire: dashed horizontal connector between collapsed branch-point and continuation
 - **Workshop** (`/workshop`): Interactive test harness for spine model rendering with 8+ example workflows
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the redesign pivot.
@@ -59,21 +60,25 @@
 
 **Parallel Execution Primitives** (Mar 15). Three new control-flow primitives: router (automatic conditional branching), fork (parallel branch split), merge (implicit convergence). Complete rewrite of Exp-D renderer to grid-based layout with orthogonal-only edge routing. Builder extended to support authoring all three primitives. Demo workflow (Parallel Investigation) exercises router → fork → merge across three severity paths.
 
-**ELK.js Integration + Banner Redesign** (Mar 15). Integrated ELK.js (Eclipse Layout Kernel) for the lifecycle banner — Sugiyama layered algorithm handles layer assignment, crossing minimization, and coordinate placement automatically. Banner uses horizontal layout with collapsed fork placeholders (branch labels stacked in dashed-border cards). Defined edge visual language: solid green (flow), dashed orange (router), dotted purple (goto), dotted blue (back). Full chart retains hand-rolled grid layout; banner delegates to ELK.
+**ELK.js Integration + Banner Redesign** (Mar 15). Integrated ELK.js for lifecycle banner. Horizontal layout with collapsed fork placeholders. Edge visual language: solid green (flow), dashed orange (router), dotted purple (goto), dotted blue (back).
 
-**Builder Full Engine Parity** (Mar 15). Rewrote `builder_handler.py` to close all gaps between the Create Workflow builder and the runtime engine. 44 actions (was 29): 15 new + 6 modified. Builder now authors option sets, column types, all 4 field types, dynamic options, side effects, computed fields, visible_when, lists with item_schema, tables with column_type_catalog, expression-tree gates, conditional navigation, pause/execution flags. Dogfooded by building and executing a 12-node Comprehensive Change Assessment workflow through the live API.
+**Builder Full Engine Parity** (Mar 15). Rewrote `builder_handler.py` — 44 actions authoring all primitives. Dogfooded via 12-node Comprehensive Change Assessment workflow.
 
-**Spine Model Schematic Renderer** (Mar 16). Designed a canonical representation for workflow topology: three recursive segment types (Step, Gate/OR, Split/AND). Built a canvas-based schematic renderer at `/workshop` using electrical schematic conventions. Monochrome palette with shape-based semantics: hexagons for decision gates, double-bar rectangles for parallel forks, rounded pills for steps. Dotted vertical bars for conditional branches, solid for parallel. Iterative layout engine with node-center convergence, per-label convergenceX maps, and even node spacing across branch spans. Five example workflows from simple sequential to deeply nested router-inside-fork. Established key structural guarantee: all branches must converge (every workflow bounded by final Close).
+**Spine Model Schematic Renderer** (Mar 16). Canonical representation for workflow topology: three recursive segment types (Step, Gate/OR, Split/AND). Canvas-based renderer with electrical schematic conventions.
 
-**Unified HTML-over-Canvas Rendering** (Mar 18). Replaced pure-canvas schematic rendering with `renderHybrid()` — nodes are real HTML divs positioned by the layout engine over a canvas that draws only topology wires/bars. Callers provide a `nodeRenderer(item, status)` callback returning arbitrary HTML. Two built-in renderers: compact pills (banner, standalone, workshop) and rich cards (detailed flowchart). CSS lives in `schematic.js`, injected once on first use. Measurement-first approach: DOM heights and widths measured in hidden container, injected into spine, layout adapts. Implicit sequential proceed targets resolved during definition serialization.
+**Unified HTML-over-Canvas Rendering** (Mar 18). `renderHybrid()` — nodes are real HTML divs over canvas topology wires. Measurement-first approach.
 
-**Schematic Engine Hardening + Interactivity** (Mar 19). Comprehensive audit and refinement of the schematic layout engine. Removed vestigial height heuristics — DOM measurement is the sole source of truth. Replaced CSS clip-path gate hexagons with inline SVG polygons for correct stroke rendering. Fixed measurement/render context mismatch for fixed-width card layouts. Added node handle concept (`handleY`/`handlePx`) so wires attach at configurable points — detailed flowchart wires pass through card headers. Built interactive collapse/expand as an engine service: branch-points are clickable by default, spine pruning + re-render handled internally. Added `focusNode` auto-collapse for workflow banners — only the path to the current node is shown. Promoted Experimental-D to Simple renderer (new default). Removed old Simple and Schematic renderers. Added Workshop to sidebar navigation.
+**Schematic Engine Hardening + Interactivity** (Mar 19). DOM measurement as sole source of truth. Inline SVG gate polygons. Node handles. Interactive collapse/expand. `focusNode` auto-collapse. Promoted Experimental-D to Simple renderer (default).
 
-**Gate Condition Labels on Node Cards** (Mar 19). Fixed lossy gate serialization in `_serialize_definition()` — previously only `field_truthy` conditions were extracted into `requires`, silently dropping `table_has_columns`, `table_has_rows`, `field_equals`, `field_not_null`, and `set_membership`. Added `_gate_labels()` recursive walker that produces human-readable labels for all condition types and composites. OR gates join with ` or ` for semantic clarity. Card renderer now surfaces proceed gate requirements on workflow node cards.
+**Gate Condition Labels on Node Cards** (Mar 19). Fixed lossy gate serialization. `_gate_labels()` recursive walker for all condition types.
 
-**Architecture Formalization** (Mar 19). Distilled and documented the project's core architectural principle: **Lossless, Non-Additive, and Representationally Free**. The engine holds exclusive semantic authority; projections (renderers, API, collaboration UI) hold exclusive representational authority. Nothing omitted, nothing invented, form is free. Wrote three supporting articles: Agent Portal technical exposition, general-purpose workflow platform framing, and deployed platform reference with collaboration mode and multi-executor workflow patterns.
+**Architecture Formalization** (Mar 19). Core principle: **Lossless, Non-Additive, and Representationally Free**.
 
-**Repository Restructure** (Mar 20). Removed v1 CLI engine (`wfe/`, `workflows/`, `templates/`, `compiled/`, `.wfe/`, `db.json`, `pyproject.toml`) — ~5,174 lines deleted. Restructured `wfe-ui/` into `engine/` (runtime, execution, builder, utils) and `app/` (Flask, templates, static). Promoted `data/` and `docs/` to repo root. Added `run.py` entry point. All imports rewired to package-relative paths. Split `agent_observer.html` (3,433 lines) into 7 JS files under `app/static/renderers/` — template reduced to 134-line shell. Removed dead ELK.js integration code and CDN dependency (~275 lines).
+**Repository Restructure** (Mar 20). Removed v1 CLI engine (~5,174 lines). Restructured `wfe-ui/` into `engine/` + `app/`. Split `agent_observer.html` into 7 JS renderer files. Removed dead ELK.js code.
+
+**Documentation Consolidation** (Mar 20). Consolidated three docs into two: README.md (user-facing intro/tutorial) and ENGINE.md (comprehensive technical reference absorbing TAXONOMY.md).
+
+**AffordanceSource Protocol + External State Providers** (Mar 20). Refactored affordance generation from a 7-step monolith into recursive delegation — each primitive (field, list, navigation, proceed, fork, action, table, execution) implements `get_affordances()` and answers "What is possible?" for itself. Built the External State Provider framework on top: providers implement `ExternalStateProvider` protocol (query/get_affordances/execute/evaluate), register at application startup, and are referenced declaratively from workflow YAML. Providers are just another AffordanceSource — no special casing anywhere.
 
 ---
 
@@ -105,19 +110,20 @@
 | Component | Description |
 |-----------|-------------|
 | `engine/runtime/` | Unified workflow engine — interprets YAML definitions, implements handler protocol |
-| `engine/runtime/schema.py` | Dataclasses: NodeDef, FieldDef, RouteDef, BranchDef, ForkDef, etc. |
-| `engine/runtime/actions.py` | Action dispatcher — proceed, fork, route, switch_branch, merge |
-| `engine/runtime/renderer.py` | Page renderer — affordances, fork state, definition serialization |
-| `engine/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table conditions |
+| `engine/runtime/schema.py` | Dataclasses: NodeDef, FieldDef, RouteDef, BranchDef, ForkDef, ProviderDef, ProviderNodeDef, etc. |
+| `engine/runtime/affordances.py` | AffordanceSource protocol — delegated affordance generation (FieldSource, ListSource, NavigationSource, ProceedSource, ForkSource, ActionSource, TableSource, ExecutionSource, ProviderSource) |
+| `engine/runtime/providers.py` | ExternalStateProvider protocol, ProviderRegistry, binding resolution |
+| `engine/runtime/actions.py` | Action dispatcher — proceed, fork, route, switch_branch, merge, provider_action |
+| `engine/runtime/renderer.py` | Page renderer — state building, provider querying, field exposure, definition serialization |
+| `engine/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table/provider_state conditions |
 | `engine/builder.py` | Create Workflow meta-tool — full engine parity (44 actions) |
 | `engine/execution/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
-| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
+| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery, provider registration |
 | `app/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
 | `app/templates/agent_observer.html` | Agent Observer — Simple renderer (promoted from Exp-D) + 3 experimental + Raw |
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
-| `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment) |
+| `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test) |
 | `docs/ENGINE.md` | Comprehensive engine reference documentation |
-| `docs/TAXONOMY.md` | Taxonomy of workflow building blocks |
 
 ---
 
@@ -140,11 +146,11 @@
 
 ### Immediate
 
-1. **ENGINE.md / TAXONOMY.md updates** — Document router, fork, merge primitives + builder expansion
-2. **Flowchart scoping** — Full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
-3. **Hot reload** — Endpoint to re-discover workflows without server restart
-4. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-5. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+1. **Flowchart scoping** — Full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
+2. **Hot reload** — Endpoint to re-discover workflows without server restart
+3. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+5. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
 
 ### CR-110 Remaining EIs
 
@@ -199,7 +205,5 @@ Both superseded by the engine. May need cancellation or significant revision.
 **qms-workflow-engine submodule pointer** should be kept current with pushes.
 
 **Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
-
-**ENGINE.md / TAXONOMY.md are stale.** Need updates to document router, fork, merge primitives + builder expansion.
 
 **Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
