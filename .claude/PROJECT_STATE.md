@@ -73,7 +73,7 @@
 
 **Architecture Formalization** (Mar 19). Distilled and documented the project's core architectural principle: **Lossless, Non-Additive, and Representationally Free**. The engine holds exclusive semantic authority; projections (renderers, API, collaboration UI) hold exclusive representational authority. Nothing omitted, nothing invented, form is free. Wrote three supporting articles: Agent Portal technical exposition, general-purpose workflow platform framing, and deployed platform reference with collaboration mode and multi-executor workflow patterns.
 
-**Repository Restructure** (Mar 20). Removed v1 CLI engine (`wfe/`, `workflows/`, `templates/`, `compiled/`, `.wfe/`, `db.json`, `pyproject.toml`) — ~5,174 lines deleted. Restructured `wfe-ui/` into `engine/` (runtime, execution, builder, utils) and `app/` (Flask, templates, static). Promoted `data/` and `docs/` to repo root. Added `run.py` entry point. All imports rewired to package-relative paths.
+**Repository Restructure** (Mar 20). Removed v1 CLI engine (`wfe/`, `workflows/`, `templates/`, `compiled/`, `.wfe/`, `db.json`, `pyproject.toml`) — ~5,174 lines deleted. Restructured `wfe-ui/` into `engine/` (runtime, execution, builder, utils) and `app/` (Flask, templates, static). Promoted `data/` and `docs/` to repo root. Added `run.py` entry point. All imports rewired to package-relative paths. Split `agent_observer.html` (3,433 lines) into 7 JS files under `app/static/renderers/` — template reduced to 134-line shell. Removed dead ELK.js integration code and CDN dependency (~275 lines).
 
 ---
 

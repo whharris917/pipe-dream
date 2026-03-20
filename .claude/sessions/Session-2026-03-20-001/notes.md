@@ -1,10 +1,10 @@
 # Session-2026-03-20-001
 
-## Current State (last updated: restructure complete)
+## Current State (last updated: renderer split + ELK removal complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current task:** qms-workflow-engine repo cleanup and restructure
 - **Blocking on:** Nothing
-- **Next:** Commit and push submodule changes, update parent pointer
+- **Next:** Per PROJECT_STATE forward plan
 
 ## Progress Log
 
@@ -58,3 +58,23 @@
 - All imports pass: engine.runtime, engine.execution, engine.builder, app.api, app.app
 - Flask smoke test: GET /, /agent, /workshop all return 200
 - User confirmed `python run.py` works
+
+### Renderer Split: agent_observer.html → 7 JS files
+- Extracted all renderer code from `agent_observer.html` (3,433 lines) into `app/static/renderers/`:
+  - `registry.js` (265 lines) — renderer framework, mode toggle, state dispatch
+  - `raw.js` (21 lines) — Raw JSON renderer
+  - `simple-shared.js` (1,343 lines) — shared `wf*` rendering functions, flowchart helpers, banner
+  - `simple.js` (334 lines) — CSS constants + 4 Simple variant registrations
+  - `exp-a.js` (262 lines) — Experimental A (blueprint layout)
+  - `exp-b.js` (222 lines) — Experimental B (card grid)
+  - `exp-c.js` (325 lines) — Experimental C (tree outline)
+- `agent_observer.html` reduced to 134-line thin shell: HTML, Jinja vars, script tags, SSE + boot
+- Jinja variables injected via `window._WFE_ALLOWED_RENDERERS` and `window._WFE_STREAM_URL`
+
+### ELK.js Dead Code Removal
+- Identified ELK.js as completely superseded by schematic engine (renderHybrid) since Mar 18-19
+- `_wfMiniFlowchart` defined but never called — only caller was the legacy banner path
+- Removed from `registry.js`: `_elk`, `_elkBuildGraph`, `_elkLayout` (~90 lines)
+- Removed from `simple-shared.js`: `_wfMiniFlowchart`, `_MB`, `_mbW`, `_mbRenderSvg`, `_mbRenderBannerSvg`, `_mbArrow` (~185 lines)
+- Removed elkjs CDN `<script>` tag from `agent_observer.html` — no more external dependency
+- Fixed stale "legacy ELK-based" comment on `expDRenderDefinition`
