@@ -73,6 +73,8 @@
 
 **Architecture Formalization** (Mar 19). Distilled and documented the project's core architectural principle: **Lossless, Non-Additive, and Representationally Free**. The engine holds exclusive semantic authority; projections (renderers, API, collaboration UI) hold exclusive representational authority. Nothing omitted, nothing invented, form is free. Wrote three supporting articles: Agent Portal technical exposition, general-purpose workflow platform framing, and deployed platform reference with collaboration mode and multi-executor workflow patterns.
 
+**Repository Restructure** (Mar 20). Removed v1 CLI engine (`wfe/`, `workflows/`, `templates/`, `compiled/`, `.wfe/`, `db.json`, `pyproject.toml`) — ~5,174 lines deleted. Restructured `wfe-ui/` into `engine/` (runtime, execution, builder, utils) and `app/` (Flask, templates, static). Promoted `data/` and `docs/` to repo root. Added `run.py` entry point. All imports rewired to package-relative paths.
+
 ---
 
 ## 3. What's Built
@@ -98,28 +100,24 @@
 | TEMPLATE-ADD | v2.0 EFFECTIVE |
 | TEMPLATE-VR | v3.0 EFFECTIVE |
 
-### WFE v1 (Experimental/Provisional — being superseded)
-
-CLI-based graph engine in `qms-workflow-engine/wfe/`. Functional but design replaced.
-
-### WFE v2 — Unified Workflow Engine (Active)
+### Unified Workflow Engine (Active)
 
 | Component | Description |
 |-----------|-------------|
-| `wfe-ui/runtime/` | Unified workflow engine — interprets YAML definitions, implements handler protocol |
-| `wfe-ui/runtime/schema.py` | Dataclasses: NodeDef, FieldDef, RouteDef, BranchDef, ForkDef, etc. |
-| `wfe-ui/runtime/actions.py` | Action dispatcher — proceed, fork, route, switch_branch, merge |
-| `wfe-ui/runtime/renderer.py` | Page renderer — affordances, fork state, definition serialization |
-| `wfe-ui/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table conditions |
-| `wfe-ui/builder_handler.py` | Create Workflow meta-tool — full engine parity (44 actions) |
-| `wfe-ui/engine/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
-| `wfe-ui/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
-| `wfe-ui/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
-| `wfe-ui/templates/agent_observer.html` | Agent Observer — Simple renderer (promoted from Exp-D) + 3 experimental + Raw |
-| `wfe-ui/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
-| `wfe-ui/data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment) |
-| `wfe-ui/ENGINE.md` | Comprehensive engine reference documentation |
-| `wfe-ui/TAXONOMY.md` | Taxonomy of workflow building blocks |
+| `engine/runtime/` | Unified workflow engine — interprets YAML definitions, implements handler protocol |
+| `engine/runtime/schema.py` | Dataclasses: NodeDef, FieldDef, RouteDef, BranchDef, ForkDef, etc. |
+| `engine/runtime/actions.py` | Action dispatcher — proceed, fork, route, switch_branch, merge |
+| `engine/runtime/renderer.py` | Page renderer — affordances, fork state, definition serialization |
+| `engine/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table conditions |
+| `engine/builder.py` | Create Workflow meta-tool — full engine parity (44 actions) |
+| `engine/execution/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
+| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery |
+| `app/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
+| `app/templates/agent_observer.html` | Agent Observer — Simple renderer (promoted from Exp-D) + 3 experimental + Raw |
+| `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
+| `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment) |
+| `docs/ENGINE.md` | Comprehensive engine reference documentation |
+| `docs/TAXONOMY.md` | Taxonomy of workflow building blocks |
 
 ---
 
@@ -191,8 +189,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 ---
 
 ## 7. Gaps & Risks
-
-**v1 engine is in limbo.** Functional but being superseded. No clear deprecation plan yet.
 
 **SOPs are being phased out.** The UI will eventually replace SOPs as the authoritative source of process knowledge. During transition, both exist.
 
