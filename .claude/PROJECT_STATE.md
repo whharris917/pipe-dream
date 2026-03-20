@@ -71,6 +71,8 @@
 
 **Gate Condition Labels on Node Cards** (Mar 19). Fixed lossy gate serialization in `_serialize_definition()` — previously only `field_truthy` conditions were extracted into `requires`, silently dropping `table_has_columns`, `table_has_rows`, `field_equals`, `field_not_null`, and `set_membership`. Added `_gate_labels()` recursive walker that produces human-readable labels for all condition types and composites. OR gates join with ` or ` for semantic clarity. Card renderer now surfaces proceed gate requirements on workflow node cards.
 
+**Architecture Formalization** (Mar 19). Distilled and documented the project's core architectural principle: **Lossless, Non-Additive, and Representationally Free**. The engine holds exclusive semantic authority; projections (renderers, API, collaboration UI) hold exclusive representational authority. Nothing omitted, nothing invented, form is free. Wrote three supporting articles: Agent Portal technical exposition, general-purpose workflow platform framing, and deployed platform reference with collaboration mode and multi-executor workflow patterns.
+
 ---
 
 ## 3. What's Built
