@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-19-001 (2026-03-19)*
+*Last updated: Session-2026-03-19-002 (2026-03-19)*
 
 ---
 
@@ -68,6 +68,8 @@
 **Unified HTML-over-Canvas Rendering** (Mar 18). Replaced pure-canvas schematic rendering with `renderHybrid()` — nodes are real HTML divs positioned by the layout engine over a canvas that draws only topology wires/bars. Callers provide a `nodeRenderer(item, status)` callback returning arbitrary HTML. Two built-in renderers: compact pills (banner, standalone, workshop) and rich cards (detailed flowchart). CSS lives in `schematic.js`, injected once on first use. Measurement-first approach: DOM heights and widths measured in hidden container, injected into spine, layout adapts. Implicit sequential proceed targets resolved during definition serialization.
 
 **Schematic Engine Hardening + Interactivity** (Mar 19). Comprehensive audit and refinement of the schematic layout engine. Removed vestigial height heuristics — DOM measurement is the sole source of truth. Replaced CSS clip-path gate hexagons with inline SVG polygons for correct stroke rendering. Fixed measurement/render context mismatch for fixed-width card layouts. Added node handle concept (`handleY`/`handlePx`) so wires attach at configurable points — detailed flowchart wires pass through card headers. Built interactive collapse/expand as an engine service: branch-points are clickable by default, spine pruning + re-render handled internally. Added `focusNode` auto-collapse for workflow banners — only the path to the current node is shown. Promoted Experimental-D to Simple renderer (new default). Removed old Simple and Schematic renderers. Added Workshop to sidebar navigation.
+
+**Gate Condition Labels on Node Cards** (Mar 19). Fixed lossy gate serialization in `_serialize_definition()` — previously only `field_truthy` conditions were extracted into `requires`, silently dropping `table_has_columns`, `table_has_rows`, `field_equals`, `field_not_null`, and `set_membership`. Added `_gate_labels()` recursive walker that produces human-readable labels for all condition types and composites. OR gates join with ` or ` for semantic clarity. Card renderer now surfaces proceed gate requirements on workflow node cards.
 
 ---
 
