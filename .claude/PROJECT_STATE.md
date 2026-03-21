@@ -84,7 +84,9 @@
 
 **Multi-Instance Workflows + Unified Renderer Architecture** (Mar 21). Transformed the engine from single-instance-per-type to multi-instance. Instance IDs are 8-char hex UUIDs. URLs now `/agent/{type}/{instance_id}/{resource}`. Dashboard redesigned as instance manager. Auto-migration of legacy state files. Established the **Unified Renderer Principle**: every page in the UI is a projection of agent-renderable state. The human HTML view and the Agent Observer are both renderers of the same `{state, instructions, affordances}` canonical representation. The Agent Observer becomes a "view mode" toggle on each page, not a separate URL. Sub-workflow embedding designed (plan saved) — blocked on unified renderer groundwork.
 
-**LNARF Portal Renderer + Audit** (Mar 21). First page-specific renderer: Agent Portal. Human view is now a JS renderer (`portal.js`) projecting the canonical `{state, instructions, affordances}` GET payload — no hardcoded content in the template. Performed full LNARF audit: fixed 5 losses (affordance labels/IDs discarded, `state.page` dropped), 2 additions (`/observe` URL invention, API meta line). Content negotiation on `GET /agent/{wf_id}/{inst_id}` — same URL serves JSON or HTML observer. POST `/new` creates only (no navigation). Renamed `/reset` to `/delete`. Raw toggle replaces Agent View for renderer-driven pages. Agent/human action parity enforced: every button traces to an affordance, every affordance has a button.
+**LNARF Portal Renderer + Audit** (Mar 21). First page-specific renderer: Agent Portal. Human view is now a JS renderer (`portal.js`) projecting the canonical `{state, instructions, affordances}` GET payload — no hardcoded content in the template. Performed full LNARF audit: fixed 5 losses (affordance labels/IDs discarded, `state.page` dropped), 2 additions (`/observe` URL invention, API meta line). Content negotiation on `GET /agent/{wf_id}/{inst_id}` — same URL serves JSON or HTML observer. POST `/new` creates only (no navigation). Renamed `/reset` to `/delete`. Agent/human action parity enforced: every button traces to an affordance, every affordance has a button.
+
+**Observer Simplification + Sidebar Integration** (Mar 21). Retired 3 experimental renderers (exp-a/b/c), dark theme, verbose mode — ~1,100 lines removed. Two renderers remain: Human (light) and Agent (raw JSON). Registry stripped from hierarchical format/verbosity/style system to simple two-mode toggle. Observer page now extends `base.html` — gains sidebar navigation. Purple border delineates renderer territory on both portal and observer pages. Consistent Human/Agent + Full/Feedback toggle buttons across all pages.
 
 ---
 
@@ -127,7 +129,7 @@
 | `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, multi-instance state persistence, discovery, provider registration, content negotiation |
 | `app/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
 | `app/static/renderers/portal.js` | Portal renderer — LNARF-conforming projection of GET /agent payload |
-| `app/templates/agent_observer.html` | Agent Observer — Simple renderer (promoted from Exp-D) + 3 experimental + Raw |
+| `app/templates/agent_observer.html` | Agent Observer — Human renderer + Agent (raw JSON), extends base.html |
 | `app/templates/base.html` | Base template with view toggle (Agent View for SSE pages, Raw for renderer-driven pages) |
 | `app/templates/agent.html` | Agent Portal — payload-driven template, loads portal renderer + Raw toggle |
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
