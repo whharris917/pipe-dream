@@ -137,6 +137,7 @@
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
 | `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test) |
 | `docs/ENGINE.md` | Comprehensive engine reference documentation |
+| `docs/FAITHFUL-PROJECTION.md` | Design document: faithful projection architecture for human-agent parity |
 
 ---
 

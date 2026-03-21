@@ -53,6 +53,10 @@
 - **wfEsc fix:** now escapes `"` as `&quot;` — JSON in title attributes was breaking out of attribute boundary
 - **Boolean display:** true/false rendered as Yes/No matching button labels
 
+### Faithful Projection Design Document
+- Wrote `docs/FAITHFUL-PROJECTION.md` — consolidates the LNARF principle under the name "faithful projection"
+- Covers: canonical payload, affordance contract, page-specific renderers, Human/Agent projections, parity by construction, audit protocol, QMS connection
+
 ### Route changes
 - `GET /agent/{wf_id}/{inst_id}` content-negotiates (JSON or HTML observer)
 - `POST /agent/{wf_id}/new` redirects to `/agent` (not to instance)
