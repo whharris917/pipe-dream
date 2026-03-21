@@ -152,13 +152,11 @@
 
 ### Immediate
 
-1. **Unified Renderer — Agent Portal** — JSON API for portal (`{state, instructions, affordances}`), SSE stream, Agent View toggle button in base template. First page to get the treatment.
-2. **Sub-workflow embedding** — Nest workflows inside workflows (plan in session folder). Depends on multi-instance support (done).
-3. **Flowchart scoping** — Full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
-4. **Hot reload** — Endpoint to re-discover workflows without server restart
-5. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-6. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
-7. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
+1. **Sub-workflow embedding** — Nest workflows inside workflows (plan in session folder). Depends on multi-instance support (done).
+2. **Hot reload** — Endpoint to re-discover workflows without server restart
+3. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+5. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
 
 ### CR-110 Remaining EIs
 
@@ -214,4 +212,4 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
 
-**Exp-D flowchart over-renders.** Full flowchart currently renders for all workflows in the observer. Should only render for Create Workflow; others should access it via a dedicated "View Workflow Diagram" option.
+**Unified Renderer rollout.** Agent View toggle only on portal page so far. Extend to workflow instance pages and other routes.

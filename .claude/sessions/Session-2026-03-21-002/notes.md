@@ -1,8 +1,8 @@
 # Session-2026-03-21-002
 
-## Current State (last updated: unified renderer + agent view toggle complete)
+## Current State (last updated: definition consolidation complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current task:** Complete. Multi-instance + unified renderer + agent view toggle all implemented.
+- **Current task:** Complete. Multi-instance + unified renderer + agent view toggle + definition consolidation.
 - **Blocking on:** Nothing
 - **Next:** Sub-workflow embedding (plan saved to session folder), extend Agent View to more pages
 
@@ -18,6 +18,16 @@
   - Button highlights blue when active
   - Only appears on pages that pass `agent_view_stream` template variable (portal is first)
 - Updated PROJECT_STATE with the Unified Renderer Principle and reordered forward plan
+
+### Definition Consolidation — Token Optimization
+- **Problem:** Every workflow state dict included a full `definition` with per-node detail (fields, instructions, navigation, actions) plus a redundant `lifecycle` list. Token-heavy and redundant.
+- **Solution:** Single source of truth — `definition` key only, with two levels:
+  - **Topology-only** (all runtime workflows): `_serialize_definition_topology()` emits only id, title, proceed targets, router routes, fork branches. Just enough for `definitionToSpine()` to build the schematic banner.
+  - **Full detail** (builder only): `_serialize_definition()` emits everything. Rendered as node-card flowchart via `_isDefinition()` gate — checks for fields/instructions on nodes.
+- **Removed:** `lifecycle`, `lifecycle_current`, `lifecycle_completed` from all state dicts. `node` and `completed_nodes` serve those roles.
+- **Removed:** `_build_lifecycle()` from renderer.py (dead code).
+- **Updated all renderers:** simple-shared.js (banner reads `definition` + `node`/`completed_nodes`), exp-a/b/c.js (derive step lists from `definition.nodes`).
+- **Removed:** `lifecycleToSpine()` from schematic.js (was an intermediate approach, no longer needed).
 
 ## Progress Log
 
