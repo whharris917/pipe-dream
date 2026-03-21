@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-20-002 (2026-03-20)*
+*Last updated: Session-2026-03-21-003 (2026-03-21)*
 
 ---
 
@@ -84,6 +84,8 @@
 
 **Multi-Instance Workflows + Unified Renderer Architecture** (Mar 21). Transformed the engine from single-instance-per-type to multi-instance. Instance IDs are 8-char hex UUIDs. URLs now `/agent/{type}/{instance_id}/{resource}`. Dashboard redesigned as instance manager. Auto-migration of legacy state files. Established the **Unified Renderer Principle**: every page in the UI is a projection of agent-renderable state. The human HTML view and the Agent Observer are both renderers of the same `{state, instructions, affordances}` canonical representation. The Agent Observer becomes a "view mode" toggle on each page, not a separate URL. Sub-workflow embedding designed (plan saved) — blocked on unified renderer groundwork.
 
+**LNARF Portal Renderer + Audit** (Mar 21). First page-specific renderer: Agent Portal. Human view is now a JS renderer (`portal.js`) projecting the canonical `{state, instructions, affordances}` GET payload — no hardcoded content in the template. Performed full LNARF audit: fixed 5 losses (affordance labels/IDs discarded, `state.page` dropped), 2 additions (`/observe` URL invention, API meta line). Content negotiation on `GET /agent/{wf_id}/{inst_id}` — same URL serves JSON or HTML observer. POST `/new` creates only (no navigation). Renamed `/reset` to `/delete`. Raw toggle replaces Agent View for renderer-driven pages. Agent/human action parity enforced: every button traces to an affordance, every affordance has a button.
+
 ---
 
 ## 3. What's Built
@@ -122,11 +124,12 @@
 | `engine/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table/provider_state conditions |
 | `engine/builder.py` | Create Workflow meta-tool — full engine parity (44 actions) |
 | `engine/execution/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
-| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, multi-instance state persistence, discovery, provider registration, portal JSON API |
+| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, multi-instance state persistence, discovery, provider registration, content negotiation |
 | `app/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
+| `app/static/renderers/portal.js` | Portal renderer — LNARF-conforming projection of GET /agent payload |
 | `app/templates/agent_observer.html` | Agent Observer — Simple renderer (promoted from Exp-D) + 3 experimental + Raw |
-| `app/templates/base.html` | Base template with Agent View toggle (opt-in per page via `agent_view_stream`) |
-| `app/templates/agent.html` | Agent Portal dashboard — multi-instance manager with Agent View support |
+| `app/templates/base.html` | Base template with view toggle (Agent View for SSE pages, Raw for renderer-driven pages) |
+| `app/templates/agent.html` | Agent Portal — payload-driven template, loads portal renderer + Raw toggle |
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
 | `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test) |
 | `docs/ENGINE.md` | Comprehensive engine reference documentation |
@@ -152,11 +155,12 @@
 
 ### Immediate
 
-1. **Sub-workflow embedding** — Nest workflows inside workflows (plan in session folder). Depends on multi-instance support (done).
-2. **Hot reload** — Endpoint to re-discover workflows without server restart
-3. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
-5. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
+1. **LNARF renderers for remaining pages** — Extend the portal renderer pattern to workflow instance pages and other routes
+2. **Sub-workflow embedding** — Nest workflows inside workflows (plan in session folder). Depends on multi-instance support (done).
+3. **Hot reload** — Endpoint to re-discover workflows without server restart
+4. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+5. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+6. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
 
 ### CR-110 Remaining EIs
 
@@ -212,4 +216,4 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 **Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
 
-**Unified Renderer rollout.** Agent View toggle only on portal page so far. Extend to workflow instance pages and other routes.
+**LNARF renderer rollout.** Portal page is LNARF-conforming with page-specific renderer. Workflow instance pages and other routes still use hardcoded templates.
