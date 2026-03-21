@@ -80,6 +80,8 @@
 
 **AffordanceSource Protocol + External State Providers** (Mar 20). Refactored affordance generation from a 7-step monolith into recursive delegation — each primitive (field, list, navigation, proceed, fork, action, table, execution) implements `get_affordances()` and answers "What is possible?" for itself. Built the External State Provider framework on top: providers implement `ExternalStateProvider` protocol (query/get_affordances/execute/evaluate), register at application startup, and are referenced declaratively from workflow YAML. Providers are just another AffordanceSource — no special casing anywhere.
 
+**Documentation + Builder Banner Unification + Condition Labels** (Mar 21). Updated ENGINE.md and README.md to document AffordanceSource protocol, external state providers, and provider_state conditions. Unified the Create Workflow builder's rendering with all other workflows — builder now uses the runtime's `_build_lifecycle()` and emits `banner_definition` for its own schematic banner. Auto-collapse now preserves first/last nodes for context. Condition labels on schematic diagrams are highlighted: green for taken router routes and active fork branches.
+
 ---
 
 ## 3. What's Built
