@@ -82,6 +82,8 @@
 
 **Documentation + Builder Banner Unification + Condition Labels** (Mar 21). Updated ENGINE.md and README.md to document AffordanceSource protocol, external state providers, and provider_state conditions. Unified the Create Workflow builder's rendering with all other workflows — builder now uses the runtime's `_build_lifecycle()` and emits `banner_definition` for its own schematic banner. Auto-collapse now preserves first/last nodes for context. Condition labels on schematic diagrams are highlighted: green for taken router routes and active fork branches.
 
+**Multi-Instance Workflows + Unified Renderer Architecture** (Mar 21). Transformed the engine from single-instance-per-type to multi-instance. Instance IDs are 8-char hex UUIDs. URLs now `/agent/{type}/{instance_id}/{resource}`. Dashboard redesigned as instance manager. Auto-migration of legacy state files. Established the **Unified Renderer Principle**: every page in the UI is a projection of agent-renderable state. The human HTML view and the Agent Observer are both renderers of the same `{state, instructions, affordances}` canonical representation. The Agent Observer becomes a "view mode" toggle on each page, not a separate URL. Sub-workflow embedding designed (plan saved) — blocked on unified renderer groundwork.
+
 ---
 
 ## 3. What's Built
@@ -120,9 +122,11 @@
 | `engine/runtime/evaluator.py` | Expression evaluator — AND/OR/NOT composites, field/table/provider_state conditions |
 | `engine/builder.py` | Create Workflow meta-tool — full engine parity (44 actions) |
 | `engine/execution/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
-| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, state persistence, discovery, provider registration |
+| `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, multi-instance state persistence, discovery, provider registration, portal JSON API |
 | `app/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
 | `app/templates/agent_observer.html` | Agent Observer — Simple renderer (promoted from Exp-D) + 3 experimental + Raw |
+| `app/templates/base.html` | Base template with Agent View toggle (opt-in per page via `agent_view_stream`) |
+| `app/templates/agent.html` | Agent Portal dashboard — multi-instance manager with Agent View support |
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
 | `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test) |
 | `docs/ENGINE.md` | Comprehensive engine reference documentation |
@@ -148,11 +152,13 @@
 
 ### Immediate
 
-1. **Flowchart scoping** — Full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
-2. **Hot reload** — Endpoint to re-discover workflows without server restart
-3. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
-5. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
+1. **Unified Renderer — Agent Portal** — JSON API for portal (`{state, instructions, affordances}`), SSE stream, Agent View toggle button in base template. First page to get the treatment.
+2. **Sub-workflow embedding** — Nest workflows inside workflows (plan in session folder). Depends on multi-instance support (done).
+3. **Flowchart scoping** — Full flowchart should only render for Create Workflow; add "View Workflow Diagram" to Agent Portal dashboard for other workflows
+4. **Hot reload** — Endpoint to re-discover workflows without server restart
+5. **Rate limiter fix** — Move before mutation or remove (see deviation report)
+6. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+7. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
 
 ### CR-110 Remaining EIs
 
