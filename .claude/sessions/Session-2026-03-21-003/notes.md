@@ -1,9 +1,9 @@
 # Session-2026-03-21-003
 
-## Current State (last updated: second commit ready)
+## Current State (last updated: third commit ready)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Blocking on:** Nothing
-- **Next:** Extend LNARF renderer pattern to more pages
+- **Next:** Continue LNARF renderer work — more page types, further polish
 
 ## Progress Log
 
@@ -31,15 +31,27 @@
 - Affordance tooltips on hover show full request
 
 ### Observer + Renderer Simplification
-- **Retired:** exp-a, exp-b, exp-c renderers (deleted files), dark theme, verbose mode
-- **Simplified registry.js:** removed hierarchical format/verbosity/style system (~170 lines)
-- **simple.js:** single `light` renderer remains (~300 lines of CSS removed)
-- **_ALL_RENDERERS:** reduced from 8 entries to `["raw", "light"]`
-- **Terminology:** Raw→Agent, Simple→Human. Toggle labels are "Human" and "Agent"
-- **Observer page:** removed static black header bar, replaced with floating Human/Agent + Full/Feedback buttons
-- **Observer extends base.html:** gains sidebar navigation, purple border delineates renderer territory
-- **Full/Feedback:** collapsed from two buttons to a single toggle button
-- **Layout:** purple bounding box pushed down 2.5rem to avoid overlapping floating controls
+- Retired exp-a, exp-b, exp-c renderers (deleted files), dark theme, verbose mode
+- Simplified registry.js: removed hierarchical format/verbosity/style system
+- simple.js: single `light` renderer remains
+- `_ALL_RENDERERS` reduced to `["raw", "light"]`
+- Terminology: Raw→Agent, Simple→Human. Toggle labels are "Human" and "Agent"
+- Observer page: removed static black header bar, floating Human/Agent + Full/Feedback buttons
+- Observer extends base.html: gains sidebar navigation, purple border delineates renderer territory
+- Full/Feedback collapsed to single toggle button
+- Purple bounding box pushed down 2.5rem to avoid overlapping floating controls
+
+### Interactive Affordances in Human Renderer
+- **Field affordances inline:** matched to fields via `"Set {FieldLabel} (current: ...)"` pattern
+- **Three control types:** text input (pre-filled with current value), option buttons (highlighted active), dropdown (for >3 options or long labels)
+- **Standalone action bar:** non-field affordances (Proceed, Go back, restart) render as buttons in an "Actions" card
+- **Old Affordances card removed** — no more flat list mixing field edits with navigation
+- **Error rendering:** feedback with `outcome.error` shows as red banner below node title
+- **Annotated options bug fix:** `_resolve_options` takes `annotate` parameter — affordances emit raw values (`annotate=False`), field state keeps display annotations (`annotate=True` default). Previously affordance sent `"flow-state (SDLC governed)"` but engine validated against `"flow-state"`
+- **Rate limiter removed:** was silently dropping valid actions
+- **Tooltip fixes:** scoped to interactive controls only (not labels/instructions), option buttons show actual POST body, text input tooltips update dynamically on Set button, no placeholder text in empty fields
+- **wfEsc fix:** now escapes `"` as `&quot;` — JSON in title attributes was breaking out of attribute boundary
+- **Boolean display:** true/false rendered as Yes/No matching button labels
 
 ### Route changes
 - `GET /agent/{wf_id}/{inst_id}` content-negotiates (JSON or HTML observer)

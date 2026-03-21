@@ -88,6 +88,8 @@
 
 **Observer Simplification + Sidebar Integration** (Mar 21). Retired 3 experimental renderers (exp-a/b/c), dark theme, verbose mode — ~1,100 lines removed. Two renderers remain: Human (light) and Agent (raw JSON). Registry stripped from hierarchical format/verbosity/style system to simple two-mode toggle. Observer page now extends `base.html` — gains sidebar navigation. Purple border delineates renderer territory on both portal and observer pages. Consistent Human/Agent + Full/Feedback toggle buttons across all pages.
 
+**Interactive Affordances + Error Rendering** (Mar 21). Human renderer now projects affordances as interactive controls: text inputs (pre-filled with current value), option buttons (highlighted active state), and dropdowns (for many/long options). Field affordances render inline with their fields; standalone actions (Proceed, Go back) render in a separate Actions bar. Error feedback renders as a red banner. Fixed annotated options bug — affordance parameters now emit raw values while field state keeps display annotations. Removed rate limiter. Fixed `wfEsc` to escape quotes in HTML attributes.
+
 ---
 
 ## 3. What's Built
@@ -160,9 +162,8 @@
 1. **LNARF renderers for remaining pages** — Extend the portal renderer pattern to workflow instance pages and other routes
 2. **Sub-workflow embedding** — Nest workflows inside workflows (plan in session folder). Depends on multi-instance support (done).
 3. **Hot reload** — Endpoint to re-discover workflows without server restart
-4. **Rate limiter fix** — Move before mutation or remove (see deviation report)
-5. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
-6. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
+4. **SDLC-WFE-RS rewrite** — Requirements spec for v2 engine
+5. **Real provider implementation** — QMS provider bridging qms-cli into the workflow engine
 
 ### CR-110 Remaining EIs
 
@@ -185,7 +186,6 @@ Both superseded by the engine. May need cancellation or significant revision.
 | Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 |
 | Delete `.QMS-Docs/` | Trivial | CR-103 |
 | Standardize metadata timestamps to UTC ISO 8601 | Small | Session-2026-02-26-001 |
-| Fix rate limiter silent-drop bug | Small | Session-2026-03-14-003 deviation |
 
 ### Bundleable
 
@@ -215,7 +215,5 @@ Both superseded by the engine. May need cancellation or significant revision.
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
 **qms-workflow-engine submodule pointer** should be kept current with pushes.
-
-**Rate limiter bug.** `_process_agent_action` rate limit fires after mutation, discarding successful state changes. Documented via Create Deviation workflow.
 
 **LNARF renderer rollout.** Portal page is LNARF-conforming with page-specific renderer. Workflow instance pages and other routes still use hardcoded templates.
