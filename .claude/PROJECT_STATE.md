@@ -92,7 +92,9 @@
 
 **Faithful Projection for All Workflow Pages** (Mar 21). LNARF audit of the Human renderer found 3 violations: (1) affordances with `body.value` that didn't match a field label were silently dropped, (2) parametric affordances (table operations) rendered as plain buttons without parameter inputs, (3) execution cell actions detached from their cells. Fixed affordance classification to match by label pattern against displayed fields. Added parametric affordance form rendering (`wfRenderParamAff`) — operations like Add Column and Set Cell now have interactive inputs for each parameter. Added faithful execution table renderer (`wfRenderExecTableFaithful`) — cell actions (fill, sign, amend, mark N/A, initiate issue) render inline with their target cells. Fixed builder `_summary()` to resolve implicit sequential proceed targets — was breaking `definitionToSpine()` chain traversal (only first node card rendered in flowcharts). Removed proceed bypass on builder preview node (only `/publish` advances now). Aligned builder `render_node()` to emit `state.fields` for metadata and focused-node properties — builder fields now render inline with "Set" controls like all other workflows.
 
-**Agent API Evaluation + Fixes** (Mar 21). End-to-end agent-friendliness test: built a 10-node "Document Review and Approval" workflow (router, fork, computed fields, conditional visibility, 29 fields) via the Create Workflow builder using only curl, then executed an instance through the Major severity fork/merge path. Identified 3 bugs and 6 improvements. Fixed same session: (1) computed field evaluation unified with canonical `evaluate()`, (2) `visible_when` updated to support expression tree format, (3) field value loss verified as non-bug, (4) unrecognized POST parameters now rejected with helpful errors, (5) `/agent/` routes default to JSON, (6) fork auto-activation for `pause: false` nodes, (7) structured validation output on preview, (8) expression syntax factored to response root. **Remaining:** affordance count reduction (tiered disclosure, context-aware suppression, relevance ordering) — payload noise was reduced but the number of affordances per focused node (17) was not.
+**Agent API Evaluation + Fixes** (Mar 21). End-to-end agent-friendliness test: built a 10-node "Document Review and Approval" workflow (router, fork, computed fields, conditional visibility, 29 fields) via the Create Workflow builder using only curl, then executed an instance through the Major severity fork/merge path. Identified 3 bugs and 6 improvements. Fixed same session: (1) computed field evaluation unified with canonical `evaluate()`, (2) `visible_when` updated to support expression tree format, (3) field value loss verified as non-bug, (4) unrecognized POST parameters now rejected with helpful errors, (5) `/agent/` routes default to JSON, (6) fork auto-activation for `pause: false` nodes, (7) structured validation output on preview, (8) expression syntax factored to response root.
+
+**Affordance Framework Redesign** (Mar 22). Design discussion grounded in HATEOAS, affordance theory (Gibson/Norman), and agent-friendly API research. Core concept: the API response is a **visual cortex for the agent** — salience detection, perceptual grouping, gaze management, and pre-action verification free the agent's higher reasoning for domain problems. Designed an **object tree with focus controls**: affordances are anchored to the objects they operate on (fields, table, columns, properties), not in a flat list. Two focus modes: by object (drill into a subtree) and by salience (cross-cutting query for high-priority affordances). Sticky focus, snap-to-next, and an autonomy spectrum (manual → auto-advance). Implementation: unified field-affordance response (each field carries its inline affordance), table affordances decomposed per-column and anchored to `state.table.columns[i].affordances`, labels removed from field/table affordances. Generic `wfRenderAffordances()` ensures faithful projection. Renderer cleanup: deleted dead code (~160 lines), renamed all Exp-D references, merged `simple-shared.js` + `simple.js` into single `human-renderer.js`, renamed `raw.js` → `agent-renderer.js`.
 
 ---
 
@@ -134,8 +136,11 @@
 | `engine/execution/` | Table execution engine — PlanEngine, criteria evaluator, gating, locking |
 | `app/app.py` | Flask infrastructure — routes, SSE, feedback diffing, multi-instance state persistence, discovery, provider registration, content negotiation |
 | `app/static/schematic.js` | Schematic layout engine — spine model, renderHybrid, collapse/expand, focusNode |
+| `app/static/renderers/registry.js` | Renderer registry — two-mode toggle (Agent / Human) |
+| `app/static/renderers/agent-renderer.js` | Agent renderer — formatted JSON |
+| `app/static/renderers/human-renderer.js` | Human renderer — interactive UI with flowchart, inline affordance controls |
 | `app/static/renderers/portal.js` | Portal renderer — LNARF-conforming projection of GET /agent payload |
-| `app/templates/agent_observer.html` | Agent Observer — Human renderer + Agent (raw JSON), extends base.html |
+| `app/templates/agent_observer.html` | Agent Observer — Human + Agent renderers, extends base.html |
 | `app/templates/base.html` | Base template with view toggle (Agent View for SSE pages, Raw for renderer-driven pages) |
 | `app/templates/agent.html` | Agent Portal — payload-driven template, loads portal renderer + Raw toggle |
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
@@ -186,7 +191,10 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 | Item | Effort | Source |
 |------|--------|--------|
-| Builder affordance count reduction: tiered disclosure, context-aware suppression, relevance ordering | Medium | Session-2026-03-21-005 agent eval |
+| Affordance framework: anchor flow/navigation affordances to state objects (proceed, go back, branch switch) | Medium | Session-2026-03-22-001 |
+| Affordance framework: implement focus mechanism (?focus=object, ?focus=salience, sticky focus) | Large | Session-2026-03-22-001 design |
+| AffordanceSource reorganization: regroup by agent experience (data entry / forward / lateral / terminal / external) | Medium | Session-2026-03-22-001 |
+| Builder affordance alignment: unify builder field/affordance rendering with runtime pattern | Medium | Session-2026-03-22-001 |
 | Fix CLI title metadata propagation | Small | CR-091-ADD-001-VAR-001 |
 | Align SOP-004 Section 9C.4 with TEMPLATE-VR | Small | CR-091-ADD-001-VAR-001 |
 | Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 |
