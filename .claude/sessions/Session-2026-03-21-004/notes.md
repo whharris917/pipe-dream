@@ -1,9 +1,9 @@
 # Session-2026-03-21-004
 
-## Current State (last updated: faithful projection implementation)
+## Current State (last updated: builder alignment complete)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Blocking on:** Nothing — awaiting manual test
-- **Next:** Manual test of Create Execution Table workflow through all 4 nodes
+- **Blocking on:** Nothing
+- **Next:** Continue LNARF renderer rollout to remaining pages
 
 ## Progress Log
 
@@ -50,3 +50,16 @@
   - **complete** — 2 fields (next cal due, cert ref), show_all_fields, restart action
 - Published via `/publish` endpoint (not `/proceed` — learned that proceed just advances without writing YAML)
 - Zombie server process on port 5000 caused confusion — workflow was discoverable but old process served stale state
+
+### Builder Proceed Bypass Fix
+- Preview node had an implicit proceed gate allowing `/proceed` to advance to "published" without writing the YAML
+- Removed implicit proceed injection for the preview node
+- Added explicit guard in proceed handler: returns error "Use 'publish' to advance from Preview."
+
+### Builder Alignment to Runtime Field Convention
+- **Problem:** Builder affordances had the right label pattern (`Set {Label} (current: ...)`) but `render_node()` didn't emit `state.fields`, so the Human renderer couldn't match them inline — they fell through to parametric forms with "Submit" buttons instead of "Set"
+- **Fix:** Added `state["fields"]` to builder's `render_node()`:
+  - Metadata node: Workflow ID, Workflow Title, Workflow Description
+  - Node builder (focused): Show All Fields, Pause, Execution, Node Mode
+- Normalized affordance labels — dropped node-scoped `for '{node_id}'` suffixes
+- Changed Node Mode affordance body from `{mode: "<mode>"}` to `{value: "<value>"}` to match `FieldSource` convention; updated handler to accept both
