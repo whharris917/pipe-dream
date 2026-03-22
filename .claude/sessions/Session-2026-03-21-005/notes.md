@@ -1,6 +1,6 @@
 # Session-2026-03-21-005
 
-## Current State (last updated: session complete)
+## Current State (last updated: all fixes implemented and verified)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Blocking on:** Nothing
 - **Next:** Address findings from agent API evaluation
@@ -19,6 +19,24 @@
 - **Key finding: affordance body template IS the schema.** The `body` field specifies the exact JSON keys; I failed to read it and used domain-guessed parameter names instead.
 - Full execution log with 34 observations in `execution-log.md`
 - Overall verdict: highly agent-friendly API with one critical gap (silent failures)
+
+### Implementation — All Findings Resolved
+Implemented all 7 phases from the plan:
+1. **Bug 2.1 FIXED:** `_evaluate_computed()` in renderer.py now delegates to unified `evaluate()` — computed fields with AND/OR/field_equals work correctly
+2. **Bug 2.2 FIXED:** `check_visibility()` in evaluator.py now detects expression tree format and delegates to `evaluate()` — visible_when conditional fields appear correctly
+3. **Bug 2.3 VERIFIED:** Field values persist through branch transitions. Original "data loss" was a curl observation error.
+4. **Content negotiation:** `/agent/` routes now default to JSON when no Accept header specified
+5. **Parameter validation:** All 44 builder actions have parameter whitelists; unrecognized params return clear error messages
+6. **Fork auto-activation:** Runtime auto-activates forks with `pause: false`; builder defaults new fork nodes to `pause: false`
+7. **Validation output:** Preview node returns structured `{status, errors, checks}` dict
+8. **Expression syntax factoring:** `_EXPR_HINT` moved to response-root `expression_syntax` key; affordance params use short "See expression_syntax." references
+
+**Files changed:**
+- `engine/runtime/evaluator.py` — 3-line fix in check_visibility()
+- `engine/runtime/renderer.py` — replaced _evaluate_computed() body, added evaluate import
+- `engine/runtime/actions.py` — added validate_params() helper, fork auto-activation in _enter_node()
+- `engine/builder.py` — parameter whitelist dict, validate_params integration, fork pause default, validation output, expression factoring
+- `app/app.py` — _wants_json() helper, replaced 5 content negotiation checks
 
 ### Runtime Execution of Published Workflow
 - Executed the Major severity path (fork/merge) through to completion
