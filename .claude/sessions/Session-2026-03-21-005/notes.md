@@ -38,6 +38,17 @@ Implemented all 7 phases from the plan:
 - `engine/builder.py` — parameter whitelist dict, validate_params integration, fork pause default, validation output, expression factoring
 - `app/app.py` — _wants_json() helper, replaced 5 content negotiation checks
 
+### Verification + Remaining Work
+- All bug fixes verified via curl against live server (hot reload)
+- Computed field: `All Reviews Acceptable = True` with matching values (was False)
+- visible_when: `Conditions of Approval` appears when triggered (was hidden)
+- Parameter validation: clear error "Unknown parameter(s)... Expected: branch_id, label, nodes"
+- Content negotiation: JSON returned without Accept header
+- **NOT addressed:** affordance COUNT reduction (17 per focused node unchanged)
+  - Tiered disclosure, context-aware suppression, relevance ordering deferred to next session
+  - Payload noise was reduced (expression factoring) but not affordance count
+- Updated PROJECT_STATE backlog: replaced 4 resolved items with 1 remaining item
+
 ### Runtime Execution of Published Workflow
 - Executed the Major severity path (fork/merge) through to completion
 - Runtime log in `runtime-execution-log.md`
