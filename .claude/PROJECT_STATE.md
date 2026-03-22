@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-21-003 (2026-03-21)*
+*Last updated: Session-2026-03-21-005 (2026-03-21)*
 
 ---
 
@@ -91,6 +91,8 @@
 **Interactive Affordances + Error Rendering** (Mar 21). Human renderer now projects affordances as interactive controls: text inputs (pre-filled with current value), option buttons (highlighted active state), and dropdowns (for many/long options). Field affordances render inline with their fields; standalone actions (Proceed, Go back) render in a separate Actions bar. Error feedback renders as a red banner. Fixed annotated options bug — affordance parameters now emit raw values while field state keeps display annotations. Removed rate limiter. Fixed `wfEsc` to escape quotes in HTML attributes.
 
 **Faithful Projection for All Workflow Pages** (Mar 21). LNARF audit of the Human renderer found 3 violations: (1) affordances with `body.value` that didn't match a field label were silently dropped, (2) parametric affordances (table operations) rendered as plain buttons without parameter inputs, (3) execution cell actions detached from their cells. Fixed affordance classification to match by label pattern against displayed fields. Added parametric affordance form rendering (`wfRenderParamAff`) — operations like Add Column and Set Cell now have interactive inputs for each parameter. Added faithful execution table renderer (`wfRenderExecTableFaithful`) — cell actions (fill, sign, amend, mark N/A, initiate issue) render inline with their target cells. Fixed builder `_summary()` to resolve implicit sequential proceed targets — was breaking `definitionToSpine()` chain traversal (only first node card rendered in flowcharts). Removed proceed bypass on builder preview node (only `/publish` advances now). Aligned builder `render_node()` to emit `state.fields` for metadata and focused-node properties — builder fields now render inline with "Set" controls like all other workflows.
+
+**Agent API Evaluation** (Mar 21). End-to-end agent-friendliness test: built a 10-node "Document Review and Approval" workflow (router, fork, computed fields, conditional visibility, 29 fields) via the Create Workflow builder using only curl, then executed an instance through the Major severity fork/merge path. Builder verdict: highly agent-friendly HATEOAS model with one critical gap — silent failures on malformed POST bodies (unrecognized parameters ignored without error). Runtime bugs found: (1) computed field evaluates false when cross-node field_equals should match, (2) visible_when conditional fields never appear, (3) field values lost during fork branch transitions. Full findings in `.claude/sessions/Session-2026-03-21-005/agent-api-findings.md`.
 
 ---
 
@@ -184,6 +186,10 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 | Item | Effort | Source |
 |------|--------|--------|
+| Fix computed field cross-node evaluation (field_equals returns false for matching values) | Medium | Session-2026-03-21-005 agent eval |
+| Fix visible_when conditional fields not appearing at runtime | Medium | Session-2026-03-21-005 agent eval |
+| Fix field value loss during fork branch transitions | Medium | Session-2026-03-21-005 agent eval |
+| Reject unrecognized POST parameters in builder handlers (silent failure) | Small | Session-2026-03-21-005 agent eval |
 | Fix CLI title metadata propagation | Small | CR-091-ADD-001-VAR-001 |
 | Align SOP-004 Section 9C.4 with TEMPLATE-VR | Small | CR-091-ADD-001-VAR-001 |
 | Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 |
