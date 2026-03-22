@@ -90,6 +90,8 @@
 
 **Interactive Affordances + Error Rendering** (Mar 21). Human renderer now projects affordances as interactive controls: text inputs (pre-filled with current value), option buttons (highlighted active state), and dropdowns (for many/long options). Field affordances render inline with their fields; standalone actions (Proceed, Go back) render in a separate Actions bar. Error feedback renders as a red banner. Fixed annotated options bug — affordance parameters now emit raw values while field state keeps display annotations. Removed rate limiter. Fixed `wfEsc` to escape quotes in HTML attributes.
 
+**Faithful Projection for All Workflow Pages** (Mar 21). LNARF audit of the Human renderer found 3 violations: (1) affordances with `body.value` that didn't match a field label were silently dropped, (2) parametric affordances (table operations) rendered as plain buttons without parameter inputs, (3) execution cell actions detached from their cells. Fixed affordance classification to match by label pattern against displayed fields. Added parametric affordance form rendering (`wfRenderParamAff`) — operations like Add Column and Set Cell now have interactive inputs for each parameter. Added faithful execution table renderer (`wfRenderExecTableFaithful`) — cell actions (fill, sign, amend, mark N/A, initiate issue) render inline with their target cells. Fixed builder `_summary()` to resolve implicit sequential proceed targets — was breaking `definitionToSpine()` chain traversal (only first node card rendered in flowcharts).
+
 ---
 
 ## 3. What's Built
@@ -135,7 +137,7 @@
 | `app/templates/base.html` | Base template with view toggle (Agent View for SSE pages, Raw for renderer-driven pages) |
 | `app/templates/agent.html` | Agent Portal — payload-driven template, loads portal renderer + Raw toggle |
 | `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
-| `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test) |
+| `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test, Equipment Calibration) |
 | `docs/ENGINE.md` | Comprehensive engine reference documentation |
 | `docs/FAITHFUL-PROJECTION.md` | Design document: faithful projection architecture for human-agent parity |
 
