@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-21-005 (2026-03-21)*
+*Last updated: Session-2026-03-23-001 (2026-03-23)*
 
 ---
 
@@ -102,6 +102,8 @@
 
 **Renderer Registry + Field Groups** (Mar 22). Brought workshop insight into real engine: `_sectionRenderers` registry dispatches state keys to self-rendering functions; unknown keys show red error box. New `field_groups` element type: multiple fields grouped under a single `POST /set_fields` affordance, reducing agent token cost. `FieldGroupDef` in schema, `FieldGroupSource` in affordances, `_set_fields` action handler. Applied to Create CR initiation node: 2 affordances instead of 4.
 
+**Content Array + Element Type Vocabulary + Element Library** (Mar 23). Unified `fields`/`field_groups` state keys into a single ordered `content` array — element type embedded in each item, rendering order follows YAML definition order exactly. Renamed field types from Python-isms (`boolean`, `select`, `computed`) to semantic names (`toggle`, `choice`, `indicator`) with backward-compat normalization maps; all 11 YAML workflow files updated. Runtime instruction enforcement: `FieldGroupDef` and `NodeDef` raise `ValueError` at load time if `instruction` is missing. Combined all Change Definition fields into a single group. Rebuilt Element Library workshop page from scratch — grounded in actual engine schema and renderer, documenting all 7 element types (text, toggle, choice, indicator, group, table, list) with YAML syntax, state JSON shape, visual previews using `wf-*` CSS classes, and behavioral notes. Deleted three stale workshop pages (API Design, Element Library, Workflow Console).
+
 ---
 
 ## 3. What's Built
@@ -149,7 +151,8 @@
 | `app/templates/agent_observer.html` | Agent Observer — Human + Agent renderers, extends base.html |
 | `app/templates/base.html` | Base template with view toggle (Agent View for SSE pages, Raw for renderer-driven pages) |
 | `app/templates/agent.html` | Agent Portal — payload-driven template, loads portal renderer + Raw toggle |
-| `app/templates/workshop.html` | Interactive workshop — test harness for schematic rendering |
+| `app/templates/workshop.html` | Workshop index — Spine Model + Element Library |
+| `app/templates/workshop_elements.html` | Element Library — reference catalog for all 7 element types (text/toggle/choice/indicator/group/table/list) |
 | `data/custom_workflows/` | Published custom workflows (Create Deviation, Incident Response, Parallel Investigation, Comprehensive Change Assessment, Provider Test, Equipment Calibration) |
 | `docs/ENGINE.md` | Comprehensive engine reference documentation |
 | `docs/FAITHFUL-PROJECTION.md` | Design document: faithful projection architecture for human-agent parity |
