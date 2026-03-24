@@ -67,3 +67,34 @@ actual `wf-*` CSS classes, notes on special behaviors.
 **Files changed:** `app/app.py` (removed 2 routes), `app/templates/workshop.html` (updated card grid)
 
 **File created:** `app/templates/workshop_elements.html`
+
+#### Feature: Element Library — interactive demos + behavioral patterns + tabbed UI
+Extended the Element Library from a static reference into an interactive, comprehensive
+guide. All rendering is live — interacting with an element updates the Agent view JSON.
+
+**Interactive demos added:**
+- All 7 element types now render via actual `human-renderer.js` functions
+- `_wfExecAffordance` overridden globally to intercept `/demo/{id}/{action}` POSTs
+  and update local state, then re-render. No server required.
+
+**5 new sections added:**
+- `visible_when` (behavioral): toggle reveals a hidden field; affordance list updates live
+- `side_effects` (behavioral): setting Category to Security/Data auto-sets compliance flag
+- `proceed` (flow control): gated Proceed button unlocks only when both fields are filled
+- `navigation` (flow control): static reference — go_back, go_to, submit, restart shapes
+- `expressions` (reference): full condition type table, AND/OR/NOT syntax, legacy
+  visible_when format, indicator compute functions, compound gate example
+
+**Agent view panel:**
+- Renamed "State JSON" → "Agent view"
+- Now shows both `content`/`state` AND `affordances` together — what the agent actually
+  receives. Affordances update live as state changes (e.g. hidden fields drop from list,
+  proceed affordance appears when gate passes).
+
+**Tabbed interface:**
+- Only one section visible at a time; TOC buttons are tab switchers
+- Group labels (Element Types / Behavioral Features / Flow Control / Reference) appear
+  in the tab bar above their respective tabs
+- URL hash updates on tab switch; direct links (e.g. `#proceed`) work on load
+
+**File changed:** `app/templates/workshop_elements.html`
