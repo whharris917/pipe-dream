@@ -86,7 +86,19 @@
       "Bash(wfe fill:*)",
       "Bash(wfe:*)",
       "Bash(WFE_SESSION=default python:*)",
-      "Bash(WFE_SESSION=compile-test python:*)"
+      "Bash(WFE_SESSION=compile-test python:*)",
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(sleep:*)",
+      "Bash(find qms-workflow-engine:*)",
+      "Bash(git rm:*)",
+      "Bash(sed -n '2360,2575p' C:/Users/wilha/projects/pipe-dream/qms-workflow-engine/app/templates/agent_observer.html)",
+      "Read(//tmp/**)",
+      "Bash(sed -n '2577,2838p' C:/Users/wilha/projects/pipe-dream/qms-workflow-engine/app/templates/agent_observer.html)",
+      "Bash(sed -n '2840,3061p' C:/Users/wilha/projects/pipe-dream/qms-workflow-engine/app/templates/agent_observer.html)",
+      "Bash(sed -n '3062,3386p' C:/Users/wilha/projects/pipe-dream/qms-workflow-engine/app/templates/agent_observer.html)",
+      "Bash(node:*)",
+      "Bash(xargs sed:*)",
+      "Bash(python -c \":*)"
     ],
     "deny": [
       "Edit(QMS/**)",
