@@ -8,29 +8,39 @@
 
 **Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
 
-**What's running now:** Minimal Flask app at `http://127.0.0.1:5000` with:
-- Portal landing page with links to 3 demo pages
-- **Eigenform architecture** — self-contained, self-rendering units of workflow interaction:
-  - `Eigenform` base class: serialize() → JSON, render() → HTML, handle(body) → mutation
-  - `TextForm`: single free-form string input with SetValueAffordance
-  - `CheckboxForm`: multi-select with per-item checkboxes, single affordance
-  - `TabForm`: tabbed container — only active tab visible in JSON and HTML (faithful projection enforced), tab switching is a persisted affordance
-  - `PageForm`: container eigenform that delegates to nested eigenforms, routes POSTs through containers
-  - `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
-  - `Store`: JSON file persistence scoped by page/eigenform key
-  - **SSE**: `/page/{id}/stream` pushes updates on POST, browser auto-refreshes
-- **Self-sufficiency via bind()**: eigenforms bound to store/scope/url_prefix, then operate with zero-argument serialize()/render()/handle()
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 4 demo pages:
+- **Page 1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
+- **Page 2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
+- **Page 3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
+- **Page 4**: ChainForm wizard (4-step sequential form with auto-advance)
+
+**Eigenform architecture** — self-contained, self-rendering units of workflow interaction:
+- `Eigenform` base class: serialize() → JSON, render() → HTML, handle(body) → mutation
+- `TextForm`: single free-form string. Complete when value is not None.
+- `CheckboxForm`: multi-select with N/A mode. Complete when any item checked or N/A.
+- `TabForm`: tabbed container. Only active tab in JSON/HTML. Complete when all tabs complete.
+- `ChainForm`: sequential wizard. Shows first incomplete step, auto-advances. Complete when all steps complete.
+- `PageForm`: top-level container with Reset Page affordance (recursive clear). Complete when all children complete.
+- `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
+- `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
+- `Store`: JSON file persistence scoped by page/eigenform key, with clear_scope for reset
+
+**Key design patterns:**
+- **Self-sufficiency via bind()**: eigenforms bound to store/scope/url_prefix, zero-argument serialize()/render()/handle()
 - **bind() returns copies**: definitions are templates, bind() produces independent instances via deepcopy
-- **Affordance body templates**: fillable templates with placeholders (`<value>`, `<true | false>`) + per-affordance instructions
+- **Affordance body templates**: fillable placeholders (`<value>`, `<true | false>`) + per-affordance instructions
+- **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
+- **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
+- **Faithful projection**: TabForm/ChainForm hide non-visible eigenforms from both JSON and HTML
 - **RESTful API**: GET /page/{id} → JSON, GET /page/{id}/view → HTML, POST /page/{id}/{key} → mutation + full page JSON
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
-- **HATEOAS**: every eigenform carries affordances with fillable body templates, POST returns full page state
+- **HATEOAS**: every eigenform carries affordances, POST returns full page state
+- **SSE**: `/page/{id}/stream` pushes updates on POST
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = types: TextForm, CheckboxForm, TabForm, PageForm (more to come)
-- **PageForm** = container eigenform that delegates to children
-- **TabForm** = container that shows one child at a time; hidden tabs are absent from serialization
+- **Forms** = types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm
+- Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard)
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
@@ -60,7 +70,7 @@
 
 **Content Model Unification Plan** (Mar 24). Architectural audit of the engine. Developed comprehensive plan: one content array, one element protocol, one dispatch loop. Seven element types. Python-native definitions with JSON persistence. Four-phase implementation plan. Adversarial audit found and resolved 20 issues. YAML elimination decision.
 
-**Clean-Room Rebuild** (Mar 25). Deleted all engine code. Built new foundation from scratch. Established Eigenform architecture: self-contained, self-rendering, self-sufficient units with bind() pattern. TextForm + PageForm + Affordance + Store. LNARF audit passed.
+**Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Six eigenform types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm. Five affordance types. Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances (affordance lists change based on state), faithful projection (hidden eigenforms absent from both JSON and HTML), N/A mode for CheckboxForm, recursive PageForm reset. LNARF audit passed. 4 demo pages exercising all types.
 
 ---
 
@@ -91,14 +101,17 @@
 
 | Component | Description |
 |-----------|-------------|
-| `engine/eigenforms.py` | Eigenform base class + TextForm |
-| `engine/affordances.py` | Affordance base class + SetValueAffordance |
-| `engine/store.py` | JSON file store, scoped by page/key |
-| `engine/page.py` | PageForm — container eigenform with delegation |
+| `engine/eigenforms.py` | Eigenform base, TextForm, CheckboxForm |
+| `engine/affordances.py` | Affordance base, SetValueAffordance, SwitchTabAffordance, SimpleButtonAffordance, CheckboxAffordance |
+| `engine/store.py` | JSON file store, scoped by page/key, clear_scope for reset |
+| `engine/page.py` | PageForm — container with Reset Page + recursive clear |
+| `engine/tab.py` | TabForm — tabbed container, faithful projection |
+| `engine/chain.py` | ChainForm — sequential wizard with auto-advance |
+| `engine/rubiks.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
 | `app/__init__.py` | Flask app factory |
-| `app/routes.py` | Routes: GET JSON, GET /view HTML, POST mutation |
-| `app/templates/` | Minimal templates (index.html, page.html) |
-| `run.py` | Entry point |
+| `app/routes.py` | Routes + SSE streaming, 4 demo pages |
+| `app/templates/` | index.html, page.html (SSE client) |
+| `run.py` | Entry point (threaded=True) |
 
 ---
 
