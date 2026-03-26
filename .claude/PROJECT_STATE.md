@@ -8,22 +8,25 @@
 
 **Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
 
-**What's running now:** Flask app at `http://127.0.0.1:5000` with 5 demo pages:
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 6 demo pages:
 - **Page 1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
 - **Page 2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
 - **Page 3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
 - **Page 4**: ChainForm wizard (4-step sequential form with auto-advance)
 - **Page 5**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
+- **Page 6**: MultiForm + ChoiceForm + CheckboxForm + 2x ListForm (change request form)
 
-**Eigenform architecture** — self-contained, self-rendering units of workflow interaction:
-- `Eigenform` base class: serialize() → JSON, render() → HTML, handle(body) → mutation
-- `TextForm`: single free-form string. Complete when value is not None.
-- `CheckboxForm`: multi-select with N/A mode. Complete when any item checked or N/A.
+**Eigenform architecture** — 10 eigenform types, self-contained and self-rendering:
+- `TextForm`: single free-form string. Complete when value not None.
+- `CheckboxForm`: multi-select with N/A mode. Complete when any checked or N/A.
+- `ChoiceForm`: single selection via radio buttons. Complete when valid option selected.
+- `MultiForm`: groups FieldDescriptors under single affordance. Complete when all fields filled.
+- `ListForm`: ordered list with add/edit/remove/reorder + N/A. Inline up/down arrows and remove buttons. Complete when items > 0 or N/A.
 - `TabForm`: tabbed container. Only active tab in JSON/HTML. Complete when all tabs complete.
-- `ChainForm`: sequential wizard. Shows first incomplete step, auto-advances. Complete when all steps complete.
-- `PageForm`: top-level container with Reset Page affordance (recursive clear). Complete when all children complete.
+- `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
+- `PageForm`: top-level container with Reset Page (recursive clear). Complete when all children complete.
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
-- `TableForm`: dynamic columns + rows with stable IDs (row_0, row_1...). add_row with initial values, set_row for bulk cell updates, rename_column, dual key/label addressing, structured error responses. Agent-reviewed through two iterations.
+- `TableForm`: dynamic columns + rows with stable IDs. Agent-reviewed through two iterations.
 - `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
 - `Store`: JSON file persistence scoped by page/eigenform key, with clear_scope for reset
 
@@ -42,7 +45,8 @@
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm
+- **Forms** = 10 types: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm
+- Data forms: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm
 - Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard)
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
@@ -73,7 +77,7 @@
 
 **Content Model Unification Plan** (Mar 24). Architectural audit of the engine. Developed comprehensive plan: one content array, one element protocol, one dispatch loop. Seven element types. Python-native definitions with JSON persistence. Four-phase implementation plan. Adversarial audit found and resolved 20 issues. YAML elimination decision.
 
-**Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Seven eigenform types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm. Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances, faithful projection, N/A mode, recursive PageForm reset, structured error responses. TableForm agent-reviewed through two iterations — added stable row IDs, set_row, add_row with values, rename_column, dual key/label addressing. 5 demo pages exercising all types.
+**Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Ten eigenform types across data forms (TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm), container forms (PageForm, TabForm, ChainForm), and showcase (RubiksCubeForm). Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances, faithful projection, N/A mode for CheckboxForm/ListForm, recursive PageForm reset, structured error responses. TableForm agent-reviewed through two iterations. MultiForm reduces agent round-trips by grouping fields under a single affordance. ListForm has inline up/down/remove controls. 6 demo pages exercising all types.
 
 ---
 
@@ -112,8 +116,11 @@
 | `engine/chain.py` | ChainForm — sequential wizard with auto-advance |
 | `engine/rubiks.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
 | `engine/table.py` | TableForm — dynamic table with stable row IDs, agent-reviewed |
+| `engine/choice.py` | ChoiceForm — single selection via radio buttons |
+| `engine/listform.py` | ListForm — ordered list with add/edit/remove/reorder + N/A |
+| `engine/multi.py` | MultiForm — groups FieldDescriptors under single affordance |
 | `app/__init__.py` | Flask app factory |
-| `app/routes.py` | Routes + SSE streaming, 5 demo pages |
+| `app/routes.py` | Routes + SSE streaming, 6 demo pages |
 | `app/templates/` | index.html, page.html (SSE client) |
 | `run.py` | Entry point (threaded=True) |
 
