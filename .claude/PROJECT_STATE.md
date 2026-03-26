@@ -16,8 +16,10 @@
 - **page-5**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
 - **page-6**: MultiForm + ChoiceForm + CheckboxForm + 2x ListForm (change request form)
 - **math-test**: TextForm + ChoiceForm + CheckboxForm + TabForm (6-tab scavenger hunt) + ChainForm (4-clue chain)
+- **upgraded-math-test**: All questions wrapped in outer ChainForm (one at a time)
+- **visibility-experiments**: ChoiceForm controlling VisibilityForm children (Simple/Advanced/Expert)
 
-**Eigenform architecture** — 10 eigenform types, self-contained and self-rendering:
+**Eigenform architecture** — 11 eigenform types:
 - `TextForm`: single free-form string. Complete when value not None.
 - `CheckboxForm`: multi-select with N/A mode. Complete when any checked or N/A.
 - `ChoiceForm`: single selection via radio buttons. Complete when valid option selected.
@@ -27,14 +29,16 @@
 - `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
 - `PageForm`: top-level container with Reset Page (recursive clear). Complete when all children complete.
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
-- `TableForm`: dynamic columns + rows with stable IDs. Agent-reviewed through two iterations.
-- `Affordance` base class: pure data/serialization. serialize() includes render_hints for HTML generation.
+- `TableForm`: dynamic columns + rows with stable IDs. Inline editing for cells, headers, add/remove.
+- `VisibilityForm`: wraps a child with conditional visibility. serialize() returns None when invisible.
+- `Affordance` base class: pure data. Describes actions; does NOT render itself. Eigenform accounts for all affordances.
 - `Store`: JSON file persistence, one file per PageForm (data/{scope}.json), scoped by eigenform key within the page
 
 **Key design patterns:**
-- **Self-sufficiency via bind()**: eigenforms bound to store/scope/url_prefix, zero-argument serialize()/render()/handle()
-- **bind() returns copies**: definitions are templates, bind() produces independent instances via deepcopy
+- **children property**: base Eigenform returns []. Containers override. Enables generic traversal — no hasattr checks.
+- **Unified bind()**: base bind() deepcopies + calls _bind_children(). Containers override _bind_children() only.
 - **PageForm is the persistence boundary**: PageForm.bind() takes data_dir and creates its own Store; children inherit it
+- **Batch actions**: handle() checks for {"action": "batch", "actions": [...]}. Subclasses implement _handle().
 - **Affordance body templates**: fillable placeholders (`<value>`, `<true | false>`) + per-affordance instructions
 - **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
@@ -47,13 +51,14 @@
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
-- **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key format: `page-N`.
+- **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = 10 types: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm
+- **Forms** = 11 types: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm, VisibilityForm
 - Data forms: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm
 - Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard)
+- Conditional: VisibilityForm (wraps child, depends on sibling value)
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
@@ -116,17 +121,18 @@
 
 | Component | Description |
 |-----------|-------------|
-| `engine/eigenforms.py` | Eigenform base, TextForm, CheckboxForm |
-| `engine/affordances.py` | Affordance base, SetValueAffordance, SwitchTabAffordance, SimpleButtonAffordance, CheckboxAffordance |
+| `engine/eigenforms.py` | Eigenform base (children, bind, batch, render-from-serialize), TextForm, CheckboxForm |
+| `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses |
 | `engine/store.py` | JSON file store, one file per page, scoped by eigenform key |
-| `engine/page.py` | PageForm — persistence boundary, container, recursive find/clear |
+| `engine/page.py` | PageForm — persistence boundary, find_eigenform, clear_recursive via children |
 | `engine/tab.py` | TabForm — tabbed container, faithful projection |
-| `engine/chain.py` | ChainForm — sequential wizard with auto-advance |
+| `engine/chain.py` | ChainForm — sequential wizard with auto-advance + Continue |
 | `engine/rubiks.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
-| `engine/table.py` | TableForm — dynamic table with stable row IDs, agent-reviewed |
+| `engine/table.py` | TableForm — inline editing, add/remove, batch support |
 | `engine/choice.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list with add/edit/remove/reorder + N/A |
 | `engine/multi.py` | MultiForm — groups FieldDescriptors under single affordance |
+| `engine/visibility.py` | VisibilityForm — conditional visibility based on sibling value |
 | `app/__init__.py` | Flask app factory |
 | `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |

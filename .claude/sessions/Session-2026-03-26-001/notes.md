@@ -1,10 +1,10 @@
 # Session-2026-03-26-001
 
-## Current State (last updated: late session)
+## Current State (last updated: end of session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current EI:** Rebuild continuation
 - **Blocking on:** Nothing
-- **Next:** Awaiting direction from Lead
+- **Next:** Continue audit items (FieldDescriptor→eigenforms, N/A mixin, HTML boilerplate helper)
 
 ## Progress Log
 
@@ -103,3 +103,46 @@
 - _rendered flag and check removed — no longer needed since HTML derives from JSON
 - Affordance is now a pure data/serialization class
 - Verified: all 8 pages render, functional tests pass
+
+### Batch action support
+- Base Eigenform.handle() checks for {"action": "batch", "actions": [...]}
+- Executes each action in sequence, stops on first error
+- Subclasses implement _handle() instead of handle()
+- Demonstrated: 50-state table built in single POST
+
+### TableForm inline controls
+- Column headers editable inline (rename on Enter), with live tooltips
+- "−" remove buttons inline: columns (in header), rows (in ID cell)
+- "+" add buttons inline: column (last header cell, input+button), row (final table row)
+- Set Cell tooltips update live with entered value
+- Rename Column affordance stays in JSON but rendered inline, not as separate control
+- Removed rubik_solve.py (orphaned script)
+- Renamed page-5 to example-table
+
+### Affordance design clarification
+- Affordances are pure data — they do NOT render themselves
+- Eigenform is responsible for accounting for all affordances in render_from_data()
+- render_affordance_html() is a convenience utility, not a requirement
+- mark_rendered() for affordances handled with custom HTML
+- Updated docstrings in affordances.py and eigenforms.py
+
+### Fallback affordance rendering
+- Parameterized affordances (body values starting with "<") render as input forms
+- Buttons and parameterized forms have vertical separation (block display, border-top)
+
+### VisibilityForm
+- New eigenform: wraps a child with a visibility condition
+- depends_on: key of sibling eigenform to watch
+- visible_when: value or list of values that make it visible
+- Invisible: serialize() returns None, render() returns "", is_complete returns True
+- PageForm filters None from children's serialization
+- Visibility Experiments page: Mode (Simple/Advanced/Expert) controls two conditional forms
+
+### Conceptual purity audit + children property
+- Added `children` property to base Eigenform (returns [])
+- Containers override: PageForm→eigenforms, TabForm→tabs.values(), ChainForm→steps, VisibilityForm→[eigenform]
+- Base bind() calls _bind_children(store, url_prefix) — containers override this instead of bind()
+- PageForm keeps custom bind() (creates its own Store)
+- _get_children static method eliminated — find_eigenform uses match.children
+- _clear_recursive reduced from 12 lines of hasattr checks to 3 lines
+- Adding new container types requires zero changes to PageForm
