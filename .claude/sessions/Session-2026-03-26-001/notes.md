@@ -22,3 +22,31 @@
 - Removed global `store` from routes.py, replaced with `DATA_DIR = Path("data")`
 - Deleted orphaned `data/state.json`
 - Verified: cross-page isolation, page reset, import correctness
+
+### Page definitions extracted to pages/ directory
+- Created `pages/` directory with one file per page (`page_1.py` through `page_6.py`)
+- Each file exports an unbound `definition` (a PageForm)
+- `pages/__init__.py` auto-discovers `page_*.py` modules, binds them, returns dict
+- `routes.py` reduced to pure routing — just `from pages import build_pages`
+- Adding a new page = creating a new file, no registry to update
+
+### Content negotiation
+- Unified GET routes: same URL serves JSON (agents) or HTML (browsers) via Accept header
+- Removed `/view` suffix — `GET /pages/page-1` serves both formats
+- Updated index.html links
+
+### Eigenform-level GET routes
+- `GET /pages/{key}/{ef_key}` returns individual eigenform JSON or HTML
+- Added `PageForm.find_eigenform(key)` — recursive lookup traversing all containers
+- Useful for viewing eigenforms hidden by their parent (inactive tabs, non-current chain steps)
+
+### PageForm URL cleanup
+- Reset button now POSTs to `/pages/{key}` instead of `/pages/{key}/{key}` (was duplicating the page key)
+- Page-level POST route added to handle page actions directly
+- Removed self-referencing key check from `handle_action`
+
+### URL scheme overhaul
+- `/page/{id}` → `/pages/{key}` (plural, key-based)
+- Page keys changed from `"1"` to `"page-1"` format
+- `pages/__init__.py` derives key from filename: `page_1.py` → `page-1`
+- Store files now `data/page-1.json`

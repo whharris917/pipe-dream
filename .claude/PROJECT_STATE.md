@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-25-001 (2026-03-25)*
+*Last updated: Session-2026-03-26-001 (2026-03-26)*
 
 ---
 
@@ -39,10 +39,13 @@
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
 - **Faithful projection**: TabForm/ChainForm hide non-visible eigenforms from both JSON and HTML
 - **Structured errors**: error message + failed_action echoed in response, valid alternatives listed
-- **RESTful API**: GET /page/{id} → JSON, GET /page/{id}/view → HTML, POST /page/{id}/{key} → mutation + full page JSON
+- **Content negotiation**: single URL serves JSON (default) or HTML (when Accept: text/html). No `/view` suffix.
+- **Eigenform-level access**: GET /pages/{key}/{ef_key} returns individual eigenform, even if hidden by parent
+- **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{ef_key} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{ef_key} → eigenform mutation
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
-- **SSE**: `/page/{id}/stream` pushes updates on POST
+- **SSE**: `/pages/{key}/stream` pushes updates on POST
+- **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key format: `page-N`.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
@@ -111,8 +114,8 @@
 |-----------|-------------|
 | `engine/eigenforms.py` | Eigenform base, TextForm, CheckboxForm |
 | `engine/affordances.py` | Affordance base, SetValueAffordance, SwitchTabAffordance, SimpleButtonAffordance, CheckboxAffordance |
-| `engine/store.py` | JSON file store, scoped by page/key, clear_scope for reset |
-| `engine/page.py` | PageForm — container with Reset Page + recursive clear |
+| `engine/store.py` | JSON file store, one file per page, scoped by eigenform key |
+| `engine/page.py` | PageForm — persistence boundary, container, recursive find/clear |
 | `engine/tab.py` | TabForm — tabbed container, faithful projection |
 | `engine/chain.py` | ChainForm — sequential wizard with auto-advance |
 | `engine/rubiks.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
@@ -121,8 +124,9 @@
 | `engine/listform.py` | ListForm — ordered list with add/edit/remove/reorder + N/A |
 | `engine/multi.py` | MultiForm — groups FieldDescriptors under single affordance |
 | `app/__init__.py` | Flask app factory |
-| `app/routes.py` | Routes + SSE streaming, 6 demo pages |
+| `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |
+| `pages/` | One file per page (page_1.py–page_6.py), auto-discovered |
 | `run.py` | Entry point (threaded=True) |
 
 ---
