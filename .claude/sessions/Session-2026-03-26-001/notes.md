@@ -1,6 +1,6 @@
 # Session-2026-03-26-001
 
-## Current State (last updated: mid-session)
+## Current State (last updated: late session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current EI:** Rebuild continuation
 - **Blocking on:** Nothing
@@ -83,3 +83,23 @@
 - Eigenform.render() checks all affordances after render_inner() — raises RuntimeError if any missed
 - ChainForm uses `if not aff._rendered` to catch remaining affordances instead of matching by body keys
 - Verified: all 7 pages pass, and intentionally skipped affordances raise clear errors
+
+### Upgraded Math Test page
+- Copied math test, wrapped all questions in outer ChainForm
+- Key: `upgraded-math-test`, one question visible at a time
+- Added API usage guidance to page instruction
+
+### Index page auto-generated
+- index.html now uses Jinja template iterating `pages` list from route
+- New pages appear automatically, no hardcoded links
+
+### Render derives from serialize (critical architectural fix)
+- Problem: serialize() and render() were independent code paths that could drift
+- Fix: render() now calls serialize() first, then render_from_data(data) produces HTML purely from the dict
+- All 10 eigenform types migrated from render_inner(affordances) to render_from_data(data)
+- Affordances enriched with render_hints in serialize() for HTML rendering
+- Standalone render_affordance_html(aff_dict) renders any affordance from its serialized dict
+- All 11 affordance subclasses: render_html() replaced with _render_hints()
+- _rendered flag and check removed — no longer needed since HTML derives from JSON
+- Affordance is now a pure data/serialization class
+- Verified: all 8 pages render, functional tests pass

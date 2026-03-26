@@ -28,7 +28,7 @@
 - `PageForm`: top-level container with Reset Page (recursive clear). Complete when all children complete.
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
 - `TableForm`: dynamic columns + rows with stable IDs. Agent-reviewed through two iterations.
-- `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
+- `Affordance` base class: pure data/serialization. serialize() includes render_hints for HTML generation.
 - `Store`: JSON file persistence, one file per PageForm (data/{scope}.json), scoped by eigenform key within the page
 
 **Key design patterns:**
@@ -43,7 +43,7 @@
 - **Content negotiation**: single URL serves JSON (default) or HTML (when Accept: text/html). No `/view` suffix.
 - **Path-based eigenform access**: URLs mirror containment hierarchy (e.g., `/pages/page-2/tabs/title`)
 - **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{path} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{path} → eigenform mutation
-- **Affordance render tracking**: Affordance.render() sets _rendered flag; Eigenform.render() raises if any affordance was not rendered by render_inner()
+- **Render derives from serialize**: render() calls serialize() then render_from_data(data). HTML is a pure function of the serialized dict. Cannot drift.
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
@@ -84,6 +84,8 @@
 **Content Model Unification Plan** (Mar 24). Architectural audit of the engine. Developed comprehensive plan: one content array, one element protocol, one dispatch loop. Seven element types. Python-native definitions with JSON persistence. Four-phase implementation plan. Adversarial audit found and resolved 20 issues. YAML elimination decision.
 
 **Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Ten eigenform types across data forms (TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm), container forms (PageForm, TabForm, ChainForm), and showcase (RubiksCubeForm). Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances, faithful projection, N/A mode for CheckboxForm/ListForm, recursive PageForm reset, structured error responses. TableForm agent-reviewed through two iterations. MultiForm reduces agent round-trips by grouping fields under a single affordance. ListForm has inline up/down/remove controls. 6 demo pages exercising all types.
+
+**State Isolation + Render-from-Serialize + URL Overhaul** (Mar 26). Per-page state files (one Store per PageForm). Page definitions in `pages/` directory with auto-discovery. Content negotiation (single URL for JSON/HTML). Path-based eigenform URLs mirroring containment hierarchy. Eigenform-level GET routes. Critical architectural fix: render() now derives from serialize() — HTML is a pure function of the serialized dict, cannot drift. Affordances enriched with render_hints; standalone render_affordance_html() replaces per-class render methods. Math Test and Upgraded Math Test pages exercising nested containers (ChainForm wrapping TabForm wrapping eigenforms). Auto-generated index page. 8 pages total.
 
 ---
 
