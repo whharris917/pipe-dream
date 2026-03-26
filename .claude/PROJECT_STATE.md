@@ -13,19 +13,24 @@
 - **Eigenform architecture** — self-contained, self-rendering units of workflow interaction:
   - `Eigenform` base class: serialize() → JSON, render() → HTML, handle(body) → mutation
   - `TextForm`: single free-form string input with SetValueAffordance
-  - `PageForm`: eigenform that contains and delegates to nested eigenforms
+  - `CheckboxForm`: multi-select with per-item checkboxes, single affordance
+  - `TabForm`: tabbed container — only active tab visible in JSON and HTML (faithful projection enforced), tab switching is a persisted affordance
+  - `PageForm`: container eigenform that delegates to nested eigenforms, routes POSTs through containers
   - `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
   - `Store`: JSON file persistence scoped by page/eigenform key
+  - **SSE**: `/page/{id}/stream` pushes updates on POST, browser auto-refreshes
 - **Self-sufficiency via bind()**: eigenforms bound to store/scope/url_prefix, then operate with zero-argument serialize()/render()/handle()
 - **bind() returns copies**: definitions are templates, bind() produces independent instances via deepcopy
+- **Affordance body templates**: fillable templates with placeholders (`<value>`, `<true | false>`) + per-affordance instructions
 - **RESTful API**: GET /page/{id} → JSON, GET /page/{id}/view → HTML, POST /page/{id}/{key} → mutation + full page JSON
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
-- **HATEOAS**: every eigenform carries affordances with explicit parameters, POST returns full page state
+- **HATEOAS**: every eigenform carries affordances with fillable body templates, POST returns full page state
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = types: TextForm, BooleanForm, ChoiceForm, DisplayForm, MultiForm, TableForm, ListForm
+- **Forms** = types: TextForm, CheckboxForm, TabForm, PageForm (more to come)
 - **PageForm** = container eigenform that delegates to children
+- **TabForm** = container that shows one child at a time; hidden tabs are absent from serialization
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
