@@ -8,13 +8,14 @@
 
 **Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
 
-**What's running now:** Flask app at `http://127.0.0.1:5000` with 6 demo pages:
-- **Page 1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
-- **Page 2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
-- **Page 3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
-- **Page 4**: ChainForm wizard (4-step sequential form with auto-advance)
-- **Page 5**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
-- **Page 6**: MultiForm + ChoiceForm + CheckboxForm + 2x ListForm (change request form)
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 7 pages:
+- **page-1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
+- **page-2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
+- **page-3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
+- **page-4**: ChainForm wizard (4-step sequential form with auto-advance)
+- **page-5**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
+- **page-6**: MultiForm + ChoiceForm + CheckboxForm + 2x ListForm (change request form)
+- **math-test**: TextForm + ChoiceForm + CheckboxForm + TabForm (6-tab scavenger hunt) + ChainForm (4-clue chain)
 
 **Eigenform architecture** — 10 eigenform types, self-contained and self-rendering:
 - `TextForm`: single free-form string. Complete when value not None.
@@ -40,8 +41,9 @@
 - **Faithful projection**: TabForm/ChainForm hide non-visible eigenforms from both JSON and HTML
 - **Structured errors**: error message + failed_action echoed in response, valid alternatives listed
 - **Content negotiation**: single URL serves JSON (default) or HTML (when Accept: text/html). No `/view` suffix.
-- **Eigenform-level access**: GET /pages/{key}/{ef_key} returns individual eigenform, even if hidden by parent
-- **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{ef_key} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{ef_key} → eigenform mutation
+- **Path-based eigenform access**: URLs mirror containment hierarchy (e.g., `/pages/page-2/tabs/title`)
+- **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{path} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{path} → eigenform mutation
+- **Affordance render tracking**: Affordance.render() sets _rendered flag; Eigenform.render() raises if any affordance was not rendered by render_inner()
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
@@ -126,7 +128,7 @@
 | `app/__init__.py` | Flask app factory |
 | `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |
-| `pages/` | One file per page (page_1.py–page_6.py), auto-discovered |
+| `pages/` | One file per page, auto-discovered. Key from definition, not filename. |
 | `run.py` | Entry point (threaded=True) |
 
 ---

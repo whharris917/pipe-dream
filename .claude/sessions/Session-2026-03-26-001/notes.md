@@ -1,6 +1,6 @@
 # Session-2026-03-26-001
 
-## Current State (last updated: session start)
+## Current State (last updated: mid-session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
 - **Current EI:** Rebuild continuation
 - **Blocking on:** Nothing
@@ -50,3 +50,36 @@
 - Page keys changed from `"1"` to `"page-1"` format
 - `pages/__init__.py` derives key from filename: `page_1.py` → `page-1`
 - Store files now `data/page-1.json`
+
+### Path-based eigenform URLs
+- URLs now mirror containment hierarchy: `/pages/page-2/tabs/title` instead of `/pages/page-2/title`
+- Containers (TabForm, ChainForm) pass nested url_prefix to children during bind()
+- Route changed to `<path:path>` catch-all
+- PageForm.find_eigenform() walks path segments through hierarchy
+- PageForm.handle_action() simplified — uses find_eigenform() + handle() directly
+
+### Page registry: key from definition, not filename
+- `pages/__init__.py` now discovers all .py files (not just page_*.py)
+- Key comes from `definition.key`, filename is independent
+- Created `math_test.py` with key `math-test` to demonstrate
+
+### Math Test page (pages/math_test.py)
+- Q1: TextForm (free text), Q2: ChoiceForm (radio), Q3: CheckboxForm (select all)
+- Q4: TabForm scavenger hunt — 6 tabs with cross-referencing instructions
+- Q5: ChainForm clue chain — each answer feeds the next
+
+### ChainForm: Continue button
+- Bug: jumping back to a completed step left you stuck (no way to resume)
+- Fix: added "Continue" affordance when viewing a completed step with explicit focus
+- Clears focus, lets auto-advance resume
+
+### TabForm: label rendering
+- TabForm.render_inner() was skipping label/instruction heading
+- Fixed to render `<h3>` and instruction like other eigenforms
+
+### Affordance render tracking
+- Affordance.render() now sets `_rendered` flag, delegates to render_html()
+- All affordance subclasses override render_html() instead of render()
+- Eigenform.render() checks all affordances after render_inner() — raises RuntimeError if any missed
+- ChainForm uses `if not aff._rendered` to catch remaining affordances instead of matching by body keys
+- Verified: all 7 pages pass, and intentionally skipped affordances raise clear errors
