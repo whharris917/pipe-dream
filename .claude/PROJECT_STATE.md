@@ -28,11 +28,12 @@
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
 - `TableForm`: dynamic columns + rows with stable IDs. Agent-reviewed through two iterations.
 - `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
-- `Store`: JSON file persistence scoped by page/eigenform key, with clear_scope for reset
+- `Store`: JSON file persistence, one file per PageForm (data/{scope}.json), scoped by eigenform key within the page
 
 **Key design patterns:**
 - **Self-sufficiency via bind()**: eigenforms bound to store/scope/url_prefix, zero-argument serialize()/render()/handle()
 - **bind() returns copies**: definitions are templates, bind() produces independent instances via deepcopy
+- **PageForm is the persistence boundary**: PageForm.bind() takes data_dir and creates its own Store; children inherit it
 - **Affordance body templates**: fillable placeholders (`<value>`, `<true | false>`) + per-affordance instructions
 - **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
