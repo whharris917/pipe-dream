@@ -8,11 +8,12 @@
 
 **Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
 
-**What's running now:** Flask app at `http://127.0.0.1:5000` with 4 demo pages:
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 5 demo pages:
 - **Page 1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
 - **Page 2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
 - **Page 3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
 - **Page 4**: ChainForm wizard (4-step sequential form with auto-advance)
+- **Page 5**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
 
 **Eigenform architecture** — self-contained, self-rendering units of workflow interaction:
 - `Eigenform` base class: serialize() → JSON, render() → HTML, handle(body) → mutation
@@ -22,6 +23,7 @@
 - `ChainForm`: sequential wizard. Shows first incomplete step, auto-advances. Complete when all steps complete.
 - `PageForm`: top-level container with Reset Page affordance (recursive clear). Complete when all children complete.
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
+- `TableForm`: dynamic columns + rows with stable IDs (row_0, row_1...). add_row with initial values, set_row for bulk cell updates, rename_column, dual key/label addressing, structured error responses. Agent-reviewed through two iterations.
 - `Affordance` base class: serialize() → JSON, render() → interactive HTML (NotImplementedError enforced)
 - `Store`: JSON file persistence scoped by page/eigenform key, with clear_scope for reset
 
@@ -32,6 +34,7 @@
 - **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
 - **Faithful projection**: TabForm/ChainForm hide non-visible eigenforms from both JSON and HTML
+- **Structured errors**: error message + failed_action echoed in response, valid alternatives listed
 - **RESTful API**: GET /page/{id} → JSON, GET /page/{id}/view → HTML, POST /page/{id}/{key} → mutation + full page JSON
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
@@ -39,7 +42,7 @@
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm
+- **Forms** = types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm
 - Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard)
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
@@ -70,7 +73,7 @@
 
 **Content Model Unification Plan** (Mar 24). Architectural audit of the engine. Developed comprehensive plan: one content array, one element protocol, one dispatch loop. Seven element types. Python-native definitions with JSON persistence. Four-phase implementation plan. Adversarial audit found and resolved 20 issues. YAML elimination decision.
 
-**Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Six eigenform types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm. Five affordance types. Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances (affordance lists change based on state), faithful projection (hidden eigenforms absent from both JSON and HTML), N/A mode for CheckboxForm, recursive PageForm reset. LNARF audit passed. 4 demo pages exercising all types.
+**Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Seven eigenform types: TextForm, CheckboxForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm. Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances, faithful projection, N/A mode, recursive PageForm reset, structured error responses. TableForm agent-reviewed through two iterations — added stable row IDs, set_row, add_row with values, rename_column, dual key/label addressing. 5 demo pages exercising all types.
 
 ---
 
@@ -108,8 +111,9 @@
 | `engine/tab.py` | TabForm — tabbed container, faithful projection |
 | `engine/chain.py` | ChainForm — sequential wizard with auto-advance |
 | `engine/rubiks.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
+| `engine/table.py` | TableForm — dynamic table with stable row IDs, agent-reviewed |
 | `app/__init__.py` | Flask app factory |
-| `app/routes.py` | Routes + SSE streaming, 4 demo pages |
+| `app/routes.py` | Routes + SSE streaming, 5 demo pages |
 | `app/templates/` | index.html, page.html (SSE client) |
 | `run.py` | Entry point (threaded=True) |
 
