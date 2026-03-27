@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-26-001 (2026-03-26)*
+*Last updated: Session-2026-03-26-002 (2026-03-26)*
 
 ---
 
@@ -8,41 +8,61 @@
 
 **Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
 
-**What's running now:** Flask app at `http://127.0.0.1:5000` with 7 pages:
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 11 pages:
 - **page-1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
 - **page-2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
 - **page-3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
 - **page-4**: ChainForm wizard (4-step sequential form with auto-advance)
-- **page-5**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
+- **example-table**: TableForm (dynamic columns, stable row IDs, agent-reviewed API)
 - **page-6**: MultiForm + ChoiceForm + CheckboxForm + 2x ListForm (change request form)
 - **math-test**: TextForm + ChoiceForm + CheckboxForm + TabForm (6-tab scavenger hunt) + ChainForm (4-clue chain)
 - **upgraded-math-test**: All questions wrapped in outer ChainForm (one at a time)
 - **visibility-experiments**: ChoiceForm controlling VisibilityForm children (Simple/Advanced/Expert)
+- **quiz-portal**: 3 quizzes (Geography/Science/History) in nested TabForms, ScoreForm grading per quiz
+- **vendor-assessment**: Vendor Qualification Assessment composing all 23 eigenform types
 
-**Eigenform architecture** — 11 eigenform types:
+**Eigenform architecture** — 23 eigenform types:
+
+Data forms:
 - `TextForm`: single free-form string. Complete when value not None.
 - `CheckboxForm`: multi-select with N/A mode. Complete when any checked or N/A.
 - `ChoiceForm`: single selection via radio buttons. Complete when valid option selected.
 - `MultiForm`: groups FieldDescriptors under single affordance. Complete when all fields filled.
-- `ListForm`: ordered list with add/edit/remove/reorder + N/A. Inline up/down arrows and remove buttons. Complete when items > 0 or N/A.
-- `TabForm`: tabbed container. Only active tab in JSON/HTML. Complete when all tabs complete.
-- `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
-- `PageForm`: top-level container with Reset Page (recursive clear). Complete when all children complete.
-- `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
+- `ListForm`: ordered list with add/edit/remove/reorder + N/A. Complete when items > 0 or N/A.
 - `TableForm`: dynamic columns + rows with stable IDs. Inline editing for cells, headers, add/remove.
-- `VisibilityForm`: wraps a child with conditional visibility. serialize() returns None when invisible.
-- `Affordance` base class: pure data. Describes actions; does NOT render itself. Eigenform accounts for all affordances.
-- `Store`: JSON file persistence, one file per PageForm (data/{scope}.json), scoped by eigenform key within the page
+- `NumberForm`: numeric input with min/max/step/integer constraint. Complete when not None.
+- `DateForm`: ISO 8601 date or datetime with optional bounds. Complete when not None.
+- `BooleanForm`: binary yes/no toggle with custom labels. Complete when not None.
+- `RangeForm`: slider over continuous range with unit. Complete when not None.
+- `MemoForm`: multi-line textarea with min/max length. Complete when non-empty and meets min_length.
+- `RatingForm`: ordinal 1-N rating with optional labels. Complete when not None.
+- `RankForm`: fixed-set item reordering with move up/down + set_order. Complete when explicitly ranked.
+- `KeyValueForm`: dynamic key-value pairs with stable IDs. Complete when at least one entry with key+value.
+
+Container forms:
+- `PageForm`: top-level container with Reset Page (recursive clear). Persistence boundary.
+- `TabForm`: tabbed container. Only active tab in JSON/HTML (faithful projection).
+- `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
+- `AccordionForm`: collapsible sections. Only expanded sections in JSON/HTML (faithful projection).
+- `VisibilityForm`: wraps child with conditional visibility. Supports value, list, or callable predicates.
+
+Sibling-reading forms:
+- `ScoreForm`: read-only grading from answer key. Reads sibling values.
+- `ComputedForm`: read-only derived display from arbitrary compute function. Optional store_result for cross-eigenform dependencies.
+
+Showcase:
+- `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
 
 **Key design patterns:**
-- **children property**: base Eigenform returns []. Containers override. Enables generic traversal — no hasattr checks.
+- **children property**: base Eigenform returns []. Containers override. Enables generic traversal.
 - **Unified bind()**: base bind() deepcopies + calls _bind_children(). Containers override _bind_children() only.
 - **PageForm is the persistence boundary**: PageForm.bind() takes data_dir and creates its own Store; children inherit it
+- **Scope = parent key**: containers pass scope=self.key when binding children. Siblings share scope.
 - **Batch actions**: handle() checks for {"action": "batch", "actions": [...]}. Subclasses implement _handle().
 - **Affordance body templates**: fillable placeholders (`<value>`, `<true | false>`) + per-affordance instructions
 - **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
-- **Faithful projection**: TabForm/ChainForm hide non-visible eigenforms from both JSON and HTML
+- **Faithful projection**: TabForm/ChainForm/AccordionForm hide non-visible eigenforms from both JSON and HTML
 - **Structured errors**: error message + failed_action echoed in response, valid alternatives listed
 - **Content negotiation**: single URL serves JSON (default) or HTML (when Accept: text/html). No `/view` suffix.
 - **Path-based eigenform access**: URLs mirror containment hierarchy (e.g., `/pages/page-2/tabs/title`)
@@ -52,13 +72,15 @@
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
+- **ComputedForm ordering**: when store_result=True, must appear before VisibilityForm that depends on its result (serialization is sequential).
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = 11 types: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TabForm, ChainForm, PageForm, RubiksCubeForm, TableForm, VisibilityForm
-- Data forms: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm
-- Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard)
-- Conditional: VisibilityForm (wraps child, depends on sibling value)
+- **Forms** = 23 types across data, container, sibling-reading, and showcase categories
+- Data forms: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm, NumberForm, DateForm, BooleanForm, RangeForm, MemoForm, RatingForm, RankForm, KeyValueForm
+- Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard), AccordionForm (collapsible sections)
+- Conditional: VisibilityForm (wraps child, depends on sibling value or callable)
+- Sibling-reading: ScoreForm, ComputedForm
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
@@ -90,7 +112,7 @@
 
 **Clean-Room Rebuild — Eigenform Architecture** (Mar 25). Deleted all engine code. Built new foundation from scratch. Coined "Eigenform" (self-contained, self-rendering, self-sufficient). Ten eigenform types across data forms (TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm), container forms (PageForm, TabForm, ChainForm), and showcase (RubiksCubeForm). Key patterns: bind() produces independent copies, is_complete required on all forms, conditional affordances, faithful projection, N/A mode for CheckboxForm/ListForm, recursive PageForm reset, structured error responses. TableForm agent-reviewed through two iterations. MultiForm reduces agent round-trips by grouping fields under a single affordance. ListForm has inline up/down/remove controls. 6 demo pages exercising all types.
 
-**State Isolation + Render-from-Serialize + URL Overhaul** (Mar 26). Per-page state files (one Store per PageForm). Page definitions in `pages/` directory with auto-discovery. Content negotiation (single URL for JSON/HTML). Path-based eigenform URLs mirroring containment hierarchy. Eigenform-level GET routes. Critical architectural fix: render() now derives from serialize() — HTML is a pure function of the serialized dict, cannot drift. Affordances enriched with render_hints; standalone render_affordance_html() replaces per-class render methods. Math Test and Upgraded Math Test pages exercising nested containers (ChainForm wrapping TabForm wrapping eigenforms). Auto-generated index page. 8 pages total.
+**State Isolation + Render-from-Serialize + URL Overhaul + Primitive Expansion** (Mar 26). Per-page state files. Page definitions with auto-discovery. Content negotiation. Path-based eigenform URLs. Render-from-serialize architectural fix. ScoreForm for quiz grading. Quiz Portal page. 10 new eigenform primitives (NumberForm, DateForm, BooleanForm, RangeForm, MemoForm, RatingForm, RankForm, KeyValueForm, ComputedForm, AccordionForm). ComputedForm with store_result for cross-eigenform dependencies. VisibilityForm callable predicates. Vendor Assessment page composing all 23 types with 3-level container nesting and derived computed scores. 11 pages total.
 
 ---
 
@@ -132,7 +154,18 @@
 | `engine/choice.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list with add/edit/remove/reorder + N/A |
 | `engine/multi.py` | MultiForm — groups FieldDescriptors under single affordance |
-| `engine/visibility.py` | VisibilityForm — conditional visibility based on sibling value |
+| `engine/visibility.py` | VisibilityForm — conditional visibility (value, list, or callable) |
+| `engine/score.py` | ScoreForm — read-only grading from answer key |
+| `engine/number.py` | NumberForm — numeric input with min/max/step/integer |
+| `engine/date.py` | DateForm — ISO 8601 date/datetime with bounds |
+| `engine/boolean.py` | BooleanForm — binary yes/no toggle |
+| `engine/range.py` | RangeForm — slider over continuous range |
+| `engine/memo.py` | MemoForm — multi-line textarea with length constraints |
+| `engine/rating.py` | RatingForm — ordinal 1-N rating |
+| `engine/rank.py` | RankForm — fixed-set item reordering |
+| `engine/keyvalue.py` | KeyValueForm — dynamic key-value pairs |
+| `engine/computed.py` | ComputedForm — derived display from siblings, optional store_result |
+| `engine/accordion.py` | AccordionForm — collapsible sections, faithful projection |
 | `app/__init__.py` | Flask app factory |
 | `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |
@@ -160,7 +193,7 @@
 
 ### Immediate (Rebuild)
 
-1. **Remaining eigenform types** — BooleanForm, ChoiceForm, DisplayForm, MultiForm, TableForm, ListForm
+1. **Remaining eigenform types** — DisplayForm (all other planned types now built)
 2. **Flow control** — ProceedDef, NavigationDef, RouterDef, ForkDef as page/node-level affordances
 3. **Workflow definition** — Python-native WorkflowDef with nodes containing eigenforms
 4. **Expression evaluator** — visible_when, gates, side_effects
