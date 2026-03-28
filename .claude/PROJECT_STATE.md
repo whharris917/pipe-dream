@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-26-002 (2026-03-26)*
+*Last updated: Session-2026-03-27-001 (2026-03-27)*
 
 ---
 
@@ -8,7 +8,7 @@
 
 **Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
 
-**What's running now:** Flask app at `http://127.0.0.1:5000` with 11 pages:
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 12 pages:
 - **page-1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
 - **page-2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
 - **page-3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
@@ -20,8 +20,9 @@
 - **visibility-experiments**: ChoiceForm controlling VisibilityForm children (Simple/Advanced/Expert)
 - **quiz-portal**: 3 quizzes (Geography/Science/History) in nested TabForms, ScoreForm grading per quiz
 - **vendor-assessment**: Vendor Qualification Assessment composing all 23 eigenform types
+- **weird-experiments**: Playground exercising ValidationForm, DynamicChoiceForm, ActionForm, RepeaterForm
 
-**Eigenform architecture** — 23 eigenform types:
+**Eigenform architecture** — 28 eigenform types:
 
 Data forms:
 - `TextForm`: single free-form string. Complete when value not None.
@@ -45,10 +46,17 @@ Container forms:
 - `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
 - `AccordionForm`: collapsible sections. Only expanded sections in JSON/HTML (faithful projection).
 - `VisibilityForm`: wraps child with conditional visibility. Supports value, list, or callable predicates.
+- `GroupForm`: named container for reusable compositions. Supports parameterization via subclassing.
+- `RepeaterForm`: stamps template eigenforms per dynamic entry. Compound scopes, stable IDs, add/remove.
 
 Sibling-reading forms:
 - `ScoreForm`: read-only grading from answer key. Reads sibling values.
 - `ComputedForm`: read-only derived display from arbitrary compute function. Optional store_result for cross-eigenform dependencies.
+- `ValidationForm`: cross-field validation rules. Pending/pass/fail. Can block page completion.
+
+Dynamic forms:
+- `DynamicChoiceForm`: options depend on sibling value via options_fn or static_options. Stale detection.
+- `ActionForm`: imperative button with preconditions, confirmation, side effects. Receives (context, store, scope).
 
 Showcase:
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
@@ -73,14 +81,12 @@ Showcase:
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
 - **ComputedForm ordering**: when store_result=True, must appear before VisibilityForm that depends on its result (serialization is sequential).
+- **Named compositions**: GroupForm enables reusable, parameterized eigenform groups via subclassing. Subclass gets own form type identity.
+- **Compound scopes**: RepeaterForm uses `key/entry_id` scopes. Store treats scope as opaque string, so nesting works naturally.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = 23 types across data, container, sibling-reading, and showcase categories
-- Data forms: TextForm, CheckboxForm, ChoiceForm, MultiForm, ListForm, TableForm, NumberForm, DateForm, BooleanForm, RangeForm, MemoForm, RatingForm, RankForm, KeyValueForm
-- Container forms: PageForm (shows all children), TabForm (one at a time), ChainForm (sequential wizard), AccordionForm (collapsible sections)
-- Conditional: VisibilityForm (wraps child, depends on sibling value or callable)
-- Sibling-reading: ScoreForm, ComputedForm
+- **Forms** = 28 types across data, container, sibling-reading, dynamic, and showcase categories
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
@@ -114,6 +120,8 @@ Showcase:
 
 **State Isolation + Render-from-Serialize + URL Overhaul + Primitive Expansion** (Mar 26). Per-page state files. Page definitions with auto-discovery. Content negotiation. Path-based eigenform URLs. Render-from-serialize architectural fix. ScoreForm for quiz grading. Quiz Portal page. 10 new eigenform primitives (NumberForm, DateForm, BooleanForm, RangeForm, MemoForm, RatingForm, RankForm, KeyValueForm, ComputedForm, AccordionForm). ComputedForm with store_result for cross-eigenform dependencies. VisibilityForm callable predicates. Vendor Assessment page composing all 23 types with 3-level container nesting and derived computed scores. 11 pages total.
 
+**Expressiveness Expansion + Fractal Complexity Architecture** (Mar 27). Five new eigenform types addressing expressiveness gaps: ValidationForm (cross-field validation), DynamicChoiceForm (conditional options), ActionForm (imperative side effects), RepeaterForm (dynamic repeated structure), GroupForm (named parameterized compositions). Weird Experiments page exercising all new types. Architectural plan for dynamic fractal complexity: collapsing the boundary between structure and data so user interactions can reshape the eigenform tree itself. Biology metaphor: genome (Python types), expression (store), environment (user POSTs). Five-phase plan: SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages.
+
 ---
 
 ## 3. What's Built
@@ -144,7 +152,7 @@ Showcase:
 | Component | Description |
 |-----------|-------------|
 | `engine/eigenforms.py` | Eigenform base (children, bind, batch, render-from-serialize), TextForm, CheckboxForm |
-| `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses |
+| `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses, disabled_button |
 | `engine/store.py` | JSON file store, one file per page, scoped by eigenform key |
 | `engine/page.py` | PageForm — persistence boundary, find_eigenform, clear_recursive via children |
 | `engine/tab.py` | TabForm — tabbed container, faithful projection |
@@ -166,6 +174,11 @@ Showcase:
 | `engine/keyvalue.py` | KeyValueForm — dynamic key-value pairs |
 | `engine/computed.py` | ComputedForm — derived display from siblings, optional store_result |
 | `engine/accordion.py` | AccordionForm — collapsible sections, faithful projection |
+| `engine/validation.py` | ValidationForm — cross-field rules, pending/pass/fail, blocks completion |
+| `engine/dynamic_choice.py` | DynamicChoiceForm — options from sibling value, stale detection |
+| `engine/action.py` | ActionForm — imperative button, preconditions, confirmation, side effects |
+| `engine/repeater.py` | RepeaterForm + EntryGroup — dynamic repeated structure, compound scopes |
+| `engine/group.py` | GroupForm — named compositions, parameterizable via subclassing |
 | `app/__init__.py` | Flask app factory |
 | `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |
@@ -191,13 +204,13 @@ Showcase:
 
 ## 5. Forward Plan
 
-### Immediate (Rebuild)
+### Immediate (Fractal Complexity)
 
-1. **Remaining eigenform types** — DisplayForm (all other planned types now built)
-2. **Flow control** — ProceedDef, NavigationDef, RouterDef, ForkDef as page/node-level affordances
-3. **Workflow definition** — Python-native WorkflowDef with nodes containing eigenforms
-4. **Expression evaluator** — visible_when, gates, side_effects
-5. **Builder** — Create Workflow via the engine itself
+1. **SwitchForm** — select between named compositions based on sibling value (Phase A)
+2. **Eigenform Type Registry** — explicit, queryable mapping of type names to classes (Phase B)
+3. **Structural Persistence** — store the eigenform tree as data, not just values (Phase C)
+4. **Structural Actions** — actions that add/remove/replace eigenforms in the tree (Phase D)
+5. **Self-Modifying Pages** — pages that grow and reshape in response to user input (Phase E)
 
 ### CR-110 Remaining EIs
 
@@ -249,3 +262,5 @@ Both superseded by the engine. May need cancellation or significant revision.
 **Legacy QMS debt.** Nine open documents from early iterations. Bulk cleanup recommended.
 
 **qms-workflow-engine submodule pointer** should be kept current with pushes.
+
+**Structure-as-data transition.** The fractal complexity plan is architecturally significant — it changes the fundamental relationship between Python definitions and runtime state. Phase A (SwitchForm) is low-risk and incremental. Phases C-E are higher-risk and may require revisiting the Store model.
