@@ -11,40 +11,66 @@
 ### README Update
 - Added Eigenform Type Registry, Structural Persistence, Structural Mutations, Self-Modifying Pages sections
 - Added mutable-demo and survey-builder to Demo Pages table
-- Fixed page-5 key to example-table
-- Expanded architecture tree to show key engine modules
+- Fixed page-5 key to example-table; expanded architecture tree
 
 ### Eigenform Gallery Page
 - Created pages/eigenform_gallery.py — interactive tutorial for all 29 eigenform types
-- 8 tabbed sections: Simple Values, Selection, Collections, Containers, Conditional, Computed, Actions, Showcase
-- Exercises every eigenform type with instructive instructions explaining behavior
-- Added to README Demo Pages table — Page #16
+- 8 tabbed sections covering all categories — Page #16
+- Updated instructions to reflect all session changes (removed stale N/A, set_order, clamping references)
 
 ### Universal Clear Affordance
-- Added `has_data` property and `_clear_data()` method to base Eigenform
-- Modified base `serialize()` to append "Clear" affordance when `has_data` is True
-- Modified base `handle()` to intercept `{"action": "clear"}` before subclass dispatch
-- Overrides: ComputedForm (has_data=False), EntryGroup (has_data=False), RepeaterForm (custom clear)
-- Containers that override serialize() naturally unaffected; read-only forms have value=None by default
+- has_data property + Clear button on all data eigenforms
+- Overrides: ComputedForm, EntryGroup (False), RepeaterForm (custom clear with sub-scopes)
 
-### NumberForm/RangeForm Validation Fix
-- Silently clamping → structured error rejection for out-of-range and invalid step values
-- Added server-side step validation to NumberForm
-
-### Faithful Projection Fix
-- Removed browser-side validation (min/max/step on number input, min/max on date input)
-- Changed number input from type="number" to type="text" inputmode="decimal"
-- Server is sole validation authority; humans and agents see the same errors
+### Server-Side Validation (faithful projection)
+- NumberForm/RangeForm: reject out-of-range with structured errors (no silent clamping)
+- NumberForm: server-side step validation
+- MemoForm: reject too-short/too-long with structured errors (was silently accepting)
+- Removed browser-side validation (min/max/step on number, min/max on date HTML inputs)
+- Number input changed to type="text" inputmode="decimal"
 
 ### PageForm Feedback Banner
-- Transient `_feedback` on PageForm — one-shot, consumed after first serialize()
-- Captures success/error for both page-level and nested eigenform actions
-- Renders colored banner (green/red) between title and children in HTML
-- Also in JSON response for agent visibility
-- Fixes pre-existing bug: page-level POST errors were silently lost
+- Multi-message feedback: errors accumulate per-target, success is singular
+- Stored in __feedback key (persisted, survives restarts)
+- Dismiss affordance in JSON + inline ✕ button (same POST, endpoint tooltip, marked rendered)
+- Page-level actions clear all feedback; success clears error for same target
 
 ### Store File Sync
-- Store now checks file mtime on every access (get/set/delete/clear_scope)
-- File deleted externally → in-memory cache cleared, page shows empty state
-- File modified externally → cache reloaded from disk
-- _save() records mtime to avoid re-reading own writes
+- mtime-based cache invalidation on every access
+- External file delete → cache cleared; external modify → reload from disk
+
+### CheckboxForm Done Confirmation
+- Requires explicit Done to complete (prevents ChainForm premature auto-advance)
+- Done with nothing checked = "none apply" (replaced N/A mechanism entirely)
+- Toggling after Done clears confirmed state
+- Fixed JS key quoting for item names with spaces; added autocomplete="off"
+
+### RankForm Done Confirmation
+- Same Done pattern; storage changed to {order, __confirmed} dict
+- Removed Set Order affordance/handler/class
+
+### Condensed Move Affordances (ListForm + RankForm)
+- Two parameterized affordances (Move Up, Move Down) listing only valid items
+- HTML still renders inline ▲/▼ arrows per item
+- ListForm: added move_up/move_down actions alongside existing move
+
+### KeyValueForm Improvements
+- Condensed per-entry Edit/Remove into one parameterized affordance each
+- Inline edit fields (key + value) with ✓ submit and x remove in same horizontal row
+- Add row rendered inline with placeholder fields + green + button (matches ListForm pattern)
+- Duplicate key rejection on add and edit
+- All button tooltips show POST endpoint + body
+
+### ListForm UI Improvements
+- Add row inline at bottom of list (text field + green + button)
+- Edit rows get green ✓ submit button with live tooltip
+- All inline buttons (remove, move, add, edit) show POST endpoint tooltips
+
+### Live Tooltip Updates (codebase-wide)
+- All input-with-button forms update tooltip on keystroke to show actual POST body
+- Applied to: number, date, range, textarea, text_input_add, parameterized, multi_field,
+  kv_add, ListForm edit/add rows, KeyValueForm edit/add rows
+
+### Minor Fixes
+- TextForm: is_complete rejects empty string
+- NumberForm: constraints rendered in HTML below instruction
