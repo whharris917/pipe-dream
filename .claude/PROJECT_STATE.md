@@ -81,6 +81,7 @@ Showcase:
 - **Scope = parent key**: containers pass scope=self.key when binding children. Siblings share scope.
 - **Batch actions**: handle() checks for {"action": "batch", "actions": [...]}. Subclasses implement _handle().
 - **Universal clear**: base serialize() appends Clear affordance when has_data is True. base handle() intercepts {"action": "clear"}.
+- **Base helpers**: `_base_state()` returns common state fields; `_error(msg, *, action, body)` eliminates per-file error helpers; `render_inline_button()` + style constants eliminate inline HTML duplication.
 - **Affordance body templates**: fillable placeholders (`<value>`, `<true | false>`) + per-affordance instructions
 - **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
