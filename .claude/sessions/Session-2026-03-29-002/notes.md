@@ -40,8 +40,35 @@
 - Serialization output unchanged (columns as key/label, rows with _id)
 - All existing handle actions preserved
 
+### TableForm Rendering Improvements
+- Row controls (remove, move up/down) moved to borderless first `<td>` column — visually outside the data grid, structurally inside the `<tr>` for guaranteed alignment
+- Inline constraint UI for both axes using shared `_render_constraint_inline()` helper:
+  - Row constraints: "+ prereq" dropdown + green pills (`#e8f4e8`) in control column
+  - Column constraints: "+ prereq" dropdown + blue pills (`#e8e8f4`) in header cells
+  - Static constraints show as pills without remove buttons; dynamic ones get red X
+- `set_row` affordance marked agent-only (redundant with inline cell editing for humans)
+- All other affordances rendered inline — only "Clear" falls through to below-table area
+
+### Button Alignment Fixes
+- Added `vertical-align: middle` to `STYLE_CONFIRM`, `STYLE_REMOVE`, `STYLE_ARROW` — eliminates baseline-offset differences between buttons with different font sizes
+- Created shared `BUTTON_GAP` constant in `affordances.py` with `border: 1px solid transparent; vertical-align: middle` — matches buttons' total box height (26px). Replaced inline gap strings in tableform, listform, rankform, keyvalueform
+
+### Fixed Columns Bug Fix
+- `_current_states()` was reading raw store (empty on first interaction), losing seeded fixed columns
+- Fixed: now builds state from collections (which handle seeding) instead of raw store
+
+### Gallery: Tables Tab
+- Added "Section 3c: TableForm Showcase" with 5 demos:
+  - Basic Table — standard add/edit/move/remove
+  - Fixed Columns — immutable Name/Role/Status columns
+  - Row Ordering Constraints — per-row prerequisite dropdowns
+  - Column Ordering Constraints — per-column prerequisite dropdowns
+  - Full-Featured Table — fixed columns + both constraint axes
+- Gallery now has 10 tabs (simple, selection, collections, lists, tables, containers, conditional, computed, actions, showcase)
+
 ### Verification
 - All 16 pages render cleanly in both JSON and HTML
 - Legacy migration tested with simulated old-format data
 - ListForm constraint behavior (static, dynamic, cycle detection) verified
-- TableForm move/add/remove verified on fresh tables
+- TableForm fixed_columns seeding verified through add_row lifecycle
+- Constraint inline UI verified for both axes with active constraints

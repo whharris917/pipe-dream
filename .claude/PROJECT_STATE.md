@@ -106,7 +106,8 @@ Showcase:
 - **Seed preservation**: PageForm._seed holds unbound eigenforms for callable matching during _rebuild().
 - **ListForm constraints**: ID-based ordering constraints (static must_follow + dynamic add/remove). Stable topological sort enforcement. Transitive cycle detection. Inline constraint UI per item.
 - **OrderedCollection**: Reusable ordering engine extracted from ListForm. Manages stable IDs, fixed items, must_follow constraints, cycle detection, topological sort. ListForm wraps one (items). TableForm wraps two (rows + columns).
-- **TableForm reordering**: move_row_up/down, move_col_left/right with inline arrow buttons. Fixed rows/columns. Row/column ordering constraints. Legacy state auto-migration.
+- **TableForm reordering**: move_row_up/down, move_col_left/right with inline arrow buttons. Fixed rows/columns. Row/column ordering constraints. Legacy state auto-migration. Inline constraint UI (row: green pills, column: blue pills). Row controls in borderless column outside data grid.
+- **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
@@ -159,7 +160,7 @@ Showcase:
 
 **ListForm Expansion + SetForm + KeyValueForm Simplification** (Mar 29, session 001). ListForm: fixed_items (immutable seed items), must_follow ordering constraints (ID-based, static + dynamic), stable topological sort enforcement, transitive cycle detection, inline constraint UI with per-item add dropdown and remove buttons. SetForm: 30th eigenform type, unordered unique collection. KeyValueForm: API simplified to key-based edit/remove, internal IDs hidden from agent. Consistent layout polish: remove buttons on left, pill badges for IDs, aligned columns across all collection forms. Gallery: dedicated Lists tab with 4 use cases.
 
-**OrderedCollection Extraction + TableForm Unification** (Mar 29, session 002). Extracted `OrderedCollection` utility from ListForm — reusable ordering engine (stable IDs, fixed items, must_follow constraints, cycle detection, topological sort). ListForm refactored to delegate to one OC (zero API change). TableForm refactored to wrap two OCs (rows + columns), gaining: move_row_up/down, move_col_left/right with inline arrows, fixed_columns/fixed_rows, row/column ordering constraints. Legacy state auto-migration. AddConstraintAffordance moved to affordances.py for shared use.
+**OrderedCollection Extraction + TableForm Unification** (Mar 29, session 002). Extracted `OrderedCollection` utility from ListForm — reusable ordering engine (stable IDs, fixed items, must_follow constraints, cycle detection, topological sort). ListForm refactored to delegate to one OC (zero API change). TableForm refactored to wrap two OCs (rows + columns), gaining: move_row_up/down, move_col_left/right with inline arrows, fixed_columns/fixed_rows, row/column ordering constraints. Legacy state auto-migration. AddConstraintAffordance moved to affordances.py for shared use. Inline constraint UI for both axes (row: green pills in control column, column: blue pills in headers). Row controls moved to borderless column outside data grid. BUTTON_GAP constant for consistent button/gap alignment. Gallery: Tables tab with 5 demos (basic, fixed columns, row constraints, column constraints, full-featured). Fixed _current_states() seeding bug for fixed_columns.
 
 ---
 
