@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-29-002 (2026-03-29)*
+*Last updated: Session-2026-03-29-004 (2026-03-29)*
 
 ---
 
@@ -37,7 +37,7 @@ Data forms:
 - `MultiForm`: groups FieldDescriptors under single affordance. Complete when all fields filled.
 - `ListForm`: ordered list with add/edit/remove/reorder + N/A. Fixed items, ordering constraints (static + dynamic), topological sort enforcement. Complete when items > 0 or N/A.
 - `SetForm`: unordered collection of unique items. Add/remove by value, duplicates rejected. Complete when non-empty.
-- `TableForm`: dynamic columns + rows with stable IDs. Inline editing for cells, headers, add/remove.
+- `TableForm`: dynamic columns + rows with stable IDs. Inline editing for cells, headers, add/remove. Typed columns: fixed_columns accepts Eigenform instances, cells become bound eigenforms with compound scopes and path-based routing.
 - `NumberForm`: numeric input with min/max/step/integer constraint. Complete when not None.
 - `DateForm`: ISO 8601 date or datetime with optional bounds. Complete when not None.
 - `BooleanForm`: binary yes/no toggle with custom labels. Complete when not None.
@@ -107,11 +107,12 @@ Showcase:
 - **ListForm constraints**: ID-based ordering constraints (static must_follow + dynamic add/remove). Stable topological sort enforcement. Transitive cycle detection. Inline constraint UI per item.
 - **OrderedCollection**: Reusable ordering engine extracted from ListForm. Manages stable IDs, fixed items, must_follow constraints, cycle detection, topological sort. ListForm wraps one (items). TableForm wraps two (rows + columns).
 - **TableForm reordering**: move_row_up/down, move_col_left/right with inline arrow buttons. Fixed rows/columns. Row/column ordering constraints. Legacy state auto-migration. Inline constraint UI (row: green pills, column: blue pills). Row controls in borderless column outside data grid.
+- **TableForm typed columns**: fixed_columns accepts `str | Eigenform`. Eigenform entries become typed columns — each cell is a bound eigenform with compound scope (`table_key/row_id`), path-based URL routing (`table/row_id/col_id`), and RowGroup routing nodes. set_cell guards typed columns; set_row skips them. Serialization includes nested eigenform state. is_complete checks typed cell eigenforms.
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = 29 types across data, container, sibling-reading, dynamic, and showcase categories
+- **Forms** = 30 types across data, container, sibling-reading, dynamic, and showcase categories
 - **Seed** = the Python page definition; the genome
 - **Structure** = the stored eigenform tree; the expressed organism
 - **Structural action** = a mutation that reshapes the eigenform tree at runtime
@@ -164,6 +165,8 @@ Showcase:
 
 **TableForm UI Overhaul + Configuration Panel** (Mar 29, session 003). Comprehensive TableForm rendering redesign. Column headers: pill badge IDs centered between move arrows (3-column grid), editable inputs with ✓ confirm buttons, remove buttons on label row. Row controls: dedicated bordered columns for remove (−), up (▲), down (▼), and prerequisite (☑) — all shaded #f0f0f0. Prerequisite UI split into ☑ button column (custom button-styled select overlay) and "Prerequisites" column (auto-appears when any prereq exists, pills use ID badge style, vertical layout). Horizontal scroll via overflow-x wrapper. Uniform font sizes (removed per-element overrides). Auto-seed one empty row when columns exist. Add_row affordance body includes column key placeholders. box-sizing: content-box on all inline button styles fixes alignment across ListForm and TableForm. Configuration panel above the table with checkbox toggles for auto-chain rows/columns — when enabled, each row/column automatically depends on the previous one, maintained across add/remove/move operations.
 
+**Typed Columns + Constraint UI Unification** (Mar 29, session 004). TableForm typed columns: fixed_columns accepts Eigenform instances alongside strings. Cell eigenforms use compound scopes (table_key/row_id) following RepeaterForm pattern. RowGroup routing node enables path-based access to individual cells. Cells render eigenform widgets inline (radio buttons, toggles). Agent affordances exclude typed columns from set_cell/set_row. Gallery: Typed Columns demo with ChoiceForm and BooleanForm columns. ListForm constraint UI unified with TableForm: checkbox-symbol button overlay and monospace pill badges replace plain select dropdown.
+
 ---
 
 ## 3. What's Built
@@ -204,7 +207,7 @@ Showcase:
 | `engine/tabform.py` | TabForm — tabbed container, faithful projection |
 | `engine/chainform.py` | ChainForm — sequential wizard with auto-advance + Continue |
 | `engine/rubikscubeform.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
-| `engine/tableform.py` | TableForm — inline editing, add/remove, batch support |
+| `engine/tableform.py` | TableForm — inline editing, add/remove, batch support, typed columns (RowGroup, compound scopes) |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
