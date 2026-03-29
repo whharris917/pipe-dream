@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-28-002 (2026-03-28)*
+*Last updated: Session-2026-03-29-001 (2026-03-29)*
 
 ---
 
@@ -91,7 +91,8 @@ Showcase:
 - **Content negotiation**: single URL serves JSON (default) or HTML (when Accept: text/html). No `/view` suffix.
 - **Path-based eigenform access**: URLs mirror containment hierarchy (e.g., `/pages/page-2/tabs/title`)
 - **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{path} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{path} → eigenform mutation
-- **Render derives from serialize**: render() calls serialize() then render_from_data(data). HTML is a pure function of the serialized dict. Cannot drift.
+- **Two-tier serialization**: `_serialize_full()` produces internal dict (with form, key, render_hints) for HTML rendering. `serialize()` strips agent-noise fields. render() uses `_serialize_full()` for HTML, `serialize()` for "See JSON" button. Containers override `_serialize_full()`.
+- **Render derives from serialize**: render() calls _serialize_full() then render_from_data(data). HTML is a pure function of the internal dict. Cannot drift.
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
@@ -148,6 +149,8 @@ Showcase:
 
 **Gallery, Feedback, Faithful Projection, Store Sync, UI Polish** (Mar 28, session 002). Eigenform Gallery page: interactive tutorial covering all 29 types across 8 tabbed sections (16 pages total). Universal Clear affordance on all data eigenforms. Server-side validation: NumberForm/RangeForm/MemoForm reject invalid values with structured errors instead of silently accepting. Faithful projection enforcement: removed browser-side validation so humans see same errors as agents. PageForm multi-message feedback banner: errors accumulate per-target, success is singular, dismiss affordance per error. Store file sync: mtime-based cache invalidation. CheckboxForm/RankForm: explicit Done confirmation prevents ChainForm premature auto-advance; CheckboxForm N/A removed (Done with nothing checked = none apply). Condensed move affordances: ListForm/RankForm use two parameterized affordances (Move Up/Down) listing valid items. KeyValueForm: inline edit fields, duplicate key rejection, condensed affordances. ListForm: inline add/edit rows with green +/✓ buttons. Live tooltip updates codebase-wide: all input buttons show actual POST body on hover.
 
+**Module Reorganization + Agent JSON Cleanup** (Mar 29). One eigenform per module: extracted TextForm/CheckboxForm from base, renamed all 27 modules to consistent `*form.py` convention. Two-tier serialization: `_serialize_full()` (internal, for HTML) and `serialize()` (agent-facing). Agent JSON no longer includes `form`, `key`, `render_hints`, or `_rendered` — eigenforms are self-describing through instructions and affordances. NumberForm affordance now includes integer constraint in instruction text.
+
 ---
 
 ## 3. What's Built
@@ -177,36 +180,38 @@ Showcase:
 
 | Component | Description |
 |-----------|-------------|
-| `engine/eigenforms.py` | Eigenform base (children, bind, batch, render-from-serialize, to_descriptor, has_data, clear), TextForm, CheckboxForm |
+| `engine/eigenform.py` | Eigenform base (children, bind, batch, two-tier serialize, to_descriptor, has_data, clear) |
+| `engine/textform.py` | TextForm — single free-form string input |
+| `engine/checkboxform.py` | CheckboxForm — multi-select with Done confirmation |
 | `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses, disabled_button |
 | `engine/store.py` | JSON file store, one file per page, scoped by eigenform key, delete() for surgical removal, mtime-based file sync |
 | `engine/registry.py` | EigenformRegistry (register/lookup/available), from_descriptor(), lazy default with 29 types |
-| `engine/page.py` | PageForm — persistence boundary, find_eigenform, structural persistence (__structure), mutable structure (add/remove/move/rebuild_from_seed), structural_actions from children, feedback banner |
-| `engine/tab.py` | TabForm — tabbed container, faithful projection |
-| `engine/chain.py` | ChainForm — sequential wizard with auto-advance + Continue |
-| `engine/rubiks.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
-| `engine/table.py` | TableForm — inline editing, add/remove, batch support |
-| `engine/choice.py` | ChoiceForm — single selection via radio buttons |
+| `engine/pageform.py` | PageForm — persistence boundary, find_eigenform, structural persistence, mutable structure, feedback banner |
+| `engine/tabform.py` | TabForm — tabbed container, faithful projection |
+| `engine/chainform.py` | ChainForm — sequential wizard with auto-advance + Continue |
+| `engine/rubikscubeform.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
+| `engine/tableform.py` | TableForm — inline editing, add/remove, batch support |
+| `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list with add/edit/remove/reorder + N/A |
-| `engine/multi.py` | MultiForm — groups FieldDescriptors under single affordance |
-| `engine/visibility.py` | VisibilityForm — conditional visibility (value, list, or callable) |
-| `engine/switch.py` | SwitchForm — N-way structural selection based on sibling value |
-| `engine/score.py` | ScoreForm — read-only grading from answer key |
-| `engine/number.py` | NumberForm — numeric input with min/max/step/integer, server-side validation |
-| `engine/date.py` | DateForm — ISO 8601 date/datetime with bounds |
-| `engine/boolean.py` | BooleanForm — binary yes/no toggle |
-| `engine/range.py` | RangeForm — slider over continuous range, server-side validation |
-| `engine/memo.py` | MemoForm — multi-line textarea with length constraints |
-| `engine/rating.py` | RatingForm — ordinal 1-N rating |
-| `engine/rank.py` | RankForm — fixed-set item reordering |
-| `engine/keyvalue.py` | KeyValueForm — dynamic key-value pairs |
-| `engine/computed.py` | ComputedForm — derived display from siblings, optional store_result |
-| `engine/accordion.py` | AccordionForm — collapsible sections, faithful projection |
-| `engine/validation.py` | ValidationForm — cross-field rules, pending/pass/fail, blocks completion |
-| `engine/dynamic_choice.py` | DynamicChoiceForm — options from sibling value, stale detection |
-| `engine/action.py` | ActionForm — imperative button, preconditions, confirmation, side effects, structural_actions |
-| `engine/repeater.py` | RepeaterForm + EntryGroup — dynamic repeated structure, compound scopes |
-| `engine/group.py` | GroupForm — named compositions, parameterizable via subclassing |
+| `engine/multiform.py` | MultiForm — groups FieldDescriptors under single affordance |
+| `engine/visibilityform.py` | VisibilityForm — conditional visibility (value, list, or callable) |
+| `engine/switchform.py` | SwitchForm — N-way structural selection based on sibling value |
+| `engine/scoreform.py` | ScoreForm — read-only grading from answer key |
+| `engine/numberform.py` | NumberForm — numeric input with min/max/step/integer, server-side validation |
+| `engine/dateform.py` | DateForm — ISO 8601 date/datetime with bounds |
+| `engine/booleanform.py` | BooleanForm — binary yes/no toggle |
+| `engine/rangeform.py` | RangeForm — slider over continuous range, server-side validation |
+| `engine/memoform.py` | MemoForm — multi-line textarea with length constraints |
+| `engine/ratingform.py` | RatingForm — ordinal 1-N rating |
+| `engine/rankform.py` | RankForm — fixed-set item reordering |
+| `engine/keyvalueform.py` | KeyValueForm — dynamic key-value pairs |
+| `engine/computedform.py` | ComputedForm — derived display from siblings, optional store_result |
+| `engine/accordionform.py` | AccordionForm — collapsible sections, faithful projection |
+| `engine/validationform.py` | ValidationForm — cross-field rules, pending/pass/fail, blocks completion |
+| `engine/dynamicchoiceform.py` | DynamicChoiceForm — options from sibling value, stale detection |
+| `engine/actionform.py` | ActionForm — imperative button, preconditions, confirmation, side effects, structural_actions |
+| `engine/repeaterform.py` | RepeaterForm + EntryGroup — dynamic repeated structure, compound scopes |
+| `engine/groupform.py` | GroupForm — named compositions, parameterizable via subclassing |
 | `app/__init__.py` | Flask app factory |
 | `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |
