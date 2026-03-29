@@ -26,16 +26,17 @@
 - **switch-demo**: SwitchForm with ticket type driving BugReport/FeatureRequest/Question compositions
 - **mutable-demo**: Mutable structure page — add/remove/reorder eigenforms at runtime
 - **survey-builder**: Self-modifying page — ActionForm generates questions that materialize from registry
-- **eigenform-gallery**: Interactive tutorial covering all 29 eigenform types across 8 tabbed sections
+- **eigenform-gallery**: Interactive tutorial covering all 30 eigenform types across 9 tabbed sections
 
-**Eigenform architecture** — 29 eigenform types:
+**Eigenform architecture** — 30 eigenform types:
 
 Data forms:
 - `TextForm`: single free-form string. Complete when value not None.
 - `CheckboxForm`: multi-select with N/A mode. Complete when any checked or N/A.
 - `ChoiceForm`: single selection via radio buttons. Complete when valid option selected.
 - `MultiForm`: groups FieldDescriptors under single affordance. Complete when all fields filled.
-- `ListForm`: ordered list with add/edit/remove/reorder + N/A. Complete when items > 0 or N/A.
+- `ListForm`: ordered list with add/edit/remove/reorder + N/A. Fixed items, ordering constraints (static + dynamic), topological sort enforcement. Complete when items > 0 or N/A.
+- `SetForm`: unordered collection of unique items. Add/remove by value, duplicates rejected. Complete when non-empty.
 - `TableForm`: dynamic columns + rows with stable IDs. Inline editing for cells, headers, add/remove.
 - `NumberForm`: numeric input with min/max/step/integer constraint. Complete when not None.
 - `DateForm`: ISO 8601 date or datetime with optional bounds. Complete when not None.
@@ -44,7 +45,7 @@ Data forms:
 - `MemoForm`: multi-line textarea with min/max length. Complete when non-empty and meets min_length.
 - `RatingForm`: ordinal 1-N rating with optional labels. Complete when not None.
 - `RankForm`: fixed-set item reordering with move up/down + set_order. Complete when explicitly ranked.
-- `KeyValueForm`: dynamic key-value pairs with stable IDs. Complete when at least one entry with key+value.
+- `KeyValueForm`: dynamic key-value pairs. Edit/remove by key (not internal ID). Key rename via new_key. Complete when at least one entry with key+value.
 
 Container forms:
 - `PageForm`: top-level container with Reset Page (recursive clear). Persistence boundary. Optional mutable_structure for Phase D/E. Feedback banner for action results.
@@ -103,6 +104,7 @@ Showcase:
 - **Compound scopes**: RepeaterForm uses `key/entry_id` scopes. Store treats scope as opaque string, so nesting works naturally.
 - **Structural descriptors**: to_descriptor() auto-extracts serializable config. Containers add children. from_descriptor() reconstructs with seed for callables.
 - **Seed preservation**: PageForm._seed holds unbound eigenforms for callable matching during _rebuild().
+- **ListForm constraints**: ID-based ordering constraints (static must_follow + dynamic add/remove). Stable topological sort enforcement. Transitive cycle detection. Inline constraint UI per item.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
@@ -112,6 +114,8 @@ Showcase:
 - **Structural action** = a mutation that reshapes the eigenform tree at runtime
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
+
+**30 eigenform types. 16 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -150,6 +154,8 @@ Showcase:
 **Gallery, Feedback, Faithful Projection, Store Sync, UI Polish** (Mar 28, session 002). Eigenform Gallery page: interactive tutorial covering all 29 types across 8 tabbed sections (16 pages total). Universal Clear affordance on all data eigenforms. Server-side validation: NumberForm/RangeForm/MemoForm reject invalid values with structured errors instead of silently accepting. Faithful projection enforcement: removed browser-side validation so humans see same errors as agents. PageForm multi-message feedback banner: errors accumulate per-target, success is singular, dismiss affordance per error. Store file sync: mtime-based cache invalidation. CheckboxForm/RankForm: explicit Done confirmation prevents ChainForm premature auto-advance; CheckboxForm N/A removed (Done with nothing checked = none apply). Condensed move affordances: ListForm/RankForm use two parameterized affordances (Move Up/Down) listing valid items. KeyValueForm: inline edit fields, duplicate key rejection, condensed affordances. ListForm: inline add/edit rows with green +/✓ buttons. Live tooltip updates codebase-wide: all input buttons show actual POST body on hover.
 
 **Module Reorganization + Agent JSON Cleanup** (Mar 29). One eigenform per module: extracted TextForm/CheckboxForm from base, renamed all 27 modules to consistent `*form.py` convention. Two-tier serialization: `_serialize_full()` (internal, for HTML) and `serialize()` (agent-facing). Agent JSON no longer includes `form`, `key`, `render_hints`, or `_rendered` — eigenforms are self-describing through instructions and affordances. NumberForm affordance now includes integer constraint in instruction text.
+
+**ListForm Expansion + SetForm + KeyValueForm Simplification** (Mar 29). ListForm: fixed_items (immutable seed items), must_follow ordering constraints (ID-based, static + dynamic), stable topological sort enforcement, transitive cycle detection, inline constraint UI with per-item add dropdown and remove buttons. SetForm: 30th eigenform type, unordered unique collection. KeyValueForm: API simplified to key-based edit/remove, internal IDs hidden from agent. Consistent layout polish: remove buttons on left, pill badges for IDs, aligned columns across all collection forms. Gallery: dedicated Lists tab with 4 use cases.
 
 ---
 
@@ -192,7 +198,8 @@ Showcase:
 | `engine/rubikscubeform.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
 | `engine/tableform.py` | TableForm — inline editing, add/remove, batch support |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
-| `engine/listform.py` | ListForm — ordered list with add/edit/remove/reorder + N/A |
+| `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
+| `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
 | `engine/multiform.py` | MultiForm — groups FieldDescriptors under single affordance |
 | `engine/visibilityform.py` | VisibilityForm — conditional visibility (value, list, or callable) |
 | `engine/switchform.py` | SwitchForm — N-way structural selection based on sibling value |
