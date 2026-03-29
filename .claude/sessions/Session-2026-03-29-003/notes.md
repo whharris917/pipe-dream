@@ -54,8 +54,28 @@
 **Constraint visibility:**
 - `show_row_constraints` threshold changed from `num_rows > 1` to `num_rows > 0`
 
+### Configuration Panel + Auto-Chain
+- Configuration panel renders above table when `allow_row_constraints` or `allow_col_constraints` is enabled
+- Checkbox toggles for "Auto-chain rows" and "Auto-chain columns"
+- `toggle_auto_chain_rows` / `toggle_auto_chain_cols` actions: flip config flag in state, rebuild or clear constraints
+- `_apply_auto_chain(state, key, config)` — generic method for both axes: rebuilds constraints as sequential chain
+- Auto-chain applied after add/remove/move on the respective axis
+- Config stored in `state["config"]` dict alongside columns/rows_meta/cells
+- Agent affordance: "Toggle Auto-Chain Rows/Columns" with current state in instruction
+
+### Additional Polish
+- Prerequisite dropdown: ☑ button-styled select overlay (18px font, font-weight: normal)
+- Per-option tooltips with exact POST body
+- Column constraint inline layout: vertical (dropdown on top, pills below)
+- Constraint row: `display: flex` to eliminate descender gap
+- Column header input `size="12"` for balanced width
+- Prerequisite pills use ID badge style (monospace, rounded)
+- `_render_constraint_dropdown` redundant label fix (row_0 not row_0 (row_0))
+- Full-Featured Table demo populated with 5-row project plan + sequential constraints + column constraint
+
 ### Commits
 - `74913db` — Fix button/gap alignment, add column placeholders to add_row affordance
 - `ccd6310` — Redesign TableForm column headers and row controls
 - `140133b` — TableForm layout overhaul: remove column, scrolling, uniform fonts, auto-seed row
-- Final commit pending — prerequisite UI redesign, control columns, shading
+- `00d30c7` — Prerequisite UI redesign, control columns, shading, polish
+- Final commit pending — config panel, auto-chain, additional polish
