@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-29-001 (2026-03-29)*
+*Last updated: Session-2026-03-29-002 (2026-03-29)*
 
 ---
 
@@ -105,6 +105,8 @@ Showcase:
 - **Structural descriptors**: to_descriptor() auto-extracts serializable config. Containers add children. from_descriptor() reconstructs with seed for callables.
 - **Seed preservation**: PageForm._seed holds unbound eigenforms for callable matching during _rebuild().
 - **ListForm constraints**: ID-based ordering constraints (static must_follow + dynamic add/remove). Stable topological sort enforcement. Transitive cycle detection. Inline constraint UI per item.
+- **OrderedCollection**: Reusable ordering engine extracted from ListForm. Manages stable IDs, fixed items, must_follow constraints, cycle detection, topological sort. ListForm wraps one (items). TableForm wraps two (rows + columns).
+- **TableForm reordering**: move_row_up/down, move_col_left/right with inline arrow buttons. Fixed rows/columns. Row/column ordering constraints. Legacy state auto-migration.
 
 **Terminology:**
 - **Eigenform** = self-contained unit (from German "eigen" = self)
@@ -155,7 +157,9 @@ Showcase:
 
 **Module Reorganization + Agent JSON Cleanup** (Mar 29). One eigenform per module: extracted TextForm/CheckboxForm from base, renamed all 27 modules to consistent `*form.py` convention. Two-tier serialization: `_serialize_full()` (internal, for HTML) and `serialize()` (agent-facing). Agent JSON no longer includes `form`, `key`, `render_hints`, or `_rendered` — eigenforms are self-describing through instructions and affordances. NumberForm affordance now includes integer constraint in instruction text.
 
-**ListForm Expansion + SetForm + KeyValueForm Simplification** (Mar 29). ListForm: fixed_items (immutable seed items), must_follow ordering constraints (ID-based, static + dynamic), stable topological sort enforcement, transitive cycle detection, inline constraint UI with per-item add dropdown and remove buttons. SetForm: 30th eigenform type, unordered unique collection. KeyValueForm: API simplified to key-based edit/remove, internal IDs hidden from agent. Consistent layout polish: remove buttons on left, pill badges for IDs, aligned columns across all collection forms. Gallery: dedicated Lists tab with 4 use cases.
+**ListForm Expansion + SetForm + KeyValueForm Simplification** (Mar 29, session 001). ListForm: fixed_items (immutable seed items), must_follow ordering constraints (ID-based, static + dynamic), stable topological sort enforcement, transitive cycle detection, inline constraint UI with per-item add dropdown and remove buttons. SetForm: 30th eigenform type, unordered unique collection. KeyValueForm: API simplified to key-based edit/remove, internal IDs hidden from agent. Consistent layout polish: remove buttons on left, pill badges for IDs, aligned columns across all collection forms. Gallery: dedicated Lists tab with 4 use cases.
+
+**OrderedCollection Extraction + TableForm Unification** (Mar 29, session 002). Extracted `OrderedCollection` utility from ListForm — reusable ordering engine (stable IDs, fixed items, must_follow constraints, cycle detection, topological sort). ListForm refactored to delegate to one OC (zero API change). TableForm refactored to wrap two OCs (rows + columns), gaining: move_row_up/down, move_col_left/right with inline arrows, fixed_columns/fixed_rows, row/column ordering constraints. Legacy state auto-migration. AddConstraintAffordance moved to affordances.py for shared use.
 
 ---
 
@@ -186,6 +190,7 @@ Showcase:
 
 | Component | Description |
 |-----------|-------------|
+| `engine/ordered_collection.py` | OrderedCollection — reusable ordering engine (stable IDs, fixed items, constraints, cycle detection, topological sort) |
 | `engine/eigenform.py` | Eigenform base (children, bind, batch, two-tier serialize, to_descriptor, has_data, clear) |
 | `engine/textform.py` | TextForm — single free-form string input |
 | `engine/checkboxform.py` | CheckboxForm — multi-select with Done confirmation |
