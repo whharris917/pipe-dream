@@ -1,12 +1,71 @@
 # Session-2026-03-29-004
 
-## Current State (last updated: in progress)
+## Current State (last updated: end of session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current work:** Typed columns for TableForm + ListForm constraint UI
+- **Current work:** Complete — typed columns, SequenceForm, edit mode, TableRunner, Workflow Builder
 - **Blocking on:** Nothing
-- **Next:** Verify in browser, potential UI polish
+- **Next:** Extend edit mode to more eigenform types, explore Runner category further
 
 ## Progress Log
+
+### SequenceForm (new eigenform type)
+- Gated sequential container — like ChainForm but without auto-advance
+- Steps unlock progressively (step N+1 accessible when step N complete)
+- Manual navigation via Back/Next buttons + jump to completed steps
+- Locked steps show lock icon in progress bar
+- Registered as type "sequence" (31 types total)
+- Added to Eigenform Gallery Container Forms tab
+
+### Edit Mode Infrastructure (base Eigenform)
+- `editable: bool = False` on base Eigenform class
+- Pencil icon in chrome toggles edit/execution mode (dashed border when editing)
+- Label overrides stored in store (`{key}.__label`), effective_label property
+- `_get_edit_affordances()` extensible by subclasses
+- `_chrome_rendered` flag prevents duplicate rendering of toggle affordance
+- TextForm: edit mode shows inline label editor (ListForm-style input + green checkmark)
+- Gallery: TextForm demo set to `editable=True`
+
+### TableRunner (new eigenform type — Runner category)
+- Reads a sibling TableForm and presents its rows as a gated sequence
+- Row ordering constraints become execution gates
+- Typed cell eigenforms rendered large, one row at a time
+- Text cells rendered as labeled inputs
+- Navigation: Back/Next + jump to completed accessible rows
+- Locked rows show lock icon; prerequisite enforcement via constraint DAG
+- Registered as type "tablerunner" (32 types total)
+- Added to Eigenform Gallery Tables tab with dedicated source table
+
+### Workflow Builder Page
+- New page at /pages/workflow-builder (17 pages total)
+- 6-tab builder: Overview, Stages, Gates, Paths, Acceptance, Review
+- Stages tab showcases typed columns (ChoiceForm + BooleanForm cells)
+- Gates tab uses RepeaterForm with rich templates
+- Paths tab uses AccordionForm with 3 TableForms (parallel, conditional, merge)
+- 14 eigenform types composed
+
+### TableForm fixed_rows Cell Seeding
+- `fixed_rows` now seeds cell data on first access (previously only seeded row metadata)
+- Writes column state + row state + cells to store atomically
+- Used in gallery demo: Runner Source Table pre-populated with Design/Build/Test stages
+
+### Edit/Execution Mode Distinction (architectural insight)
+- TableForm currently behaves as if always in edit mode (structural + data ops)
+- Execution mode = structure frozen, only cell eigenforms are interactive
+- Text columns are authoring-only (provide labels); typed columns are executable
+- Row ordering constraints become execution gates in the runner
+
+### TableRunner (new eigenform type — Runner category)
+- Reads a sibling TableForm and presents its rows as a gated sequential workflow
+- Only typed columns appear as interactive eigenforms; text columns provide row labels
+- Row ordering constraints enforced as execution gates (prerequisite rows must complete)
+- Cell eigenform URLs routed through the runner (distinct from table's inline cells)
+- Both share the same store scopes — data is consistent across table and runner
+- Radio button name collision fixed by distinct URL prefixes
+- Registered as type "tablerunner"
+- Gallery demo: Runner Source Table (Design → Build → Test) + TableRunner executing it
+
+### Commits
+- Pending: all session work
 
 ### ListForm Constraint UI Update
 - Replaced plain `<select>` dropdown with TableForm's checkbox-symbol button overlay style

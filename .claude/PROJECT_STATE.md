@@ -28,7 +28,7 @@
 - **survey-builder**: Self-modifying page — ActionForm generates questions that materialize from registry
 - **eigenform-gallery**: Interactive tutorial covering all 30 eigenform types across 9 tabbed sections
 
-**Eigenform architecture** — 30 eigenform types:
+**Eigenform architecture** — 32 eigenform types:
 
 Data forms:
 - `TextForm`: single free-form string. Complete when value not None.
@@ -51,6 +51,7 @@ Container forms:
 - `PageForm`: top-level container with Reset Page (recursive clear). Persistence boundary. Optional mutable_structure for Phase D/E. Feedback banner for action results.
 - `TabForm`: tabbed container. Only active tab in JSON/HTML (faithful projection).
 - `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
+- `SequenceForm`: gated sequential container. Like ChainForm but without auto-advance. Steps unlock progressively. Manual Back/Next navigation.
 - `AccordionForm`: collapsible sections. Only expanded sections in JSON/HTML (faithful projection).
 - `VisibilityForm`: wraps child with conditional visibility. Supports value, list, or callable predicates.
 - `GroupForm`: named container for reusable compositions. Supports parameterization via subclassing.
@@ -66,11 +67,14 @@ Dynamic forms:
 - `DynamicChoiceForm`: options depend on sibling value via options_fn or static_options. Stale detection.
 - `ActionForm`: imperative button with preconditions, confirmation, side effects. Can return structural_actions for Phase E.
 
+Runner forms:
+- `TableRunner`: reads a sibling TableForm and presents its rows as a gated sequential workflow. Only typed columns are executable; text columns provide row labels. Row ordering constraints become execution gates.
+
 Showcase:
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
 
 **Infrastructure (Phases B-E):**
-- **Eigenform Type Registry** (`engine/registry.py`): explicit mapping of type names to classes. 29 built-in types auto-registered. Custom types register under their own names.
+- **Eigenform Type Registry** (`engine/registry.py`): explicit mapping of type names to classes. 31 built-in types auto-registered. Custom types register under their own names.
 - **Structural Persistence**: `to_descriptor()` on all types serializes tree structure. `from_descriptor()` reconstructs from descriptors + seed. PageForm stores `__structure` in the store.
 - **Structural Actions**: `mutable_structure=True` pages support add/remove/move/rebuild_from_seed. Surgical data cleanup on removal.
 - **Self-Modifying Pages**: ActionForm can return `structural_actions` that PageForm applies, reshaping the page in response to user interaction.
@@ -108,6 +112,9 @@ Showcase:
 - **OrderedCollection**: Reusable ordering engine extracted from ListForm. Manages stable IDs, fixed items, must_follow constraints, cycle detection, topological sort. ListForm wraps one (items). TableForm wraps two (rows + columns).
 - **TableForm reordering**: move_row_up/down, move_col_left/right with inline arrow buttons. Fixed rows/columns. Row/column ordering constraints. Legacy state auto-migration. Inline constraint UI (row: green pills, column: blue pills). Row controls in borderless column outside data grid.
 - **TableForm typed columns**: fixed_columns accepts `str | Eigenform`. Eigenform entries become typed columns — each cell is a bound eigenform with compound scope (`table_key/row_id`), path-based URL routing (`table/row_id/col_id`), and RowGroup routing nodes. set_cell guards typed columns; set_row skips them. Serialization includes nested eigenform state. is_complete checks typed cell eigenforms.
+- **TableForm fixed_rows**: seeds row metadata AND cell data on first access. Enables pre-populated table definitions.
+- **Edit mode infrastructure**: `editable: bool = False` on base Eigenform. Pencil icon toggle in chrome. Edit mode: dashed border, label becomes editable via inline input. Label overrides persisted in store (`{key}.__label`). `_chrome_rendered` flag prevents duplicate affordance rendering. `_get_edit_affordances()` extensible by subclasses.
+- **Edit/execution mode distinction**: TableForm structural operations (add/remove/rename columns, reorder, constraints) are edit-mode activities. Execution mode = structure frozen, only typed cell eigenforms are interactive. Text columns are authoring-only. TableRunner enforces this distinction.
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
 
 **Terminology:**
@@ -119,7 +126,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**30 eigenform types. 16 pages.**
+**32 eigenform types. 17 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -165,7 +172,7 @@ Showcase:
 
 **TableForm UI Overhaul + Configuration Panel** (Mar 29, session 003). Comprehensive TableForm rendering redesign. Column headers: pill badge IDs centered between move arrows (3-column grid), editable inputs with ✓ confirm buttons, remove buttons on label row. Row controls: dedicated bordered columns for remove (−), up (▲), down (▼), and prerequisite (☑) — all shaded #f0f0f0. Prerequisite UI split into ☑ button column (custom button-styled select overlay) and "Prerequisites" column (auto-appears when any prereq exists, pills use ID badge style, vertical layout). Horizontal scroll via overflow-x wrapper. Uniform font sizes (removed per-element overrides). Auto-seed one empty row when columns exist. Add_row affordance body includes column key placeholders. box-sizing: content-box on all inline button styles fixes alignment across ListForm and TableForm. Configuration panel above the table with checkbox toggles for auto-chain rows/columns — when enabled, each row/column automatically depends on the previous one, maintained across add/remove/move operations.
 
-**Typed Columns + Constraint UI Unification** (Mar 29, session 004). TableForm typed columns: fixed_columns accepts Eigenform instances alongside strings. Cell eigenforms use compound scopes (table_key/row_id) following RepeaterForm pattern. RowGroup routing node enables path-based access to individual cells. Cells render eigenform widgets inline (radio buttons, toggles). Agent affordances exclude typed columns from set_cell/set_row. Gallery: Typed Columns demo with ChoiceForm and BooleanForm columns. ListForm constraint UI unified with TableForm: checkbox-symbol button overlay and monospace pill badges replace plain select dropdown.
+**Typed Columns + Constraint UI + SequenceForm + Edit Mode + TableRunner + Workflow Builder** (Mar 29, session 004). TableForm typed columns: fixed_columns accepts Eigenform instances alongside strings. Cell eigenforms use compound scopes (table_key/row_id). RowGroup routing node. fixed_rows now seeds cell data. ListForm constraint UI unified with TableForm (checkbox button overlay, monospace pills). SequenceForm: gated sequential container without auto-advance (intermediate between TabForm and ChainForm). Edit mode infrastructure: editable flag on base Eigenform, pencil icon toggle, label overrides in store, _chrome_rendered for affordance dedup. TextForm edit mode with inline label editor. TableRunner: new Runner category — reads sibling TableForm, presents rows as gated sequential workflow. Only typed columns are executable; text columns provide row labels; ordering constraints become execution gates. Workflow Builder page: 6-tab tool composing 14 eigenform types for designing workflows with stage gates, parallel paths, conditional branches, merge gates, and acceptance criteria. Gallery: SequenceForm in containers tab, TableRunner in tables tab with pre-populated Design/Build/Test source table.
 
 ---
 
@@ -207,7 +214,9 @@ Showcase:
 | `engine/tabform.py` | TabForm — tabbed container, faithful projection |
 | `engine/chainform.py` | ChainForm — sequential wizard with auto-advance + Continue |
 | `engine/rubikscubeform.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
-| `engine/tableform.py` | TableForm — inline editing, add/remove, batch support, typed columns (RowGroup, compound scopes) |
+| `engine/tableform.py` | TableForm — inline editing, add/remove, batch support, typed columns (RowGroup, compound scopes), fixed_rows cell seeding |
+| `engine/stepform.py` | SequenceForm — gated sequential container without auto-advance |
+| `engine/tablerunner.py` | TableRunner — executes a TableForm as a gated sequential workflow |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
