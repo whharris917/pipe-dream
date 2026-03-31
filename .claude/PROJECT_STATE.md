@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-30-001 (2026-03-30)*
+*Last updated: Session-2026-03-31-001 (2026-03-31)*
 
 ---
 
@@ -27,7 +27,8 @@
 - **mutable-demo**: Mutable structure page — add/remove/reorder eigenforms at runtime
 - **survey-builder**: Self-modifying page — ActionForm generates questions that materialize from registry
 - **eigenform-gallery**: Interactive tutorial covering all 33 eigenform types across 10 tabbed sections
-- **control-flow-gallery**: Control flow eigenform experiments (HistoryForm)
+- **control-flow-gallery**: Control flow demos (SequenceForm, Fork/Merge, Routing, HistoryForm)
+- **page-builder**: Mutable page for composing eigenform structures from the registry
 
 **Eigenform architecture** — 33 eigenform types:
 
@@ -121,6 +122,8 @@ Showcase:
 - **Edit/execution mode distinction**: TableForm structural operations (add/remove/rename columns, reorder, constraints) are edit-mode activities. Execution mode = structure frozen, only typed cell eigenforms are interactive. Text columns are authoring-only. TableRunner enforces this distinction.
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
 - **Dependency visibility**: `render_dependency_line()` in eigenform.py. All sibling-reading eigenforms render "Depends on: /path/to/sibling" with full URL paths. Applied to SwitchForm, DynamicChoiceForm, ComputedForm, ValidationForm (per-rule), ActionForm, ScoreForm. Makes the shadow dependency graph visible in the UI.
+- **Base class hierarchy** (`engine/bases.py`): 7 abstract bases grouping the 33 eigenform types into families. ScalarForm (single value: Text/Number/Date/Boolean/Range/Memo/Rating), SelectionForm (pick from options: Choice/DynamicChoice), CollectionForm (manage items: List/Set/KeyValue), SequentialContainer (gated sequence: Chain/Sequence/TableRunner), NavigableContainer (switchable visibility: Tab/Accordion), DependentForm (read-only derived: Computed/Score/Validation), WrapperForm (single child wrapper: Visibility/History/Switch). Bases not registered in the registry — only concrete subclasses.
+- **Mutable page UI**: PageForm.render_from_data renders custom HTML for mutable_structure pages: type dropdown toolbar, per-eigenform ▲/▼/✕ control bars, empty state placeholder, subtle Rebuild from Seed. Eigenforms added via Page Builder get `editable=True` automatically; `editable` round-trips through to_descriptor/from_descriptor.
 
 **Terminology:**
 - **Eigenform** = a form that preserves its identity under transformation (serialize, render, handle, recompose). "Eigen" as in eigenvector — identity-preserving — not "self-contained." Revised from original meaning after theoretical analysis (Session-2026-03-30-001).
@@ -181,6 +184,8 @@ Showcase:
 
 **Theoretical Analysis + Dependency Visibility + HistoryForm + Control Flow Gallery** (Mar 30, session 001). Rigorous examination of eigenform concept prompted by TableRunner introduction. Found: "eigen" (self-contained) was a special case — eroded gradually across ScoreForm, ComputedForm, VisibilityForm, DynamicChoiceForm, SwitchForm, TableRunner. Real invariant: HATEOAS-complete interaction node. Revised eigenform meaning to "identity-preserving under transformation" (eigenvector reading). Further: eigenform is a *program* — state + instruction set (affordances) + halt condition (is_complete). Agent is the runtime. Runners reframe as interpreters. Identified `depends_on` as a shadow dependency graph invisible in the UI — coupling without containment. Implemented `render_dependency_line()`: all sibling-reading eigenforms now render "Depends on: /path/to/sibling" with full URL paths (6 types updated). HistoryForm: new wrapper type with append-only change history, lazy detection on serialize, timeline browsing. Control Flow Gallery page. AuditForm attempted (HistoryForm + mandatory reason per change) — required monkey-patching child's handle(), which was the first inter-eigenform behavior modification. Rejected as architecturally wrong and deleted. Open question: first-class interception mechanism needed in routing layer.
 
+**Control Flow Gallery + Page Builder + Base Class Hierarchy** (Mar 31, session 001). Control Flow Gallery expanded: SequenceForm demo (3-step gated workflow), Fork/Merge demo (TabForm inside SequenceForm gives parallel-branch-then-merge for free), Routing demo (SwitchForm inside SequenceForm gives conditional branching with state-preserving route switching). Workflow Builder replaced with Page Builder — generic mutable PageForm with type dropdown toolbar, per-eigenform ▲/▼/✕ controls, editable=True on dynamically added eigenforms. PageForm mutable HTML overhauled. Base class hierarchy: 7 abstract bases in `engine/bases.py` grouping 33 eigenforms into families (ScalarForm, SelectionForm, CollectionForm, SequentialContainer, NavigableContainer, DependentForm, WrapperForm). ScalarForm introduces `_parse()` pattern replacing `_handle()` boilerplate. Net code change ~neutral (+28 lines); value is structural clarity and reduced duplication for future eigenforms.
+
 ---
 
 ## 3. What's Built
@@ -212,6 +217,7 @@ Showcase:
 |-----------|-------------|
 | `engine/ordered_collection.py` | OrderedCollection — reusable ordering engine (stable IDs, fixed items, constraints, cycle detection, topological sort) |
 | `engine/eigenform.py` | Eigenform base (children, bind, batch, two-tier serialize, to_descriptor, has_data, clear) |
+| `engine/bases.py` | 7 abstract base classes: ScalarForm, SelectionForm, CollectionForm, SequentialContainer, NavigableContainer, DependentForm, WrapperForm |
 | `engine/textform.py` | TextForm — single free-form string input |
 | `engine/checkboxform.py` | CheckboxForm — multi-select with Done confirmation |
 | `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses, disabled_button |
@@ -279,6 +285,7 @@ Showcase:
 
 ### Engine Next Steps
 
+- **Per-eigenform configuration editing** — Page Builder can add/remove/reorder eigenforms, but once placed, their config (options, min/max, etc.) can only be set via the JSON API. Edit mode infrastructure exists (label editing) but needs extension to full config per type.
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns. Lead is thinking through approaches.
 - Agent integration testing (can an agent drive the API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
