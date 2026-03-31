@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-29-004 (2026-03-29)*
+*Last updated: Session-2026-03-30-001 (2026-03-30)*
 
 ---
 
@@ -10,7 +10,7 @@
 
 **Fractal complexity plan is complete.** All five phases (SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages) are implemented and tested.
 
-**What's running now:** Flask app at `http://127.0.0.1:5000` with 16 pages:
+**What's running now:** Flask app at `http://127.0.0.1:5000` with 18 pages:
 - **page-1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
 - **page-2**: TabForm with 3 tabs (Document Title, Scope, Impact Areas)
 - **page-3**: RubiksCubeForm (arbitrarily complex eigenform, conditional affordances)
@@ -26,9 +26,10 @@
 - **switch-demo**: SwitchForm with ticket type driving BugReport/FeatureRequest/Question compositions
 - **mutable-demo**: Mutable structure page — add/remove/reorder eigenforms at runtime
 - **survey-builder**: Self-modifying page — ActionForm generates questions that materialize from registry
-- **eigenform-gallery**: Interactive tutorial covering all 30 eigenform types across 9 tabbed sections
+- **eigenform-gallery**: Interactive tutorial covering all 33 eigenform types across 10 tabbed sections
+- **control-flow-gallery**: Control flow eigenform experiments (HistoryForm)
 
-**Eigenform architecture** — 32 eigenform types:
+**Eigenform architecture** — 33 eigenform types:
 
 Data forms:
 - `TextForm`: single free-form string. Complete when value not None.
@@ -66,6 +67,9 @@ Sibling-reading forms:
 Dynamic forms:
 - `DynamicChoiceForm`: options depend on sibling value via options_fn or static_options. Stale detection.
 - `ActionForm`: imperative button with preconditions, confirmation, side effects. Can return structural_actions for Phase E.
+
+Wrapper forms:
+- `HistoryForm`: wraps an eigenform with append-only change history. Lazy detection on serialize — compares child state to last snapshot, appends if different. Timeline browsing with read-only historical views. History is never editable or clearable.
 
 Runner forms:
 - `TableRunner`: reads a sibling TableForm and presents its rows as a gated sequential workflow. Only typed columns are executable; text columns provide row labels. Row ordering constraints become execution gates.
@@ -116,17 +120,18 @@ Showcase:
 - **Edit mode infrastructure**: `editable: bool = False` on base Eigenform. Pencil icon toggle in chrome. Edit mode: dashed border, label becomes editable via inline input. Label overrides persisted in store (`{key}.__label`). `_chrome_rendered` flag prevents duplicate affordance rendering. `_get_edit_affordances()` extensible by subclasses.
 - **Edit/execution mode distinction**: TableForm structural operations (add/remove/rename columns, reorder, constraints) are edit-mode activities. Execution mode = structure frozen, only typed cell eigenforms are interactive. Text columns are authoring-only. TableRunner enforces this distinction.
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
+- **Dependency visibility**: `render_dependency_line()` in eigenform.py. All sibling-reading eigenforms render "Depends on: /path/to/sibling" with full URL paths. Applied to SwitchForm, DynamicChoiceForm, ComputedForm, ValidationForm (per-rule), ActionForm, ScoreForm. Makes the shadow dependency graph visible in the UI.
 
 **Terminology:**
-- **Eigenform** = self-contained unit (from German "eigen" = self)
-- **Forms** = 30 types across data, container, sibling-reading, dynamic, and showcase categories
+- **Eigenform** = a form that preserves its identity under transformation (serialize, render, handle, recompose). "Eigen" as in eigenvector — identity-preserving — not "self-contained." Revised from original meaning after theoretical analysis (Session-2026-03-30-001).
+- **Forms** = 33 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
 - **Seed** = the Python page definition; the genome
 - **Structure** = the stored eigenform tree; the expressed organism
 - **Structural action** = a mutation that reshapes the eigenform tree at runtime
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**32 eigenform types. 17 pages.**
+**33 eigenform types. 18 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -174,6 +179,8 @@ Showcase:
 
 **Typed Columns + Constraint UI + SequenceForm + Edit Mode + TableRunner + Workflow Builder** (Mar 29, session 004). TableForm typed columns: fixed_columns accepts Eigenform instances alongside strings. Cell eigenforms use compound scopes (table_key/row_id). RowGroup routing node. fixed_rows now seeds cell data. ListForm constraint UI unified with TableForm (checkbox button overlay, monospace pills). SequenceForm: gated sequential container without auto-advance (intermediate between TabForm and ChainForm). Edit mode infrastructure: editable flag on base Eigenform, pencil icon toggle, label overrides in store, _chrome_rendered for affordance dedup. TextForm edit mode with inline label editor. TableRunner: new Runner category — reads sibling TableForm, presents rows as gated sequential workflow. Only typed columns are executable; text columns provide row labels; ordering constraints become execution gates. Workflow Builder page: 6-tab tool composing 14 eigenform types for designing workflows with stage gates, parallel paths, conditional branches, merge gates, and acceptance criteria. Gallery: SequenceForm in containers tab, TableRunner in tables tab with pre-populated Design/Build/Test source table.
 
+**Theoretical Analysis + Dependency Visibility + HistoryForm + Control Flow Gallery** (Mar 30, session 001). Rigorous examination of eigenform concept prompted by TableRunner introduction. Found: "eigen" (self-contained) was a special case — eroded gradually across ScoreForm, ComputedForm, VisibilityForm, DynamicChoiceForm, SwitchForm, TableRunner. Real invariant: HATEOAS-complete interaction node. Revised eigenform meaning to "identity-preserving under transformation" (eigenvector reading). Further: eigenform is a *program* — state + instruction set (affordances) + halt condition (is_complete). Agent is the runtime. Runners reframe as interpreters. Identified `depends_on` as a shadow dependency graph invisible in the UI — coupling without containment. Implemented `render_dependency_line()`: all sibling-reading eigenforms now render "Depends on: /path/to/sibling" with full URL paths (6 types updated). HistoryForm: new wrapper type with append-only change history, lazy detection on serialize, timeline browsing. Control Flow Gallery page. AuditForm attempted (HistoryForm + mandatory reason per change) — required monkey-patching child's handle(), which was the first inter-eigenform behavior modification. Rejected as architecturally wrong and deleted. Open question: first-class interception mechanism needed in routing layer.
+
 ---
 
 ## 3. What's Built
@@ -217,6 +224,7 @@ Showcase:
 | `engine/tableform.py` | TableForm — inline editing, add/remove, batch support, typed columns (RowGroup, compound scopes), fixed_rows cell seeding |
 | `engine/stepform.py` | SequenceForm — gated sequential container without auto-advance |
 | `engine/tablerunner.py` | TableRunner — executes a TableForm as a gated sequential workflow |
+| `engine/historyform.py` | HistoryForm — wraps eigenform with append-only change history, lazy detection, timeline browsing |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
@@ -271,6 +279,7 @@ Showcase:
 
 ### Engine Next Steps
 
+- **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns. Lead is thinking through approaches.
 - Agent integration testing (can an agent drive the API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
 - Performance / stress testing with large pages
