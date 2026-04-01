@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-31-002 (2026-03-31)*
+*Last updated: Session-2026-03-31-003 (2026-03-31)*
 
 ---
 
@@ -45,7 +45,6 @@ Data forms:
 - `BooleanForm`: binary yes/no toggle with custom labels. Complete when not None.
 - `RangeForm`: slider over continuous range with unit. Complete when not None.
 - `MemoForm`: multi-line textarea with min/max length. Complete when non-empty and meets min_length.
-- `RatingForm`: ordinal 1-N rating with optional labels. Complete when not None.
 - `RankForm`: fixed-set item reordering with move up/down + set_order. Complete when explicitly ranked.
 - `KeyValueForm`: dynamic key-value pairs. Edit/remove by key (not internal ID). Key rename via new_key. Complete when at least one entry with key+value.
 
@@ -79,7 +78,7 @@ Showcase:
 - `RubiksCubeForm`: full Rubik's Cube. Conditional affordances based on solved state.
 
 **Infrastructure (Phases B-E):**
-- **Eigenform Type Registry** (`engine/registry.py`): explicit mapping of type names to classes. 31 built-in types auto-registered. Custom types register under their own names.
+- **Eigenform Type Registry** (`engine/registry.py`): explicit mapping of type names to classes. 30 built-in types auto-registered. Custom types register under their own names.
 - **Structural Persistence**: `to_descriptor()` on all types serializes tree structure. `from_descriptor()` reconstructs from descriptors + seed. PageForm stores `__structure` in the store.
 - **Structural Actions**: `mutable_structure=True` pages support add/remove/move/rebuild_from_seed. Surgical data cleanup on removal.
 - **Self-Modifying Pages**: ActionForm can return `structural_actions` that PageForm applies, reshaping the page in response to user interaction.
@@ -118,7 +117,7 @@ Showcase:
 - **TableForm reordering**: move_row_up/down, move_col_left/right with inline arrow buttons. Fixed rows/columns. Row/column ordering constraints. Legacy state auto-migration. Inline constraint UI (row: green pills, column: blue pills). Row controls in borderless column outside data grid.
 - **TableForm typed columns**: fixed_columns accepts `str | Eigenform`. Eigenform entries become typed columns — each cell is a bound eigenform with compound scope (`table_key/row_id`), path-based URL routing (`table/row_id/col_id`), and RowGroup routing nodes. set_cell guards typed columns; set_row skips them. Serialization includes nested eigenform state. is_complete checks typed cell eigenforms.
 - **TableForm fixed_rows**: seeds row metadata AND cell data on first access. Enables pre-populated table definitions.
-- **Edit mode infrastructure**: `editable: bool = False` on base Eigenform. Pencil icon toggle in chrome. Edit mode: dashed border, label becomes editable via inline input. Label overrides persisted in store (`{key}.__label`). `_chrome_rendered` flag prevents duplicate affordance rendering. `_get_edit_affordances()` extensible by subclasses.
+- **Edit mode infrastructure**: `editable: bool = False` on base Eigenform. `set_mode` affordance with `edit`/`execute` modes. Pencil icon (✏) enters edit mode, play icon (▶) returns to execution. Edit mode: dashed border on container, label/instruction become inline editable inputs with `font: inherit` and position-matched margins. Label overrides in `{key}.__label`, instruction overrides in `{key}.__instruction`. `_chrome_rendered` flag prevents duplicate affordance rendering. `_get_edit_affordances()` extensible by subclasses. Type-specific config (NumberForm min/max/step/integer, BooleanForm true/false labels) persisted via `{key}.__config` with `_effective_config` property. ChoiceForm/CheckboxForm embed a child ListForm for options/items editing — visible in edit mode (faithful projection), routable via standard children. Undo stack (`{key}.__undo`) with snapshot-based restore; initial snapshot (`{key}.__snapshot`) for discard. Chrome buttons: ↩ undo (conditional on depth > 0), ✕ discard (red, restores snapshot and exits edit mode). Child ListForm handle wrapped to push undo on parent.
 - **Edit/execution mode distinction**: TableForm structural operations (add/remove/rename columns, reorder, constraints) are edit-mode activities. Execution mode = structure frozen, only typed cell eigenforms are interactive. Text columns are authoring-only. TableRunner enforces this distinction.
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
 - **Dependency visibility**: `render_dependency_line()` in eigenform.py. All sibling-reading eigenforms render "Depends on: /path/to/sibling" with full URL paths. Applied to SwitchForm, DynamicChoiceForm, ComputedForm, ValidationForm (per-rule), ActionForm, ScoreForm. Makes the shadow dependency graph visible in the UI.
@@ -126,14 +125,14 @@ Showcase:
 
 **Terminology:**
 - **Eigenform** = a form that preserves its identity under transformation (serialize, render, handle, recompose). "Eigen" as in eigenvector — identity-preserving — not "self-contained." Revised from original meaning after theoretical analysis (Session-2026-03-30-001).
-- **Forms** = 33 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
+- **Forms** = 32 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
 - **Seed** = the Python page definition; the genome
 - **Structure** = the stored eigenform tree; the expressed organism
 - **Structural action** = a mutation that reshapes the eigenform tree at runtime
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**33 eigenform types. 18 pages.**
+**32 eigenform types. 18 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -187,6 +186,8 @@ Showcase:
 
 **Reverted bases.py abstraction** (Mar 31, session 002). The 7-class base hierarchy (ScalarForm, SelectionForm, etc.) added 251 lines of indirection without sufficient value. Reverted all engine/ changes from that commit, restoring each form's own _handle() and is_complete. Net -145 lines. Page Builder and Control Flow Gallery preserved.
 
+**Edit mode expansion + RatingForm deletion** (Mar 31, session 003). Full edit mode for TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm. Same-shape principle: edit mode preserves layout, fields become inline editable inputs with `font: inherit` and position-matched margins. Base infrastructure: `effective_instruction`, `set_mode` replacing `toggle_edit`, pencil/play icons. Type-specific config editing via `__config` store pattern (NumberForm, BooleanForm). ChoiceForm/CheckboxForm refactored: child ListForm manages options/items, visible in edit mode via faithful projection. Undo/discard: snapshot-based undo stack with `_push_undo()` before each edit mutation, initial snapshot for discard-all. Child ListForm handle wrapped to push undo on parent. Chrome buttons: undo (↩, conditional), discard (✕ red). RatingForm deleted — replaced with NumberForm(integer=True). 32 eigenform types.
+
 ---
 
 ## 3. What's Built
@@ -222,7 +223,7 @@ Showcase:
 | `engine/checkboxform.py` | CheckboxForm — multi-select with Done confirmation |
 | `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses, disabled_button |
 | `engine/store.py` | JSON file store, one file per page, scoped by eigenform key, delete() for surgical removal, mtime-based file sync |
-| `engine/registry.py` | EigenformRegistry (register/lookup/available), from_descriptor(), lazy default with 29 types |
+| `engine/registry.py` | EigenformRegistry (register/lookup/available), from_descriptor(), lazy default with 28 types |
 | `engine/pageform.py` | PageForm — persistence boundary, find_eigenform, structural persistence, mutable structure, feedback banner |
 | `engine/tabform.py` | TabForm — tabbed container, faithful projection |
 | `engine/chainform.py` | ChainForm — sequential wizard with auto-advance + Continue |
@@ -243,7 +244,6 @@ Showcase:
 | `engine/booleanform.py` | BooleanForm — binary yes/no toggle |
 | `engine/rangeform.py` | RangeForm — slider over continuous range, server-side validation |
 | `engine/memoform.py` | MemoForm — multi-line textarea with length constraints |
-| `engine/ratingform.py` | RatingForm — ordinal 1-N rating |
 | `engine/rankform.py` | RankForm — fixed-set item reordering |
 | `engine/keyvalueform.py` | KeyValueForm — dynamic key-value pairs |
 | `engine/computedform.py` | ComputedForm — derived display from siblings, optional store_result |
@@ -285,7 +285,7 @@ Showcase:
 
 ### Engine Next Steps
 
-- **Per-eigenform configuration editing** — Page Builder can add/remove/reorder eigenforms, but once placed, their config (options, min/max, etc.) can only be set via the JSON API. Edit mode infrastructure exists (label editing) but needs extension to full config per type.
+- **Edit mode for remaining eigenform types** — TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm have full edit mode (label, instruction, config). Remaining types (DateForm, RangeForm, MemoForm, RankForm, etc.) need edit mode added.
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns. Lead is thinking through approaches.
 - Agent integration testing (can an agent drive the API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
