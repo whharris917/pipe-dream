@@ -2,7 +2,7 @@
 
 ## Current State (last updated: end of session)
 - **Active document:** CR-110 (IN_EXECUTION v1.1)
-- **Current work:** Complete — edit mode for 5 eigenform types, undo/discard, RatingForm deletion
+- **Current work:** Complete — edit mode for 6 eigenform types, undo/discard, RatingForm deletion
 - **Blocking on:** Nothing
 - **Next:** Edit mode for remaining eigenform types, CR-110 remaining EIs
 
@@ -30,6 +30,19 @@
 - `_effective_options` / `_effective_items` reads from child ListForm's items
 - `__config` store pattern eliminated — ListForm owns its own state
 - Seeded from Python `options`/`items` on first bind
+- Child ListForm handle wrapped to push undo on parent
+
+### Edit mode — ListForm
+- Label, instruction editable (base pattern)
+- `allow_constraints` toggle via `__config` store
+- Fixed items fully editable in edit mode via `relax_fixed` on OrderedCollection
+- Pin toggle (📌) per item to mark/unmark as fixed
+- Pin toggle per constraint pill to pin (make fixed/irremovable) or unpin (make dynamic/removable)
+- Fixed constraint pills shown with amber border/background; dynamic pills in gray
+- Static constraints removable in edit mode — demoted via `fixed: false` stored entry
+- `effective_must_follow` in OrderedCollection updated to exclude demoted static constraints
+- All item mutations (add, edit, remove, move, constraints) push undo in edit mode
+- Snapshot includes ListForm value for full undo/discard support
 
 ### RatingForm deleted
 - Removed from registry, gallery, vendor_assessment, README
@@ -48,12 +61,14 @@
 - Undo pops and restores; discard restores initial snapshot and exits edit mode
 - Chrome: undo (↩, conditional on depth > 0) and discard (✕ red) buttons in edit mode
 - NumberForm/BooleanForm: snapshot/restore includes `__config`
-- ChoiceForm/CheckboxForm: snapshot/restore includes child ListForm state; child handle wrapped to push undo on parent
+- ChoiceForm/CheckboxForm: snapshot/restore includes child ListForm state
+- ListForm: snapshot/restore includes `__config` and item value
 
 ### Style refinements
 - Dashed border only on outer eigenform container in edit mode
 - Inner editable fields use solid `#ddd` borders (not dashed)
 - Removed duplicate Edit button from NumberForm/BooleanForm normal mode (`_rendered` check)
 
-### Commit
+### Commits
 - `363ed74` — Edit mode for 5 types, delete RatingForm
+- `13d321e` — Undo/discard, set_mode replacing toggle_edit
