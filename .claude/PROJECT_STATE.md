@@ -90,7 +90,7 @@ Showcase:
 - **Scope = parent key**: containers pass scope=self.key when binding children. Siblings share scope.
 - **Batch actions**: handle() checks for {"action": "batch", "actions": [...]}. Subclasses implement _handle().
 - **Universal clear**: base serialize() appends Clear affordance when has_data is True. base handle() intercepts {"action": "clear"}.
-- **Base helpers**: `_base_state()` returns common state fields; `_error(msg, *, action, body)` eliminates per-file error helpers; `render_inline_button()` + style constants eliminate inline HTML duplication.
+- **Base helpers**: `_base_state()` returns common state fields; `_error(msg, *, action, body)` eliminates per-file error helpers; `render_inline_button()` renders delegated action buttons.
 - **Affordance body templates**: fillable placeholders (`<value>`, `<true | false>`) + per-affordance instructions
 - **is_complete**: required on all eigenforms (NotImplementedError). Green border when complete, gray when incomplete.
 - **Conditional affordances**: affordance lists change based on state (Rubik's solved/unsolved, CheckboxForm normal/N/A mode)
@@ -101,8 +101,11 @@ Showcase:
 - **Path-based eigenform access**: URLs mirror containment hierarchy (e.g., `/pages/page-2/tabs/title`)
 - **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{path} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{path} → eigenform mutation
 - **Two-tier serialization**: `_serialize_full()` produces internal dict (with form, key, render_hints) for HTML rendering. `serialize()` strips agent-noise fields. render() uses `_serialize_full()` for HTML, `serialize()` for "See JSON" button. Containers override `_serialize_full()`.
-- **Render derives from serialize**: render() calls _serialize_full() then render_from_data(data). HTML is a pure function of the internal dict. Cannot drift.
-- **LNARF compliance**: JSON is canonical, HTML is faithful projection, purple "See JSON" buttons are human-only (exempt)
+- **Jinja2 templates**: All 32 eigenforms render via Jinja2 templates in `app/templates/eigenforms/`. `render_from_data()` calls `render_template()` with serialized state + eigenform instance. Shared `_edit_header.html` partial replaces 6 duplicated edit-mode label/instruction forms. `engine/templates.py` provides standalone Jinja2 env with `render_aff()`, `render_btn()`, `render_dep_line()`, CSS constants, `tojson` filter.
+- **Event delegation**: Zero inline JavaScript in Python. All actions use `data-ef-post`/`data-ef-submit`/`data-ef-change` attributes. Single global `app/static/eigenform.js` (~60 lines) handles fetch+reload. Eliminates the XSS class structurally — one escaping context (HTML `escape()`) instead of three (Python/HTML/JS).
+- **CSS extraction**: `app/static/style.css` with `ef-` prefixed semantic classes. `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` class constants replace inline style strings. ~40% of inline styles extracted.
+- **Parity test**: `tests/test_parity.py` verifies every affordance URL in `serialize()` appears as `data-ef-*` attribute in `render()` for all 18 pages. Replaces runtime RuntimeError with CI-time enforcement (shift-left). 20 tests, all passing.
+- **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), purple "See JSON" buttons are human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
@@ -188,6 +191,8 @@ Showcase:
 **Reverted bases.py abstraction** (Mar 31, session 002). The 7-class base hierarchy (ScalarForm, SelectionForm, etc.) added 251 lines of indirection without sufficient value. Reverted all engine/ changes from that commit, restoring each form's own _handle() and is_complete. Net -145 lines. Page Builder and Control Flow Gallery preserved.
 
 **Edit mode expansion + RatingForm deletion** (Mar 31, session 003). Full edit mode for TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm, ListForm. Same-shape principle: edit mode preserves layout, fields become inline editable inputs with `font: inherit` and position-matched margins. Base infrastructure: `effective_instruction`, `set_mode` replacing `toggle_edit`, pencil/play icons. Type-specific config editing via `__config` store pattern (NumberForm, BooleanForm, ListForm). ChoiceForm/CheckboxForm refactored: child ListForm manages options/items, visible in edit mode via faithful projection. ListForm: fixed items fully editable in edit mode via `relax_fixed` on OrderedCollection; 📌 pin toggles per item and per constraint to mark fixed/unfixed; static constraints demotable via `fixed: false` stored entries. Undo/discard: snapshot-based undo stack with `_push_undo()` before each edit mutation (including all item/constraint mutations in ListForm), initial snapshot for discard-all. Child ListForm handle wrapped to push undo on parent. Chrome buttons: undo (↩, conditional), discard (✕ red). RatingForm deleted — replaced with NumberForm(integer=True). 32 eigenform types.
+
+**Rendering layer modernization** (Apr 1, session 003). External architectural review prompted re-evaluation of three foundational assumptions: JSON-for-agents, JSON→HTML derivation, runtime parity enforcement. Implemented three-step modernization: (1) Event delegation — replaced all inline JavaScript (100+ `fetch()` calls across 30 files) with `data-ef-*` attributes and a single 60-line delegation script, structurally eliminating XSS vulnerability class. (2) CSS extraction — moved repeated inline styles to `app/static/style.css` with semantic `ef-` classes, 418→252 inline styles. (3) Parity test + Jinja2 templates — wrote `tests/test_parity.py` (20 tests verifying JSON↔HTML affordance alignment for all 18 pages), removed runtime RuntimeError accounting, migrated all 32 eigenforms from f-string HTML to Jinja2 templates in `app/templates/eigenforms/`. Shared `_edit_header.html` partial eliminates 6 duplicated edit-header methods. Browser-tested: zero behavioral regressions.
 
 **Container edit mode** (Apr 1, session 002). Edit mode for all 5 container eigenforms: GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm. Each supports add/remove/reorder children, toggle child editability (parent-controlled ✏ toggle), undo/discard via Store.snapshot_scope/restore_scope. Structural persistence via `__structure` in child scope. `editable` round-trips through to_descriptor/from_descriptor (base Eigenform and registry updated). Containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbars, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Gallery Container Forms tab: all 5 demos set to editable=True. 11 eigenform types now have full edit mode (6 data + 5 container).
 
@@ -288,6 +293,7 @@ Showcase:
 
 ### Engine Next Steps
 
+- **HTML-as-agent-API experiment** (Step 4 of rendering modernization) — now that HTML is clean and semantic, experiment with agents consuming HTML directly. Add `render(mode="agent")` that strips chrome/JSON toggle. Measure token cost vs JSON.
 - **Edit mode for remaining eigenform types** — 11 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm, ListForm) and containers (GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm). Remaining data types (DateForm, RangeForm, MemoForm, RankForm, SetForm, KeyValueForm, etc.) need edit mode added.
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns. Lead is thinking through approaches.
 - Agent integration testing (can an agent drive the API end-to-end?)
