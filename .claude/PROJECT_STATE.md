@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-03-31-003 (2026-03-31)*
+*Last updated: Session-2026-04-01-004 (2026-04-01)*
 
 ---
 
@@ -105,7 +105,11 @@ Showcase:
 - **Event delegation**: Zero inline JavaScript in Python. All actions use `data-ef-post`/`data-ef-submit`/`data-ef-change` attributes. Single global `app/static/eigenform.js` (~60 lines) handles fetch+reload. Eliminates the XSS class structurally — one escaping context (HTML `escape()`) instead of three (Python/HTML/JS).
 - **CSS extraction**: `app/static/style.css` with `ef-` prefixed semantic classes. `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` class constants replace inline style strings. ~40% of inline styles extracted.
 - **Parity test**: `tests/test_parity.py` verifies every affordance URL in `serialize()` appears as `data-ef-*` attribute in `render()` for all 18 pages. Replaces runtime RuntimeError with CI-time enforcement (shift-left). 20 tests, all passing.
-- **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), purple "See JSON" buttons are human-only (exempt)
+- **HTMX integration**: HTMX 2.0.4 + json-enc extension. `#page-content` carries `hx-target`, `hx-swap="innerHTML"`, `hx-ext="json-enc"` — all child elements inherit. POST routes return HTML fragments for HTMX/browser requests (detected via `HX-Request` header or Accept negotiation), JSON for agents. Partial DOM swaps replace full page reloads. eigenform.js (legacy `data-ef-*` delegation) coexists with native HTMX during migration.
+- **HTMX-native eigenforms**: `htmx_native = True` flag on migrated eigenforms. Templates use `hx-post`/`hx-vals` directly — no Affordance objects, no render_aff(), no render_hints. The template IS the state machine. TextForm and ListFormX are migrated; remaining 30 types still use legacy pipeline.
+- **Dual template architecture**: HTMX-native eigenforms have two templates: agent (naked semantic HTML, `data-field`/`data-item-id` attributes, no styling) and human (styled layout with CSS classes, BUTTON_GAP alignment, pill badges). `render_from_data()` renders human template, `render_agent_from_data()` renders agent template. Shared `_template_context()` eliminates context duplication. Architecture chosen over CSS-only (can't bridge structural differences like table O(1) vs O(N) affordances) and macro composition (unnecessary indirection for current needs).
+- **View selector dropdown**: HTMX-native eigenforms show a 4-option dropdown (Human View, Agent View, Agent HTMX, JSON). Legacy eigenforms show 2-option (Human View, JSON). Replaces the old "See JSON" toggle button.
+- **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
@@ -136,7 +140,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**32 eigenform types. 18 pages.**
+**33 eigenform types (32 + ListFormX). 19 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -194,6 +198,8 @@ Showcase:
 
 **Rendering layer modernization** (Apr 1, session 003). External architectural review prompted re-evaluation of three foundational assumptions: JSON-for-agents, JSON→HTML derivation, runtime parity enforcement. Implemented three-step modernization: (1) Event delegation — replaced all inline JavaScript (100+ `fetch()` calls across 30 files) with `data-ef-*` attributes and a single 60-line delegation script, structurally eliminating XSS vulnerability class. (2) CSS extraction — moved repeated inline styles to `app/static/style.css` with semantic `ef-` classes, 418→252 inline styles. (3) Parity test + Jinja2 templates — wrote `tests/test_parity.py` (20 tests verifying JSON↔HTML affordance alignment for all 18 pages), removed runtime RuntimeError accounting, migrated all 32 eigenforms from f-string HTML to Jinja2 templates in `app/templates/eigenforms/`. Shared `_edit_header.html` partial eliminates 6 duplicated edit-header methods. Browser-tested: zero behavioral regressions.
 
+**HTMX migration proof of concept** (Apr 1, session 004). Decision to abandon JSON as agent-facing representation in favor of HTML/HTMX. Integrated HTMX 2.0.4 + json-enc extension. Replaced full page reloads with partial DOM swaps. Migrated TextForm and ListFormX to native HTMX templates — templates encode the state machine directly via `hx-post`/`hx-vals`, eliminating Affordance objects from the rendering path. Established dual template architecture: agent templates (naked semantic HTML with `data-field`/`data-item-id` attributes, zero styling) and human templates (styled HTMX with CSS classes and layout). Four-option view selector dropdown (Human View, Agent View, Agent HTMX, JSON) replaces the old toggle button. Fixed latent `render_inline_button()` bug where CSS class names were placed in `style=` attribute instead of `class=` — affected all eigenforms using `render_btn()`. htmx-lab test page with TextForm + two ListFormX variants (simple + constrained/editable). 21 parity tests passing across 19 pages.
+
 **Container edit mode** (Apr 1, session 002). Edit mode for all 5 container eigenforms: GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm. Each supports add/remove/reorder children, toggle child editability (parent-controlled ✏ toggle), undo/discard via Store.snapshot_scope/restore_scope. Structural persistence via `__structure` in child scope. `editable` round-trips through to_descriptor/from_descriptor (base Eigenform and registry updated). Containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbars, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Gallery Container Forms tab: all 5 demos set to editable=True. 11 eigenform types now have full edit mode (6 data + 5 container).
 
 ---
@@ -242,6 +248,7 @@ Showcase:
 | `engine/historyform.py` | HistoryForm — wraps eigenform with append-only change history, lazy detection, timeline browsing |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
+| `engine/listformx.py` | ListFormX — HTMX-native ListForm (dual template: listx.html agent, listx_human.html human) |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
 | `engine/multiform.py` | MultiForm — groups FieldDescriptors under single affordance |
 | `engine/visibilityform.py` | VisibilityForm — conditional visibility (value, list, or callable) |
@@ -293,10 +300,11 @@ Showcase:
 
 ### Engine Next Steps
 
-- **HTML-as-agent-API experiment** (Step 4 of rendering modernization) — now that HTML is clean and semantic, experiment with agents consuming HTML directly. Add `render(mode="agent")` that strips chrome/JSON toggle. Measure token cost vs JSON.
-- **Edit mode for remaining eigenform types** — 11 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm, ListForm) and containers (GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm). Remaining data types (DateForm, RangeForm, MemoForm, RankForm, SetForm, KeyValueForm, etc.) need edit mode added.
-- **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns. Lead is thinking through approaches.
-- Agent integration testing (can an agent drive the API end-to-end?)
+- **HTMX migration — remaining eigenforms** — TextForm and ListFormX proven. Next candidates: simple data forms (BooleanForm, NumberForm, ChoiceForm, CheckboxForm), then containers, then complex forms (TableForm — the real stress test for O(1) agent vs O(N) human affordance divergence).
+- **Agent HTML route** — wire `render_agent_from_data()` into the route layer so agents can GET the naked HTML directly (content negotiation or query param).
+- **Edit mode for remaining eigenform types** — 11 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm, ListForm) and containers (GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm). Remaining data types need edit mode added.
+- **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns.
+- Agent integration testing (can an agent drive the HTMX API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
 - Performance / stress testing with large pages
 
