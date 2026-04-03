@@ -106,9 +106,10 @@ Showcase:
 - **CSS extraction**: `app/static/style.css` with `ef-` prefixed semantic classes. `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` class constants replace inline style strings. ~40% of inline styles extracted.
 - **Parity test**: `tests/test_parity.py` verifies every affordance URL in `serialize()` appears as `data-ef-*` attribute in `render()` for all 18 pages. Replaces runtime RuntimeError with CI-time enforcement (shift-left). 20 tests, all passing.
 - **HTMX integration**: HTMX 2.0.4 + json-enc extension. `#page-content` carries `hx-target`, `hx-swap="innerHTML"`, `hx-ext="json-enc"` — all child elements inherit. POST routes return HTML fragments for HTMX/browser requests (detected via `HX-Request` header or Accept negotiation), JSON for agents. Partial DOM swaps replace full page reloads. eigenform.js (legacy `data-ef-*` delegation) coexists with native HTMX during migration.
-- **HTMX-native eigenforms**: `htmx_native = True` flag on migrated eigenforms. Templates use `hx-post`/`hx-vals` directly — no Affordance objects, no render_aff(), no render_hints. The template IS the state machine. 8 eigenforms migrated: TextForm, ListFormX, TableFormX, ChoiceFormX, CheckboxFormX, NumberFormX, BooleanFormX, MemoFormX. Remaining 24 types still use legacy pipeline.
+- **HTMX-native eigenforms**: `htmx_native = True` flag on migrated eigenforms. Templates use `hx-post`/`hx-vals` directly — no Affordance objects, no render_aff(), no render_hints. The template IS the state machine. 10 eigenforms migrated: TextForm, ListFormX, TableFormX, ChoiceFormX, CheckboxFormX, NumberFormX, BooleanFormX, MemoFormX, TabFormX, AccordionFormX. Remaining 22 types still use legacy pipeline.
 - **Dual template architecture**: HTMX-native eigenforms have two templates: agent (read-only data display + parameterized affordance forms mirroring JSON structure, minimal context usage) and human (styled layout with CSS classes, BUTTON_GAP alignment, pill badges, inline editing). `render_from_data()` renders human template, `render_agent_from_data()` renders agent template. Shared `_template_context()` eliminates context duplication. Agent templates use O(1) parameterized forms (one per action type with `<select>` dropdowns) rather than O(N) per-item buttons. Architecture chosen over CSS-only (can't bridge structural differences like table O(1) vs O(N) affordances) and macro composition (unnecessary indirection for current needs).
 - **View selector dropdown**: HTMX-native eigenforms show a 4-option dropdown (Human View, Agent View, Agent HTMX, JSON). Legacy eigenforms show 2-option (Human View, JSON). Replaces the old "See JSON" toggle button.
+- **Agent view route**: `?view=agent` on any HTML endpoint returns clean agent HTMX with zero chrome — no wrapper divs, no view selectors, no hidden panes, no inline JS. `render_agent()` on base Eigenform returns agent template directly; PageForm recurses; container X forms propagate agent mode to children.
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
@@ -140,7 +141,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**40 eigenform types (33 base + 7 HTMX-native X variants). 19 pages.**
+**42 eigenform types (33 base + 9 HTMX-native X variants). 19 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
