@@ -101,12 +101,12 @@ Showcase:
 - **Path-based eigenform access**: URLs mirror containment hierarchy (e.g., `/pages/page-2/tabs/title`)
 - **RESTful API**: GET /pages/{key} → page, GET /pages/{key}/{path} → eigenform, POST /pages/{key} → page action, POST /pages/{key}/{path} → eigenform mutation
 - **Two-tier serialization**: `_serialize_full()` produces internal dict (with form, key, render_hints) for HTML rendering. `serialize()` strips agent-noise fields. render() uses `_serialize_full()` for HTML, `serialize()` for "See JSON" button. Containers override `_serialize_full()`.
-- **Jinja2 templates**: All 32 eigenforms render via Jinja2 templates in `app/templates/eigenforms/`. `render_from_data()` calls `render_template()` with serialized state + eigenform instance. Shared `_edit_header.html` partial replaces 6 duplicated edit-mode label/instruction forms. `engine/templates.py` provides standalone Jinja2 env with `render_aff()`, `render_btn()`, `render_dep_line()`, CSS constants, `tojson` filter.
+- **Jinja2 templates**: All eigenforms render via Jinja2 templates in `app/templates/eigenforms/`. `render_from_data()` calls `render_template()` with serialized state + eigenform instance. Shared `_edit_header.html` partial replaces 6 duplicated edit-mode label/instruction forms. `engine/templates.py` provides standalone Jinja2 env with `render_aff()`, `render_btn()`, `render_dep_line()`, CSS constants, `tojson` filter. `render_template()` post-processes output to collapse 3+ consecutive newlines (eliminates blank lines from false conditionals). Environment uses `trim_blocks=True` and `lstrip_blocks=True`.
 - **Event delegation**: Zero inline JavaScript in Python. All actions use `data-ef-post`/`data-ef-submit`/`data-ef-change` attributes. Single global `app/static/eigenform.js` (~60 lines) handles fetch+reload. Eliminates the XSS class structurally — one escaping context (HTML `escape()`) instead of three (Python/HTML/JS).
 - **CSS extraction**: `app/static/style.css` with `ef-` prefixed semantic classes. `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` class constants replace inline style strings. ~40% of inline styles extracted.
 - **Parity test**: `tests/test_parity.py` verifies every affordance URL in `serialize()` appears as `data-ef-*` attribute in `render()` for all 18 pages. Replaces runtime RuntimeError with CI-time enforcement (shift-left). 20 tests, all passing.
 - **HTMX integration**: HTMX 2.0.4 + json-enc extension. `#page-content` carries `hx-target`, `hx-swap="innerHTML"`, `hx-ext="json-enc"` — all child elements inherit. POST routes return HTML fragments for HTMX/browser requests (detected via `HX-Request` header or Accept negotiation), JSON for agents. Partial DOM swaps replace full page reloads. eigenform.js (legacy `data-ef-*` delegation) coexists with native HTMX during migration.
-- **HTMX-native eigenforms**: `htmx_native = True` flag on migrated eigenforms. Templates use `hx-post`/`hx-vals` directly — no Affordance objects, no render_aff(), no render_hints. The template IS the state machine. TextForm, ListFormX, and TableFormX are migrated; remaining 29 types still use legacy pipeline.
+- **HTMX-native eigenforms**: `htmx_native = True` flag on migrated eigenforms. Templates use `hx-post`/`hx-vals` directly — no Affordance objects, no render_aff(), no render_hints. The template IS the state machine. 8 eigenforms migrated: TextForm, ListFormX, TableFormX, ChoiceFormX, CheckboxFormX, NumberFormX, BooleanFormX, MemoFormX. Remaining 24 types still use legacy pipeline.
 - **Dual template architecture**: HTMX-native eigenforms have two templates: agent (read-only data display + parameterized affordance forms mirroring JSON structure, minimal context usage) and human (styled layout with CSS classes, BUTTON_GAP alignment, pill badges, inline editing). `render_from_data()` renders human template, `render_agent_from_data()` renders agent template. Shared `_template_context()` eliminates context duplication. Agent templates use O(1) parameterized forms (one per action type with `<select>` dropdowns) rather than O(N) per-item buttons. Architecture chosen over CSS-only (can't bridge structural differences like table O(1) vs O(N) affordances) and macro composition (unnecessary indirection for current needs).
 - **View selector dropdown**: HTMX-native eigenforms show a 4-option dropdown (Human View, Agent View, Agent HTMX, JSON). Legacy eigenforms show 2-option (Human View, JSON). Replaces the old "See JSON" toggle button.
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
@@ -133,14 +133,14 @@ Showcase:
 
 **Terminology:**
 - **Eigenform** = a form that preserves its identity under transformation (serialize, render, handle, recompose). "Eigen" as in eigenvector — identity-preserving — not "self-contained." Revised from original meaning after theoretical analysis (Session-2026-03-30-001).
-- **Forms** = 32 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
+- **Forms** = 33 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
 - **Seed** = the Python page definition; the genome
 - **Structure** = the stored eigenform tree; the expressed organism
 - **Structural action** = a mutation that reshapes the eigenform tree at runtime
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**34 eigenform types (32 + ListFormX + TableFormX). 19 pages.**
+**40 eigenform types (33 base + 7 HTMX-native X variants). 19 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
