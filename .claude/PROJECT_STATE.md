@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-02-001 (2026-04-02)*
+*Last updated: Session-2026-04-04-001 (2026-04-04)*
 
 ---
 
@@ -110,7 +110,7 @@ Showcase:
 - **Dual template architecture**: HTMX-native eigenforms have two templates: agent (read-only data display + parameterized affordance forms mirroring JSON structure, minimal context usage) and human (styled layout with CSS classes, BUTTON_GAP alignment, pill badges, inline editing). `render_from_data()` renders human template, `render_agent_from_data()` renders agent template. Shared `_template_context()` eliminates context duplication. Agent templates use O(1) parameterized forms (one per action type with `<select>` dropdowns) rather than O(N) per-item buttons. Architecture chosen over CSS-only (can't bridge structural differences like table O(1) vs O(N) affordances) and macro composition (unnecessary indirection for current needs).
 - **View selector dropdown**: HTMX-native eigenforms show a 4-option dropdown (Human View, Agent View, Agent HTMX, JSON). Legacy eigenforms show 2-option (Human View, JSON). Replaces the old "See JSON" toggle button.
 - **Agent view route**: `?view=agent` on any HTML endpoint returns clean agent HTMX with zero chrome — no wrapper divs, no view selectors, no hidden panes, no inline JS. `render_agent()` on base Eigenform wraps output in `<div data-eigenform="{key}" data-type="{form}">` bounding div with proper indentation; PageForm recurses; container X forms propagate agent mode to children.
-- **Agent template conventions**: All forms carry `hx-vals` with `<placeholder>` body templates (e.g., `hx-vals='{"value": "<value>"}'`) so agents see the exact POST body shape without inferring from HTML form encoding. Affordance instructions from `get_affordances()` are threaded through `_affordance_hints(data)` on the base Eigenform and displayed as `<p data-field="instruction">` in agent templates. State fields use `data-field` attributes. Bounding divs use `data-eigenform` and `data-type`.
+- **Agent template conventions**: All forms carry `hx-vals` as the sole authority for POST body shape — no hidden inputs, no redundant form fields. Select-based placeholders enumerate valid options inline (e.g., `hx-vals='{"value": "<Low | Medium | High | Critical>"}'`); free-text fields use generic placeholders (`<value>`, `<label>`). Affordance instructions from `get_affordances()` are threaded through `_affordance_hints(data)` on the base Eigenform (wrapped in `Markup()` to preserve angle-bracket placeholders) and displayed as `<p data-field="instruction">` in agent templates. State fields use `data-field` attributes. Bounding divs use `data-eigenform` and `data-type`. Button labels use plain text (`Up`/`Down`/`Save`) not HTML entities.
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
