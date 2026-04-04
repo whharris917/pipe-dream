@@ -24,4 +24,21 @@
 
 ### Bug fixes
 - **`_affordance_hints` dict.clear collision**: `hints.clear` in Jinja2 resolved to `dict.clear()` method instead of the `"clear"` key. Fixed by returning `SimpleNamespace` instead of `dict`.
-- **Scroll position lost on HTMX swap**: Page scrolled unexpectedly after interactions. Root cause: SSE `onmessage` handler did raw `innerHTML` swap bypassing HTMX scroll control; HTMX's own `show:none`/`focus-scroll:false` modifiers were ineffective. Fixed with explicit `scrollY` save/restore on both HTMX swaps (`htmx:beforeSwap`/`htmx:afterSwap`) and SSE swaps. Also added 500ms debounce to suppress SSE reloads after same-tab POSTs.
+- **Scroll position lost on swap**: Page scrolled unexpectedly after interactions. Root cause: SSE `onmessage` handler did raw `innerHTML` swap with no scroll control. Fixed with explicit `scrollY` save/restore on both eigenform.js swaps and SSE swaps. Also added 500ms debounce to suppress SSE reloads after same-tab POSTs.
+- **Feedback banner HTML escaping**: `target_label` built via Jinja2 string concatenation caused `Markup.__radd__` to escape the HTML literal. Fixed by using inline template tags instead.
+- **Feedback banner duplicate path**: Success message included path (`set → path`) AND template appended it as `target_label`. Fixed message to just the action name.
+
+### HTMX excision
+- **Decision**: HTMX removed entirely. It was providing minimal value — just fetch+swap on buttons, which eigenform.js already does. Agent view reverts to JSON (the clearer machine-readable format). HTML is for humans only.
+- **Infrastructure**: Deleted `htmx.min.js`, `json-enc.js`. Removed all `hx-*` attributes from `page.html`. Removed `HX-Request` check from routes.
+- **12 human templates**: Converted `hx-post`/`hx-vals` → `data-ef-post`/`data-ef-body`/`data-ef-submit`/`data-ef-change` (eigenform.js delegation).
+- **eigenform.py**: Removed `htmx_native`, `render_agent_from_data`, `render_agent`, `_wrap_agent_html`, `_affordance_hints`. View selector simplified to 2 panes (Human View + JSON).
+- **routes.py**: Removed `agent_view` query param, all `render_agent()` calls.
+- **pageform.py**: Removed `render_agent` method.
+
+### X variant removal
+- **Deleted 11 X form Python files** (ListFormX, TableFormX, ChoiceFormX, CheckboxFormX, NumberFormX, BooleanFormX, MemoFormX, TabFormX, AccordionFormX, ChainFormX, SequenceFormX)
+- **Deleted 11 X human templates** and all 12 agent templates
+- **Deleted HTMX Lab page** (pages/htmx_lab.py + data/htmx-lab.json)
+- **Registry**: trimmed from 44 to 33 eigenform types
+- **Tests**: 20 passing (lost 1 HTMX Lab parity test with page deletion)

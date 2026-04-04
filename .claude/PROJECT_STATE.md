@@ -105,12 +105,8 @@ Showcase:
 - **Event delegation**: Zero inline JavaScript in Python. All actions use `data-ef-post`/`data-ef-submit`/`data-ef-change` attributes. Single global `app/static/eigenform.js` (~60 lines) handles fetch+reload. Eliminates the XSS class structurally — one escaping context (HTML `escape()`) instead of three (Python/HTML/JS).
 - **CSS extraction**: `app/static/style.css` with `ef-` prefixed semantic classes. `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` class constants replace inline style strings. ~40% of inline styles extracted.
 - **Parity test**: `tests/test_parity.py` verifies every affordance URL in `serialize()` appears as `data-ef-*` attribute in `render()` for all 18 pages. Replaces runtime RuntimeError with CI-time enforcement (shift-left). 20 tests, all passing.
-- **HTMX integration**: HTMX 2.0.4 + json-enc extension. `#page-content` carries `hx-target`, `hx-swap="innerHTML"`, `hx-ext="json-enc"` — all child elements inherit. POST routes return HTML fragments for HTMX/browser requests (detected via `HX-Request` header or Accept negotiation), JSON for agents. Partial DOM swaps replace full page reloads. Scroll position preserved via explicit `scrollY` save/restore on both HTMX swaps (`htmx:beforeSwap`/`htmx:afterSwap`) and SSE swaps. SSE handler debounced 500ms after same-tab POSTs to prevent redundant swaps. eigenform.js (legacy `data-ef-*` delegation) coexists with native HTMX during migration.
-- **HTMX-native eigenforms**: `htmx_native = True` flag on migrated eigenforms. Templates use `hx-post`/`hx-vals` directly — no Affordance objects, no render_aff(), no render_hints. The template IS the state machine. 12 eigenforms migrated: TextForm, ListFormX, TableFormX, ChoiceFormX, CheckboxFormX, NumberFormX, BooleanFormX, MemoFormX, TabFormX, AccordionFormX, ChainFormX, SequenceFormX. Remaining 20 types still use legacy pipeline.
-- **Dual template architecture**: HTMX-native eigenforms have two templates: agent (pure semantic markup — state display + annotated action endpoints, no form controls) and human (styled layout with CSS classes, BUTTON_GAP alignment, pill badges, inline editing). `render_from_data()` renders human template, `render_agent_from_data()` renders agent template. Shared `_template_context()` eliminates context duplication. Agent templates are NOT human-usable — they contain zero `<form>`, `<input>`, `<select>`, or `<textarea>` elements. Edit mode is omitted from agent templates entirely.
-- **View selector dropdown**: HTMX-native eigenforms show a 4-option dropdown (Human View, Agent View, Agent HTMX, JSON). Legacy eigenforms show 2-option (Human View, JSON). Replaces the old "See JSON" toggle button.
-- **Agent view route**: `?view=agent` on any HTML endpoint returns clean agent HTMX with zero chrome — no wrapper divs, no view selectors, no hidden panes, no inline JS. `render_agent()` on base Eigenform wraps output in `<div data-eigenform="{key}" data-type="{form}">` bounding div with proper indentation; PageForm recurses; container X forms propagate agent mode to children.
-- **Agent template conventions**: Each affordance is wrapped in `<div data-affordance="action_name">` containing a `<button hx-post hx-vals>` + optional `<p data-field="instruction">`. `hx-vals` is the sole authority for POST body shape. Select-based placeholders enumerate valid options inline (e.g., `hx-vals='{"value": "<Low | Medium | High | Critical>"}'`); free-text fields use generic placeholders (`<value>`, `<label>`). Affordance instructions from `get_affordances()` are threaded through `_affordance_hints(data)` on the base Eigenform (returns `SimpleNamespace` to avoid Jinja2 dict method collisions; values wrapped in `Markup()` to preserve angle-bracket placeholders). State fields use `data-field` attributes with bare values (empty content for null, no display prefixes). Bounding divs use `data-eigenform` and `data-type`.
+- **Event delegation**: All interactive elements use `data-ef-*` attributes. Single global `eigenform.js` (~75 lines) handles fetch+swap. Scroll position preserved via explicit `scrollY` save/restore. SSE handler debounced 500ms after same-tab POSTs to prevent redundant swaps.
+- **View selector dropdown**: 2-option dropdown (Human View, JSON) on every eigenform. Agents use JSON via content negotiation (`Accept: application/json`).
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
@@ -142,7 +138,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**44 eigenform types (33 base + 11 HTMX-native X variants). 19 pages.**
+**33 eigenform types. 18 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -254,8 +250,6 @@ Showcase:
 | `engine/historyform.py` | HistoryForm — wraps eigenform with append-only change history, lazy detection, timeline browsing |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
-| `engine/listformx.py` | ListFormX — HTMX-native ListForm (dual template: listx.html agent, listx_human.html human) |
-| `engine/tableformx.py` | TableFormX — HTMX-native TableForm (dual template: tablex.html agent, tablex_human.html human) |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
 | `engine/multiform.py` | MultiForm — groups FieldDescriptors under single affordance |
 | `engine/visibilityform.py` | VisibilityForm — conditional visibility (value, list, or callable) |
@@ -275,8 +269,6 @@ Showcase:
 | `engine/actionform.py` | ActionForm — imperative button, preconditions, confirmation, side effects, structural_actions |
 | `engine/repeaterform.py` | RepeaterForm + EntryGroup — dynamic repeated structure, compound scopes |
 | `engine/groupform.py` | GroupForm — named compositions, parameterizable via subclassing |
-| `engine/chainformx.py` | ChainFormX — HTMX-native ChainForm (dual template: chainx.html agent, chainx_human.html human) |
-| `engine/stepformx.py` | SequenceFormX — HTMX-native SequenceForm (dual template: stepx.html agent, stepx_human.html human) |
 | `app/__init__.py` | Flask app factory |
 | `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
 | `app/templates/` | index.html, page.html (SSE client) |
@@ -309,11 +301,9 @@ Showcase:
 
 ### Engine Next Steps
 
-- **HTMX migration — remaining eigenforms** — 12 of 33 types migrated (TextForm, ListFormX, TableFormX, ChoiceFormX, CheckboxFormX, NumberFormX, BooleanFormX, MemoFormX, TabFormX, AccordionFormX, ChainFormX, SequenceFormX). Agent template conventions established: bounding divs, hx-vals body templates, affordance instructions, data-field attributes. Next candidates: remaining data forms, then containers (GroupForm, SwitchForm, VisibilityForm, etc.).
-- **Agent HTML route** — wire `render_agent_from_data()` into the route layer so agents can GET the naked HTML directly (content negotiation or query param).
 - **Edit mode for remaining eigenform types** — 11 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, ChoiceForm, CheckboxForm, ListForm) and containers (GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm). Remaining data types need edit mode added.
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns.
-- Agent integration testing (can an agent drive the HTMX API end-to-end?)
+- Agent integration testing (can an agent drive the JSON API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
 - Performance / stress testing with large pages
 
