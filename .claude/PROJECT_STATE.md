@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-04-001 (2026-04-04)*
+*Last updated: Session-2026-04-04-002 (2026-04-04)*
 
 ---
 
@@ -110,6 +110,7 @@ Showcase:
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
+- **Stateless server**: Server holds no eigenforms or pages in memory between requests. `discover_pages()` returns unbound seed definitions at startup; `bind_page()` produces a transient bound page per request from seed + store. Server is a pure function: `(seed + store + request) → response`. SSE subscriber registry is connection state only (queues, not eigenforms).
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
 - **Store file sync**: Store checks file mtime on every access. External deletes clear cache; external edits reload.
 - **ComputedForm ordering**: when store_result=True, must appear before VisibilityForm that depends on its result (serialization is sequential).
@@ -203,6 +204,8 @@ Showcase:
 **ChainFormX + SequenceFormX + agent template conventions** (Apr 3, session 001). ChainFormX and SequenceFormX migrated to HTMX-native (44 eigenform types: 33 base + 11 X variants). Both added to HTMX Lab with demo data. Comprehensive agent template quality pass across all 12 agent templates: fixed Jinja2 `&#34;` escaping in data attributes; added `hx-vals` with `<placeholder>` body templates to every `<form>` and `<button>` so agents see exact POST body shape; added `<div data-eigenform="{key}" data-type="{form}">` bounding divs via `_wrap_agent_html()` with proper indentation for nested eigenforms; added `_affordance_hints(data)` to base Eigenform threading affordance instruction text into agent templates as visible `<p data-field="instruction">` elements; standardized `<input>` attribute ordering. Research confirmed LLMs can infer POST bodies from forms but reliability degrades with complexity — `hx-vals` chosen as pragmatic explicit approach that keeps HTML human-usable.
 
 **Container edit mode** (Apr 1, session 002). Edit mode for all 5 container eigenforms: GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm. Each supports add/remove/reorder children, toggle child editability (parent-controlled ✏ toggle), undo/discard via Store.snapshot_scope/restore_scope. Structural persistence via `__structure` in child scope. `editable` round-trips through to_descriptor/from_descriptor (base Eigenform and registry updated). Containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbars, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Gallery Container Forms tab: all 5 demos set to editable=True. 11 eigenform types now have full edit mode (6 data + 5 container).
+
+**HTMX excision + X variant removal + stateless server** (Apr 4, sessions 001-002). Session 001: HTMX fully excised — deleted htmx.min.js, json-enc.js, removed all hx-* attributes, converted 12 human templates to data-ef-* event delegation. All 11 X variant forms deleted (Python files, human templates, agent templates). HTMX Lab page deleted. Registry trimmed from 44 to 33 eigenform types. View selector simplified to 2 panes (Human View, JSON). 20 parity tests passing. Session 002: Stateless server refactor — server no longer holds eigenforms or pages in memory between requests. `build_pages()` replaced with `discover_pages()` (unbound seeds) + `bind_page()` (transient per-request binding). Server is a pure function: (seed + store + request) → response. SSE subscriber registry retained as connection state only.
 
 ---
 
