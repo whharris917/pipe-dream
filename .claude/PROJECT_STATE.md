@@ -111,7 +111,8 @@ Showcase:
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
 - **Stateless server**: Server holds no eigenforms or pages in memory between requests. `discover_pages()` returns unbound seed definitions at startup; `bind_page()` produces a transient bound page per request from seed + store. Server is a pure function: `(seed + store + request) → response`. SSE subscriber registry is connection state only (queues, not eigenforms).
-- **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition.
+- **Instance spawning**: Page seeds are templates. Users spawn named instances of any seed type via `POST /instances`. Multiple instances of the same type coexist. `InstanceRegistry` (`app/registry.py`) wraps `data/instances.json` — tracks instance ID, type, label, created_at. Sequential IDs per type (`{type}-{n}`). `POST /instances/<id>/delete` removes instance + data file. Index page is a launcher: seed catalog with "New Page" buttons + instance list with open/delete. Auto-migration adopts legacy `data/{seed_key}.json` files as instances on startup.
+- **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition. Seeds are templates — define page types, not page instances.
 - **Store file sync**: Store checks file mtime on every access. External deletes clear cache; external edits reload.
 - **ComputedForm ordering**: when store_result=True, must appear before VisibilityForm that depends on its result (serialization is sequential).
 - **Named compositions**: GroupForm enables reusable, parameterized eigenform groups via subclassing. Subclass gets own form type identity.
@@ -205,7 +206,7 @@ Showcase:
 
 **Container edit mode** (Apr 1, session 002). Edit mode for all 5 container eigenforms: GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm. Each supports add/remove/reorder children, toggle child editability (parent-controlled ✏ toggle), undo/discard via Store.snapshot_scope/restore_scope. Structural persistence via `__structure` in child scope. `editable` round-trips through to_descriptor/from_descriptor (base Eigenform and registry updated). Containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbars, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Gallery Container Forms tab: all 5 demos set to editable=True. 11 eigenform types now have full edit mode (6 data + 5 container).
 
-**HTMX excision + X variant removal + stateless server** (Apr 4, sessions 001-002). Session 001: HTMX fully excised — deleted htmx.min.js, json-enc.js, removed all hx-* attributes, converted 12 human templates to data-ef-* event delegation. All 11 X variant forms deleted (Python files, human templates, agent templates). HTMX Lab page deleted. Registry trimmed from 44 to 33 eigenform types. View selector simplified to 2 panes (Human View, JSON). 20 parity tests passing. Session 002: Stateless server refactor — server no longer holds eigenforms or pages in memory between requests. `build_pages()` replaced with `discover_pages()` (unbound seeds) + `bind_page()` (transient per-request binding). Server is a pure function: (seed + store + request) → response. SSE subscriber registry retained as connection state only.
+**HTMX excision + X variant removal + stateless server + instance spawning** (Apr 4, sessions 001-002). Session 001: HTMX fully excised — deleted htmx.min.js, json-enc.js, removed all hx-* attributes, converted 12 human templates to data-ef-* event delegation. All 11 X variant forms deleted (Python files, human templates, agent templates). HTMX Lab page deleted. Registry trimmed from 44 to 33 eigenform types. View selector simplified to 2 panes (Human View, JSON). 20 parity tests passing. Session 002: Stateless server refactor — server no longer holds eigenforms or pages in memory between requests. `build_pages()` replaced with `discover_pages()` (unbound seeds) + `bind_page()` (transient per-request binding). Server is a pure function: (seed + store + request) → response. SSE subscriber registry retained as connection state only. Instance spawning — page seeds become templates, users spawn named instances via the Agent Portal launcher. `InstanceRegistry` tracks instances in `data/instances.json`. Sequential IDs per type. Auto-migration adopts legacy data files on startup. TextForm tooltip and layout fixes.
 
 ---
 
@@ -273,9 +274,10 @@ Showcase:
 | `engine/repeaterform.py` | RepeaterForm + EntryGroup — dynamic repeated structure, compound scopes |
 | `engine/groupform.py` | GroupForm — named compositions, parameterizable via subclassing |
 | `app/__init__.py` | Flask app factory |
-| `app/routes.py` | Routes + SSE + content negotiation (JSON/HTML) |
-| `app/templates/` | index.html, page.html (SSE client) |
-| `pages/` | One file per page, auto-discovered. Key from definition, not filename. |
+| `app/registry.py` | InstanceRegistry — tracks spawned page instances in `data/instances.json` |
+| `app/routes.py` | Routes + SSE + content negotiation + instance management |
+| `app/templates/` | index.html (launcher), page.html (SSE client) |
+| `pages/` | Seed definitions (page types), auto-discovered. Key = type identifier. |
 | `run.py` | Entry point (threaded=True) |
 
 ---
