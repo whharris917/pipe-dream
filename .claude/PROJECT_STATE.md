@@ -102,7 +102,10 @@ Showcase:
 - **CSS extraction**: `app/static/style.css` with `ef-` prefixed semantic classes. `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` class constants replace inline style strings. ~40% of inline styles extracted.
 - **Parity test**: `tests/test_parity.py` verifies every affordance URL in `serialize()` appears as `data-ef-*` attribute in `render()` for all 18 pages. Replaces runtime RuntimeError with CI-time enforcement (shift-left). 20 tests, all passing.
 - **Event delegation**: All interactive elements use `data-ef-*` attributes. Single global `eigenform.js` (~75 lines) handles fetch+swap. Scroll position preserved via explicit `scrollY` save/restore. SSE handler debounced 500ms after same-tab POSTs to prevent redundant swaps.
-- **View selector dropdown**: 2-option dropdown (Human View, JSON) on every eigenform. Agents use JSON via content negotiation (`Accept: application/json`).
+- **View selector dropdown**: 2-option dropdown (Human View, JSON) on every eigenform. Agents use JSON via content negotiation (`Accept: application/json`). Hidden in Operator View.
+- **Supervisor/Operator View**: Page-level toggle (localStorage `ef-view`). Supervisor View: full surrounding borders on all eigenforms, view toggles and chrome buttons visible, forces Default theme. Operator View: suppresses chrome (view toggles, edit buttons, JSON panes), shows theme selector. Default theme in Operator: left accent on data forms only, no border on containers. Non-default themes: eigenform borders stripped, theme CSS controls presentation.
+- **Theme infrastructure**: `engine/templates.py` `set_theme()`/`get_theme()` + fallback resolution: `render_template()` tries `{theme}/{template_name}`, falls back to default. Theme = subdirectory under `app/templates/eigenforms/` + optional CSS file. Theme selected via cookie (`ef-theme`), `data-theme` attribute on `<body>` for CSS targeting. `before_request` hook in routes applies theme. Themes only override templates they want to customize.
+- **Sleek theme**: VS Code-inspired dark UI. `sleek/text_human.html` (TextForm only). `sleek.css` with dark palette (#262626 bg, #2d2d30 cards, #007acc focus, #4ec9b0 teal accents). Data eigenforms as bordered cards, containers transparent. Global dark styling for inputs, buttons, tabs, accordions, feedback.
 - **LNARF compliance**: JSON is canonical, HTML is faithful projection (verified by parity test), view selector dropdown is human-only (exempt)
 - **HATEOAS**: every eigenform carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
@@ -221,6 +224,8 @@ Showcase:
 
 **Container Unification + InfoForm Edit Mode + DictionaryForm Rename** (Apr 5, session 004). Merged TabForm, ChainForm, SequenceForm, AccordionForm into NavigationForm — single class with `mode` field ("tabs", "chain", "sequence", "accordion"). Two orthogonal axes: unlock policy (free vs gated) + projection (one-at-a-time vs all-visible). ~62% line reduction (1,730→624 lines + 4→1 templates). Registry aliases for backwards-compatible descriptor resolution. InfoForm: added edit mode with embedded multiline TextForm child (same pattern as ChoiceForm/CheckboxForm). Suppressed Batch affordance (no interaction affordances to batch). Gallery: new Display Forms tab. KeyValueForm renamed to DictionaryForm. 28 eigenform types, 20 pages, 21 parity tests passing.
 
+**Supervisor/Operator View + Theme Infrastructure + Sleek Theme** (Apr 5, session 005). Page-level Supervisor/Operator View toggle: Supervisor shows full surrounding borders and all chrome, Operator suppresses chrome and enables theme selection. Eigenform wrapper migrated from inline styles to CSS classes (`eigenform`, `eigenform--complete`, `eigenform--editing`, `eigenform--editable`) with `data-form` attribute selectors for container exclusion. Theme infrastructure: `set_theme()`/`get_theme()` in templates.py with fallback resolution (themed subdirectory → default). Themes are additive — subdirectory + optional CSS, override only desired templates. Sleek theme: VS Code-inspired dark UI with TextForm template override, card-based data eigenform layout, dark palette (#262626/#2d2d30/#007acc/#4ec9b0). 21 parity tests passing.
+
 ---
 
 ## 3. What's Built
@@ -284,7 +289,9 @@ Showcase:
 | `app/__init__.py` | Flask app factory |
 | `app/registry.py` | InstanceRegistry — tracks spawned page instances in `data/instances.json` |
 | `app/routes.py` | Routes + SSE + content negotiation + instance management |
-| `app/templates/` | index.html (launcher), page.html (SSE client) |
+| `app/templates/` | index.html (launcher), page.html (SSE client + view/theme toggles) |
+| `app/templates/eigenforms/sleek/` | Sleek theme template overrides (text_human.html) |
+| `app/static/sleek.css` | Sleek theme styles (VS Code dark palette, card layout) |
 | `pages/` | Seed definitions (page types), auto-discovered. Key = type identifier. |
 | `run.py` | Entry point (threaded=True) |
 
@@ -318,6 +325,7 @@ Showcase:
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns.
 - **Affordance flotation future phases** — body-varying merges, container-level flotation (mid-tree), dynamic flotation rules, additional separable affordance types
 - **Affordance option normalization** — inconsistent option list carriers across eigenforms (body placeholder, instruction text, or both). Normalize to dedicated fields for machine-readable option discovery.
+- **Sleek theme expansion** — Only TextForm has a themed template. Remaining data forms use default templates inside sleek cards. Per-form sleek templates would complete the dark UI.
 - Agent integration testing (can an agent drive the JSON API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
 - Performance / stress testing with large pages
