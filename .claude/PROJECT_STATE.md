@@ -226,6 +226,8 @@ Showcase:
 
 **Supervisor/Operator View + Theme Infrastructure + Sleek Theme** (Apr 5, session 005). Page-level Supervisor/Operator View toggle: Supervisor shows full surrounding borders and all chrome, Operator suppresses view toggles/JSON and enables theme selection. Edit chrome (pencil/undo/discard) visible in both views. Eigenform wrapper migrated from inline styles to CSS classes with `data-form` attribute selectors for container exclusion. Theme infrastructure: `set_theme()`/`get_theme()` in templates.py with fallback resolution (themed subdirectory → default). Themes are additive — subdirectory + optional CSS, override only desired templates. Sleek theme: dark UI (GitHub Dark Dimmed palette) with card-based layout, window-style titlebars, VS Code-style tab navigation with active-tab continuity. SVG chrome icons replaced with Unicode characters using `currentColor`. NavigationForm template gained CSS classes (`ef-nav-bar`, `ef-nav-tab`, `ef-nav-content`, etc.) for reliable theme targeting. Active child content wrapped in `ef-nav-content` div. 21 parity tests passing.
 
+**Sleek Theme Expansion + TableForm Bugfix** (Apr 5, session 006). Sleek ListForm: custom `sleek/list.html` template with row-based layout, numbered ordinals, borderless inline inputs, hover-revealed controls. All `sleek-list__*` BEM classes, zero reliance on `render_btn()`/`ef-btn-*`. Global Sleek button overrides scoped with `:not([class*="sleek-"])` to prevent bleed-through. Sleek TableForm: custom `sleek/table.html` rendering from raw data (col_oc, row_oc, typed_templates, row_groups_by_id, constraint data added to render_from_data context). Dark spreadsheet grid with `border-spacing: 1px` gaps, hover-revealed row/column controls, borderless cell inputs. AccordionForm: migrated toggle div from inline `background: #eee` to `.ef-aff-accordion` class (inline style was blocking all CSS overrides), darkened to `#22272e`, removed blue left accent from section content. TableForm default view bugfix: `render_inline_button()` takes CSS class name but was receiving `STYLE_REMOVE`/`STYLE_ARROW` inline style strings — buttons had no styling. Added `CSS_CONFIRM`/`CSS_REMOVE`/`CSS_ARROW` constants to affordances.py. 21 parity tests passing.
+
 ---
 
 ## 3. What's Built
@@ -290,7 +292,7 @@ Showcase:
 | `app/registry.py` | InstanceRegistry — tracks spawned page instances in `data/instances.json` |
 | `app/routes.py` | Routes + SSE + content negotiation + instance management |
 | `app/templates/` | index.html (launcher), page.html (SSE client + view/theme toggles) |
-| `app/templates/eigenforms/sleek/` | Sleek theme template overrides (text_human.html) |
+| `app/templates/eigenforms/sleek/` | Sleek theme template overrides (text_human.html, list.html, table.html) |
 | `app/static/sleek.css` | Sleek theme styles (VS Code dark palette, card layout) |
 | `pages/` | Seed definitions (page types), auto-discovered. Key = type identifier. |
 | `run.py` | Entry point (threaded=True) |
@@ -325,7 +327,7 @@ Showcase:
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns.
 - **Affordance flotation future phases** — body-varying merges, container-level flotation (mid-tree), dynamic flotation rules, additional separable affordance types
 - **Affordance option normalization** — inconsistent option list carriers across eigenforms (body placeholder, instruction text, or both). Normalize to dedicated fields for machine-readable option discovery.
-- **Sleek theme expansion** — Only TextForm has a themed template. Remaining data forms use default templates inside sleek cards. Per-form sleek templates would complete the dark UI.
+- **Sleek theme expansion** — TextForm, ListForm, and TableForm have themed templates. AccordionForm toggle headers fixed. Remaining data forms use default templates inside sleek cards. Per-form sleek templates would complete the dark UI.
 - Agent integration testing (can an agent drive the JSON API end-to-end?)
 - QMS workflow page definitions (actual workflow pages using eigenforms)
 - Performance / stress testing with large pages
