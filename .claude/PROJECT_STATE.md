@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-05-003 (2026-04-05)*
+*Last updated: Session-2026-04-05-004 (2026-04-05)*
 
 ---
 
@@ -31,7 +31,7 @@
 - **page-builder**: Mutable page for composing eigenform structures from the registry, with embedded Eigenform Reference Menu
 - **eigenform-reference**: Eigenform Reference Menu — type documentation for agents (5-tab reference with Overview, Data, Containers, Reactive, Special)
 
-**Eigenform architecture** — 31 eigenform types (RankForm, MemoForm, RangeForm consolidated into ListForm, TextForm, NumberForm respectively):
+**Eigenform architecture** — 28 eigenform types (RankForm→ListForm, MemoForm→TextForm, RangeForm→NumberForm, TabForm+ChainForm+SequenceForm+AccordionForm→NavigationForm, KeyValueForm→DictionaryForm):
 
 Data forms:
 - `TextForm`: free-form string input. Single-line by default; `multiline=True` for textarea. Optional `min_length`/`max_length` validation. Complete when non-empty (and meets min_length if set).
@@ -44,15 +44,12 @@ Data forms:
 - `NumberForm`: numeric input with min/max/step constraint. `slider=True` for range slider UI with optional `unit` label. Complete when not None.
 - `DateForm`: ISO 8601 date or datetime with optional bounds. Complete when not None.
 - `BooleanForm`: binary yes/no toggle with custom labels. Complete when not None.
-- `KeyValueForm`: dynamic key-value pairs. Edit/remove by key (not internal ID). Key rename via new_key. Complete when at least one entry with key+value.
-- `InfoForm`: read-only text display, no affordances, always complete. `text` accepts `str | dict` — flat string or structured key-value pairs for labeled entries.
+- `DictionaryForm`: dynamic key-value pairs (renamed from KeyValueForm). Edit/remove by key (not internal ID). Key rename via new_key. Complete when at least one entry with key+value.
+- `InfoForm`: read-only text display, no interaction affordances, always complete. Edit mode embeds a multiline TextForm for content editing. `text` accepts `str | dict` — dict auto-converts to "key: value" lines on bind.
 
 Container forms:
 - `PageForm`: top-level container with Reset Page (recursive clear). Persistence boundary. Optional mutable_structure for Phase D/E. Feedback banner for action results.
-- `TabForm`: tabbed container. Only active tab in JSON/HTML (faithful projection).
-- `ChainForm`: sequential wizard. Auto-advances. Complete when all steps complete.
-- `SequenceForm`: gated sequential container. Like ChainForm but without auto-advance. Steps unlock progressively. Manual Back/Next navigation.
-- `AccordionForm`: collapsible sections. Only expanded sections in JSON/HTML (faithful projection).
+- `NavigationForm`: unified container with four modes (replaces TabForm, ChainForm, SequenceForm, AccordionForm). `mode="tabs"`: free access, one child visible. `mode="chain"`: gated, auto-advance. `mode="sequence"`: gated, manual Back/Next. `mode="accordion"`: free access, all children visible with expand/collapse. Faithful projection in all modes.
 - `VisibilityForm`: wraps child with conditional visibility. Supports value, list, or callable predicates.
 - `GroupForm`: named container for reusable compositions. Supports parameterization via subclassing.
 - `RepeaterForm`: stamps template eigenforms per dynamic entry. Compound scopes, stable IDs, add/remove.
@@ -116,7 +113,7 @@ Showcase:
 - **Type registry**: `GET /types` returns config schema per type (field names, types, optional flag). `describe_types()` in registry.py introspects dataclass fields.
 - **Compact responses**: Child POST returns targeted eigenform state, not full page. `GET /pages/{id}?depth=shallow` returns labels + completion only. Mutable page affordances collapsed from O(N) to O(1) parameterized remove/move.
 - **Affordance flotation**: Separable affordances (Clear, Edit, Batch) float from eigenforms at any nesting depth to PageForm level during agent-facing serialization. Affordances tagged with `_floatable` merge key in `_serialize_full()`. `_collect_floatable()` recursively walks `eigenform`, `eigenforms`, `sections` keys. PageForm groups by merge key and emits parameterized compound affordances with structured `targets` dict (full URL → label). Children retain only type-specific affordances. HTML rendering unaffected (flotation is agent-tier only). ~61% reduction in affordance blocks on flat pages; deeply nested pages (eigenform-gallery) also benefit.
-- **Navigation affordance collapse (O(N)→O(1))**: Container navigation affordances (tab switch, section toggle, step jump) collapsed from one-per-child to a single parameterized affordance with an options dict (`tabs`, `sections`, or `steps` mapping key→label). Applies to TabForm, AccordionForm, ChainForm, SequenceForm, TableRunner. HTML templates render navigation buttons directly from context data via `render_btn()`. `SwitchTabAffordance` and `ToggleSectionAffordance` deleted.
+- **Navigation affordance collapse (O(N)→O(1))**: Container navigation affordances (tab switch, section toggle, step jump) collapsed from one-per-child to a single parameterized affordance with an options dict (`tabs`, `sections`, or `steps` mapping key→label). Applies to NavigationForm (all modes), TableRunner. HTML templates render navigation buttons directly from context data via `render_btn()`. `SwitchTabAffordance` and `ToggleSectionAffordance` deleted.
 - **Embedded PageForm**: PageForm.bind() accepts both `Path` (top-level) and `Store` (embedded child). Embedded pages derive `data_dir` from parent store path, create independent Store files at `{parent_scope}__{child_key}.json`, and nest URL prefix under parent. Full routing support via `find_eigenform` path traversal. Enables reuse of page seeds across standalone and embedded contexts.
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition. Seeds are templates — define page types, not page instances.
 - **Store file sync**: Store checks file mtime on every access. External deletes clear cache; external edits reload.
@@ -135,18 +132,18 @@ Showcase:
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tableform, listform, rankform, keyvalueform.
 - **Dependency visibility**: `render_dependency_line()` in eigenform.py. All sibling-reading eigenforms render "Depends on: /path/to/sibling" with full URL paths. Applied to SwitchForm, DynamicChoiceForm, ComputedForm, ValidationForm (per-rule), ActionForm, ScoreForm. Makes the shadow dependency graph visible in the UI.
 - **Mutable page UI**: PageForm.render_from_data renders custom HTML for mutable_structure pages: type dropdown toolbar, per-eigenform ▲/▼/✕ control bars, empty state placeholder, subtle Rebuild from Seed. Eigenforms added via Page Builder get `editable=True` automatically; `editable` round-trips through to_descriptor/from_descriptor.
-- **Container edit mode**: All 5 container eigenforms (GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm) support edit mode with structural operations: add/remove/reorder children, toggle child editability (✏ pencil toggle per child). Structural persistence via `__structure` in child scope (list-based for GroupForm/ChainForm/SequenceForm, ordered-list-of-entries for TabForm/AccordionForm). Undo/discard via `Store.snapshot_scope`/`restore_scope`. `_reconstruct` applies `editable` from descriptor after seed matching. All containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbar, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Editability is a parent-controlled property — containers toggle child `editable` via structural descriptors.
+- **Container edit mode**: Container eigenforms (GroupForm, NavigationForm) support edit mode with structural operations: add/remove/reorder children, toggle child editability (✏ pencil toggle per child). Structural persistence via `__structure` in child scope. Undo/discard via `Store.snapshot_scope`/`restore_scope`. `_reconstruct` applies `editable` from descriptor after seed matching. All containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbar, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Editability is a parent-controlled property — containers toggle child `editable` via structural descriptors.
 
 **Terminology:**
 - **Eigenform** = a form that preserves its identity under transformation (serialize, render, handle, recompose). "Eigen" as in eigenvector — identity-preserving — not "self-contained." Revised from original meaning after theoretical analysis (Session-2026-03-30-001).
-- **Forms** = 33 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
+- **Forms** = 28 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
 - **Seed** = the Python page definition; the genome
 - **Structure** = the stored eigenform tree; the expressed organism
 - **Structural action** = a mutation that reshapes the eigenform tree at runtime
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**31 eigenform types. 20 pages.**
+**28 eigenform types. 20 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -222,6 +219,8 @@ Showcase:
 
 **Eigenform Type Consolidation + Template Fixes + Gallery Polish** (Apr 5, session 002). Removed 3 redundant eigenform types: RankForm (→ ListForm with fixed_items), MemoForm (→ TextForm with multiline/min_length/max_length), RangeForm (→ NumberForm with slider/unit). TextForm expanded: `multiline`, `min_length`, `max_length` fields with validation, textarea render hints, template support. NumberForm expanded: `slider`, `unit` fields with range_input render hints. Fixed Batch affordance HTML leak: 6 templates (date, range, action, dynamicchoice, history, tablerunner) rendered `_chrome_rendered` affordances as visible buttons — added `_rendered` filter. Fixed MultiForm missing `render_from_data()` override (fell through to base f-string renderer). Gallery cleanup: all edit-mode eigenforms set editable, removed redundant TableForm from collections tab, reordered demos. Eigenform reference page and README updated. 31 eigenform types, 20 pages, 21 parity tests passing.
 
+**Container Unification + InfoForm Edit Mode + DictionaryForm Rename** (Apr 5, session 004). Merged TabForm, ChainForm, SequenceForm, AccordionForm into NavigationForm — single class with `mode` field ("tabs", "chain", "sequence", "accordion"). Two orthogonal axes: unlock policy (free vs gated) + projection (one-at-a-time vs all-visible). ~62% line reduction (1,730→624 lines + 4→1 templates). Registry aliases for backwards-compatible descriptor resolution. InfoForm: added edit mode with embedded multiline TextForm child (same pattern as ChoiceForm/CheckboxForm). Suppressed Batch affordance (no interaction affordances to batch). Gallery: new Display Forms tab. KeyValueForm renamed to DictionaryForm. 28 eigenform types, 20 pages, 21 parity tests passing.
+
 ---
 
 ## 3. What's Built
@@ -257,16 +256,14 @@ Showcase:
 | `engine/checkboxform.py` | CheckboxForm — multi-select with Done confirmation |
 | `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses, disabled_button |
 | `engine/store.py` | JSON file store, one file per page, scoped by eigenform key, delete() for surgical removal, mtime-based file sync |
-| `engine/registry.py` | EigenformRegistry (register/lookup/available), from_descriptor(), lazy default with 28 types |
+| `engine/registry.py` | EigenformRegistry (register/lookup/available), from_descriptor(), lazy default with 28 types + aliases |
 | `engine/pageform.py` | PageForm — persistence boundary, find_eigenform, structural persistence, mutable structure, feedback banner |
-| `engine/tabform.py` | TabForm — tabbed container, faithful projection |
-| `engine/chainform.py` | ChainForm — sequential wizard with auto-advance + Continue |
+| `engine/navigationform.py` | NavigationForm — unified container (tabs/chain/sequence/accordion modes), faithful projection |
 | `engine/rubikscubeform.py` | RubiksCubeForm + RotateAffordance — complexity showcase |
 | `engine/tableform.py` | TableForm — inline editing, add/remove, batch support, typed columns (RowGroup, compound scopes), fixed_rows cell seeding |
-| `engine/stepform.py` | SequenceForm — gated sequential container without auto-advance |
 | `engine/tablerunner.py` | TableRunner — executes a TableForm as a gated sequential workflow |
 | `engine/historyform.py` | HistoryForm — wraps eigenform with append-only change history, lazy detection, timeline browsing |
-| `engine/infoform.py` | InfoForm — read-only text display (`str` or `dict`), no affordances, always complete |
+| `engine/infoform.py` | InfoForm — read-only text display, embedded TextForm in edit mode, always complete |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
@@ -277,9 +274,8 @@ Showcase:
 | `engine/numberform.py` | NumberForm — numeric input with min/max/step/integer/slider/unit |
 | `engine/dateform.py` | DateForm — ISO 8601 date/datetime with bounds |
 | `engine/booleanform.py` | BooleanForm — binary yes/no toggle |
-| `engine/keyvalueform.py` | KeyValueForm — dynamic key-value pairs |
+| `engine/dictionaryform.py` | DictionaryForm — dynamic key-value pairs (renamed from KeyValueForm) |
 | `engine/computedform.py` | ComputedForm — derived display from siblings, optional store_result |
-| `engine/accordionform.py` | AccordionForm — collapsible sections, faithful projection |
 | `engine/validationform.py` | ValidationForm — cross-field rules, pending/pass/fail, blocks completion |
 | `engine/dynamicchoiceform.py` | DynamicChoiceForm — options from sibling value, stale detection |
 | `engine/actionform.py` | ActionForm — imperative button, preconditions, confirmation, side effects, structural_actions |
@@ -318,7 +314,7 @@ Showcase:
 
 ### Engine Next Steps
 
-- **Edit mode for remaining eigenform types** — 16 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, DateForm, ChoiceForm, CheckboxForm, ListForm, SetForm, MultiForm, KeyValueForm) and containers (GroupForm, TabForm, ChainForm, SequenceForm, AccordionForm, PageForm). Remaining types (TableForm, ComputedForm, ScoreForm, ValidationForm, DynamicChoiceForm, ActionForm, HistoryForm, RepeaterForm, SwitchForm, InfoForm, TableRunner) may benefit from edit mode.
+- **Edit mode for remaining eigenform types** — 14 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, DateForm, ChoiceForm, CheckboxForm, ListForm, SetForm, MultiForm, DictionaryForm, InfoForm) and containers (GroupForm, NavigationForm, PageForm). Remaining types (TableForm, ComputedForm, ScoreForm, ValidationForm, DynamicChoiceForm, ActionForm, HistoryForm, RepeaterForm, SwitchForm, TableRunner) may benefit from edit mode.
 - **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns.
 - **Affordance flotation future phases** — body-varying merges, container-level flotation (mid-tree), dynamic flotation rules, additional separable affordance types
 - **Affordance option normalization** — inconsistent option list carriers across eigenforms (body placeholder, instruction text, or both). Normalize to dedicated fields for machine-readable option discovery.
