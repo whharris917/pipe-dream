@@ -28,9 +28,10 @@
 - **survey-builder**: Self-modifying page — ActionForm generates questions that materialize from registry
 - **eigenform-gallery**: Interactive tutorial covering all 33 eigenform types across 10 tabbed sections
 - **control-flow-gallery**: Control flow demos (SequenceForm, Fork/Merge, Routing, HistoryForm)
-- **page-builder**: Mutable page for composing eigenform structures from the registry
+- **page-builder**: Mutable page for composing eigenform structures from the registry, with embedded Eigenform Reference Menu
+- **eigenform-reference**: Eigenform Reference Menu — type documentation for agents (5-tab reference with Overview, Data, Containers, Reactive, Special)
 
-**Eigenform architecture** — 33 eigenform types:
+**Eigenform architecture** — 34 eigenform types:
 
 Data forms:
 - `TextForm`: single free-form string. Complete when value not None.
@@ -47,6 +48,7 @@ Data forms:
 - `MemoForm`: multi-line textarea with min/max length. Complete when non-empty and meets min_length.
 - `RankForm`: fixed-set item reordering with move up/down + set_order. Complete when explicitly ranked.
 - `KeyValueForm`: dynamic key-value pairs. Edit/remove by key (not internal ID). Key rename via new_key. Complete when at least one entry with key+value.
+- `InfoForm`: read-only text display with no affordances, always complete. `text` accepts `str | dict` — flat string or structured key-value pairs for labeled entries.
 
 Container forms:
 - `PageForm`: top-level container with Reset Page (recursive clear). Persistence boundary. Optional mutable_structure for Phase D/E. Feedback banner for action results.
@@ -118,6 +120,7 @@ Showcase:
 - **Compact responses**: Child POST returns targeted eigenform state, not full page. `GET /pages/{id}?depth=shallow` returns labels + completion only. Mutable page affordances collapsed from O(N) to O(1) parameterized remove/move.
 - **Affordance flotation**: Separable affordances (Clear, Edit, Batch) float from eigenforms at any nesting depth to PageForm level during agent-facing serialization. Affordances tagged with `_floatable` merge key in `_serialize_full()`. `_collect_floatable()` recursively walks `eigenform`, `eigenforms`, `sections` keys. PageForm groups by merge key and emits parameterized compound affordances with structured `targets` dict (full URL → label). Children retain only type-specific affordances. HTML rendering unaffected (flotation is agent-tier only). ~61% reduction in affordance blocks on flat pages; deeply nested pages (eigenform-gallery) also benefit.
 - **Navigation affordance collapse (O(N)→O(1))**: Container navigation affordances (tab switch, section toggle, step jump) collapsed from one-per-child to a single parameterized affordance with an options dict (`tabs`, `sections`, or `steps` mapping key→label). Applies to TabForm, AccordionForm, ChainForm, SequenceForm, TableRunner. HTML templates render navigation buttons directly from context data via `render_btn()`. `SwitchTabAffordance` and `ToggleSectionAffordance` deleted.
+- **Embedded PageForm**: PageForm.bind() accepts both `Path` (top-level) and `Store` (embedded child). Embedded pages derive `data_dir` from parent store path, create independent Store files at `{parent_scope}__{child_key}.json`, and nest URL prefix under parent. Full routing support via `find_eigenform` path traversal. Enables reuse of page seeds across standalone and embedded contexts.
 - **Page definitions**: one file per page in `pages/` directory, auto-discovered. Key from definition. Seeds are templates — define page types, not page instances.
 - **Store file sync**: Store checks file mtime on every access. External deletes clear cache; external edits reload.
 - **ComputedForm ordering**: when store_result=True, must appear before VisibilityForm that depends on its result (serialization is sequential).
@@ -146,7 +149,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**33 eigenform types. 18 pages.**
+**34 eigenform types. 20 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -218,6 +221,8 @@ Showcase:
 
 **Navigation Affordance Collapse + Batch Body Cleanup** (Apr 5, session 001). O(N)→O(1) collapse of container navigation affordances across 5 forms: TabForm (`tabs` dict), AccordionForm (`sections` dict), ChainForm (`steps` dict), SequenceForm (`steps` dict), TableRunner (`steps` dict). Each emits a single parameterized affordance with an options dict instead of one affordance per child. HTML templates updated to render navigation buttons directly via `render_btn()` from context data. Deleted `SwitchTabAffordance`, `ToggleSectionAffordance`, `_render_tab_button()`, `_render_accordion_toggle()`. Stripped `_chrome_rendered` from agent JSON. Batch affordance body template cleaned up: `[{"action": "...", "...": "..."}]` → `["<action_body_1>", "<action_body_2>", "..."]` with instruction referencing sibling affordances. ~230 lines reduced from agent JSON across flotation + navigation collapse + batch cleanup.
 
+**InfoForm + Eigenform Reference Menu + Embedded PageForm + Page Builder** (Apr 5, session 001 continued). InfoForm: 34th eigenform type — read-only text display, no affordances, always complete. `text` accepts `str | dict` for structured key-value display. AccordionForm: added `default_expanded` config field (defaults `True`, sections start collapsed when `False`). Eigenform Reference Menu: new page (`eigenform-reference`) documenting all 34 types across 5 tabs (Overview + 4 type categories). Overview tab explains eigenform concepts, composition patterns, and config/JSON configurability. Type entries use AccordionForm sections with `default_expanded=False` — 199 lines JSON initially, ~19 lines per expanded type. Floated affordance HTML fix: compound affordances marked `_chrome_rendered` (agent-only, not rendered in HTML). Simplified Add Eigenform: removed config/after from required body — agent flow now matches human flow (add with defaults → edit to configure). Embedded PageForm: `PageForm.bind()` handles both top-level (`Path`) and embedded (`Store`) binding. Embedded pages get independent Store files (`{parent_scope}__{child_key}.json`), nested URL prefixes, and full routing support via `find_eigenform` path traversal. Page Builder embeds the Eigenform Reference Menu as first child with independent state. 20 pages, 34 eigenform types, 21 parity tests passing.
+
 ---
 
 ## 3. What's Built
@@ -262,6 +267,7 @@ Showcase:
 | `engine/stepform.py` | SequenceForm — gated sequential container without auto-advance |
 | `engine/tablerunner.py` | TableRunner — executes a TableForm as a gated sequential workflow |
 | `engine/historyform.py` | HistoryForm — wraps eigenform with append-only change history, lazy detection, timeline browsing |
+| `engine/infoform.py` | InfoForm — read-only text display (`str` or `dict`), no affordances, always complete |
 | `engine/choiceform.py` | ChoiceForm — single selection via radio buttons |
 | `engine/listform.py` | ListForm — ordered list, fixed items, ordering constraints, topological sort |
 | `engine/setform.py` | SetForm — unordered unique collection, add/remove by value |
