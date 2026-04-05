@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-05-001 (2026-04-05)*
+*Last updated: Session-2026-04-05-002 (2026-04-05)*
 
 ---
 
@@ -31,24 +31,21 @@
 - **page-builder**: Mutable page for composing eigenform structures from the registry, with embedded Eigenform Reference Menu
 - **eigenform-reference**: Eigenform Reference Menu — type documentation for agents (5-tab reference with Overview, Data, Containers, Reactive, Special)
 
-**Eigenform architecture** — 34 eigenform types:
+**Eigenform architecture** — 31 eigenform types (RankForm, MemoForm, RangeForm consolidated into ListForm, TextForm, NumberForm respectively):
 
 Data forms:
-- `TextForm`: single free-form string. Complete when value not None.
+- `TextForm`: free-form string input. Single-line by default; `multiline=True` for textarea. Optional `min_length`/`max_length` validation. Complete when non-empty (and meets min_length if set).
 - `CheckboxForm`: multi-select with N/A mode. Complete when any checked or N/A.
 - `ChoiceForm`: single selection via radio buttons. Complete when valid option selected.
 - `MultiForm`: groups FieldDescriptors under single affordance. Complete when all fields filled.
 - `ListForm`: ordered list with add/edit/remove/reorder + N/A. Fixed items, ordering constraints (static + dynamic), topological sort enforcement. Complete when items > 0 or N/A.
 - `SetForm`: unordered collection of unique items. Add/remove by value, duplicates rejected. Complete when non-empty.
 - `TableForm`: dynamic columns + rows with stable IDs. Inline editing for cells, headers, add/remove. Typed columns: fixed_columns accepts Eigenform instances, cells become bound eigenforms with compound scopes and path-based routing.
-- `NumberForm`: numeric input with min/max/step/integer constraint. Complete when not None.
+- `NumberForm`: numeric input with min/max/step/integer constraint. `slider=True` for range slider UI with optional `unit` label. Complete when not None.
 - `DateForm`: ISO 8601 date or datetime with optional bounds. Complete when not None.
 - `BooleanForm`: binary yes/no toggle with custom labels. Complete when not None.
-- `RangeForm`: slider over continuous range with unit. Complete when not None.
-- `MemoForm`: multi-line textarea with min/max length. Complete when non-empty and meets min_length.
-- `RankForm`: fixed-set item reordering with move up/down + set_order. Complete when explicitly ranked.
 - `KeyValueForm`: dynamic key-value pairs. Edit/remove by key (not internal ID). Key rename via new_key. Complete when at least one entry with key+value.
-- `InfoForm`: read-only text display with no affordances, always complete. `text` accepts `str | dict` — flat string or structured key-value pairs for labeled entries.
+- `InfoForm`: read-only text display, no affordances, always complete. `text` accepts `str | dict` — flat string or structured key-value pairs for labeled entries.
 
 Container forms:
 - `PageForm`: top-level container with Reset Page (recursive clear). Persistence boundary. Optional mutable_structure for Phase D/E. Feedback banner for action results.
@@ -149,7 +146,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**34 eigenform types. 20 pages.**
+**31 eigenform types. 20 pages.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -223,6 +220,8 @@ Showcase:
 
 **InfoForm + Eigenform Reference Menu + Embedded PageForm + Page Builder** (Apr 5, session 001 continued). InfoForm: 34th eigenform type — read-only text display, no affordances, always complete. `text` accepts `str | dict` for structured key-value display. AccordionForm: added `default_expanded` config field (defaults `True`, sections start collapsed when `False`). Eigenform Reference Menu: new page (`eigenform-reference`) documenting all 34 types across 5 tabs (Overview + 4 type categories). Overview tab explains eigenform concepts, composition patterns, and config/JSON configurability. Type entries use AccordionForm sections with `default_expanded=False` — 199 lines JSON initially, ~19 lines per expanded type. Floated affordance HTML fix: compound affordances marked `_chrome_rendered` (agent-only, not rendered in HTML). Simplified Add Eigenform: removed config/after from required body — agent flow now matches human flow (add with defaults → edit to configure). Embedded PageForm: `PageForm.bind()` handles both top-level (`Path`) and embedded (`Store`) binding. Embedded pages get independent Store files (`{parent_scope}__{child_key}.json`), nested URL prefixes, and full routing support via `find_eigenform` path traversal. Page Builder embeds the Eigenform Reference Menu as first child with independent state. 20 pages, 34 eigenform types, 21 parity tests passing.
 
+**Eigenform Type Consolidation + Template Fixes + Gallery Polish** (Apr 5, session 002). Removed 3 redundant eigenform types: RankForm (→ ListForm with fixed_items), MemoForm (→ TextForm with multiline/min_length/max_length), RangeForm (→ NumberForm with slider/unit). TextForm expanded: `multiline`, `min_length`, `max_length` fields with validation, textarea render hints, template support. NumberForm expanded: `slider`, `unit` fields with range_input render hints. Fixed Batch affordance HTML leak: 6 templates (date, range, action, dynamicchoice, history, tablerunner) rendered `_chrome_rendered` affordances as visible buttons — added `_rendered` filter. Fixed MultiForm missing `render_from_data()` override (fell through to base f-string renderer). Gallery cleanup: all edit-mode eigenforms set editable, removed redundant TableForm from collections tab, reordered demos. Eigenform reference page and README updated. 31 eigenform types, 20 pages, 21 parity tests passing.
+
 ---
 
 ## 3. What's Built
@@ -254,7 +253,7 @@ Showcase:
 |-----------|-------------|
 | `engine/ordered_collection.py` | OrderedCollection — reusable ordering engine (stable IDs, fixed items, constraints, cycle detection, topological sort) |
 | `engine/eigenform.py` | Eigenform base (children, bind, batch, two-tier serialize, to_descriptor, has_data, clear) |
-| `engine/textform.py` | TextForm — single free-form string input |
+| `engine/textform.py` | TextForm — free-form string, optional multiline/min_length/max_length |
 | `engine/checkboxform.py` | CheckboxForm — multi-select with Done confirmation |
 | `engine/affordances.py` | Affordance (pure data), render_affordance_html utility, all affordance subclasses, disabled_button |
 | `engine/store.py` | JSON file store, one file per page, scoped by eigenform key, delete() for surgical removal, mtime-based file sync |
@@ -275,12 +274,9 @@ Showcase:
 | `engine/visibilityform.py` | VisibilityForm — conditional visibility (value, list, or callable) |
 | `engine/switchform.py` | SwitchForm — N-way structural selection based on sibling value |
 | `engine/scoreform.py` | ScoreForm — read-only grading from answer key |
-| `engine/numberform.py` | NumberForm — numeric input with min/max/step/integer, server-side validation |
+| `engine/numberform.py` | NumberForm — numeric input with min/max/step/integer/slider/unit |
 | `engine/dateform.py` | DateForm — ISO 8601 date/datetime with bounds |
 | `engine/booleanform.py` | BooleanForm — binary yes/no toggle |
-| `engine/rangeform.py` | RangeForm — slider over continuous range, server-side validation |
-| `engine/memoform.py` | MemoForm — multi-line textarea with length constraints |
-| `engine/rankform.py` | RankForm — fixed-set item reordering |
 | `engine/keyvalueform.py` | KeyValueForm — dynamic key-value pairs |
 | `engine/computedform.py` | ComputedForm — derived display from siblings, optional store_result |
 | `engine/accordionform.py` | AccordionForm — collapsible sections, faithful projection |
