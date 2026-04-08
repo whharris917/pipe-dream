@@ -42,3 +42,31 @@
 - Vertical sidebar tabs: bottom #444 separator only (no top/left to avoid doubling with nav bar border)
 - Vertical nav bar gets top #444 border above first tab
 - Active vertical tab: no extra borders, just bottom separator + right merge into content
+
+### Dark outer borders on containers
+- NavigationForm and GroupForm: dark #1e1e1e outer border with rounded corners
+- Removed double bottom borders (content panel bottom border removed, outer handles it)
+- Remaining-affs area: matches content panel background, margin-top zeroed (was 12px default gap)
+
+### NavigationForm native Sleek edit mode
+- Built sleek/navigation.html edit mode with inline move/edit/remove controls per tab
+- Edit tabs use .sleek-edit-tab with key badge and .sleek-edit-btn controls
+- Dark-themed add-step toolbar (.sleek-edit-toolbar)
+- eigenform--editing class on wrapper for CSS targeting
+- Vertical sidebar edit mode: toolbar/header span full width, nav bar stays in sidebar column
+- Edit form margins zeroed (was 0.83em default gap)
+- Label/instruction edit forms: #1e1e1e background, side borders, flush with titlebar
+
+### GroupForm native Sleek edit mode
+- Built sleek/group.html edit mode using same ef-nav-content as execute mode
+- Per-child control bars as lightweight inline rows (no extra wrapper around content)
+- Wrapper renders titlebar with play/undo/discard chrome in edit mode
+- Reuses .sleek-edit-btn and .sleek-edit-toolbar classes from NavigationForm
+
+### Comprehensive edit mode CSS overrides
+- Shared button classes: .ef-btn-confirm, .ef-btn-remove, .ef-btn-arrow dark-themed
+- Chrome buttons (.ef-chrome-btn): dark styling
+- Container add toolbar (.ef-add-toolbar): dark background, dark inputs
+- Empty state, accordion headers, section content: dark overrides
+- Attribute-selector overrides for inline-styled elements in default templates
+  (catches #f5f5f5, #f8f8f8, #efffef, #fafafa, #f0f0f0, #ddd, #eee backgrounds/borders)
