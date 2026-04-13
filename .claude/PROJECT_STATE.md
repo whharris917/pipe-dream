@@ -1,12 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-04-06-001b (2026-04-06)*
+*Last updated: Session-2026-04-13-001 (2026-04-13)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Clean-room rebuild of the Workflow Engine.** The previous engine (v2) has been deleted. A new foundation is being built from scratch on the `dev/content-model-unification` branch of qms-workflow-engine, based on the architectural plan from Session-2026-03-24-001.
+**Eigenform engine with full site shell.** The clean-room rebuild on `dev/content-model-unification` now has both the eigenform engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as eigenform compositions, then merge dev into main.
 
 **Fractal complexity plan is complete.** All five phases (SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages) are implemented and tested.
 
@@ -147,7 +147,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**28 eigenform types. 21 pages.**
+**26 eigenform classes (31 registered names). 21 page seeds. Full site shell with 8 routes.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -235,6 +235,8 @@ Showcase:
 
 **Stress test + visibility cleanup + border polish + edit mode overhaul** (Apr 7, session 001). Nested Tabs Test rewritten from 14 to 115 eigenforms: 6 tabs (Four Modes, Deep Nesting 4 levels, GroupForm Tests, Edge Cases, Reactive Containers with SwitchForm/VisibilityForm, Wide Containers with 8-tab overflow), dual vertical sidebars, bare PageForm-level InfoForm. GroupForm dissolve rule removed — no more nesting-context special cases except PageForm>NavigationForm vertical sidebar. GroupForm content panel width fixed (was shrink-wrapping). NavigationForm titlebar always visible (was conditional on editable). Instruction region: #1e1e1e background matching titlebar, #444 top separator. Titlebar: #555d66 border on top/sides with rounded corners. Horizontal tab elements: subtle #444 border on top/sides with rounded top corners across all states. Vertical sidebar tabs: #444 bottom separators only (no doubling with nav bar border), top border on nav bar. Dark #1e1e1e outer borders on NavigationForm and GroupForm. Double bottom border fix (content panel border removed). Remaining-affs flush with content panel. Native Sleek edit mode for NavigationForm (inline tab controls, dark toolbar, vertical sidebar stays in sidebar column) and GroupForm (per-child control bars inside ef-nav-content, wrapper titlebar with play/undo/discard chrome). Comprehensive edit mode CSS: dark overrides for .ef-btn-confirm/remove/arrow, .ef-chrome-btn, .ef-add-toolbar, .ef-empty-state, .ef-aff-accordion, .ef-section-content; attribute-selector overrides for inline-styled elements in default templates. 22 parity tests passing.
 
+**UI Shell Port** (Apr 13). Strategic refocus: stop side quests, return to main goal of building QMS for Flow State. Ported main-branch site shell into dev branch: base.html with dark sidebar nav, Agent Portal card grid, home page, Quality Manual viewer (markdown TOC + article renderer), QMS dashboard with stage badges, Workspace card list, Inbox placeholder, README as nav page. README rewritten to match current state (26 eigenform classes, 31 registered names, full route table). All 8 routes verified. Decision: continue on dev branch rather than merging (avoids breaking main). YAML workflows, Template Editor, Workshop, Sandbox all dropped.
+
 ---
 
 ## 3. What's Built
@@ -297,9 +299,19 @@ Showcase:
 | `engine/groupform.py` | GroupForm — named compositions, parameterizable via subclassing |
 | `app/__init__.py` | Flask app factory |
 | `app/registry.py` | InstanceRegistry — tracks spawned page instances in `data/instances.json` |
-| `app/routes.py` | Routes + SSE + content negotiation + instance management |
-| `app/templates/` | index.html (launcher), page.html (SSE client + view/theme toggles) |
-| `app/templates/eigenforms/sleek/` | Sleek theme template overrides (text_human.html, list.html, table.html) |
+| `app/routes.py` | Routes + SSE + content negotiation + instance management + manual/QMS/workspace/inbox |
+| `app/manual.py` | Quality Manual markdown rendering (TOC builder, link rewriter, renderer) |
+| `app/templates/base.html` | Shared layout — dark sidebar nav (Home, Portal, QMS, Workspace, Inbox, Manual, README) |
+| `app/templates/home.html` | Landing page with hero + info cards |
+| `app/templates/portal.html` | Agent Portal — card grid grouping instances by seed type |
+| `app/templates/page.html` | Eigenform page wrapper (extends base, SSE + view/theme toggles) |
+| `app/templates/manual_*.html` | Quality Manual TOC index + article viewer with sidebar TOC |
+| `app/templates/qms.html` | QMS document dashboard with stage badges |
+| `app/templates/workspace.html` | Active document cards |
+| `app/templates/inbox.html` | Review/approval queue (placeholder) |
+| `app/templates/readme.html` | README rendered as styled HTML page |
+| `app/templates/eigenforms/` | Per-type Jinja templates (one per eigenform type) |
+| `app/templates/eigenforms/sleek/` | Sleek theme template overrides (wrapper, navigation, group, list, table, text) |
 | `app/static/sleek.css` | Sleek theme styles (VS Code dark palette, card layout) |
 | `pages/` | Seed definitions (page types), auto-discovered. Key = type identifier. |
 | `run.py` | Entry point (threaded=True) |
@@ -325,18 +337,23 @@ Showcase:
 
 ### Immediate
 
-1. **CR-110 remaining EIs** — Update EI-5 (RS), EI-6 (push + pointer), EI-7 (post-exec) to reflect the rebuilt engine
-2. **SDLC-WFE-RS rewrite** — Requirements spec needs full rewrite for eigenform architecture
+1. **Build real QMS workflows as eigenform compositions** — CR creation, review workflows, document lifecycle pages. This is the primary goal: making the QMS usable.
+2. **Wire QMS/Workspace/Inbox to real data** — Connect to qms-cli or QMS document store
+3. **Review and clean up demo pages** — Determine which seeds in `/portal` are valuable vs gallery/experiment cruft
 
-### Engine Next Steps
+### After Workflows Are Working
 
-- **Edit mode for remaining eigenform types** — 14 types have full edit mode: data forms (TextForm, NumberForm, BooleanForm, DateForm, ChoiceForm, CheckboxForm, ListForm, SetForm, MultiForm, DictionaryForm, InfoForm) and containers (GroupForm, NavigationForm, PageForm). Remaining types (TableForm, ComputedForm, ScoreForm, ValidationForm, DynamicChoiceForm, ActionForm, HistoryForm, RepeaterForm, SwitchForm, TableRunner) may benefit from edit mode.
-- **First-class interception mechanism** — containers need `handle_child_action(child, body)` so wrappers can gate child mutations without monkey-patching. Required for AuditForm-style patterns.
-- **Affordance flotation future phases** — body-varying merges, container-level flotation (mid-tree), dynamic flotation rules, additional separable affordance types
-- **Affordance option normalization** — inconsistent option list carriers across eigenforms (body placeholder, instruction text, or both). Normalize to dedicated fields for machine-readable option discovery.
-- **Sleek theme expansion** — TextForm, ListForm, and TableForm have themed templates. AccordionForm toggle headers fixed. Remaining data forms use default templates inside sleek cards. Per-form sleek templates would complete the dark UI.
-- Agent integration testing (can an agent drive the JSON API end-to-end?)
-- QMS workflow page definitions (actual workflow pages using eigenforms)
+4. **Merge dev into main** — Dev branch preserved until confirmed working
+5. **CR-110 remaining EIs** — Update to reflect the rebuilt engine
+6. **SDLC-WFE-RS rewrite** — Requirements spec needs full rewrite for eigenform architecture
+
+### Engine Backlog (lower priority)
+
+- Edit mode for remaining eigenform types (TableForm, ComputedForm, ScoreForm, etc.)
+- First-class interception mechanism for containers
+- Affordance flotation future phases
+- Sleek theme expansion for remaining data forms
+- Agent integration testing
 - Performance / stress testing with large pages
 
 ### On Hold: CR-107 / CR-106
@@ -378,7 +395,7 @@ Both superseded by the engine. May need cancellation or significant revision.
 
 ## 7. Gaps & Risks
 
-**Engine is in rebuild.** The v2 engine code has been deleted on the dev branch. The old engine remains on main until the rebuild is ready to merge.
+**Dev branch has full site shell but no real QMS workflows yet.** The eigenform engine and UI are complete, but no actual QMS document workflows exist — all page seeds are demos/galleries. This is the critical gap.
 
 **SDLC-WFE-RS needs full rewrite.** v1 requirements don't apply to the rebuilt engine.
 

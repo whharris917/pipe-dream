@@ -1,0 +1,48 @@
+# Session-2026-04-13-001
+
+## Current State (last updated: 2026-04-13)
+- **Active work:** UI shell port complete, committed
+- **Branch:** dev/content-model-unification (qms-workflow-engine submodule)
+- **Status:** All features working, ready for next steps
+- **Blocking on:** Nothing
+- **Next:** Lead direction — build real QMS workflows as eigenforms, or cleanup demo pages
+
+## Progress Log
+
+### Strategic discussion
+- Lead recognized need to refocus from side quests back to main goal: building QMS for Flow State
+- Reviewed main branch site to understand current state
+- Decision: bring dev branch up to state-of-the-art rather than merging into main (avoids breaking main)
+- Dropped: Template Editor, YAML workflows, Workshop pages, Sandbox
+- Dev branch preserved until explicit instruction to delete
+
+### Phase 1: Base Layout Template
+- Created `app/templates/base.html` — dark sidebar nav with 7 items (Home, Agent Portal, QMS, Workspace, Inbox, Quality Manual, README)
+- Refactored `app/templates/page.html` to extend base.html (toolbar, SSE, theme toggle preserved)
+- Updated routes.py with active_page kwargs
+
+### Phase 2: Agent Portal + Home Page
+- Created `app/templates/portal.html` — card-grid layout grouping instances by seed type
+- Created `app/templates/home.html` — landing page with hero + info cards
+- Restructured routes: `/` = home, `/portal` = portal, redirects updated
+
+### Phase 3: Quality Manual Viewer
+- Created `app/manual.py` — extracted markdown helpers (TOC builder, link rewriter, renderer)
+- Created `app/templates/manual_index.html` — 2x2 section grid
+- Created `app/templates/manual_page.html` — left TOC sidebar + article content
+- Added `/manual` and `/manual/<slug>` routes
+
+### Phase 4: QMS Dashboard, Workspace, Inbox
+- Created `app/templates/qms.html` — document table with stage badges
+- Created `app/templates/workspace.html` — card-based document list
+- Created `app/templates/inbox.html` — placeholder
+- Added `/qms`, `/workspace`, `/inbox` routes with `_list_crs()` helper
+
+### Phase 5: Polish + Verification
+- All routes verified via Flask test client: 200 status, sidebar present, active nav highlighting
+- Removed superseded `index.html`
+
+### README as nav page
+- Added `/readme` route rendering README.md as styled HTML
+- Added README link to sidebar nav (bottom, with ⓘ icon)
+- Rewrote README.md to match current state: 26 eigenform classes, 31 registered names, accurate module paths, site structure table, themes section, all route documentation
