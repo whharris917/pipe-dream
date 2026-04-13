@@ -46,3 +46,28 @@
 - Added `/readme` route rendering README.md as styled HTML
 - Added README link to sidebar nav (bottom, with ⓘ icon)
 - Rewrote README.md to match current state: 26 eigenform classes, 31 registered names, accurate module paths, site structure table, themes section, all route documentation
+
+### Instance ID cleanup
+- Replaced counter-based IDs (`page-1-2`) with 8-char UUID hex (`eeadc32c`) in InstanceRegistry
+- Removed `_counters` usage from create_instance
+
+### Debug Mode toggle
+- Replaced Supervisor/Operator view toggle + theme selector with single "Debug Mode" checkbox
+- Debug Off = operator-view + sleek theme (production look)
+- Debug On = supervisor-view + default theme (full borders, chrome, JSON)
+- Moved toggle to bottom-right of page (unobtrusive footer position)
+- Default for new visitors: sleek theme (debug off)
+
+### Demo page cleanup
+- Deleted page definitions: page_1, page_2, page_3, page_4, page_6, math_test, survey_builder, vendor_assessment, weird_experiments, eigenform_reference, page_builder
+- Cleaned up associated instance data files and registry entries
+- Removed stale legacy-named instances (page-6-2)
+
+### Stateless page discovery
+- Made `discover_pages()` truly stateless: reloads modules on every call, purges stale sys.modules entries
+- `seeds` in routes.py changed from module-level dict to per-request function call
+- Adding/removing page .py files takes effect on next request — no server restart needed
+
+### Sleek theme font fix
+- Added `h3` (13px) and `p` (12px) sizing rules inside `.eigenform` for sleek theme
+- Fixes large instruction text in data eigenform cards (was inheriting base.html's 1rem)
