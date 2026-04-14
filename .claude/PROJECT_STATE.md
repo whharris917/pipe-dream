@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-13-001 (2026-04-13)*
+*Last updated: Session-2026-04-14-001 (2026-04-14)*
 
 ---
 
@@ -238,6 +238,8 @@ Showcase:
 **UI Shell Port + Cleanup** (Apr 13, session 001). Strategic refocus: stop side quests, return to main goal of building QMS for Flow State. Ported main-branch site shell into dev branch: base.html with dark sidebar nav, Agent Portal card grid, home page, Quality Manual viewer (markdown TOC + article renderer), QMS dashboard with stage badges, Workspace card list, Inbox placeholder, README as nav page. README rewritten to match current state. Decision: continue on dev branch rather than merging (avoids breaking main). YAML workflows, Template Editor, Workshop, Sandbox all dropped. Cleanup: UUID instance IDs (replacing counter-based), Debug Mode toggle (replacing Supervisor/Operator + theme selector), removed 11 demo page definitions, stateless page discovery (no server restart needed), sleek theme font fix for data form instructions.
 
 **Sleek Edit Mode Unification** (Apr 13, session 002). All data eigenforms now render edit mode natively in the sleek theme instead of falling back to default light-themed templates with CSS attribute-selector patches. 8 new sleek templates created (number, boolean, date, choice, checkbox, info, dictionary, multi). 3 existing sleek templates updated to handle edit mode (text_human, list, table). Unified CSS classes: `.sleek-edit-config` config bar, `.sleek-edit-config__toggle` pills, `.sleek-edit-config__field`/`__input`/`__btn` inline config forms, `.sleek-edit-value` value display, `.sleek-edit-child-ef` embedded child container, `.sleek-edit-row` collection rows, `.sleek-list__btn--pin` fixed-item pins. Design pattern: edit header (already styled via `.ef-edit-*`) + config bar + value display + remaining affordances. Execute mode: custom sleek rendering where available, `{% include "default.html" %}` fallback otherwise. 11 parity tests passing.
+
+**Mutable Page Polish + Icon Overhaul + Escaping Fixes** (Apr 14, session 001). Fixed double-escaping bugs: `html.escape()` on wrapper context values (label, url, json_str) produced plain `str` that Jinja2 auto-escaped again — removed redundant `escape()` calls. Added `ensure_ascii=False` to JSON pane for real Unicode. Created `sleek/page.html` template for mutable PageForm — dark toolbar, margin-positioned controls. Mutable pages now force `editable=True` on seed eigenforms (was only set on dynamically added ones). Fixed `from_descriptor()` to sync `editable` flag from descriptor onto matched seed (was only setting True, never False). Added `toggle_editable` action to PageForm with affordance, handler, and feedback. Icon vocabulary overhaul: pencil (✏) for edit mode, padlocks (🔓/🔒) for toggle-editable, wastebasket (🗑) for delete, ✕ for discard — 8 templates updated. Fixed pre-existing bug where default templates passed inline styles as CSS class names via `render_btn()`. New `ef-icon-btn` class: 24×24 squares, 14px font, `--active`/`--danger` variants. All icon buttons consistent across both themes. 11 parity tests passing.
 
 ---
 
