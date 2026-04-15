@@ -1,14 +1,16 @@
 # Project State
 
-*Last updated: Session-2026-04-14-002 (2026-04-14)*
+*Last updated: Session-2026-04-14-003 (2026-04-14)*
 
 ---
 
 ## 1. Where We Are Now
 
-**Eigenform engine with full site shell.** The clean-room rebuild on `dev/content-model-unification` now has both the eigenform engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as eigenform compositions, then merge dev into main.
+**Eigenform engine with full site shell and streamlined UX.** The clean-room rebuild on `dev/content-model-unification` now has both the eigenform engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as eigenform compositions, then merge dev into main.
 
 **Fractal complexity plan is complete.** All five phases (SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages) are implemented and tested.
+
+**Sleek theme UX polish (Session-2026-04-14-003):** One-click eigenform creation (no key/label required), auto-generated keys (`type-N`) and labels, container drop-target fix for empty groups, eject-from-group button on nested tiles, drag-out-of-group support.
 
 **What's running now:** Flask app at `http://127.0.0.1:5000` with 18 pages:
 - **page-1**: TextForm + TextForm + CheckboxForm (basic eigenforms)
