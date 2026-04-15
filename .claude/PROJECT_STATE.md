@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-14-003 (2026-04-14)*
+*Last updated: Session-2026-04-14-004 (2026-04-14)*
 
 ---
 
@@ -9,6 +9,8 @@
 **Eigenform engine with full site shell and streamlined UX.** The clean-room rebuild on `dev/content-model-unification` now has both the eigenform engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as eigenform compositions, then merge dev into main.
 
 **Fractal complexity plan is complete.** All five phases (SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages) are implemented and tested.
+
+**Builder layout (Session-2026-04-14-004):** Mutable pages now render in a two-panel "MS Paint" layout — type palette on the left (220px sidebar, draggable items), canvas on the right (eigenform cards with collapsible bodies, drag-to-reorder, drag-from-palette-to-insert-at-position). Click tile bar to collapse/expand, Ctrl+click for multi-select grouping. Server-side `add_eigenform` now accepts `position` for numeric index insertion.
 
 **Sleek theme UX polish (Session-2026-04-14-003):** One-click eigenform creation (no key/label required), auto-generated keys (`type-N`) and labels, container drop-target fix for empty groups, eject-from-group button on nested tiles, drag-out-of-group support.
 
