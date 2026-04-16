@@ -10,7 +10,7 @@
 
 **Fractal complexity plan is complete.** All five phases (SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages) are implemented and tested.
 
-**Builder layout (Session-2026-04-14-004):** Mutable pages now render in a two-panel "MS Paint" layout — type palette on the left (220px sidebar, draggable items), canvas on the right (eigenform cards with collapsible bodies, drag-to-reorder, drag-from-palette-to-insert-at-position). Click tile bar to collapse/expand, Ctrl+click for multi-select grouping. Server-side `add_eigenform` now accepts `position` for numeric index insertion.
+**Page Builder UI (Session-2026-04-14-004):** Mutable pages now have an inline schematic editor between the page header and the rendered eigenforms. Two-panel layout: type palette (left, 220px, draggable items) + schematic canvas (right, recursive block diagram showing nesting). Leaf blocks are compact bars; container blocks visually wrap their children. Drag from palette to canvas inserts at position; drag between blocks reorders; drag into a container's child zone reparents. Ctrl+click for multi-select grouping. The actual rendered page appears below the builder — same layout as non-mutable pages. Server-side `add_eigenform` now accepts `position` for numeric index insertion.
 
 **Sleek theme UX polish (Session-2026-04-14-003):** One-click eigenform creation (no key/label required), auto-generated keys (`type-N`) and labels, container drop-target fix for empty groups, eject-from-group button on nested tiles, drag-out-of-group support.
 

@@ -1,38 +1,56 @@
 # Session-2026-04-14-004
 
-## Current State (last updated: 2026-04-14)
-- **Active work:** Builder layout complete, ready for user testing
+## Current State (last updated: 2026-04-16)
+- **Active work:** Builder UI complete and polished
 - **Blocking on:** Nothing
-- **Next:** User feedback on builder layout, further polish
+- **Next:** Build real QMS workflows as eigenform compositions
 
 ## Progress Log
 
-### Builder layout — "MS Paint" for PageForm
+### Builder layout — "MS Paint" for PageForm (initial)
 Restructured the mutable page editing UI from a vertical stack into a two-panel workspace.
 
 **Template (`sleek/page.html`):**
-- Replaced stacked layout (catalog → structural editor → rendered content) with `.builder` grid: `.builder__palette` (left 220px) + `.builder__canvas` (right, flex)
-- Palette: compact type list organized by category, each item draggable with `data-ef-palette-type`
-- Canvas: eigenforms rendered as `.builder__item` cards — tile bar (drag handle + type info + actions) + collapsible body (rendered eigenform) + hover-revealed action strip
-- Empty state: icon + "Drag an eigenform from the palette" message
-- Group bar and rebuild button moved to canvas footer
-- Non-mutable pages unchanged (simple stacked rendering)
+- `.builder` grid: `.builder__palette` (left 220px) + `.builder__canvas` (right)
+- Palette: compact type list by category, each item draggable with `data-ef-palette-type`
+- Canvas: flat list of eigenform cards with tile bars and collapsible rendered content
 - Feedback banners extracted into reusable `render_feedback` macro
 
+**Server (`pageform.py`):**
+- `_add_eigenform()`: added `position` parameter for numeric index insertion
+
+### Schematic block diagram canvas (v2)
+User feedback: canvas should be a visual/schematic representation showing nesting, not flat cards with rendered HTML.
+
+**Template rewrite:**
+- Replaced flat `builder__item` cards with recursive `render_block` macro
+- Leaf blocks (`.blk--leaf`): compact single-row bars with icon, type, label, key, actions
+- Container blocks (`.blk--container`): header bar + `.blk__children` zone visually wrapping nested child blocks
+- Empty containers show dashed "drop here" placeholder
+- Category-tinted backgrounds on container children zones (purple for containers, amber for reactive)
+
 **CSS (`sleek.css`):**
-- Full builder layout: grid, palette scrolling, category sections, type items with accent colors
-- Canvas items: card with tile bar, collapsible body (max-height transition), action strip (opacity on hover)
-- Drop feedback: `.drop-active` outline on canvas body, insertion line, dragging opacity
-- Multi-select: blue border + shadow on `.builder__item.selected`
+- Full `.blk` block system replacing `.builder__item` styles
+- Leaf vs container differentiation, accent colors, hover-revealed actions
+- Drop target highlighting on container blocks
 
 **JS (`eigenform.js`):**
-- Palette drag: `dragstart` sets `application/ef-type` + `application/ef-url`, `dragend` clears
-- Canvas drop: detects palette vs tile drag, palette drops call `add_eigenform` with position
-- Collapse/expand: click tile bar toggles `data-collapsed` on `.builder__item-body`
-- Multi-select: Ctrl+click in builder mode (plain click = collapse/expand), legacy mode unchanged
-- Updated dragover/drop/group handlers to recognize `.builder__item` alongside `.sleek-struct__tile`
+- Complete rewrite of drag/drop/select handlers for `.blk` elements
+- `_blkFromDragHandle()` helper for leaf vs container header drag sources
+- `_efFindDropZone()` updated to find `.blk__children` zones
+- Multi-select via Ctrl+click on block handles
 
-**Server (`pageform.py`):**
-- `_add_eigenform()`: added `position` parameter for numeric index insertion (alongside existing `after` key-based insertion)
+### Inline builder within standard page flow (v3)
+User feedback: builder should slot between the page header/feedback and the rendered eigenforms, not replace the standard page layout.
 
-**Tests:** 11/11 parity tests passing. Non-mutable pages unaffected (0 builder classes in HTML).
+- Unified mutable/non-mutable rendering: both share title → instruction → feedback → eigenforms → page actions
+- Builder is an inline section between feedback and eigenforms (mutable pages only)
+- Removed duplicate title/instruction from canvas header
+- Removed separate preview section — eigenforms render naturally below the builder
+- Rebuild from Seed and Reset Page render together at the bottom via `ef-remaining-affs`
+
+### Drag-into-group fix + palette height fix
+- **Drag-into-group error:** When dropping into a container's child zone, JS now checks if the item is already a child. If not, sends `reparent_eigenform` instead of `move_eigenform` (which failed with "not found in container").
+- **Palette scrollbar:** Removed `overflow: hidden` / flex layout from palette, removed `overflow-y: auto` from scroll area. Palette now sizes to content naturally; grid row matches the taller column. Canvas scrolls internally if needed.
+
+**Tests:** 11/11 parity tests passing throughout all iterations. Non-mutable pages unaffected.
