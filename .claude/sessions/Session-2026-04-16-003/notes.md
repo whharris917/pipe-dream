@@ -121,6 +121,37 @@ reset handler).
 - Real Flask instances (4 live page instances copied from `data/`): all render JSON
   and HTML with 200 OK. ✓
 
+### Deep Dive page (/deepdive) — engine self-analysis
+Lead asked for a thorough explanation of "what this is all about" — emphasizing that the
+page should be grounded in what the code IS, not what its docs claim, and should surface
+any delta between aspiration and delivery. Plus a code-quality audit.
+
+**Approach:** Spawned two parallel Explore agents (engine architecture + page composition
+patterns), both instructed to ignore docstrings/READMEs and read code only. Verified
+load-bearing claims independently (88 `if action == ...` across 20 files; PageForm 1064
+lines, TableForm 1192, NavigationForm 665; `_set_my_config` does no value-type validation;
+PageForm has zero awareness of `depends_on` edges).
+
+**The page:** `pages/deepdive.py` — a PageForm wrapping a NavigationForm in tabs mode,
+seven InfoForm sections. Self-referential by construction (the engine analyzing itself,
+rendered by itself). Sections:
+1. What this is (literal characterization, no marketing)
+2. The lifecycle (seed → bind → reconstruct → handle → serialize/render)
+3. What works well (descriptor-as-truth, atomic writes, parity test, …)
+4. The aspiration (HATEOAS affordances, faithful projection, mutable structure)
+5. The delta (5 honest gaps: action dispatch, string sibling refs, no value validation,
+   no concurrency model, mutable structure theme-coupled)
+6. Code-quality audit (megafiles, NavigationForm-as-four-classes, scoping inconsistency,
+   from_descriptor callable loss, migration cruft in hot path, demos in production registry)
+7. Recommendations (action registry, architecture doc, typed sibling refs, config validation, …)
+
+**Routes:** `/deepdive` (page) and `/deepdive/<path>` (eigenform actions). Bound directly
+without InstanceRegistry — fixed scope and url_prefix. Sidebar link added to `base.html`.
+
+**Verification:** All 7 tab labels render; tab-switching POST returns 200; section content
+visible after navigation; sidebar link wired; 12/12 parity tests pass (was 11 — auto-discovered
+the new page).
+
 ### Cleanup follow-on: deleted effective_label/effective_instruction shims
 After the descriptor refactor these properties just returned `self.label`/`self.instruction`
 unchanged — pure indirection. Deleted them and inlined every call site to read the
