@@ -395,6 +395,16 @@ Both superseded by the engine. May need cancellation or significant revision.
 | Govern checkin.py bug fix (commit `532e630`) via CR | Trivial | INV-012 |
 | Delete `.QMS-Docs/` | Trivial | CR-103 |
 | Standardize metadata timestamps to UTC ISO 8601 | Small | Session-2026-02-26-001 |
+| Typed composition discipline (engine) | Medium | Session-2026-04-16-003 |
+
+**Typed composition discipline** (Session-2026-04-16-003 React-discussion follow-on). Three independent moves to lift type-safety at the eigenform composition seams — the React-flavored discipline of "everything that crosses a component boundary is typed and checked":
+- **Move 1 — `SiblingRef`**: replace string `depends_on="key"` with a frozen dataclass `SiblingRef(key, expects=ClassRef|None)`. `PageForm.bind()` collects all SiblingRefs and validates each at bind time. Closes the silent-orphan dependency bug; makes the dependency graph computable. Affects SwitchForm, VisibilityForm, DynamicChoiceForm, ScoreForm, ComputedForm, ValidationForm, ActionForm.
+- **Move 2 — Field-type validation in `_set_my_config`**: consult dataclass field annotation, reject mistyped values at the boundary (`bool`, `int`, `str`, `int|None`, `Literal[...]`, `list[X]`). Closes the silent-corruption bug.
+- **Move 3 — Tighten enum-like fields with `Literal`**: `NavigationForm.mode: Literal["tabs","chain","sequence","accordion"]`, `FieldDescriptor.type: Literal["text","choice"]`, etc. Combined with Move 2, invalid mode strings fail at the boundary.
+
+**Compounding payoff**: after these three, the seed is statically describable. Schema introspection, IDE stubs, and AI-agent schemas become viable downstream (deferred until Moves 1–3 land and we see the right shape). Skipped deliberately: `Generic[T]` for containers (overengineered for 28 types), full `__post_init__` field-checking (heavy, redundant with Move 2), effect annotations (no real pain yet).
+
+Should be scoped as one CR (~1 day work).
 
 ### Bundleable
 
