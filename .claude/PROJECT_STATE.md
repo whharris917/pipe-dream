@@ -1,12 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-04-17-002 (2026-04-17)*
+*Last updated: Session-2026-04-17-003 (2026-04-17)*
 
 ---
 
 ## 1. Where We Are Now
 
 **Component engine with full site shell and streamlined UX.** The clean-room rebuild on `dev/content-model-unification` now has both the component engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as component compositions, then merge dev into main.
+
+**Framework naming decision (Session-2026-04-17-003):** The general-purpose component/affordance framework — currently conflated with its first intended application under the name "QMS Workflow Engine" — is being renamed to **Razem** (Polish, "together"). The framework has no QMS-specific code; naming it after the QMS is like calling React "Facebook JS." Post-rename: **Razem** = the framework (the submodule, `engine/`, the component protocol, affordances, stores, reconciliation, faithful projection, parity tests); **QMS Workflow Engine** = the application to be built with Razem (not yet implemented — all current `pages/` entries are demos/galleries). Rename queued in Forward Plan for execution before the first real QMS workflow ships.
 
 **Eigenform → Component rename (Session-2026-04-17-002):** The base class was renamed from `Eigenform` to `Component`, and all 25 concrete subclasses from `*Form` to `*Component` (e.g., `TextForm` → `TextComponent`, `PageForm` → `PageComponent`). Propagated through module filenames (`engine/*component.py`), the `eigenforms/` template directory (now `components/`), the `eigenform.js` static asset (now `component.js`), CSS prefixes (`ef-` → `c-`), DOM data attributes (`data-ef-` → `data-c-`), and action-protocol names (`add_eigenform` → `add_component`, etc.). The `/framing` page was rewritten from a prospective design plan into a retrospective alignment reference — hero, §1 thesis, §2 mapping table, §4/§5 sections, and §8 "How we got here" all updated. `docs/architecture.md` §6 vocabulary map tightened and a change-log entry added. 72/72 parity tests pass.
 
@@ -133,7 +135,7 @@ Showcase:
 - **HATEOAS**: every component carries affordances, POST returns full page state
 - **SSE**: `/pages/{key}/stream` pushes updates on POST
 - **Stateless server**: Server holds no components or pages in memory between requests. `discover_pages()` returns unbound seed definitions at startup; `bind_page()` produces a transient bound page per request from seed + store. Server is a pure function: `(seed + store + request) → response`. SSE subscriber registry is connection state only (queues, not components).
-- **Instance spawning**: Page seeds are templates. Users spawn named instances of any seed type via `POST /instances`. Multiple instances of the same type coexist. `InstanceRegistry` (`app/registry.py`) wraps `data/instances.json` — tracks instance ID, type, label, created_at. Sequential IDs per type (`{type}-{n}`). `POST /instances/<id>/delete` removes instance + data file. Index page is a launcher: seed catalog with "New Page" buttons + instance list with open/delete. Auto-migration adopts legacy `data/{seed_key}.json` files as instances on startup. Instance label propagated to bound page per-request.
+- **Instance spawning**: Page seeds are templates. Users spawn named instances of any seed type via `POST /instances`. Multiple instances of the same type coexist. `InstanceRegistry` (`app/registry.py`) wraps `data/instances.json` — tracks instance ID, type, label, created_at. Instance IDs are 8-character hex UUIDs (`uuid.uuid4().hex[:8]`) — counter-based IDs were replaced on Apr 13. `POST /instances/<id>/delete` removes instance + data file. Index page is a launcher: seed catalog with "New Page" buttons + instance list with open/delete. Auto-migration adopts legacy `data/{seed_key}.json` files as instances on startup. Instance label propagated to bound page per-request.
 - **Config validation**: `_add_component()` validates config keys against type's dataclass fields before persisting. Invalid config returns structured error with valid fields. `validate_config()` in registry.py.
 - **Resilient bind**: `bind()` and `_rebuild()` catch reconstruction failures from corrupt `__structure`, fall back to seed. Mutable page reset clears structure entirely.
 - **Type registry**: `GET /types` returns config schema per type (field names, types, optional flag). `describe_types()` in registry.py introspects dataclass fields.
@@ -371,18 +373,126 @@ Showcase:
 2. **Wire QMS/Workspace/Inbox to real data** — Connect to qms-cli or QMS document store
 3. **Review and clean up demo pages** — Determine which seeds in `/portal` are valuable vs gallery/experiment cruft
 
+### Before First QMS Workflow Ships
+
+4. **Framework rename: `qms-workflow-engine` → Razem** — Decided Session-2026-04-17-003. The framework is general-purpose and should be named separately from its first application. Scope:
+   - GitHub repo rename: `qms-workflow-engine` → `razem` (and update remote URL)
+   - `.gitmodules` path + submodule path in pipe-dream root (`qms-workflow-engine/` → `razem/`)
+   - `CLAUDE.md` references (multiple mentions of `qms-workflow-engine` submodule and paths)
+   - Wiki (`app/templates/wiki.html`) — **LANDED** Session-2026-04-17-003 (rewritten as if rename occurred; see session notes for detail).
+   - Framing (`app/templates/framing.html`) — rewrite hero subtitle/thesis ("The QMS Workflow Engine is a Python framework..." → "Razem is..."), update §1 Thesis prose, update §8 Pass 4 history
+   - README (`README.md` in the framework) — retitle, rewrite opening thesis, update doc-pointer references
+   - Lesson prose — Lessons 1 and 5 explicitly reference "the engine" by name in a few places; sweep for "QMS Workflow Engine" → "Razem"
+   - Deep Dive (`pages/deepdive.py`) — intro sentence references the framework
+   - Preserve "QMS Workflow Engine" as the eventual application name (or rename the application too — separate decision)
+   - Effort: one focused session. Low technical risk; mostly text substitution + repo admin.
+
+5. **Class taxonomy refactor** — Decided Session-2026-04-17-003. The current `*Component` suffix (post Eigenform → Component rename in Session-2026-04-17-002) flattens semantically-distinct roles under one label. Move to role-specific suffixes that mirror the Props / State / Derived data triad (see Framing §3, Lesson 3):
+
+   | Category | Suffix/Form | What it does |
+   |----------|-------------|--------------|
+   | **Forms** | `*Form` | Produce *State* — widgets that collect user input |
+   | **Containers** | unsuffixed | Hold children; structural composition |
+   | **Derivations** | unsuffixed (standalone nouns) | Produce *Derived* — read siblings, compute output |
+   | **Displays** | `*Display` | Read-only rendering, no interaction |
+   | **Imperatives** | `Action` *or* `*Button` (TBD) | Trigger side effects |
+   | **Wrappers** | `*Wrapper` (TBD) | Wrap another component with metadata |
+   | **Runners** | `*Runner` (unchanged) | Execute workflows |
+   | **Apps** | `*App` | Self-contained mini-applications |
+
+   **Per-class mapping:**
+
+   | Current | Proposed | Category |
+   |---------|----------|----------|
+   | `TextComponent` | `TextForm` | Form |
+   | `NumberComponent` | `NumberForm` | Form |
+   | `DateComponent` | `DateForm` | Form |
+   | `BooleanComponent` | `BooleanForm` | Form |
+   | `ChoiceComponent` | `ChoiceForm` | Form |
+   | `CheckboxComponent` | `CheckboxForm` | Form |
+   | `MultiComponent` | `MultiForm` | Form |
+   | `ListComponent` | `ListForm` | Form |
+   | `SetComponent` | `SetForm` | Form |
+   | `TableComponent` | `TableForm` | Form |
+   | `DictionaryComponent` | `DictionaryForm` | Form |
+   | `DynamicChoiceComponent` | `DynamicChoiceForm` | Form (reactive) |
+   | `PageComponent` | `Page` | Container |
+   | `NavigationComponent` | `Navigation` | Container (flow-control; see item 6 for future split) |
+   | `GroupComponent` | `Group` | Container |
+   | `RepeaterComponent` | `Repeater` | Container |
+   | `SwitchComponent` | `Switch` | Container |
+   | `VisibilityComponent` | `Visibility` | Container |
+   | `ComputedComponent` | `Computation` | Derivation |
+   | `ScoreComponent` | `Score` | Derivation |
+   | `ValidationComponent` | `Validation` | Derivation |
+   | `InfoComponent` | `InfoDisplay` | Display |
+   | `ActionComponent` | `Action` *or* `ActionButton` (final pick TBD) | Imperative |
+   | `HistoryComponent` | `HistoryWrapper` *or* keep (TBD) | Wrapper |
+   | `TableRunner` | `TableRunner` | Runner (unchanged) |
+   | `RubiksCubeComponent` | `RubiksCubeApp` | App |
+   | `EntryGroup`, `RowGroup` | unchanged | Internal routing nodes |
+
+   **Full scope:** class renames + module filenames (`engine/*component.py` → per-category naming, e.g. `engine/textform.py`, `engine/page.py`, `engine/computation.py`) + registry aliases (maintain backwards-compat or migrate existing instances) + all 28 Jinja templates in `app/templates/components/` (directory may want renaming too) + sleek templates in `app/templates/components/sleek/` + `component.js` references (if any classes named) + CSS prefixes (currently `c-*` from the Eigenform rename — consider whether to keep or refresh) + parity tests + all lesson prose + Framing + README + Wiki + Deep Dive + `docs/architecture.md`. Effort: one focused session. Technical risk: moderate (registry aliases must preserve backwards-compat for any existing instance data).
+
+   **Notes:**
+   - Readers may ask why `*Form` is reintroduced so soon after Session-2026-04-17-002's `*Form` → `*Component` rename. Answer: the old `*Form` suffix meant "self-contained thing" (everything was a Form, so Form meant nothing); the new `*Form` means specifically "data-entry widget" (distinct from Containers, Derivations, etc.). Not a regression; the category is narrower and semantically richer. Add a change-log entry to `docs/architecture.md` §6 explaining this.
+   - `Action` vs `ActionButton`, and `HistoryWrapper` vs keep — final picks deferred until execution.
+
+### Future Refactors (post-workflow)
+
+6. **Split `Navigation` into four descriptive subtypes** — Decided Session-2026-04-17-003. `NavigationComponent` (soon `Navigation`) is presently a single class with a `mode` field parameterizing four distinct behaviors:
+   - `mode="tabs"` — free-access, one-visible-at-a-time
+   - `mode="chain"` — gated, auto-advance on completion
+   - `mode="sequence"` — gated, manual Back/Next
+   - `mode="accordion"` — free-access, all-visible with expand/collapse
+
+   Deep Dive §6 flagged this: *"NavigationComponent is four classes in one. `mode` switches not only display but also value shape (string for tabs/chain/sequence, dict for accordion), navigation rules, and completion semantics. The single-class implementation is DRY but the API surface is unclear; users must remember the mode is a personality dial."* A future refactor should split `Navigation` into four distinct classes with more descriptive names — candidates (not final): `Tabs`, `Chain` *or* `Wizard` *or* `Walkthrough`, `Sequence` *or* `Stepper`, `Accordion` *or* `Disclosure`. Each becomes a first-class concept in the registry with its own docstring and edit-mode affordances.
+
 ### After Workflows Are Working
 
-4. **Merge dev into main** — Dev branch preserved until confirmed working
-5. **CR-110 remaining EIs** — Update to reflect the rebuilt engine
-6. **SDLC-WFE-RS rewrite** — Requirements spec needs full rewrite for component architecture
+7. **Merge dev into main** — Dev branch preserved until confirmed working
+8. **CR-110 remaining EIs** — Update to reflect the rebuilt engine
+9. **SDLC-WFE-RS rewrite** — Requirements spec needs full rewrite for component architecture
 
-### Engine Backlog (lower priority)
+### Engine Backlog (post-workflow cleanup)
+
+Cross-referenced from Wiki / Framing §8 / Deep Dive / Lessons 6-8. Items surfaced across multiple docs but not yet scheduled. All are engine-quality improvements that should follow the primary workflow-building effort.
+
+**Convergent unscheduled items** (flagged in 3+ docs):
+
+| Item | Effort | Source |
+|------|--------|--------|
+| **Action-dispatch registry** — replace the 88 `if action == ...` branches across 20 files (PageComponent._handle alone has 11 elif) with a per-class `_actions: dict[str, ActionSpec]` table. ActionSpec captures handler, undo policy, rebuild policy, edit-mode flag, parameter validator. Opens middleware / logging / replay for free. | ~1 week | Wiki Limitations §1; Framing §8 "still open" #4; Deep Dive rec #1 |
+| **Callable-preservation diagnostic** — silent-None fallback when a seed is renamed/deleted and `from_descriptor` falls into fresh-construction mode. Require the `seed` parameter for types declaring callable-valued fields (`ComputedComponent.compute`, `DynamicChoiceComponent.options_fn`, `VisibilityComponent.predicate`, `ActionComponent.on_trigger`); return a typed diagnostic visible in the UI. | Small | Wiki Limitations §2; Framing §4 "What's still open"; Lesson 7 callout |
+| **Concurrency model** — last-write-wins on simultaneous writers to same component; no optimistic concurrency or conflict detection. Fine for single-user; broken for collaboration. | Medium | Wiki Limitations §4; Deep Dive §5 #4 |
+
+**Deep Dive findings not yet cross-referenced elsewhere:**
+
+| Item | Effort | Source |
+|------|--------|--------|
+| **Move showcase/runner demos to `engine/_examples/`** — RubiksCubeComponent (400 lines) and TableRunner ship in the production registry and appear in the builder's type-picker. Should live alongside `pages/` demos, not engine primitives. README still lists them as "Showcase" / "Runner Forms" production categories. | Small | Deep Dive rec #7 |
+| **Delete `_migrate_legacy_overrides` with kill-date comment** — runs in the bind hot path on every request, doing store reads + descriptor walks + deletes. Once existing instances are migrated (finite event), this is overhead with no value. | Trivial | Deep Dive rec #8 |
+| **Split megafiles along (orchestration / structural mutation / content mutation / rendering) axes** — PageComponent (1064 lines), TableComponent (1192), NavigationComponent (665). Would surface actual coupling and likely reveal duplication. | Medium | Deep Dive findings §6; rec #5 |
+| **Promote mutable-structure schematic editor out of `sleek/page.html`** — the most ambitious feature is gated behind a stylesheet choice. Default theme has no visual editor. Either build in default or move the editor into the engine. Lesson 8 doesn't flag this theme coupling. | Medium | Deep Dive §5 #5; rec #6 |
+
+**Consistency nits from the rename (Session-2026-04-17-002):**
+
+| Item | Effort | Source |
+|------|--------|--------|
+| **Rename `form` class attribute** — lowercase `form = "text"` registry-type identifier is inconsistent with `Component` PascalCase. Candidates: `type`, `component_type`, or leave. Cosmetic. | Small | 2026-04-17-002 follow-on #1 |
+| **Rename branch `dev/content-model-unification`** — no longer accurate post-rename; historical and not breaking. Rename at next major checkpoint. | Trivial | 2026-04-17-002 follow-on #2 |
+
+**Correctly parked** (do not action without a concrete use case):
+
+- **Context primitive** — no ancestor-to-descendant channel equivalent to React Context. Parked across Wiki Limitations §3, Framing §6, Lesson 5. Shape is clear (typed provider at container level + `_context_get(ClassRef)` accessor validated at bind like SiblingRef); the pain point isn't. Most likely earned when user/permissions arrive with QMS workflows.
+
+**Pre-existing items (not from this review):**
 
 - First-class interception mechanism for containers
 - Affordance flotation future phases
 - Agent integration testing
 - Performance / stress testing with large pages
+- Error-boundary expansion — `serialize_safely()` (JSON parity), bind-error scoping, `_handle()` partial-mutation scoping (Framing §8)
 
 ### On Hold: CR-107 / CR-106
 
