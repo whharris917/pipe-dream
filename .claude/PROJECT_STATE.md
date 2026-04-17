@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-16-001 (2026-04-16)*
+*Last updated: Session-2026-04-16-002 (2026-04-16)*
 
 ---
 
@@ -10,7 +10,13 @@
 
 **Fractal complexity plan is complete.** All five phases (SwitchForm → Registry → Structural Persistence → Structural Actions → Self-Modifying Pages) are implemented and tested.
 
-**Page Builder UI (Session-2026-04-14-004):** Mutable pages now have an inline schematic editor between the page header and the rendered eigenforms. Two-panel layout: type palette (left, 220px, draggable items) + schematic canvas (right, recursive block diagram showing nesting). Leaf blocks are compact bars; container blocks visually wrap their children. Drag from palette to canvas inserts at position; drag between blocks reorders; drag into a container's child zone reparents. Ctrl+click for multi-select grouping. The actual rendered page appears below the builder — same layout as non-mutable pages. Server-side `add_eigenform` now accepts `position` for numeric index insertion.
+**Schematic canvas refinement (Session-2026-04-16-002):** Tree guide lines now connect each container header to its children (L-shaped `::before` at the row-center of each child + continuation `::after` spine for non-last children). Outer box borders on leaf and container blocks removed — only the left accent stripe remains, reading as the node's identity; the tree guide itself carries the "belongs to this parent" signal. Sharp rectangles throughout (no block border-radius) for schematic feel.
+
+**NavigationForm mode editability (Session-2026-04-16-002):** Mode can now be changed in edit mode via four `Mode: X` buttons (tabs/chain/sequence/accordion, current one tagged). Persists as store override in `{key}.__config`, applied on every bind. Uses `set_nav_mode` action to avoid collision with the base's `set_mode` chrome (which toggles edit↔execute). Changing mode clears the current navigation value since its shape is mode-dependent.
+
+**Store resilience (Session-2026-04-16-002):** Fixed recurring `JSONDecodeError` on 0-byte JSON files caused by Windows `write_text` truncate-then-write races during Flask dev-reloader restarts. Both `Store._save` and `InstanceRegistry._save` now use atomic write-temp-then-rename. Both `_load` paths tolerate empty files gracefully.
+
+**Page Builder UI (Session-2026-04-14-004):** Mutable pages have an inline schematic editor between the page header and the rendered eigenforms. Two-panel layout: type palette (left, 220px, draggable items) + schematic canvas (right, recursive block diagram showing nesting). Leaf blocks are compact bars; container blocks visually wrap their children. Drag from palette to canvas inserts at position; drag between blocks reorders; drag into a container's child zone reparents. Ctrl+click for multi-select grouping. The actual rendered page appears below the builder — same layout as non-mutable pages. Server-side `add_eigenform` now accepts `position` for numeric index insertion.
 
 **Sleek theme UX polish (Session-2026-04-14-003):** One-click eigenform creation (no key/label required), auto-generated keys (`type-N`) and labels, container drop-target fix for empty groups, eject-from-group button on nested tiles, drag-out-of-group support.
 
