@@ -152,6 +152,39 @@ without InstanceRegistry — fixed scope and url_prefix. Sidebar link added to `
 visible after navigation; sidebar link wired; 12/12 parity tests pass (was 11 — auto-discovered
 the new page).
 
+### Morphdom integration for in-place DOM diffing
+Lead asked about React after reading the deepdive page; I argued React would be a misfit
+(state-location divergence; AI/replayability properties depend on server-side truth) but
+flagged morphdom-style diffing as a near-pure win at near-zero cost. Lead said implement.
+
+**What:** Vendored `morphdom-umd.min.js` v2.7.4 (12KB) from unpkg into `app/static/`.
+Inserted `<script>` for it in `app/templates/page.html` before the existing `eigenform.js`
+include. Added `_efSwap(html)` in `app/static/eigenform.js` — wraps the html string in a
+matching `id="page-content"` div and calls `morphdom(root, ..., {onBeforeElUpdated: ...})`.
+The `onBeforeElUpdated` hook returns false when the from-element is the currently-focused
+INPUT/TEXTAREA/SELECT, so a user mid-typing is never disturbed. Both `_efPost` (in
+eigenform.js) and the SSE-driven page reload (in page.html) now go through `_efSwap`.
+
+**Graceful fallback:** if `typeof morphdom === 'undefined'`, `_efSwap` falls back to the
+prior innerHTML+scrollY save/restore. So if the static asset fails to load the page still
+works.
+
+**What's gained (browser-only):** window scroll, nested-scroll, `<details>` open state,
+CSS transitions in flight, input focus, caret position, in-progress unsubmitted text
+all preserved across POSTs. The previous explicit `var scrollY = window.scrollY; ...
+window.scrollTo(0, scrollY);` kludge becomes unnecessary on the morphdom path.
+
+**What's NOT gained:** wire bandwidth is unchanged — server still returns the full
+re-rendered subtree. Reducing payload would require a separate, server-side change
+(POSTs return only the targeted eigenform's HTML, parallel to what the JSON path
+already does).
+
+**Verification:** 12/12 parity tests pass. `test_client` smoke: `/deepdive` GET returns
+HTML with morphdom included BEFORE eigenform.js; static asset served (200, 12165 bytes);
+POST tab switch returns 200; subsequent GET reflects the switched tab. Browser-side
+behavior (focus preservation, scroll, etc.) cannot be tested from `test_client` —
+requires a live browser.
+
 ### Cleanup follow-on: deleted effective_label/effective_instruction shims
 After the descriptor refactor these properties just returned `self.label`/`self.instruction`
 unchanged — pure indirection. Deleted them and inlined every call site to read the
