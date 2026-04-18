@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: Session-2026-04-18-002 (2026-04-18)*
+*Last updated: Session-2026-04-18-003 (2026-04-18)*
 
 ---
 
@@ -9,6 +9,8 @@
 **Component engine with full site shell and streamlined UX.** The clean-room rebuild on `dev/content-model-unification` now has both the component engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as component compositions, then merge dev into main.
 
 **Framework naming decision (Session-2026-04-17-003):** The general-purpose component/affordance framework — currently conflated with its first intended application under the name "QMS Workflow Engine" — is being renamed to **Razem** (Polish, "together"). The framework has no QMS-specific code; naming it after the QMS is like calling React "Facebook JS." Post-rename: **Razem** = the framework (the submodule, `engine/`, the component protocol, affordances, stores, reconciliation, faithful projection, parity tests); **QMS Workflow Engine** = the application to be built with Razem (not yet implemented — all current `pages/` entries are demos/galleries). Rename queued in Forward Plan for execution before the first real QMS workflow ships.
+
+**Engine quality pass — 3 backlog items completed (Session-2026-04-18-003):** (1) **Callable-preservation diagnostic**: `_callable_fields` tuple on Component subclasses declares callable-only fields; `from_descriptor()` sets `_missing_callables` after fresh construction; `_base_state()` surfaces warnings in serialized output. Applied to Computation, Action, DynamicChoiceForm. (2) **Action-dispatch registry**: `_actions = {}` class attribute maps action names → handler method names; base `handle()` dispatches via `getattr`; 20 component classes migrated, 89 if/elif branches eliminated. `None` key handles forms whose affordance bodies omit `action`. Fixed latent bug where `handle_action()` bypassed the registry for structural actions. (3) **Megafile split**: page.py split 1152→631 via `PageMutationsMixin` (493 lines in `page_mutations.py`); tableform.py split 1248→993 via `TableFormActionsMixin` (270 lines in `tableform_actions.py`). navigation.py at 693 left intact. Wiki intro rewritten with faithful-projection/HATEOAS framing, framework/QMS distinction. 72/72 parity tests pass.
 
 **Wiki article expansion + affordances() + auto-keys (Session-2026-04-18-002):** Wiki article (`/wiki`) expanded with architecture framing paragraph, 4 inline SVG diagrams (request lifecycle, reconciliation, component tree, faithful projection), "The component model" subsection defining what a component is (state + affordances + is_complete = program), mutation boundary documentation, and 6 code/pseudocode examples. `affordances()` promoted to first-class public method on `Component` — returns the complete state-dependent affordance list; `_serialize_full()` now delegates to it instead of building inline. Component `key` field made optional: auto-generates `{form}-{8-char-hex}` via UUID at construction when not provided; explicit `key=` still works unchanged; 8 subclasses updated with `super().__post_init__()`. 72/72 parity tests pass.
 
@@ -312,9 +314,11 @@ Showcase:
 | `engine/store.py` | JSON file store, one file per page, scoped by component key, delete() for surgical removal, mtime-based file sync |
 | `engine/registry.py` | ComponentRegistry (register/lookup/available), from_descriptor(), lazy default with 28 types + aliases |
 | `engine/page.py` | Page — persistence boundary, find_component, structural persistence, mutable structure, feedback banner |
+| `engine/page_mutations.py` | PageMutationsMixin — structural mutations (add/remove/move/group/ungroup/reparent component), tree helpers, handle_action routing |
 | `engine/navigation.py` | Navigation — unified container (tabs/chain/sequence/accordion modes), faithful projection |
 | `engine/rubikscubeapp.py` | RubiksCubeApp + RotateAffordance — complexity showcase |
 | `engine/tableform.py` | TableForm — inline editing, add/remove, batch support, typed columns (RowGroup, compound scopes), fixed_rows cell seeding |
+| `engine/tableform_actions.py` | TableFormActionsMixin — 17 action handlers for TableForm (add/remove/rename column, add/set/remove row, move, constraints, auto-chain) |
 | `engine/tablerunner.py` | TableRunner — executes a TableForm as a gated sequential workflow |
 | `engine/historizer.py` | Historizer — wraps component with append-only change history, lazy detection, timeline browsing |
 | `engine/infodisplay.py` | InfoDisplay — read-only text display, embedded TextForm in edit mode, always complete |
@@ -419,8 +423,8 @@ Cross-referenced from Wiki / Framing §8 / Deep Dive / Lessons 6-8. Items surfac
 
 | Item | Effort | Source |
 |------|--------|--------|
-| **Action-dispatch registry** — replace the 88 `if action == ...` branches across 20 files (Page._handle alone has 11 elif) with a per-class `_actions: dict[str, ActionSpec]` table. ActionSpec captures handler, undo policy, rebuild policy, edit-mode flag, parameter validator. Opens middleware / logging / replay for free. | ~1 week | Wiki Limitations §1; Framing §8 "still open" #4; Deep Dive rec #1 |
-| **Callable-preservation diagnostic** — silent-None fallback when a seed is renamed/deleted and `from_descriptor` falls into fresh-construction mode. Require the `seed` parameter for types declaring callable-valued fields (`Computation.compute`, `DynamicChoiceForm.options_fn`, `Visibility.predicate`, `Action.on_trigger`); return a typed diagnostic visible in the UI. | Small | Wiki Limitations §2; Framing §4 "What's still open"; Lesson 7 callout |
+| **Action-dispatch registry** — **LANDED** Session-2026-04-18-003. `_actions` dict per class, base `handle()` dispatches via `getattr`. 20 classes migrated, 89 if/elif branches eliminated. Simpler than originally scoped: plain `dict[str, str]` (action → method name), no rich ActionSpec. Middleware/logging/replay remain possible future additions on top of the registry. | Done | Wiki Limitations §1; Framing §8 "still open" #4; Deep Dive rec #1 |
+| **Callable-preservation diagnostic** — **LANDED** Session-2026-04-18-003. `_callable_fields` tuple on 3 classes (Computation, Action, DynamicChoiceForm); `from_descriptor()` sets `_missing_callables`; `_base_state()` surfaces warnings. | Done | Wiki Limitations §2; Framing §4 "What's still open"; Lesson 7 callout |
 | **Concurrency model** — last-write-wins on simultaneous writers to same component; no optimistic concurrency or conflict detection. Fine for single-user; broken for collaboration. | Medium | Wiki Limitations §4; Deep Dive §5 #4 |
 
 **Deep Dive findings not yet cross-referenced elsewhere:**
@@ -429,7 +433,7 @@ Cross-referenced from Wiki / Framing §8 / Deep Dive / Lessons 6-8. Items surfac
 |------|--------|--------|
 | **Move showcase/runner demos to `engine/_examples/`** — RubiksCubeApp (400 lines) and TableRunner ship in the production registry and appear in the builder's type-picker. Should live alongside `pages/` demos, not engine primitives. README still lists them as "Showcase" / "Runner Forms" production categories. | Small | Deep Dive rec #7 |
 | **Delete `_migrate_legacy_overrides` with kill-date comment** — runs in the bind hot path on every request, doing store reads + descriptor walks + deletes. Once existing instances are migrated (finite event), this is overhead with no value. | Trivial | Deep Dive rec #8 |
-| **Split megafiles along (orchestration / structural mutation / content mutation / rendering) axes** — Page (1064 lines), TableForm (1192), Navigation (665). Would surface actual coupling and likely reveal duplication. | Medium | Deep Dive findings §6; rec #5 |
+| **Split megafiles along (orchestration / structural mutation / content mutation / rendering) axes** — **LANDED** Session-2026-04-18-003. Page split via `PageMutationsMixin` (1152→631+493); TableForm split via `TableFormActionsMixin` (1248→993+270). Navigation at 693 left intact. Mixin pattern preserves single-class API while separating concerns. | Done | Deep Dive findings §6; rec #5 |
 | **Promote mutable-structure schematic editor out of `sleek/page.html`** — the most ambitious feature is gated behind a stylesheet choice. Default theme has no visual editor. Either build in default or move the editor into the engine. Lesson 8 doesn't flag this theme coupling. | Medium | Deep Dive §5 #5; rec #6 |
 
 **Consistency nits from the rename (Session-2026-04-17-002):**
