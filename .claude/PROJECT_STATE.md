@@ -1,12 +1,14 @@
 # Project State
 
-*Last updated: Session-2026-04-18-003 (2026-04-18)*
+*Last updated: Session-2026-04-18-004 (2026-04-18)*
 
 ---
 
 ## 1. Where We Are Now
 
 **Component engine with full site shell and streamlined UX.** The clean-room rebuild on `dev/content-model-unification` now has both the component engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as component compositions, then merge dev into main.
+
+**Components reference page + Score/DynamicChoiceForm removal + SiblingBind generalization (Session-2026-04-18-004):** Three thematic streams. **(1) Doc alignment pass** — wiki intro got a new ¶4 on impedance mismatch + affordance flotation; README, Framing (added Pass 5 covering action-registry + callable diagnostic + megafile split), and Learning Portal updated; Lesson 1 got real `curl` commands replacing the fake "change Accept in address bar" instruction, actual serialized JSON output captured by binding the example on a temp dir, "When keys matter" section explaining auto-keys with two reasons to use explicit ones, "Extracting children for legibility" section, and a correction that Page keys do NOT appear in URLs (URLs use the 8-char hex instance_id); Lesson 2 rewrote "4. Handle" for registry dispatch. **(2) New `/components` reference page** — taxonomy of every built-in component class with sidebar entry, grouped by category (Data Forms, Containers, Derivations, Imperative, Wrappers, Runners, Apps). Static `_COMPONENT_TAXONOMY` structure in `app/routes.py`, rendered by `app/templates/components_taxonomy.html`. **(3) Class taxonomy shrinkage via generalization** — *Score removed* (redundant with Computation; `grade(answer_key)` and `graded(answer_key, **kwargs)` helpers in new `engine/helpers.py` preserve the declarative ergonomics). *DynamicChoiceForm removed* (redundant with ChoiceForm + `SiblingBind`). New `engine/sibling_bind.py`: a `SiblingBind(sibling_key, fn, *, expects=None, default=None)` wrapper makes any component field reactive. `Component._sibling_refs()` base auto-discovers refs from SiblingBind-valued fields; `Component._resolve_field(name)` is the one call site a subclass migrates when wiring a field as reactive. `NumberForm` (`min_val`, `max_val`, `step`) and `ChoiceForm` (`options`) both wired; new `pages/reactive_demo.py` validates end-to-end (tier-driven bounds, cross-tier stale detection, Clear affordance). Callable-preservation diagnostic extended to auto-flag lost SiblingBinds after seed-mismatch reconciliation. **26 → 24 classes, 31 → 29 registered names. 79/79 tests pass.**
 
 **Framework naming decision (Session-2026-04-17-003):** The general-purpose component/affordance framework — currently conflated with its first intended application under the name "QMS Workflow Engine" — is being renamed to **Razem** (Polish, "together"). The framework has no QMS-specific code; naming it after the QMS is like calling React "Facebook JS." Post-rename: **Razem** = the framework (the submodule, `engine/`, the component protocol, affordances, stores, reconciliation, faithful projection, parity tests); **QMS Workflow Engine** = the application to be built with Razem (not yet implemented — all current `pages/` entries are demos/galleries). Rename queued in Forward Plan for execution before the first real QMS workflow ships.
 
@@ -61,7 +63,7 @@
 - **page-builder**: Mutable page for composing component structures from the registry, with embedded Component Reference Menu
 - **component-reference**: Component Reference Menu — type documentation for agents (5-tab reference with Overview, Data, Containers, Reactive, Special)
 
-**Component architecture** — 28 component types (RankForm→ListForm, MemoForm→TextForm, RangeForm→NumberForm, TabForm+ChainForm+SequenceForm+AccordionForm→Navigation, KeyValueForm→DictionaryForm):
+**Component architecture** — 24 component classes (post Score/DynamicChoiceForm removal; earlier consolidations include RankForm→ListForm, MemoForm→TextForm, RangeForm→NumberForm, TabForm+ChainForm+SequenceForm+AccordionForm→Navigation, KeyValueForm→DictionaryForm):
 
 Data forms:
 - `TextForm`: free-form string input. Single-line by default; `multiline=True` for textarea. Optional `min_length`/`max_length` validation. Complete when non-empty (and meets min_length if set).
@@ -86,13 +88,14 @@ Container forms:
 - `Switch`: selects between named alternative subtrees based on sibling value. Faithful projection.
 
 Sibling-reading forms:
-- `Score`: read-only grading from answer key. Reads sibling values.
-- `Computation`: read-only derived display from arbitrary compute function. Optional store_result for cross-component dependencies.
+- `Computation`: read-only derived display from arbitrary compute function over sibling values. Optional store_result for cross-component dependencies. `engine/helpers.py::graded(answer_key, **kwargs)` factory constructs a Computation preconfigured for answer-key quiz grading (replaces the former `Score` class).
 - `Validation`: cross-field validation rules. Pending/pass/fail. Can block page completion.
 
-Dynamic forms:
-- `DynamicChoiceForm`: options depend on sibling value via options_fn or static_options. Stale detection.
+Imperative:
 - `Action`: imperative button with preconditions, confirmation, side effects. Can return structural_actions for Phase E.
+
+Reactive fields (SiblingBind):
+- Any component field may hold a `SiblingBind(sibling_key, fn)` in place of a literal — the field resolves from the referenced sibling's current value at serialize time. Replaces what other frameworks expose as per-type `Dynamic*` variants. Currently wired on `ChoiceForm.options` (replaces the former `DynamicChoiceForm`) and `NumberForm`'s `min_val`/`max_val`/`step`. Stale detection is type-local: ChoiceForm flags a stored value missing from resolved options (plus a Clear affordance); NumberForm flags a stored value outside resolved bounds.
 
 Wrapper forms:
 - `Historizer`: wraps a component with append-only change history. Lazy detection on serialize — compares child state to last snapshot, appends if different. Timeline browsing with read-only historical views. History is never editable or clearable.
@@ -104,7 +107,7 @@ Showcase:
 - `RubiksCubeApp`: full Rubik's Cube. Conditional affordances based on solved state.
 
 **Infrastructure (Phases B-E):**
-- **Component Type Registry** (`engine/registry.py`): explicit mapping of type names to classes. 30 built-in types auto-registered. Custom types register under their own names.
+- **Component Type Registry** (`engine/registry.py`): explicit mapping of type names to classes. 29 registered names (24 classes + 5 aliases for Navigation modes and the DictionaryForm/keyvalue alias). Custom types register under their own names.
 - **Structural Persistence**: `to_descriptor()` on all types serializes tree structure. `from_descriptor()` reconstructs from descriptors + seed. Page stores `__structure` in the store.
 - **Structural Actions**: `mutable_structure=True` pages support add/remove/move/rebuild_from_seed. Surgical data cleanup on removal.
 - **Self-Modifying Pages**: Action can return `structural_actions` that Page applies, reshaping the page in response to user interaction.
@@ -166,20 +169,20 @@ Showcase:
 - **Edit mode infrastructure**: `editable: bool = False` on base Component. `set_mode` affordance with `edit`/`execute` modes. Pencil icon (✏) enters edit mode, play icon (▶) returns to execution. Edit mode: dashed border on container, label/instruction become inline editable inputs with `font: inherit` and position-matched margins. **All seed-time field overrides (label, instruction, mode, multiline, min_length, etc.) live in the parent container's `__structure` descriptor entry — the on-disk single source of truth.** Mutations flow through base helpers `_set_my_field` (top-level fields) and `_set_my_config` (config dict fields), which update the descriptor in place AND `setattr` on self so the runtime instance reflects the change before next bind. `from_descriptor` deepcopies the matched seed and applies the descriptor's scalars before returning. `_chrome_rendered` flag prevents duplicate affordance rendering. `_get_edit_affordances()` extensible by subclasses. Type-specific config (NumberForm min/max/step/slider/unit, BooleanForm true/false labels, TextForm multiline/min_length/max_length, DateForm include_time/min_date/max_date, DictionaryForm key_label/value_label, MultiForm fields list) all persisted in the descriptor's `config` dict. ChoiceForm/CheckboxForm embed a child ListForm for options/items editing — visible in edit mode (faithful projection), routable via standard children. Undo stack (`{key}.__undo`) with snapshot-based restore; initial snapshot (`{key}.__snapshot`) for discard. Snapshot captures self's descriptor entry; restore writes it back and re-applies. Chrome buttons: ↩ undo (conditional on depth > 0), ✕ discard (red, restores snapshot and exits edit mode). Child ListForm handle wrapped to push undo on parent. ListForm edit mode: `allow_constraints` toggle, fixed item toggle (📌 pin per item), fixed constraint toggle (📌 pin per constraint pill). `relax_fixed` on OrderedCollection allows editing/removing fixed items in edit mode. Static constraints demotable via `fixed: false` stored entries; `effective_must_follow` excludes demoted statics from enforcement; `all_must_follow` includes them for display. Demoted constraints visible in both modes (gray unpinned pill), removable in execution mode via `not is_effectively_fixed` check. JSON serialization includes demoted constraints with `"active": false`. `remove_constraint` on static constraints always demotes (never strips demotion entry). All item/constraint mutations push undo; snapshot includes item value for full discard. Legacy `__config`/`__label`/`__instruction` sidecar entries auto-migrated into the descriptor on first bind via `_migrate_legacy_overrides`.
 - **Edit/execution mode distinction**: TableForm structural operations (add/remove/rename columns, reorder, constraints) are edit-mode activities. Execution mode = structure frozen, only typed cell components are interactive. Text columns are authoring-only. TableRunner enforces this distinction.
 - **BUTTON_GAP**: shared constant in affordances.py. Transparent border matches button box height. Used by tablecomponent, listcomponent, rankform, keyvalueform.
-- **Dependency visibility**: `render_dependency_line()` in component.py. All sibling-reading components render "Depends on: /path/to/sibling" with full URL paths. Applied to Switch, DynamicChoiceForm, Computation, Validation (per-rule), Action, Score. Makes the shadow dependency graph visible in the UI.
+- **Dependency visibility**: `render_dependency_line()` in component.py. All sibling-reading components render "Depends on: /path/to/sibling" with full URL paths. Applied to Switch, Visibility, Computation, Validation (per-rule), Action, and any component with a SiblingBind-valued field. Makes the shadow dependency graph visible in the UI.
 - **Mutable page UI**: Two-layer editing interface. (1) **Add Component**: card-based type picker with 5 collapsible categories, per-type Unicode icons, category accent colors, radio-as-card selection. `TYPE_CATALOG` in registry.py; `AddComponentAffordance` with structured `type_catalog` in agent JSON. (2) **Structural editor**: tile-based page blueprint showing component tree with drag-and-drop reorder (including intra-container), reparent (drag onto container), multi-select grouping, ungrouping, and nested removal. Recursive tree helpers (`_pluck_from_tree`, `_find_siblings_list`, `_sync_container_structure`, etc.) enable all operations at any nesting depth. Per-component margin controls (▲/▼/🔓/🗑) retained alongside structural editor.
 - **Container edit mode**: Container components (Group, Navigation) support edit mode with structural operations: add/remove/reorder children, toggle child editability (✏ pencil toggle per child). Structural persistence via `__structure` in child scope. Undo/discard via `Store.snapshot_scope`/`restore_scope`. `_reconstruct` applies `editable` from descriptor after seed matching. All containers delegate to `super()._serialize_full()` for base edit mode infrastructure. Edit mode rendering: inline label/instruction editors, type/key/label add toolbar, per-child control bars. Navigation (tab switch, step focus, section toggle) works in both modes. Editability is a parent-controlled property — containers toggle child `editable` via structural descriptors.
 
 **Terminology:**
 - **Component** = a form that preserves its identity under transformation (serialize, render, handle, recompose). "Eigen" as in eigenvector — identity-preserving — not "self-contained." Revised from original meaning after theoretical analysis (Session-2026-03-30-001).
-- **Forms** = 28 types across data, container, sibling-reading, dynamic, wrapper, runner, and showcase categories
+- **Classes** = 24 types across data, container, sibling-reading, imperative, wrapper, runner, and showcase categories (reactive behavior is a cross-cutting mechanism via `SiblingBind`, not a class category)
 - **Seed** = the Python page definition; the genome
 - **Structure** = the stored component tree; the expressed organism
 - **Structural action** = a mutation that reshapes the component tree at runtime
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**26 component classes (31 registered names). 10 page seeds (demo cruft removed). Full site shell with 9 routes. Stateless page discovery — no restart needed when pages change.**
+**24 component classes (29 registered names). 11 page seeds. Full site shell with 10 routes (added `/components` reference taxonomy). Stateless page discovery — no restart needed when pages change.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
