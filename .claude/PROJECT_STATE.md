@@ -1,10 +1,16 @@
 # Project State
 
-*Last updated: Session-2026-04-18-005 (2026-04-19)*
+*Last updated: Session-2026-04-19-001 (2026-04-19)*
 
 ---
 
 ## 1. Where We Are Now
+
+**Navigation split into Tabs/Sequence/Accordion (Session-2026-04-19-001).** The unified `Navigation` class with a `mode` field has been split into three concrete subclasses: `Tabs` (free access, one visible), `Sequence` (gated, in order; `auto_advance=True` replaces old chain mode), and `Accordion` (free access, all visible with expand/collapse). `Navigation` remains as the shared base class but is not registered directly. All 6 page definitions migrated, CSS selectors updated, mutable page palette shows three entries instead of one. Mode switching removed from edit mode — the type *is* the mode. Auto-key generation in `_add_component` and `_add_step` switched from counter-based (`type-1`) to UUID-based (`type-{8-char-hex}`) to match `Component.__post_init__`.
+
+**Workshop restructured as hub (Session-2026-04-19-001).** `/workshop` is now an index page listing workshop sub-pages as cards. Existing page builder moved to `/workshop/page-builder`. New `/workshop/component-creation` stub created for future Interactive Component Creation workshop. `_WORKSHOPS` registry in routes.py for easy addition. Page builder improvements: instruction field on components, eliminated all UI jumpiness (deferred canvas re-render to focusout, removed entrance animations), fixed Navigation tab switching to show only active tab's child.
+
+**Learning Portal: Miscellaneous Topics section (Session-2026-04-19-001).** New third section on the learn index below Fundamentals and Deep Dives. First topic: "Anatomy of a Component" (`/learn/anatomy`) — annotated SVG diagram of a TextForm with all parts labeled, detailed explanations organized by role (Identity/State/Protocol/Chrome), program analogy (state + instruction set + halt condition).
 
 **Component engine with full site shell and streamlined UX.** The clean-room rebuild on `dev/content-model-unification` now has both the component engine and the complete UI shell ported from main (sidebar nav, Agent Portal, Quality Manual viewer, QMS dashboard, Workspace, Inbox, README page). Next step: build real QMS workflows as component compositions, then merge dev into main.
 
@@ -83,7 +89,9 @@ Data forms:
 
 Container forms:
 - `Page`: top-level container with Reset Page (recursive clear). Persistence boundary. Optional mutable_structure for Phase D/E. Feedback banner for action results.
-- `Navigation`: unified container with four modes (replaces TabForm, ChainForm, SequenceForm, AccordionForm). `mode="tabs"`: free access, one child visible. `mode="chain"`: gated, auto-advance. `mode="sequence"`: gated, manual Back/Next. `mode="accordion"`: free access, all children visible with expand/collapse. Faithful projection in all modes.
+- `Tabs`: free access, one child visible at a time. Classic tabbed interface.
+- `Sequence`: gated access, in order. `auto_advance=True` for automatic progression (replaces old chain mode), `False` (default) for manual Back/Next. Faithful projection.
+- `Accordion`: free access, all children visible with expand/collapse. Collapsed sections omitted from output (faithful projection).
 - `Visibility`: wraps child with conditional visibility. Supports value, list, or callable predicates.
 - `Group`: named container for reusable compositions. Supports parameterization via subclassing.
 - `Repeater`: stamps template components per dynamic entry. Compound scopes, stable IDs, add/remove.
@@ -184,7 +192,7 @@ Showcase:
 
 **CR-110** is IN_EXECUTION (v1.1). EI-1-4 Pass. Remaining EIs (5-7) will need to be scoped to reflect the rebuild.
 
-**24 component classes (29 registered names). 11 page seeds. Full site shell with 10 routes (added `/components` reference taxonomy). Stateless page discovery — no restart needed when pages change.**
+**26 component classes (29 registered names). 11 page seeds. Full site shell with 10 routes (added `/components` reference taxonomy). Stateless page discovery — no restart needed when pages change.**
 
 **65 CRs CLOSED. 5 INVs CLOSED.**
 
@@ -406,13 +414,7 @@ Showcase:
 
 ### Future Refactors (post-workflow)
 
-6. **Split `Navigation` into four descriptive subtypes** — Decided Session-2026-04-17-003. `Navigation` (soon `Navigation`) is presently a single class with a `mode` field parameterizing four distinct behaviors:
-   - `mode="tabs"` — free-access, one-visible-at-a-time
-   - `mode="chain"` — gated, auto-advance on completion
-   - `mode="sequence"` — gated, manual Back/Next
-   - `mode="accordion"` — free-access, all-visible with expand/collapse
-
-   Deep Dive §6 flagged this: *"Navigation is four classes in one. `mode` switches not only display but also value shape (string for tabs/chain/sequence, dict for accordion), navigation rules, and completion semantics. The single-class implementation is DRY but the API surface is unclear; users must remember the mode is a personality dial."* A future refactor should split `Navigation` into four distinct classes with more descriptive names — candidates (not final): `Tabs`, `Chain` *or* `Wizard` *or* `Walkthrough`, `Sequence` *or* `Stepper`, `Accordion` *or* `Disclosure`. Each becomes a first-class concept in the registry with its own docstring and edit-mode affordances.
+6. **Split `Navigation` into descriptive subtypes** — **LANDED** Session-2026-04-19-001. Three subclasses: `Tabs` (free access, one visible), `Sequence` (gated, `auto_advance` flag replaces chain vs sequence distinction), `Accordion` (free access, all visible). `Navigation` base class retains shared machinery. Mode switching removed from edit mode. All page definitions, CSS selectors, registry, templates, and mutable page infrastructure updated.
 
 ### After Workflows Are Working
 
