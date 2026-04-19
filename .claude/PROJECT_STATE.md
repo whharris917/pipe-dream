@@ -1,10 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-04-19-001 (2026-04-19)*
+*Last updated: Session-2026-04-19-002 (2026-04-19)*
 
 ---
 
 ## 1. Where We Are Now
+
+**Right-click inspect panel (Session-2026-04-19-002).** Chrome DevTools-style component inspector accessible via right-click context menu on any component. Establishes the general pattern: right-click actions are human-only chrome — no affordances, no parity tests, invisible to agents. Context menu: Inspect (full page JSON tree with target component expanded/highlighted), Affordances (component's affordances array), Data (raw store data via new `GET /pages/{id}/_store` endpoint). Collapsible JSON tree viewer with syntax coloring (VS Code dark palette), inline previews, target matching via affordance URL propagation. Right-side drawer with resize handle, toolbar (Expand/Collapse/All Affs/Labels). Live refresh: `_cSwap` fires `c-page-updated` CustomEvent, inspect panel re-fetches current view on every page update (user POSTs + SSE), preserving scroll position. Also: `app.json.sort_keys = False` for canonical key order in all JSON responses, `data-url` attribute on all component wrapper divs.
 
 **Navigation split into Tabs/Sequence/Accordion (Session-2026-04-19-001).** The unified `Navigation` class with a `mode` field has been split into three concrete subclasses: `Tabs` (free access, one visible), `Sequence` (gated, in order; `auto_advance=True` replaces old chain mode), and `Accordion` (free access, all visible with expand/collapse). `Navigation` remains as the shared base class but is not registered directly. All 6 page definitions migrated, CSS selectors updated, mutable page palette shows three entries instead of one. Mode switching removed from edit mode — the type *is* the mode. Auto-key generation in `_add_component` and `_add_step` switched from counter-based (`type-1`) to UUID-based (`type-{8-char-hex}`) to match `Component.__post_init__`.
 
