@@ -1,10 +1,12 @@
 # Project State
 
-*Last updated: Session-2026-04-19-002 (2026-04-19)*
+*Last updated: Session-2026-04-19-003 (2026-04-19)*
 
 ---
 
 ## 1. Where We Are Now
+
+**UI polish pass (Session-2026-04-19-003).** Four improvements: (1) **Inspect Data view fix** — right-click > Data was returning `{}` for leaf components because it looked up `storeData[key]` but leaf data lives under `storeData[parentKey]`; fix extracts scope from URL path. (2) **TextForm rendering consistency** — standardized across Debug Mode and Sleek Theme: "Value: \<value\>" read-only display followed by blank input field; removed pre-populated values, ghost text placeholders, and the styled blue-accent value strip in sleek. (3) **Universal ghost Clear buttons** — all Clear buttons in sleek theme now render as ghost buttons (transparent bg, gray text, subtle border) via `c-btn-clear` class on `_render_button()`, matching TextForm's style. (4) **Live form tooltips** — POST tooltips on form submit buttons now update dynamically as the user types via `_cSyncFormTooltip()` and an `input` event listener; applies universally to all `data-c-submit` forms.
 
 **Right-click inspect panel (Session-2026-04-19-002).** Chrome DevTools-style component inspector accessible via right-click context menu on any component. Establishes the general pattern: right-click actions are human-only chrome — no affordances, no parity tests, invisible to agents. Context menu: Inspect (full page JSON tree with target component expanded/highlighted), Affordances (component's affordances array), Data (raw store data via new `GET /pages/{id}/_store` endpoint). Collapsible JSON tree viewer with syntax coloring (VS Code dark palette), inline previews, target matching via affordance URL propagation. Right-side drawer with resize handle, toolbar (Expand/Collapse/All Affs/Labels). Live refresh: `_cSwap` fires `c-page-updated` CustomEvent, inspect panel re-fetches current view on every page update (user POSTs + SSE), preserving scroll position. Also: `app.json.sort_keys = False` for canonical key order in all JSON responses, `data-url` attribute on all component wrapper divs.
 
