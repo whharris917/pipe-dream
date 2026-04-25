@@ -1,6 +1,6 @@
 # Session-2026-04-25-001
 
-## Current State (last updated: Experiment A.1.X advanced-features series shipped)
+## Current State (last updated: Experiment A consolidated + workshop slimmed)
 - **Active document:** None (no open QMS work; engine-submodule direct work)
 - **Current EI:** N/A
 - **Blocking on:** Nothing (commit & push pending per Lead direction)
@@ -149,3 +149,29 @@ PROJECT_STATE.md is 562 lines / ~41.8K tokens — well past what CLAUDE.md says 
 - **A.1.1 (non-nav components on the thread):** dashed-border italic-`i` node + dashed-border info card after each committed ancestor. `INTERLEVEL_NOTES = [{ meta, text }, ...]` shape allows future variants to swap in forms / references / acknowledgments without changing the threading logic.
 - **A.1.2 (sequential gating):** tab N+1 locked until tab N's subtree is complete. Locked tabs get 🔒 + dimmed treatment + `cursor: not-allowed`; click handlers stripped via `cloneNode + replaceWith`; `title` attribute surfaces "Locked — complete the previous selection first" on hover. Footer hint (`.expA12-gate-hint`) names the dependency when ≥1 tab is locked.
 - **`expRing` shared helper extracted** — `makeRing({ size, strokeWidth, completed, total, gradientId, includeDefs })`. Inline `stroke="url(#...)"` instead of a CSS class for the fill, so each variant emits its own gradient ID under one shared helper.
+
+### Round 10 — workshop slimming (deletion of pre-A variants)
+- **Lead instruction:** "delete everything before Experiment A to get rid of unnecessary code in the workshop"
+- File rewritten from scratch to keep only Experiment A series + shared infrastructure.
+- Removed 25+ pre-A IIFEs, the `.exp43v-*` namespace, `exp43vShared`, `exp433xDrilldown`, deeper indent class modifiers (--grandchild through --great-great-great-grandchild). 8756 → 1539 lines (~82% reduction).
+
+### Round 11 — refinements on Experiment A.1.2's gate hint placement
+- Fix 1: hint was sitting in `navWrap` after the leaf panel; the absolutely-positioned thread `::before` painted through it (line crossed "S" of "Sequential gating active"). Moved to inside the bubble body of the current step, which has `z-index: 1` and covers the thread. Also reframes the hint as part of the AI's voice ("Note: …").
+- Fix 2: dropped the asymmetric `border-left: 3px` callout treatment; now a soft tinted rounded card sitting inline within the bubble.
+
+### Round 12 — "Proceed to..." button + workshop-complete celebration in A.1.2
+- Two helpers added: `checkCurrentComplete(scope, done, progressFor)` and `findNextTarget(scope, progressFor)`. The latter walks up the scope path looking for the next incomplete sibling.
+- When all current-scope tabs are done: render a gradient-filled "Proceed to Tab X →" pill button on the thread (with its own gradient `→` node).
+- When the entire tree is done: render an `expA12-complete` element instead — green gradient `✓` node + "Workshop complete — every leaf is done." text.
+- Both elements are inside `navWrap` with `z-index: 1` so the thread visually terminates at their nodes.
+
+### Round 13 — auto-select first incomplete + reachable leaf
+- Lead's request: "first incomplete and reachable leaf node of a navigation hierarchy auto-selected as long as the user has drilled down to that level."
+- Baked into `exp43121xCore.makeNavigator` as `autoSelectIfAtLeafLevel()`. Fires after `selectAt` (when drilling reaches MAX_DEPTH-1), `navigateTo`, and on initial setup. Walks the 3 leaves under the current scope; picks the first incomplete one whose previous sibling is done (the first sibling is always reachable). In non-gated configurations this collapses to "first incomplete leaf."
+- `toggleDone` deliberately does NOT auto-advance — user stays on the just-completed leaf so they can see its completed state.
+
+### Round 14 — consolidation into a single Experiment A
+- Lead instruction: "combine Experiment A.1.1 and Experiment A.1.2 into a single new Experiment A. I want to be better about stripping out all but the obvious winners this time around."
+- Rewrote the file from scratch. The new Experiment A merges every feature explored across A → A.1 → A.1.1 → A.1.2 into a single `.expA-` namespace + IIFE: drill-down + read-only ancestor tabs + Change selection + circular progress rings + N/M pips + INTERLEVEL_NOTES on the thread + sequential gating + Proceed-to-next + workshop-complete + auto-select-first-incomplete-reachable.
+- Topbar trimmed to a single row with one button (`Experiment A`); no lineage labels. Dropped the previously-shared `.expA1-ring-bg` / `.expA1-ring-fill` CSS classes (unused after standardizing on `expRing.makeRing`'s inline SVG attributes).
+- File: 1689 → 1191 lines (~30% further reduction). JS brace balance 83/83.
