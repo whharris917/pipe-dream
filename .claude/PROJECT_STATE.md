@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: 2026-04-29 (Session-2026-04-29-002)*
+*Last updated: 2026-04-29 (Session-2026-04-29-003 — paused mid-session for context budget)*
 
 This is the living planning document for Pipe Dream. It tracks where the project is, what's next, and what's waiting. Per CLAUDE.md it is pruned aggressively and does not accumulate session-level detail — for that, read the relevant session's `.claude/sessions/{ID}/notes.md`.
 
@@ -19,23 +19,25 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 
 ## 2. Current Status
 
-**Active branch:** `dev/content-model-unification` on the engine submodule. Full UI shell ported; ready to build real QMS workflows.
+**Active focus:** Flow State adoption into QMS governance. Engine / Razem track is paused (see §6 — beach-trip pivot).
 
-**Engine surface:** 26 component classes (29 registered names), 12 page seeds (cr-create added Session-002), 7 themes (default, sleek, debug, liquid-glass, paper, chat, task), 86/86 parity tests passing. Stateless server with instance spawning. See §4.
+**CR-111 (Adopt Flow State into QMS Governance)** is IN_EXECUTION at v1.0. A lightweight Adoption CR establishing Flow State's first SDLC document pair and qualifying `flow-state/main@a26f7fb` as System Release `FLOW-STATE-1.0`. Document-only CR (no flow-state code modifications); 12 high-level requirements verified by qualitative-proof inspection mirroring `SDLC-CQ-RS/RTM`. Three pre-review cycles converged on v1.0; pre-execution baseline committed at `d6f003d`. **EIs 1–5 done; EI-6 mid-cycle (RTM v0.1 reviewed but blocked on tu_scene + tu_sketch request-updates; v0.2 revision queued); EIs 7–10 pending.** Detailed resume instructions in `.claude/sessions/Session-2026-04-29-003/notes.md`.
 
-**SDLC docs (Flow State + qms-cli):**
+**Razem engine** (paused): 26 component classes, 12 page seeds (incl. cr-create scaffold from Session-002), 7 themes, 86/86 parity tests. Stateless server with instance spawning. The terminal-execution primitive remains the load-bearing missing piece for engine-driven workflows, but engine work is on hold while Flow State CRs flow through the existing qms-cli "old fashioned way."
+
+**SDLC docs:**
 | Document | Version | Notes |
 |----------|---------|-------|
 | SDLC-QMS-RS | v22.0 EFFECTIVE | 143 requirements |
 | SDLC-QMS-RTM | v27.0 EFFECTIVE | 687 tests, qualified at `918984d` |
 | SDLC-CQ-RS | v2.0 EFFECTIVE | 6 requirements |
 | SDLC-CQ-RTM | v2.0 EFFECTIVE | Inspection-based, qualified at `d3c34e5` |
-| SDLC-WFE-RS | v0.1 DRAFT | 30 requirements (needs full rewrite for v2) |
-| Qualified Baseline | CLI-18.0 | qms-cli main at `309f217` |
+| **SDLC-FLOW-RS** | **v1.0 EFFECTIVE** | **12 reqs across ARCH/CAD/SIM/UI/APP — new this session** |
+| **SDLC-FLOW-RTM** | **v0.1 REVIEWED (blocked)** | **Inspection-based; pending v0.2 revision per tu_scene + tu_sketch feedback** |
+| SDLC-WFE-RS | v0.1 DRAFT | Razem track; rewrite deferred while Flow State is active |
+| Qualified Baselines | CLI-18.0 / **(FLOW-STATE-1.0 pending RTM EFFECTIVE)** | qms-cli main at `309f217`; flow-state main at `a26f7fb` (will be tagged in EI-8) |
 
-**Open work:** Session-2026-04-29-002 produced the **first real QMS workflow page on Razem**: `pages/cr_create.py`, a Create Change Record authoring scaffold visible at /portal. It captures the pre-approved sections of TEMPLATE-CR (sections 1–9 plus 12 References) using TextForm, ChoiceForm, ListForm, TableForm, Group, Tabs, Visibility, InfoDisplay, and a stub Action. The Submit Action is honest about being a stub — it returns a preview of the qms-cli command sequence (`qms create CR --title "..."` → checkout → write content → checkin) that *would* run, since Razem has no terminal-execution primitive yet. Session followed the Lead's reframing of Razem's purpose: it's an *API builder/coupler* whose primary application has always been a high-level, constrained API (with GUI for free) for qms-cli, so terminal execution is a load-bearing primitive, not a downstream feature. The cr-create page is the diagnostic that motivates building it. Page was dogfooded with a hypothetical "Adopt Flow State under SDLC governance" CR to surface composition gaps; final populated draft remains live at /pages/27342915. Three engine bugs surfaced during dogfooding (see §8). The previous session's unified Tabs/Sequence motif from Experiment D remains a candidate engine surface for navigation containers but is not blocking. **65 CRs CLOSED, 5 INVs CLOSED.**
-
-**Critical gap:** Razem has no terminal-execution primitive, so cr-create's Submit cannot mint a real CR. This is now the load-bearing piece of engine work — every other QMS workflow page (CR review, document lifecycle, inbox actions) needs the same primitive.
+**66 CRs CLOSED + 1 IN_EXECUTION (CR-111), 5 INVs CLOSED.**
 
 ---
 
@@ -86,6 +88,8 @@ The full per-session record lives in `.claude/sessions/`. This is the compressed
 7. **Containers as concept, not node.** Lead's final clarification: Tabs/Group/Switch shouldn't be a node — they're a *grouping concept* over a horizontal row of nodes, visualised as a labelled bounding box. Container nodes are now invisible; their visual is the `<rect class="gb-container-frame">` with kind-specific colour and an HTML `.gb-container-tag` handle anchored to the bbox top-left (kind label + `+` add-branch + `▾` collapse caret). Bbox computed bottom-up so nested containers' frames enclose inner containers. Container's logical col re-anchors to its branches' centre so the next-edge drops from bbox-centre.
 
 The workshop ended at 946 lines, with `/workshop/graph-builder` as the most architecturally ambitious workshop to date. **Item 4 — compile graph to Razem composition — is parked as the ultimate goal** but the structure is now ready: tree-shaped, with edge kinds matching Razem's container vocabulary; a recursive walk emits `SequenceForm` for next-chains and `TabForm` / `Group` / `Switch` for branch rows.
+
+**Beach-Trip Pivot — Flow State Adoption (Apr 29 Session-003, paused mid-session).** Lead opened by shelving the Razem / QMS Workflow Engine track entirely for an upcoming working vacation, returning to the chemical-engineering game (Flow State) with the existing operational QMS as the governance vehicle. The pivot exposed a structural fact: Flow State had never been adopted into the QMS — it sat in the genesis sandbox per SOP-005 §7.4 with no SDLC docs and no qualified commit. Two prior sessions had sketched but never executed an adoption CR. Session opened with the Lead choosing **Option #2: Lightweight adoption** — minimal high-level RS verified by qualitative-proof inspection, mirroring SDLC-CQ. Plan approved (`/happy-drifting-mitten.md`); CR-111 drafted (12 reqs across ARCH×4 / CAD×3 / SIM×2 / UI×2 / APP×1, 10 EIs, document-only — §7.4/§7.5 omitted). Pre-review converged in three cycles: v0.1 → v0.2 fixed three blocking factual errors traced to CLAUDE.md drift (REQ-FS-APP-001 sim/simulation flag, REQ-FS-UI-002 input layer order, REQ-FS-ARCH-003 interaction_data ownership); v0.2 → v0.3 added is_static=1 vs is_static=3 distinction in REQ-FS-SIM-002 per tu_sim's escalated request-updates; v0.3 cleared all five reviewers, QA approved, CR-111 v1.0 PRE_APPROVED → released → IN_EXECUTION. EI-1 pre-execution baseline committed at `d6f003d`. EI-2/3/4 — SDLC-FLOW-RS v0.1 authored, reviewed by 6 (qa+bu+4 TUs all clean recommend), approved → v1.0 EFFECTIVE on first cycle. EI-5 — SDLC-FLOW-RTM v0.1 authored with 12 qualitative-proof rows + Qualified Baseline section anchored at `flow-state/main@a26f7fb`. EI-6 mid-cycle — RTM v0.1 reviewed; qa+tu_sim+tu_ui recommend; tu_scene + tu_sketch request-updates: brush-operations exception in REQ-FS-ARCH-001 evidence (Scene.paint_particles/erase_particles use time-travel snapshot pattern per CLAUDE.md §3.3 — documented authorized exception not previously acknowledged), DeleteEntityCommand→RemoveEntityCommand correction, tools.py direct sketch.interaction_data mutation (the ctx.set_interaction_data facade method exists but is unused), solve() dispatcher framing imprecision. RTM checked out for v0.2 revision; revision NOT yet applied — paused before edits. Session lessons: (1) for Adoption CRs of existing systems, anchor RS/RTM evidence to actual code, not narrative docs (CLAUDE.md drift surfaced repeatedly); (2) follow-up CR queued for CLAUDE.md §2.3, §6.2, §7 + module docstrings in input_handler.py and compiler.py. Comprehensive resume instructions in `.claude/sessions/Session-2026-04-29-003/notes.md`.
 
 **First Real QMS Workflow Page on Razem — cr-create scaffold (Apr 29 Session-002).** Lead opened with self-reflection on having spent recent weeks perfecting Razem before putting it into practice. Confirmed: every commit since Apr 25 has been workshop / motif iteration while "Build real QMS workflows" stayed unmoved as the §6.1 immediate item. Conversation reframed Razem's purpose: it is an **API builder/coupler** whose primary application has always been a high-level, *constrained* API (with GUI for free) for qms-cli, so terminal execution is a load-bearing primitive, not a downstream feature. Pivoted to building the smallest real workflow page on the existing engine: `pages/cr_create.py` (~330 lines) — a Create Change Record authoring scaffold capturing the pre-approved sections of TEMPLATE-CR (sections 1–9 plus 12 References) using TextForm, ChoiceForm, ListForm, TableForm with `fixed_columns`, Group, Tabs, Visibility (`parent_doc_id` shown only when a parent_kind is selected), InfoDisplay, and a stub Action. The Submit Action is honest about being a stub: its `action_fn` returns the qms-cli command sequence (`qms create CR --title "..."` → checkout → write content → checkin) that *would* run once Razem gains a terminal-execution primitive. Engine fix landed en route: parity test `test_no_empty_url_affordances` was filtering DisabledAffordance offenders by label-substring matching, which only worked accidentally for the existing case (Action nested inside a Tabs that hides it from serialization when the tab is inactive); replaced with a structured `disabled: True` flag on the affordance dict (`engine/action.py`) and a corresponding test filter (`tests/test_parity.py`). 86/86 parity tests passing (was 79). Page was dogfooded with a hypothetical "Adopt Flow State under SDLC governance" CR — Document-only CR, genesis-sandbox-to-adoption framing per QMS-Policy §7.4, 8-step change description, 7-domain RS structure proposed (REQ-FS-SCENE/SKETCH/SIM/COMPILER/TOOLCONTEXT/UI/PERSIST), 12-phase implementation plan, 11 references. Final populated draft remains at /pages/27342915. Three engine bugs surfaced during dogfooding (see §8). Design constraint discovered: Visibility's `depends_on` resolves to same-scope siblings only, so code-CR-only sections (TEMPLATE-CR §7.4, §7.5) cannot conditionally appear inside the per-section Tabs based on a page-level `cr_type` choice — omitted from this scaffold; resolution is a future cross-scope ref form or moving conditional sections to page level.
 
@@ -145,8 +149,10 @@ Major surfaces — not an exhaustive file list. See `engine/` for the full direc
 
 | Document | Status | Context |
 |----------|--------|---------|
-| CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1-4 Pass. EIs 5-7 need rescoping for the rebuild. |
-| CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold (superseded by engine direction; may need cancellation). |
+| **CR-111** | **IN_EXECUTION v1.0** | **Adopt Flow State into QMS Governance. EIs 1–5 done; EI-6 mid-cycle (RTM v0.2 revision pending); EIs 7–10 + post-review pending. Active.** |
+| **SDLC-FLOW-RTM** | **REVIEWED v0.1 (checked out to claude)** | **Companion to CR-111 EI-6. Blocking on tu_scene + tu_sketch request-updates; v0.2 revision queued. Workspace state preserved across session pause.** |
+| CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1-4 Pass. EIs 5-7 need rescoping. **Paused for the beach-trip pivot.** |
+| CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold. |
 | CR-106 | DRAFT v0.1 | System Governance. Depends on CR-107. Same hold. |
 | CR-091-ADD-001-VAR-001 | PRE_APPROVED v1.0 | Type 2 VAR. CLI title bug + SOP-004/TEMPLATE-VR alignment gap. |
 | CR-001 | IN_EXECUTION v1.0 | Legacy. Cancellation candidate. |
@@ -158,12 +164,20 @@ Major surfaces — not an exhaustive file list. See `engine/` for the full direc
 
 ## 6. Forward Plan
 
-### Immediate
+### Immediate (Flow State track — active during beach trip)
 
-1. **Terminal-execution primitive (Exec/Command/Run Action variant).** The load-bearing piece. Razem's primary purpose is to be a constrained API over qms-cli; without external execution, every workflow page is a stub. Sketched shape: a new Action variant holding a command *template* with sibling-bound substitutions, runs the subprocess on the server, returns a structured result (stdout / stderr / exit code / parsed doc_id) into bound store keys consumable by other components. Engine permits arbitrary commands; page seeds curate which command shapes are exposed (this is what "constrained" means). Real design questions: result surfacing (toast vs new bound key vs page reload), interactive prompt handling, timeout/streaming for long commands, post-success affordance recomputation. Once this lands, cr-create's stub Submit becomes a real `qms create CR` invocation, and every subsequent QMS workflow page (review, document lifecycle, inbox actions) builds on the same primitive.
-2. **Continue building real QMS workflow pages.** After the exec primitive: CR review, document lifecycle, inbox actions, route-for-review/approval. cr-create is the model.
-3. **Wire QMS / Workspace / Inbox to real data.** Connect to `qms-cli` or the QMS document store rather than placeholder lists.
-4. **Triage demo pages.** Decide which seeds in `/portal` are valuable vs gallery cruft.
+1. **Resume CR-111 from session pause.** Apply the seven RTM v0.2 fixes documented in `.claude/sessions/Session-2026-04-29-003/notes.md` ("RTM v0.2 fix list"); checkin; re-route for review; iterate until clean recommend; route for approval; RTM EFFECTIVE.
+2. **Complete CR-111 EIs 7–10** — apply `FLOW-STATE-1.0` git tag to `flow-state/main`, update PROJECT_STATE SDLC table to reflect the qualified baseline, post-execution baseline commit, route for post-review, address feedback, close.
+3. **First real Flow State CRs.** Once CR-111 closes, normal CRs against `flow-state/` for actual gameplay/CAD/sim feature work. The fun stuff. Likely first candidates: small bug fixes or quality-of-life improvements identified during the beach trip; possibly the CLAUDE.md follow-up CR (§2.3, §6.2, §7 narrative drift).
+
+### Razem track (paused — resume after beach trip)
+
+These items remain in the queue but are not active during the Flow State arc:
+
+4. **Terminal-execution primitive (Exec/Command/Run Action variant).** The load-bearing piece for the Razem-driven QMS UI. Sketched shape: a new Action variant holding a command *template* with sibling-bound substitutions, runs the subprocess on the server, returns a structured result (stdout / stderr / exit code / parsed doc_id) into bound store keys consumable by other components. Engine permits arbitrary commands; page seeds curate which command shapes are exposed.
+5. **Continue building real QMS workflow pages.** After the exec primitive: CR review, document lifecycle, inbox actions, route-for-review/approval. cr-create is the model.
+6. **Wire QMS / Workspace / Inbox to real data.** Connect to `qms-cli` or the QMS document store rather than placeholder lists.
+7. **Triage demo pages.** Decide which seeds in `/portal` are valuable vs gallery cruft.
 
 ### Before the first QMS workflow ships
 

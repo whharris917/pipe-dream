@@ -1,0 +1,20 @@
+{
+  "doc_id": "SDLC-FLOW-RTM",
+  "doc_type": "FLOW-RTM",
+  "version": "0.1",
+  "status": "REVIEWED",
+  "executable": false,
+  "execution_phase": null,
+  "responsible_user": "claude",
+  "checked_out": true,
+  "checked_out_date": "2026-04-29",
+  "effective_version": null,
+  "pending_assignees": [],
+  "review_outcomes": {
+    "qa": "RECOMMEND",
+    "tu_ui": "RECOMMEND",
+    "tu_sim": "RECOMMEND",
+    "tu_scene": "UPDATES_REQUIRED",
+    "tu_sketch": "UPDATES_REQUIRED"
+  }
+}

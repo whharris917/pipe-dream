@@ -1,0 +1,21 @@
+{
+  "doc_id": "SDLC-FLOW-RS",
+  "doc_type": "FLOW-RS",
+  "version": "1.0",
+  "status": "EFFECTIVE",
+  "executable": false,
+  "execution_phase": null,
+  "responsible_user": null,
+  "checked_out": false,
+  "checked_out_date": null,
+  "effective_version": "1.0",
+  "pending_assignees": [],
+  "review_outcomes": {
+    "qa": "RECOMMEND",
+    "bu": "RECOMMEND",
+    "tu_ui": "RECOMMEND",
+    "tu_scene": "RECOMMEND",
+    "tu_sketch": "RECOMMEND",
+    "tu_sim": "RECOMMEND"
+  }
+}
