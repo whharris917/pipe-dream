@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: 2026-04-30 (Session-2026-04-30-001 — CR-111 EIs 1-9 complete; EI-10 + post-review pending)*
+*Last updated: 2026-04-30 (Session-2026-04-30-001 — CR-111 CLOSED; Flow State adopted under QMS governance)*
 
 This is the living planning document for Pipe Dream. It tracks where the project is, what's next, and what's waiting. Per CLAUDE.md it is pruned aggressively and does not accumulate session-level detail — for that, read the relevant session's `.claude/sessions/{ID}/notes.md`.
 
@@ -19,9 +19,9 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 
 ## 2. Current Status
 
-**Active focus:** Flow State adoption into QMS governance. Engine / Razem track is paused (see §6 — beach-trip pivot).
+**Active focus:** Flow State CR work. CR-111 (Adopt Flow State into QMS Governance) closed 2026-04-30 — Flow State is now formally under SDLC governance with `FLOW-STATE-1.0` as the qualified baseline. Razem engine track remains paused (beach-trip pivot, see §6).
 
-**CR-111 (Adopt Flow State into QMS Governance)** is IN_EXECUTION at v1.0. A lightweight Adoption CR establishing Flow State's first SDLC document pair and qualifying `flow-state/main@a26f7fb` as System Release `FLOW-STATE-1.0`. Document-only CR (no flow-state code modifications); 12 high-level requirements verified by qualitative-proof inspection mirroring `SDLC-CQ-RS/RTM`. Three pre-review cycles converged on v1.0; pre-execution baseline committed at `d6f003d`. **EIs 1–9 complete: SDLC-FLOW-RS v1.0 EFFECTIVE, SDLC-FLOW-RTM v1.0 EFFECTIVE, FLOW-STATE-1.0 git tag applied at `a26f7fb` and pushed to flow-state remote. EI-10 (post-execution baseline commit) and post-review/closure pending.**
+**Ready for normal Flow State CRs.** All subsequent changes to `flow-state/` follow the standard execution-branch workflow per SOP-005 §7.1. Three follow-up CRs queued from CR-111's Execution Summary (CLAUDE.md drift, Tool base-class cleanup, ctx.set_interaction_data adoption-or-removal — see §6).
 
 **Razem engine** (paused): 26 component classes, 12 page seeds (incl. cr-create scaffold from Session-002), 7 themes, 86/86 parity tests. Stateless server with instance spawning. The terminal-execution primitive remains the load-bearing missing piece for engine-driven workflows, but engine work is on hold while Flow State CRs flow through the existing qms-cli "old fashioned way."
 
@@ -37,7 +37,7 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 | SDLC-WFE-RS | v0.1 DRAFT | Razem track; rewrite deferred while Flow State is active |
 | **Qualified Baselines** | **CLI-18.0 + FLOW-STATE-1.0** | **qms-cli main at `309f217`; flow-state main at `a26f7fb` (annotated tag pushed)** |
 
-**66 CRs CLOSED + 1 IN_EXECUTION (CR-111), 5 INVs CLOSED.**
+**67 CRs CLOSED, 5 INVs CLOSED.**
 
 ---
 
@@ -149,7 +149,6 @@ Major surfaces — not an exhaustive file list. See `engine/` for the full direc
 
 | Document | Status | Context |
 |----------|--------|---------|
-| **CR-111** | **IN_EXECUTION v1.0** | **Adopt Flow State into QMS Governance. EIs 1–9 done (RS + RTM both EFFECTIVE; FLOW-STATE-1.0 tag pushed). EI-10 post-execution baseline + post-review/closure pending. Active.** |
 | CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1-4 Pass. EIs 5-7 need rescoping. **Paused for the beach-trip pivot.** |
 | CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold. |
 | CR-106 | DRAFT v0.1 | System Governance. Depends on CR-107. Same hold. |
