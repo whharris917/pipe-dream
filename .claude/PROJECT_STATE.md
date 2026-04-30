@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: 2026-04-29 (Session-2026-04-29-003 — paused mid-session for context budget)*
+*Last updated: 2026-04-30 (Session-2026-04-30-001 — CR-111 EIs 1-9 complete; EI-10 + post-review pending)*
 
 This is the living planning document for Pipe Dream. It tracks where the project is, what's next, and what's waiting. Per CLAUDE.md it is pruned aggressively and does not accumulate session-level detail — for that, read the relevant session's `.claude/sessions/{ID}/notes.md`.
 
@@ -21,7 +21,7 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 
 **Active focus:** Flow State adoption into QMS governance. Engine / Razem track is paused (see §6 — beach-trip pivot).
 
-**CR-111 (Adopt Flow State into QMS Governance)** is IN_EXECUTION at v1.0. A lightweight Adoption CR establishing Flow State's first SDLC document pair and qualifying `flow-state/main@a26f7fb` as System Release `FLOW-STATE-1.0`. Document-only CR (no flow-state code modifications); 12 high-level requirements verified by qualitative-proof inspection mirroring `SDLC-CQ-RS/RTM`. Three pre-review cycles converged on v1.0; pre-execution baseline committed at `d6f003d`. **EIs 1–5 done; EI-6 mid-cycle (RTM v0.1 reviewed but blocked on tu_scene + tu_sketch request-updates; v0.2 revision queued); EIs 7–10 pending.** Detailed resume instructions in `.claude/sessions/Session-2026-04-29-003/notes.md`.
+**CR-111 (Adopt Flow State into QMS Governance)** is IN_EXECUTION at v1.0. A lightweight Adoption CR establishing Flow State's first SDLC document pair and qualifying `flow-state/main@a26f7fb` as System Release `FLOW-STATE-1.0`. Document-only CR (no flow-state code modifications); 12 high-level requirements verified by qualitative-proof inspection mirroring `SDLC-CQ-RS/RTM`. Three pre-review cycles converged on v1.0; pre-execution baseline committed at `d6f003d`. **EIs 1–9 complete: SDLC-FLOW-RS v1.0 EFFECTIVE, SDLC-FLOW-RTM v1.0 EFFECTIVE, FLOW-STATE-1.0 git tag applied at `a26f7fb` and pushed to flow-state remote. EI-10 (post-execution baseline commit) and post-review/closure pending.**
 
 **Razem engine** (paused): 26 component classes, 12 page seeds (incl. cr-create scaffold from Session-002), 7 themes, 86/86 parity tests. Stateless server with instance spawning. The terminal-execution primitive remains the load-bearing missing piece for engine-driven workflows, but engine work is on hold while Flow State CRs flow through the existing qms-cli "old fashioned way."
 
@@ -32,10 +32,10 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 | SDLC-QMS-RTM | v27.0 EFFECTIVE | 687 tests, qualified at `918984d` |
 | SDLC-CQ-RS | v2.0 EFFECTIVE | 6 requirements |
 | SDLC-CQ-RTM | v2.0 EFFECTIVE | Inspection-based, qualified at `d3c34e5` |
-| **SDLC-FLOW-RS** | **v1.0 EFFECTIVE** | **12 reqs across ARCH/CAD/SIM/UI/APP — new this session** |
-| **SDLC-FLOW-RTM** | **v0.1 REVIEWED (blocked)** | **Inspection-based; pending v0.2 revision per tu_scene + tu_sketch feedback** |
+| **SDLC-FLOW-RS** | **v1.0 EFFECTIVE** | **12 reqs across ARCH/CAD/SIM/UI/APP — clean first-cycle approval** |
+| **SDLC-FLOW-RTM** | **v1.0 EFFECTIVE** | **Qualitative-proof inspection across 12 reqs; qualified baseline `flow-state/main@a26f7fb`** |
 | SDLC-WFE-RS | v0.1 DRAFT | Razem track; rewrite deferred while Flow State is active |
-| Qualified Baselines | CLI-18.0 / **(FLOW-STATE-1.0 pending RTM EFFECTIVE)** | qms-cli main at `309f217`; flow-state main at `a26f7fb` (will be tagged in EI-8) |
+| **Qualified Baselines** | **CLI-18.0 + FLOW-STATE-1.0** | **qms-cli main at `309f217`; flow-state main at `a26f7fb` (annotated tag pushed)** |
 
 **66 CRs CLOSED + 1 IN_EXECUTION (CR-111), 5 INVs CLOSED.**
 
@@ -149,8 +149,7 @@ Major surfaces — not an exhaustive file list. See `engine/` for the full direc
 
 | Document | Status | Context |
 |----------|--------|---------|
-| **CR-111** | **IN_EXECUTION v1.0** | **Adopt Flow State into QMS Governance. EIs 1–5 done; EI-6 mid-cycle (RTM v0.2 revision pending); EIs 7–10 + post-review pending. Active.** |
-| **SDLC-FLOW-RTM** | **REVIEWED v0.1 (checked out to claude)** | **Companion to CR-111 EI-6. Blocking on tu_scene + tu_sketch request-updates; v0.2 revision queued. Workspace state preserved across session pause.** |
+| **CR-111** | **IN_EXECUTION v1.0** | **Adopt Flow State into QMS Governance. EIs 1–9 done (RS + RTM both EFFECTIVE; FLOW-STATE-1.0 tag pushed). EI-10 post-execution baseline + post-review/closure pending. Active.** |
 | CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1-4 Pass. EIs 5-7 need rescoping. **Paused for the beach-trip pivot.** |
 | CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold. |
 | CR-106 | DRAFT v0.1 | System Governance. Depends on CR-107. Same hold. |
