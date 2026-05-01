@@ -482,11 +482,11 @@ The application is launched via `flow-state/main.py`, which utilizes `argparse` 
 
 The `Scene` class is the root container for the document state. It serves as the **Single Source of Truth** for the user's project. The Scene owns and orchestrates the interaction between the subsystems:
 
-* **Sketch:** Stores entities (Lines, Circles) and constraints.
+* **Sketch:** Stores entities (Lines, Circles) and constraints. Also holds `interaction_data` — the transient solver-target buffer for the User Servo (see §5.3 and the REQ-FS-ARCH-003 known asymmetry: the buffer is transient, but it lives on Sketch rather than Session).
 * **Simulation:** Stores particle arrays and physics logic.
-* **Compiler:** A one-way bridge that translates Sketch geometry into Simulation atoms.
+* **Compiler:** Translates Sketch geometry into Simulation atoms. Static atoms (`is_static=1`) are immobile; tethered atoms (`is_static=3`) are bound to dynamic entities, and tether forces feed back to entity dynamics — making the Compiler a **two-way coupling bridge**, not one-way (entity geometry drives tether positions; tether forces influence entity motion).
 * **ProcessObjects:** Dynamic entities like Emitters (Sources) or Drains (Sinks).
-* **CommandQueue:** The exclusive gatekeeper for modifying the Sketch or Simulation.
+* **CommandQueue:** The principal gatekeeper for modifying the Sketch or Simulation. Documented authorized exception: brush operations on particles (`Scene.paint_particles` / `Scene.erase_particles`) mutate Simulation directly with snapshot-based undo per §3.3.
 
 ### 2.3 The Session (`flow-state/core/session.py`)
 
@@ -496,7 +496,8 @@ While the `Scene` holds the persistent data (what is saved to disk), the `Sessio
 * Active Tool (Brush, Line, Select).
 * Selection state (highlighted entities).
 * **Focused Element:** The specific UI widget currently capturing keyboard input.
-* **Interaction Data:** Live data for the constraint solver regarding mouse drag targets.
+
+Note: the constraint solver's mouse-drag target buffer (`interaction_data`) is transient state but resides on `Sketch.interaction_data` rather than on Session — this is a documented asymmetry (see §2.2 and REQ-FS-ARCH-003 in SDLC-FLOW-RTM). Tools must route writes to `interaction_data` through the `ToolContext` facade (`ctx.set_interaction_data` / `update_interaction_target` / `clear_interaction_data` / `has_interaction_data`) per REQ-FS-ARCH-004, not by directly mutating `sketch.interaction_data`.
 
 ---
 
@@ -546,7 +547,7 @@ Data that constitutes the "Document."
 ### 4.2 Transient State ("The Lobby") -> **Direct Access Allowed**
 Data that describes *how the user is looking at* the document.
 * **Examples:** Camera Zoom, Selection, Interaction Targets (Mouse Pos).
-* **Rule:** Direct modification via Managers is acceptable.
+* **Rule:** Direct modification via Managers is acceptable. **Exception for `interaction_data`:** although it is transient state, tools must route writes through the `ToolContext` facade (`ctx.set_interaction_data` / `update_interaction_target` / `clear_interaction_data`) rather than mutating `sketch.interaction_data` directly — this is the strengthening introduced by CR-112 (REQ-FS-ARCH-004 / REQ-FS-CAD-003) so the tool surface stays free of model references.
 
 ---
 
@@ -571,7 +572,7 @@ The particle engine uses Data-Oriented Design (DOD) with flat arrays.
 
 We do not use "Forces" to move geometry with the mouse. We use **Interaction Constraints**.
 * **Concept:** The Mouse Cursor is treated as a temporary constraint target with infinite mass.
-* **The Loop:** Every frame, the `SelectTool` injects `interaction_data` (Target Pos, Handle Parameter `t`) into the solver.
+* **The Loop:** Every frame, the active tool publishes the cursor target by calling `ctx.set_interaction_data(target_pos, entity_idx, *, handle_t=None, point_idx=None)` on the `ToolContext` facade — never by direct mutation of `sketch.interaction_data` (per REQ-FS-ARCH-004 / REQ-FS-CAD-003). During an active drag, the tool calls `ctx.update_interaction_target(target_pos)` each frame; on tool-discard or drag end it calls `ctx.clear_interaction_data()`. The buffer storage remains on `Sketch.interaction_data` (a documented residual asymmetry — see §2.2/§2.3).
 * **Behavior:** The solver negotiates the Mouse position against geometric constraints (Length, Anchors). This allows for physical behaviors like **Torque** and **Rotation** (pivoting around an anchor) while maintaining 1:1 cursor responsiveness.
 
 ### 5.4 The Compiler (The Bridge)
@@ -579,21 +580,26 @@ We do not use "Forces" to move geometry with the mouse. We use **Interaction Con
 The `Compiler` (`flow-state/engine/compiler.py`) is responsible for the transition from CAD to Physics.
 
 1.  **Input:** Reads vector data from the `Sketch`.
-2.  **Process:** Discretizes lines and curves into individual static particles ("atoms").
-3.  **Output:** Writes these atoms into the `is_static` arrays of the `Simulation`.
-4.  **Rebuild:** When CAD geometry changes (via Command), the `Scene` triggers `compiler.rebuild()` to refresh the physics representation.
+2.  **Process:** Discretizes lines and curves into particles ("atoms"). Two atom flavors are written:
+    * **Static atoms (`is_static=1`):** Immobile particles representing walls and other non-dynamic geometry — they participate in collisions but never move.
+    * **Tethered atoms (`is_static=3`):** Particles bound to dynamic entities via `tether_entity_idx` / `tether_local_pos` / `tether_stiffness` arrays. Entity geometry drives tether positions; tether forces feed back to entity dynamics — this is the **two-way CAD↔Physics coupling** (see §2.2 and the orchestration loop's Physics Sub-Loop step in §7).
+3.  **Output:** Writes both atom flavors into the appropriate `Simulation` arrays.
+4.  **Rebuild:** When CAD topology changes (entities added/removed; material change), the `Scene` triggers `compiler.rebuild()` to refresh the physics representation. Geometry-only changes use a faster `sync_entity_arrays` / `sync_static_atoms_to_geometry` path without full recompilation.
 
 ### 5.5 The ToolContext (Air Gap Enforcement)
 
 The `ToolContext` (`flow-state/core/tool_context.py`) is a facade that enforces the Air Gap at the tool level:
 
 * **Problem Solved:** Tools previously received the full `FlowStateApp` reference (a "God Object"), allowing direct access to any subsystem.
-* **Solution:** Tools now receive a `ToolContext` which exposes only authorized operations:
-    * **Command Execution:** `ctx.execute(command)` - the only way to mutate state.
-    * **View Queries:** `ctx.zoom`, `ctx.pan`, `ctx.mode` - read-only access.
-    * **Geometry Queries:** `ctx.find_entity_at()`, `ctx.get_entity_type()` - read-only.
-    * **Interaction State:** `ctx.selection`, `ctx.interaction_state` - transient state (read/write allowed).
-* **Tool Base Class:** All tools must extend the `Tool` base class, which extracts `self.app = ctx._app` for backward compatibility during migration.
+* **Solution:** Tools receive a `ToolContext` which exposes only authorized operations:
+    * **Command Execution:** `ctx.execute(command)`, `ctx.discard()`, `ctx.create_coincident_command(...)` — mutation channels.
+    * **View Queries:** `ctx.zoom`, `ctx.pan`, `ctx.world_size`, `ctx.layout`, `ctx.mode`, `ctx.auto_atomize` — read-only.
+    * **Geometry Queries:** `ctx.find_entity_at()`, `ctx.get_entity_type()`, `ctx.iter_entities()`, `ctx.find_snap()`, `ctx.get_active_material()` — read-only.
+    * **Interaction State:** `ctx.selection`, `ctx.interaction_state`, `ctx.snap_target`, `ctx.set_status(...)`, `ctx.play_sound(...)`, plus the Servo facade `ctx.set_interaction_data(...)` / `ctx.update_interaction_target(...)` / `ctx.clear_interaction_data()` / `ctx.has_interaction_data()`.
+    * **ProcessObject Registration:** `ctx.add_process_object(obj)` — for Sources, Sinks, etc.
+    * **Constraint UI:** `ctx.constraint_builder` (read-only), `ctx.clear_constraint_ui()`.
+    * **Brush (BrushTool only):** `ctx.paint_particles(...)`, `ctx.erase_particles(...)`, `ctx.snapshot_particles()` — per the §3.3 documented exception.
+* **Tool Base Class:** All tools extend the `Tool` base class, which holds only `self.ctx` and `self.name` — there is **no `self.app` passthrough** (retired in CR-112). Subclass property accessors that need a Sketch or Scene reference (e.g., for command instantiation) delegate via the internal-only helpers `ctx._get_sketch()` / `ctx._get_scene()`; these underscore-prefixed helpers are reserved for the facade's own delegation and constrained subclass-property use, not for general tool code.
 
 ---
 
@@ -611,14 +617,14 @@ The UI is a retained object tree managed by `UIManager`.
 
 ### 6.2 Input Chain of Responsibility (`flow-state/ui/input_handler.py`)
 
-Input is handled via a strict 4-layer protocol to ensure events are consumed by the correct system.
+Input is handled via a strict 4-layer protocol to ensure events are consumed by the correct system. **The runtime dispatch order is System → Modal → Global → HUD** — Modal precedes Global so dialogs can capture keyboard input before global hotkeys trigger.
 
 1.  **System Layer:** `QUIT`, `VIDEORESIZE`.
-2.  **Global Layer:** Hotkeys (e.g., `Ctrl+Z` for Undo, `B` for Brush).
-3.  **Modal Layer (Blocking):**
+2.  **Modal Layer (Blocking):**
     * Checks the **Central Modal Stack** in `AppController`.
     * If `modal_stack` is not empty, all lower layers are blocked.
     * Dialogs are managed via `push_modal()` and `pop_modal()`.
+3.  **Global Layer:** Hotkeys (e.g., `Ctrl+Z` for Undo, `B` for Brush, `F9` for Numba toggle).
 4.  **HUD Layer (Generic Focus):**
     * Passes events to the UI Tree.
     * Manages **Generic Focus**: Checks `wants_focus()` on widgets and updates `session.focused_element`.
@@ -638,16 +644,16 @@ To prevent "Ghost Inputs" (e.g., a button click registering immediately after a 
 
 ## 7. The Orchestration Loop
 
-The order of operations in `Scene.update` is critical:
+The order of operations in `Scene.update` is critical. The actual implementation enforces an **8-step orchestration** for two-way CAD↔Physics coupling:
 
-1.  **Update Drivers:** Animate motors or dynamic parameters.
-2.  **Snapshot:** Capture constraint values to detect changes.
-3.  **Solver Step:**
-    * Inject `interaction_data` (Mouse) as a constraint.
-    * Iterate `solver.solve()` (Geometric Constraints).
-    * *Note:* Solver runs if constraints exist **OR** if user is interacting.
-4.  **Rebuild:** If geometry changed, recompile static atoms for physics.
-5.  **Physics Step:** Run the particle simulation integration.
+1.  **Topology Check:** If `_topology_dirty` (entities added/removed/material changed), perform full `Scene.rebuild()` — recompiles static atoms *and* tethered atoms via `Compiler.rebuild()`.
+2.  **Driver Update:** Animate constraint values (motors, dynamic parameters); snapshot before/after to detect geometry change.
+3.  **Sync Entity Arrays (Pre-Physics):** If geometry is dirty, copy current entity positions into Simulation flat arrays and sync static atoms — fast path for position updates without full recompile.
+4.  **Physics Sub-Loop (Two-Way Coupling):** Tether forces flow from particles to dynamic entities and back; this is where the Compiler's two-way coupling lives (see §2.2).
+5.  **Constraint Solve:** PBD solver iterates if constraints exist **OR** if `interaction_data` is set (User Servo). Tools must publish the cursor target via the `ToolContext` facade (`ctx.set_interaction_data` / `update_interaction_target` / `clear_interaction_data`) per REQ-FS-ARCH-004 and REQ-FS-CAD-003 — *not* by direct mutation of `sketch.interaction_data`.
+6.  **Post-Constraint Sync:** After the solver moves geometry, re-sync entity arrays and teleport static atoms to match — ensures the physics kernel sees post-solve positions.
+7.  **Process Objects:** Sources emit, Drains absorb (`obj.execute(simulation, dt)` for each enabled object).
+8.  **Physics Step:** Particle simulation integration (Verlet, spatial hash) runs `physics_steps` sub-steps.
 
 ---
 
