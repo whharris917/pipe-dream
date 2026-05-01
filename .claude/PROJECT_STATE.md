@@ -1,6 +1,6 @@
 # Project State
 
-*Last updated: 2026-04-30 (Session-2026-04-30-001 — CR-111 CLOSED; Flow State adopted under QMS governance)*
+*Last updated: 2026-05-01 (Session-2026-04-30-002 — CR-112 IN_EXECUTION through EI-9; long-term Razem/MCP/QMS framing captured)*
 
 This is the living planning document for Pipe Dream. It tracks where the project is, what's next, and what's waiting. Per CLAUDE.md it is pruned aggressively and does not accumulate session-level detail — for that, read the relevant session's `.claude/sessions/{ID}/notes.md`.
 
@@ -19,11 +19,11 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 
 ## 2. Current Status
 
-**Active focus:** Flow State CR work. CR-111 (Adopt Flow State into QMS Governance) closed 2026-04-30 — Flow State is now formally under SDLC governance with `FLOW-STATE-1.0` as the qualified baseline. Razem engine track remains paused (beach-trip pivot, see §6).
+**Active focus:** CR-112 in flight — first real Flow State code CR after CR-111 closed.
 
-**Ready for normal Flow State CRs.** All subsequent changes to `flow-state/` follow the standard execution-branch workflow per SOP-005 §7.1. Three follow-up CRs queued from CR-111's Execution Summary (CLAUDE.md drift, Tool base-class cleanup, ctx.set_interaction_data adoption-or-removal — see §6).
+**CR-112 (ToolContext Migration Completion + Documentation Reconciliation)** — IN_EXECUTION at v1.0. Bundled CR addressing the SourceTool ToolContext-migration miss (the user-visible crash from first post-CR-111 use) plus the three follow-ups CR-111 queued: Tool base-class `self.app` cleanup, `ctx.set_interaction_data` adoption, and CLAUDE.md §§2.3/6.2/7 drift. EIs 1-9 complete (qualified commit on `cr-112-toolcontext-completion` branch: **flow-state@`ec450e2`**). Lead confirmed interactive smoke 2026-05-01 — Source tool now creates Sources cleanly. EIs 10-13 remaining: RTM update (in flight, draft v1.1 checked out), PR + merge + `FLOW-STATE-1.1` tag + submodule advance, CLAUDE.md + PROJECT_STATE doc updates, post-execution baseline.
 
-**Razem engine** (paused): 26 component classes, 12 page seeds (incl. cr-create scaffold from Session-002), 7 themes, 86/86 parity tests. Stateless server with instance spawning. The terminal-execution primitive remains the load-bearing missing piece for engine-driven workflows, but engine work is on hold while Flow State CRs flow through the existing qms-cli "old fashioned way."
+**Razem engine** (paused): 26 component classes, 12 page seeds (incl. cr-create scaffold), 7 themes, 86/86 parity tests. The terminal-execution primitive — now reframed as an **MCP-call primitive** (see Razem/MCP framing in §3) — remains the load-bearing missing piece. Engine track resumes after the beach trip.
 
 **SDLC docs:**
 | Document | Version | Notes |
@@ -32,10 +32,10 @@ The current center of gravity is the Razem framework (in the `qms-workflow-engin
 | SDLC-QMS-RTM | v27.0 EFFECTIVE | 687 tests, qualified at `918984d` |
 | SDLC-CQ-RS | v2.0 EFFECTIVE | 6 requirements |
 | SDLC-CQ-RTM | v2.0 EFFECTIVE | Inspection-based, qualified at `d3c34e5` |
-| **SDLC-FLOW-RS** | **v1.0 EFFECTIVE** | **12 reqs across ARCH/CAD/SIM/UI/APP — clean first-cycle approval** |
-| **SDLC-FLOW-RTM** | **v1.0 EFFECTIVE** | **Qualitative-proof inspection across 12 reqs; qualified baseline `flow-state/main@a26f7fb`** |
+| **SDLC-FLOW-RS** | **v3.0 EFFECTIVE** | **CR-112 strengthened REQ-FS-ARCH-004 (no `self.app` passthrough; interaction_data through facade) and REQ-FS-CAD-003 (facade-routed Servo injection); v1.1→v2.0 substantive then v2.1→v3.0 cosmetic revision_summary correction** |
+| SDLC-FLOW-RTM | v1.0 EFFECTIVE | Awaiting CR-112 EI-10 update to anchor at `ec450e2` and System Release `FLOW-STATE-1.1` |
 | SDLC-WFE-RS | v0.1 DRAFT | Razem track; rewrite deferred while Flow State is active |
-| **Qualified Baselines** | **CLI-18.0 + FLOW-STATE-1.0** | **qms-cli main at `309f217`; flow-state main at `a26f7fb` (annotated tag pushed)** |
+| **Qualified Baselines** | **CLI-18.0 + FLOW-STATE-1.0** | qms-cli main at `309f217`; flow-state main at `a26f7fb`; **CR-112 will advance flow-state to FLOW-STATE-1.1 at the merge of `ec450e2`** |
 
 **67 CRs CLOSED, 5 INVs CLOSED.**
 
@@ -105,6 +105,12 @@ The workshop ended at 946 lines, with `/workshop/graph-builder` as the most arch
 
 - **Razem JSON projection inspection.** Read `/pages/0b9ab529` (Nested Tabs Stress Test, 5-level deep) and the corresponding seed in `pages/nested_tabs_test.py`. Recorded findings on the runtime projection's design properties (single-active-branch compression bounds JSON to `O(depth)` regardless of total tree size; URL paths in affordances are the spine of agent comprehension; off-active-branch contents are invisible until the agent POSTs a tab switch) and the structural divergence between Razem's seed model (`Navigation(steps=[Component, ...])` where each step IS a component, no slot wrapper, with `key`+`label`) and the Graph Builder's current data model (slot wrappers with their own labels). Noted as architectural input for future Graph Builder ↔ Razem alignment.
 
+**CR-112 + Razem/MCP Framing (Apr 30 – May 1, Session-2026-04-30-002).** Two parallel arcs in one session.
+
+*CR-112 (ToolContext migration completion + documentation reconciliation).* First real Flow State code CR. Triggered by the SourceTool crash on first post-CR-111 use of Flow State (`AttributeError: 'ToolContext' object has no attribute 'scene'`). Diagnosed as a CR-2026-004 Phase J migration miss — SourceTool was never updated to use the `ToolContext` facade. Bundled with the three CR-111 follow-ups (Tool base-class `self.app` cleanup, `ctx.set_interaction_data` adoption, CLAUDE.md §§2.3/6.2/7 drift). Three pre-review cycles (v0.1→v0.3, addressing tu_ui blocking findings around hidden `@property sketch`/`@property scene` accessors that would crash after passthrough deletion, `ctx.clear_constraint_ui` defects (`btn.is_active` vs `btn.active`, partial state clear vs `builder.reset()`), and `set_interaction_data` signature/call inconsistency); QA second-cycle caught residual §2.3↔§7.1 stale counts and an unaddressed cached-sub-object audit. SDLC-FLOW-RS revision had a recursive comedy: v1.1→v2.0 cycle approved with a revision_summary that misread engine versioning (drafts increment minor; approvals bump major; original CR §5.7/§5.8 wording about "v1.0→v2.0" was right after all), required a v2.1→v3.0 cosmetic-correction cycle to fix. EIs 1-9 executed cleanly: pre-execution baseline `pipe-dream@55ad2e9`; execution branch `cr-112-toolcontext-completion` at flow-state@`a26f7fb`; ToolContext API additions (`add_process_object`, `has_interaction_data`, keyword-only `point_idx`, `clear_constraint_ui` fix) at flow-state@`1156e31`; SourceTool migration at `01e7245`; tools.py migration (99 self.app reaches → ctx, property accessors delegate via `_get_sketch`/`_get_scene`, BrushTool ParticleBrush replaced, 4 interaction_data sites + 1 read on facade, `_clear_constraint_ui` simplified) at `97e1d55`; passthrough deletion at `b252936`; stale docstrings at `ec450e2`. Programmatic smoke 13/13 pass; Lead confirmed interactive Source-tool smoke 2026-05-01. Qualified commit `ec450e2`. Discovery: `flow-state/ui/brush_tool.py` is orphan dead code — separate small CR queued for deletion.
+
+*Razem/MCP architectural framing.* Long discussion crystallizing the long-term vision. **Razem is general-purpose; not an API wrapper but an interface generator for MCP servers.** The QMS website is one *use* of Razem — a deployment configured against the QMS MCP server. **Parity rule:** humans can only do what agents can do, full stop, the MCP is the boundary. **Documentation lives in the interface,** not separate from it: MCP tool descriptions render inline alongside affordances; the Quality Manual's procedural content moves into Razem page seeds, the policy content stays as a meta-document for QMS designers. **MCP is catalog-shaped, not HATEOAS-shaped** (it assumes a smart-LLM client); **Razem adds the application-state-machine layer that MCP omits** — page seeds are HATEOAS for MCP, encoding the procedural interior between MCP calls. The "terminal-execution primitive" reframes as an **MCP-call primitive** — Action variant that invokes MCP tools with form-validated arguments and binds responses into the store. **`qms_interact` is Razem's primordial idea** (the same procedural-layer recognition expressed as a CLI flag soup inside MCP), now subsumed and superseded by Razem; retire from MCP surface once Razem-on-MCP lands. **Long-term vision:** minimal CLAUDE.md (~200-500 tokens, just disposition + Portal pointer + SELF.md pointer); Agent Portal as the agent's runtime environment for QMS-side work; documentation, session notes, and other artifacts progressively migrate into the Portal. **RazemSphere:** an internet for agents (and humans, via parity) — MCP servers contributed by anyone, rendered uniformly through Razem; auth/discovery/composition are the open questions. Full framing captured in `.claude/sessions/Session-2026-04-30-002/design-discussion.md`.
+
 ---
 
 ## 4. What's Built
@@ -149,6 +155,8 @@ Major surfaces — not an exhaustive file list. See `engine/` for the full direc
 
 | Document | Status | Context |
 |----------|--------|---------|
+| **CR-112** | **IN_EXECUTION v1.0** | **ToolContext Migration Completion + Documentation Reconciliation. EIs 1-9 Pass; qualified commit flow-state@`ec450e2`. EI-10 (RTM update) in flight; EIs 11-13 pending.** |
+| **SDLC-FLOW-RTM** | **DRAFT v1.1** | **Checked out to claude as part of CR-112 EI-10. Awaiting REQ-FS-ARCH-004 / REQ-FS-CAD-003 evidence updates and Qualified Baseline anchoring at `ec450e2`.** |
 | CR-110 | IN_EXECUTION v1.1 | Workflow engine development. EI-1-4 Pass. EIs 5-7 need rescoping. **Paused for the beach-trip pivot.** |
 | CR-107 | DRAFT v0.1 | Unified Document Lifecycle. On hold. |
 | CR-106 | DRAFT v0.1 | System Governance. Depends on CR-107. Same hold. |
@@ -164,20 +172,22 @@ Major surfaces — not an exhaustive file list. See `engine/` for the full direc
 
 ### Immediate (Flow State track — active during beach trip)
 
-1. **First real Flow State CRs.** With CR-111 closed and FLOW-STATE-1.0 qualified, normal CRs against `flow-state/` are now ready. The fun stuff — gameplay, CAD, sim feature work. Likely first candidate: the CLAUDE.md follow-up CR documenting §2.3 (interaction_data ownership), §6.2 (input layer order), §7 (orchestration loop step count) narrative drift, plus stale module docstrings in `flow-state/ui/input_handler.py:4-9` and `flow-state/engine/compiler.py` ("Data flow is ONE-WAY"). Lead is driving the timing on this manually.
-2. **Optional `Tool` base-class cleanup CR.** Retire the `self.app = ctx._app` backward-compat passthrough at `flow-state/ui/tools.py:87` now that the ToolContext facade is established. Small scope.
-3. **Optional `ctx.set_interaction_data` adoption-or-removal CR.** The facade method exists but is unused; tools mutate `sketch.interaction_data` directly. Either retire the method or migrate tools to use it.
-4. **Auto-mode-vs-subagent permissions resolution.** Either add a more specific allow-rule to settings.local.json (e.g., `Bash(python qms-cli/qms.py --user qa *)`), or migrate QA approval flows to MCP tools (`mcp__qms__qms_approve` is already allow-listed) to bypass the Bash permission layer. Surfaced during CR-111 post-approval.
+1. **Close CR-112.** Finish EIs 10-13: RTM update v1.1 → v3.0, PR + merge + `FLOW-STATE-1.1` annotated tag + submodule pointer advance, CLAUDE.md §§2.3/6.2/7 corrections + targeted audit + this PROJECT_STATE update, post-execution baseline commit. Then post-review cycle and closure.
+2. **First real gameplay/CAD/sim Flow State CR** — *after* CR-112 closes. The fun stuff. Lead picks the first feature.
+3. **Small follow-up CR: delete orphan `flow-state/ui/brush_tool.py`.** Discovered during CR-112 scoping; trivial scope.
+4. **Auto-mode-vs-subagent permissions resolution.** Either add a more specific allow-rule to settings.local.json (e.g., `Bash(python qms-cli/qms.py --user qa *)`), or migrate QA approval flows to MCP tools (`mcp__qms__qms_approve` is already allow-listed) to bypass the Bash permission layer. Intermittently surfaces (bit once during CR-112 RS approval, didn't bite during CR-112 pre-approval).
 
 ### Razem track (paused — resume after beach trip)
 
-These items remain in the queue but are not active during the Flow State arc:
+These items remain in the queue but are not active during the Flow State arc. The framing has sharpened — see §3 Razem/MCP discussion paragraph and `.claude/sessions/Session-2026-04-30-002/design-discussion.md`. Razem is an interface generator for MCP servers; the QMS website is one *use* of Razem; the QMS MCP server is the boundary. Items below reflect that framing.
 
-5. **Terminal-execution primitive (Exec/Command/Run Action variant).** The load-bearing piece for the Razem-driven QMS UI. Sketched shape: a new Action variant holding a command *template* with sibling-bound substitutions, runs the subprocess on the server, returns a structured result (stdout / stderr / exit code / parsed doc_id) into bound store keys consumable by other components. Engine permits arbitrary commands; page seeds curate which command shapes are exposed. Without this, every Razem workflow page is a stub.
-6. **Continue building real QMS workflow pages.** After the exec primitive: CR review, document lifecycle, inbox actions, route-for-review/approval. cr-create is the model. See `reflection.md` for the recommended order: terminal-exec primitive first, inbox/workspace second, CR-builder + review third.
-7. **Wire QMS / Workspace / Inbox to real data.** Connect to `qms-cli` or the QMS document store rather than placeholder lists.
+5. **MCP-call primitive (Action variant for MCP tool invocation).** Was "terminal-execution primitive"; reframed. New Action variant invokes an MCP tool with form-validated arguments, binds the structured response into store keys consumable by other components. Engine speaks MCP; page seeds curate which MCP tools are exposed. This is the load-bearing piece — without it, every Razem workflow page is a stub. Cleaner than subprocess-shelling because it's protocol-typed end-to-end.
+6. **Continue building real QMS workflow pages (= page seeds for the QMS MCP server).** After the MCP primitive: CR review, document lifecycle, inbox actions, route-for-review/approval. cr-create is the existing scaffold; once the MCP primitive lands, its Submit goes from stub to functional. Per the framing: page seeds ARE the procedural-and-HATEOAS layer that MCP omits — they encode the workflow between MCP boundary calls.
+7. **Wire QMS / Workspace / Inbox to the QMS MCP server** rather than placeholder lists.
 8. **Triage demo pages.** Decide which seeds in `/portal` are valuable vs gallery cruft.
-9. **Framework rename: `qms-workflow-engine` → Razem.** Decided 2026-04-17-003. Scope: GitHub repo rename + remote URL update; `.gitmodules` and submodule path; `CLAUDE.md` references; Framing page (hero/§1/§8 Pass 4); README; Lessons 1 & 5; Deep Dive intro. Wiki was already rewritten as if the rename had occurred. Effort: one focused session, low technical risk.
+9. **Framework rename: `qms-workflow-engine` → Razem.** Decided 2026-04-17-003. Scope: GitHub repo rename + remote URL update; `.gitmodules` and submodule path; `CLAUDE.md` references; Framing page; README; Lessons; Deep Dive intro. Effort: one focused session, low technical risk.
+10. **Retire `qms_interact` from MCP surface** once Razem-on-MCP renders the equivalent procedural flows. `qms_interact` is the primordial idea that led to Razem; once Razem subsumes it, MCP can return to being purely about boundary actions.
+11. **Long-term migration (multiple sessions): documentation-in-the-interface.** Procedural Quality Manual content moves into Razem page seeds (form labels, help text, validation, conditional visibility); policy content stays as a meta-document. CLAUDE.md shrinks to ~200-500 tokens. Session notes eventually move into the Portal. SELF.md may stay as a file because it's identity-not-procedure.
 
 ### After workflows are working
 
@@ -236,7 +246,10 @@ These items remain in the queue but are not active during the Flow State arc:
 
 ## 8. Gaps & Risks
 
-- **No terminal-execution primitive in Razem.** Every QMS workflow page beyond static authoring needs it. cr-create is the diagnostic; Submit is honest about being a stub. This is now the load-bearing engine work — see §6.1.
+- **No MCP-call primitive in Razem.** Every QMS workflow page beyond static authoring needs it. cr-create is the diagnostic; Submit is honest about being a stub. Was framed as "terminal-execution primitive"; reframed as MCP-call per the §3 architectural discussion. This is the load-bearing engine work — see §6.5.
+- **MCP servers generally don't carry HATEOAS.** Catalog-shaped, not response-shaped. Razem's value-add over a chat client is precisely that page seeds add the application-state-machine layer MCP omits. Implication: page-seed authoring is high-leverage; auto-generation from MCP catalogs only gets you a starter form, not a workflow.
+- **MCP returns prose, not structured shapes.** `qms_status` returns human-readable text; rendering it cleanly in Razem requires per-tool parsers OR a shift to structured outputs on the QMS MCP server. Open question — see open questions list in `design-discussion.md`.
+- **QMS engine versioning lesson (CR-112):** drafts increment minor (v1.0→v1.1), approvals bump major (v1.1→v2.0). Misreading this cost the SDLC-FLOW-RS revision an extra v2.1→v3.0 cosmetic cycle. Worth project memory.
 - **Dev branch has only one real QMS workflow page (cr-create).** CR review, document lifecycle, inbox actions still don't exist. Most shipping page seeds remain demos or galleries.
 - **Three engine bugs surfaced during cr-create dogfooding (Session-002):**
   - **`Page._do_reset` doesn't fully clear TableForm cell data on Windows.** After reset, files_impact retained empty rows from a prior partial run. Suspect: store atomic-write rename leaves orphaned cell data, OR `_clear_recursive` doesn't reach into typed-table internal scopes correctly. Workaround: iterative `remove_row`. Worth its own CR.

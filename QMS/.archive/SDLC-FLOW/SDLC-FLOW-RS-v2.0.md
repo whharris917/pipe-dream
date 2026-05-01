@@ -1,15 +1,15 @@
 ---
 title: Flow State Requirements Specification
-revision_summary: 'CR-112 (cosmetic v2.1 → v3.0 cycle): Correct prior revision_summary
-  wording. The substantive change in this document remains the v1.0 → v2.0 strengthening
-  of REQ-FS-ARCH-004 (ToolContext Facade — forbids direct application references in
-  tools and requires Sketch.interaction_data mutations through the facade) and REQ-FS-CAD-003
-  (Interaction Servo — facade-routed injection clause). All other 10 requirements
-  unchanged from v1.0. The v1.1 → v2.0 cycle was approved with a revision_summary
-  that misread the engine''s versioning behavior (drafts increment minor; approvals
-  bump major). This v2.1 → v3.0 cycle replaces that wording with correct version-numbering.
-  Substantive RS content (REQ-FS-ARCH-004 and REQ-FS-CAD-003 strengthening) unchanged
-  from v2.0.'
+revision_summary: 'CR-112 v1.1: Strengthen REQ-FS-ARCH-004 (ToolContext Facade) to
+  explicitly forbid direct application references in tools and explicitly require
+  Sketch.interaction_data mutations to flow through the facade. Strengthen REQ-FS-CAD-003
+  (Interaction Servo) with a corresponding clause requiring the facade-routed injection
+  path. These changes close the Air Gap exception that CR-111''s RTM v1.0 acknowledged
+  (tools mutating Sketch.interaction_data directly). All other 10 requirements unchanged
+  from v1.0. (Note: CR-112 §5.7/§5.8/§7.5 describe this revision as v1.0 → v2.0; the
+  engine-assigned version is v1.0 → v1.1. The substantive scope is unchanged; the
+  CR''s v2.0 references are textually inconsistent with engine behavior. Inconsistency
+  to be noted in CR-112''s execution comments.)'
 ---
 
 # SDLC-FLOW-RS: Flow State Requirements Specification
@@ -88,7 +88,7 @@ These requirements govern the contents of `whharris917/flow-state` on GitHub.
 ## 4. References
 
 - **CR-111:** Adopt Flow State into QMS Governance — the authorizing change record for the v1.0 baseline.
-- **CR-112:** ToolContext Migration Completion + Documentation Reconciliation — the authorizing change record for the strengthened REQ-FS-ARCH-004 and REQ-FS-CAD-003 (v1.0 → v2.0 substantive revision; subsequent v2.0 → v3.0 cycle was a revision_summary cosmetic correction with no substantive RS content change).
+- **CR-112:** ToolContext Migration Completion + Documentation Reconciliation — the authorizing change record for the v1.1 revision (strengthened REQ-FS-ARCH-004 and REQ-FS-CAD-003).
 - **SDLC-FLOW-RTM:** Flow State Requirements Traceability Matrix — provides verification evidence for these requirements.
 - **SDLC-CQ-RS:** claude-qms Requirements Specification — pattern reference for lightweight, inspection-only RS.
 - **Quality-Manual/10-SDLC.md:** The two-document SDLC framework and "the code is the design" principle.

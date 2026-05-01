@@ -1,15 +1,8 @@
 ---
 title: Flow State Requirements Specification
-revision_summary: 'CR-112 (cosmetic v2.1 → v3.0 cycle): Correct prior revision_summary
-  wording. The substantive change in this document remains the v1.0 → v2.0 strengthening
-  of REQ-FS-ARCH-004 (ToolContext Facade — forbids direct application references in
-  tools and requires Sketch.interaction_data mutations through the facade) and REQ-FS-CAD-003
-  (Interaction Servo — facade-routed injection clause). All other 10 requirements
-  unchanged from v1.0. The v1.1 → v2.0 cycle was approved with a revision_summary
-  that misread the engine''s versioning behavior (drafts increment minor; approvals
-  bump major). This v2.1 → v3.0 cycle replaces that wording with correct version-numbering.
-  Substantive RS content (REQ-FS-ARCH-004 and REQ-FS-CAD-003 strengthening) unchanged
-  from v2.0.'
+revision_summary: 'CR-111: Initial Adoption RS — 12 high-level requirements across
+  5 domain groups capturing Flow State''s essential structural and behavioral invariants.
+  Lightweight, qualitative-proof model mirroring SDLC-CQ.'
 ---
 
 # SDLC-FLOW-RS: Flow State Requirements Specification
@@ -45,7 +38,7 @@ These requirements govern the contents of `whharris917/flow-state` on GitHub.
 | REQ-FS-ARCH-001 | **Air Gap.** UI components shall not mutate the Sketch or Simulation directly. All mutations of persistent state shall flow through `Command` objects submitted via `scene.execute()`. |
 | REQ-FS-ARCH-002 | **Command Pattern.** Every `Command` shall implement `execute()` and `undo()`, and shall carry a `historize` flag controlling whether the command is pushed onto the history stack. |
 | REQ-FS-ARCH-003 | **Scene/Session Split.** The `Scene` shall hold persistent document state (Sketch, Simulation, ProcessObjects, CommandQueue). The `Session` shall hold transient application state (camera, selection, focused element, current tool, mode). |
-| REQ-FS-ARCH-004 | **ToolContext Facade.** Tools shall interact with the application exclusively through a `ToolContext` instance and shall not hold a direct application reference (no `self.app` or equivalent passthrough). The facade exposes command execution, view and geometry queries, transient interaction-state management (selection, snap target, status, sound, drag-target injection via `set_interaction_data` / `update_interaction_target` / `clear_interaction_data`), and ProcessObject registration. Tools shall not mutate persistent model state — including the Sketch's `interaction_data` field — outside this facade. |
+| REQ-FS-ARCH-004 | **ToolContext Facade.** Tools shall receive a `ToolContext` exposing only command execution, view/geometry queries, and transient interaction state — never the full application reference. |
 
 ---
 
@@ -55,7 +48,7 @@ These requirements govern the contents of `whharris917/flow-state` on GitHub.
 |----|-------------|
 | REQ-FS-CAD-001 | **Geometric Entities and Constraints.** The `Sketch` shall support lines and circles as primary geometric entities, and shall support constraints (e.g., parallel, perpendicular, equal, fixed) operating over those entities. |
 | REQ-FS-CAD-002 | **PBD Solver with Hybrid Backend.** The geometric constraint solver shall enforce constraints using Position-Based Dynamics. It shall provide both a Python (legacy, OOP) backend and a Numba-compiled (kernel) backend, switchable at runtime. |
-| REQ-FS-CAD-003 | **Interaction Servo.** The mouse cursor shall be modeled as a temporary infinite-mass constraint target injected into the solver each frame, so that interactive dragging respects all other geometric constraints (length preservation, anchors, rotation about pivots). Tools shall route this injection through the `ToolContext` facade (`ctx.set_interaction_data` / `update_interaction_target` / `clear_interaction_data`) rather than mutating `Sketch.interaction_data` directly. |
+| REQ-FS-CAD-003 | **Interaction Servo.** The mouse cursor shall be modeled as a temporary infinite-mass constraint target injected into the solver each frame, so that interactive dragging respects all other geometric constraints (length preservation, anchors, rotation about pivots). |
 
 ---
 
@@ -87,8 +80,7 @@ These requirements govern the contents of `whharris917/flow-state` on GitHub.
 
 ## 4. References
 
-- **CR-111:** Adopt Flow State into QMS Governance — the authorizing change record for the v1.0 baseline.
-- **CR-112:** ToolContext Migration Completion + Documentation Reconciliation — the authorizing change record for the strengthened REQ-FS-ARCH-004 and REQ-FS-CAD-003 (v1.0 → v2.0 substantive revision; subsequent v2.0 → v3.0 cycle was a revision_summary cosmetic correction with no substantive RS content change).
+- **CR-111:** Adopt Flow State into QMS Governance — the authorizing change record for this RS.
 - **SDLC-FLOW-RTM:** Flow State Requirements Traceability Matrix — provides verification evidence for these requirements.
 - **SDLC-CQ-RS:** claude-qms Requirements Specification — pattern reference for lightweight, inspection-only RS.
 - **Quality-Manual/10-SDLC.md:** The two-document SDLC framework and "the code is the design" principle.

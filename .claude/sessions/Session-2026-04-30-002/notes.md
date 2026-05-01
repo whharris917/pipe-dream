@@ -1,11 +1,36 @@
 # Session-2026-04-30-002
 
-## Current State (last updated: v0.3 routed; third pre-review cycle in flight)
-- **Active document:** CR-112 v0.3 IN_PRE_REVIEW
-- **Current status:** 4 TUs reviewing in parallel background; QA already recommended on v0.3
-- **Blocking on:** Awaiting tu_ui, tu_scene, tu_sim, tu_sketch verdicts on v0.3
-- **Plan file:** `C:\Users\wilha\.claude\plans\composed-beaming-dahl.md` (approved by Lead)
-- **Design doc:** `.claude/sessions/Session-2026-04-30-002/design-discussion.md` (long-term Razem/MCP/QMS architectural framing)
+## Current State (last updated: EI-9 complete; EI-10 RTM update in flight)
+- **Active document:** SDLC-FLOW-RTM v1.1 DRAFT, checked out to claude, **no edits yet** (workspace file ready)
+- **CR-112 status:** IN_EXECUTION at v1.0
+- **Blocking on:** Resume EI-10 RTM authoring next session
+- **Plan file:** `C:\Users\wilha\.claude\plans\composed-beaming-dahl.md`
+- **Design doc:** `.claude/sessions/Session-2026-04-30-002/design-discussion.md`
+
+## CR-112 EI progress
+- ✅ EI-1 Pre-execution baseline (pipe-dream@`55ad2e9`)
+- ✅ EI-2 Test environment + branch `cr-112-toolcontext-completion` at flow-state@`a26f7fb`
+- ✅ EI-3 RS update — SDLC-FLOW-RS **v3.0 EFFECTIVE** (engine versioning: drafts increment minor, approvals bump major; original CR §5.7/§5.8/§7.5 wording about "v1.0 → v2.0" was correct after all — disclosed in RS revision_summary)
+- ✅ EI-4 ToolContext API changes (flow-state@`1156e31`): added `add_process_object`, `has_interaction_data`; extended `set_interaction_data` with keyword-only `point_idx`; fixed `clear_constraint_ui` (`builder.reset()` + `btn.active`)
+- ✅ EI-5 SourceTool migration (flow-state@`01e7245`)
+- ✅ EI-6 tools.py migration (flow-state@`97e1d55`): 99 self.app reaches → ctx; property accessors delegate via `_get_sketch`/`_get_scene`; BrushTool ParticleBrush replaced; 4 interaction_data sites + 1 read on facade; `_clear_constraint_ui` body simplified
+- ✅ EI-7 Retire `self.app = ctx._app` line (flow-state@`b252936`); Tool base class no longer has `self.app`
+- ✅ EI-8 Stale docstrings updated (flow-state@`ec450e2`): input_handler.py 4-layer correction; compiler.py two-way coupling clarification
+- ✅ **EI-9 Qualification + Integration Verification.** Branch pushed to origin. **Qualified commit: `ec450e2`.** Programmatic smoke (13/13 PASS): app init, all tool switches, SourceTool inheritance, ToolContext API surface, clear_constraint_ui fix, set_interaction_data signature, Source create flow programmatic, mode switch, ctx.paint_particles, AddLineCommand via ctx.execute, undo/redo, Numba toggle. **Interactive smoke confirmed by Lead 2026-05-01:** test-env code runs and successfully creates a Source.
+- ⏸ **EI-10 RTM update — IN PROGRESS.** SDLC-FLOW-RTM checked out as v1.1 draft. Need to: update REQ-FS-ARCH-004 evidence (drop "self.app passthrough" sentence; add "tools have only self.ctx; interaction_data routes through facade"); update REQ-FS-CAD-003 evidence (drop "tools mutate sketch.interaction_data directly" caveat; replace with facade routing description); update Qualified Baseline section (commit `ec450e2`, System Release `FLOW-STATE-1.1`); update revision_summary; route review/approval.
+- ⏳ EI-11 PR merge + FLOW-STATE-1.1 tag + submodule pointer advance
+- ⏳ EI-12 CLAUDE.md §§2.3/6.2/7 drift correction + PROJECT_STATE.md
+- ⏳ EI-13 Post-execution baseline commit
+
+## Subagent IDs (most recent)
+- qa (RS v3.0 approval): a18359f062ffe6181 (last approved)
+- qa (CR-112 v0.3 pre-approval): a274f39399d41bd18→aba373b4db85293f3→addb39b8b3ecd7fe0 (cleanly approved by last)
+
+## Lessons captured this session
+1. **QMS engine versioning:** drafts increment minor (v1.0→v1.1), approvals bump major (v1.1→v2.0). My v0.1 CR-112 wording was right; cycles 1-2 of RS review chased a phantom mismatch and required a v2.1→v3.0 cosmetic cycle to undo. Worth documenting as project memory.
+2. **brush_tool.py is orphan dead code** — separate small CR queued for deletion.
+3. **Lead-driven interactive smoke** is the real EI-9 VR; programmatic smoke is auxiliary.
+4. **Auto-mode-vs-subagent-permissions** intermittent — bit once on RS approval, didn't on CR-112 pre-approval. Workaround stable: exit auto mode for the spawn.
 
 ## CR-112 review history
 - **v0.1 cycle:** qa+tu_scene+tu_sim+tu_sketch recommend; tu_ui request-updates (5 findings — 3 blocking, 2 non-blocking)
