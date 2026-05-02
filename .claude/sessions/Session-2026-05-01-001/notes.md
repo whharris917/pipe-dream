@@ -1,11 +1,28 @@
 # Session-2026-05-01-001
 
-## Current State (last updated: EI-10 complete)
-- **Active document:** SDLC-FLOW-RTM **v2.0 EFFECTIVE** (CR-112)
-- **CR-112 status:** IN_EXECUTION at v1.0; EIs 1-10 Pass
-- **Current EI:** EI-11 (PR + merge + FLOW-STATE-1.1 tag + submodule pointer)
-- **Blocking on:** Lead direction on EI-11 execution approach
-- **Next:** EI-11, EI-12, EI-13
+## Current State (last updated: CR-112 CLOSED)
+- **CR-112 status:** **CLOSED v2.0**
+- **Final commits:** pipe-dream@`52df9f6` (post-execution baseline) → pipe-dream@`453195d` (closure)
+- **Qualified state:** SDLC-FLOW-RS v3.0 + SDLC-FLOW-RTM v2.0; flow-state@`c82c8e2` (qualified `ec450e2`); FLOW-STATE-1.1 tag
+- **Blocking on:** Nothing
+- **Next:** Lead picks first real Flow State gameplay/CAD/sim feature CR
+
+## EI-11 outcome
+- PR https://github.com/whharris917/flow-state/pull/1 opened and merged with regular merge commit `c82c8e2` (qualified `ec450e2` reachable from main verified)
+- Annotated `FLOW-STATE-1.1` tag pushed
+- pipe-dream submodule pointer advanced in `9502287`
+
+## EI-12 outcome
+- CLAUDE.md drift corrected across §§2.2, 2.3, 4.2, 5.3, 5.4, 5.5, 6.2, 7
+- PROJECT_STATE.md updated: SDLC table v2.0; Qualified Baselines CLI-18.0 + FLOW-STATE-1.1; new Forward Plan §6.4 backlog item (tool-facade architectural follow-up); §3 Arc to Date appended with this session's close-out story and procedural lessons
+
+## EI-13 outcome
+- pipe-dream@`52df9f6` post-execution baseline (CLAUDE.md, PROJECT_STATE, RTM state, session notes)
+- pipe-dream@`453195d` CR-112 closure
+- Pushed to origin
+
+## CR-112 close-out review cycles
+- **CR-112 post-review:** qa+tu_ui+tu_sketch+tu_scene+tu_sim all clean RECOMMEND on first cycle; QA approved → CLOSED v2.0 cleanly. tu_sim flagged a non-blocker: CLAUDE.md §7 step 4 wording slightly looser than compiler.py docstring re: "Compiler enables" vs "system executes" two-way coupling — leave as-is or future micro-touch.
 
 ## EI-10 outcome
 - SDLC-FLOW-RTM v1.1 DRAFT → v2.0 EFFECTIVE through 4 review cycles:
