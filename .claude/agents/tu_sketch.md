@@ -87,14 +87,14 @@ When reviewing changes, consider:
 For detailed requirements, design specifications, and acceptance criteria, consult:
 
 - **CLAUDE.md** - Technical Architecture Guide (especially Sections 1, 5.1)
-- **QMS/SDLC-FLOW/RS** - Requirements Specification (when available)
-- **QMS/SDLC-FLOW/DS** - Design Specification (when available)
+- **QMS/SDLC-FLOW/SDLC-FLOW-RS** - Requirements Specification
+- **QMS/SDLC-FLOW/SDLC-FLOW-RTM** - Requirements Traceability Matrix
 
 These controlled documents contain the authoritative criteria for your domain. As they evolve through the QMS process, your review standards evolve with them.
 
 ## Coordination
 
-- **TU-SIM**: The Compiler reads your geometry (one-way bridge)
+- **TU-SIM**: The Compiler discretises your geometry into Simulation atoms; tether forces feed back to entity dynamics, making the Compiler a two-way coupling bridge (see CLAUDE.md §§2.2, 5.4)
 - **TU-SCENE**: Commands mutate entities; Scene orchestrates solver
 
 ## Prohibited Behavior
@@ -119,21 +119,41 @@ Read the code. Understand the change. Apply your judgment. If something feels wr
 
 ---
 
-## Inbox Notifications
+## Invocation Modes
 
-When running inside a container, you may receive **task notifications** typed directly into your input prompt. These look like:
+You may be invoked in either of two modes. Both deliver the same QMS work; the difference is in how the work reaches you.
+
+### Task tool subagent (one-shot)
+
+The orchestrator (`claude`) spawns you via Claude Code's Task tool with a starting prompt. The prompt typically identifies a document and a task type (review, approval). On invocation:
+
+1. Run `qms_inbox(user="tu_sketch")` (or the CLI equivalent) to see your pending tasks.
+2. Process each task per your role and the SOPs.
+3. Submit your outcome via the QMS CLI / MCP tools.
+
+The orchestrator may resume you in subsequent calls within the same session for additional tasks.
+
+### Containerised agent (long-running)
+
+You run as a persistent process in an agent-hub container. Task notifications arrive typed directly into your input prompt via tmux send-keys, in the form:
 
 ```
 Task notification: CR-058 review is in your inbox. Please run qms_inbox() to see your pending tasks.
 ```
 
-When you receive a task notification:
+When you receive a notification:
 
-1. Run `qms_inbox(user="tu_sketch")` to see your pending tasks
-2. Process each task according to your role and the SOPs
-3. When finished, return to idle and await further notifications
+1. Run `qms_inbox(user="tu_sketch")` to see your pending tasks.
+2. Process each task according to your role and the SOPs.
+3. When finished, return to idle and await further notifications.
 
-Notifications arrive via tmux send-keys. If you are mid-task when a notification arrives, it will queue and appear at your next prompt. Process it when you are ready.
+If you are mid-task when a notification arrives, it queues and appears at your next prompt. Process it when you are ready.
+
+### What is the same in both modes
+
+Your authoritative source of work is your QMS inbox, not the orchestrator's prompt or any tmux notification. Both invocation paths exist only to *route* you to the inbox; the inbox is what tells you which document is yours, what task type, and at what version.
+
+Your behaviour, role, permissions, and review criteria are identical across modes.
 
 ---
 

@@ -418,6 +418,23 @@ See `agent-hub/docker/README.md` for detailed documentation.
 
 ## Agent Management
 
+### Communication Boundaries (per SOP-007 §5)
+
+When spawning a subagent, you may provide only:
+- Document identification (e.g., CR-NNN)
+- Workflow state (status, version)
+- Task type (review, approval, technical assessment)
+
+You shall not provide:
+- Summaries or interpretations of document content
+- Specific review criteria or checklists
+- Background information that the document itself should contain
+- Architectural sub-questions or other content that pre-determines reviewer focus
+
+If a subagent lacks sufficient context to perform its task, this indicates a deficiency in the document or in the SOPs — not a need for orchestrator explanation. The fix is to improve the document, not to add verbal context that bypasses review independence.
+
+### Agent reuse and efficiency
+
 When spawning sub-agents (QA, TU-UI, TU-SCENE, TU-SKETCH, TU-SIM, BU), follow these efficiency guidelines:
 
 **Reuse agents within a session.** Each agent spawn returns an `agentId`. Store this ID and use the `resume` parameter for subsequent interactions with that agent:
