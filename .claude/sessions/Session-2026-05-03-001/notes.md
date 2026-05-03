@@ -1,16 +1,47 @@
 # Session-2026-05-03-001
 
-## Current State (last updated: CR-115 PRE_APPROVED v1.0 — QA approved cleanly on first attempt)
-- **Active document:** CR-115 (PRE_APPROVED v1.0) — Permit Exploration CRs under existing scope-integrity machinery
-- **Current EI:** N/A (awaiting Lead direction on release for execution)
-- **Blocking on:** Lead direction (release immediately for execution, or hold)
-- **Next:** Lead approves release; then `qms release CR-115` → IN_EXECUTION → EI-1 (pre-execution baseline)
-- **Bash-hook approval permission:** did NOT bite this time (consistent with non-deterministic pattern noted in PROJECT_STATE §8)
+## Current State (last updated: CR-115 CLOSED v2.0)
+- **Active document:** None — CR-115 CLOSED v2.0
+- **Current EI:** N/A
+- **Blocking on:** Nothing
+- **Final pipe-dream main:** `a05cb31` (CR-115 closure commit)
+- **Final Quality-Manual master:** `c6a0a04` (PR #2 merge commit; qualified commits a07b990 + e666d72 reachable)
+- **Final SOP-002 state:** v17.0 EFFECTIVE
+- **Final qa.md state:** `## Exploration CRs` section in place between `## Reviewer Assignment for Pipe Dream` and `## Review Criteria`
+- **71 CRs CLOSED** (was 70 at session start)
+- **Next session priority:** Beach trip work — the Exploration CR pattern is now available for use. Lead can author the first Exploration CR for Flow State.
 
 ## CR-115 pre-review history
 - **Cycle 1:** QA REQUEST_UPDATES with three findings: (1) literal "TBD" in §9.4 Phase 4; (2) deferred-design language in §5.4 ("(numbering to be assigned at execution time...)"); (3) non-blocking recommendation to lock (a)/(b)/(c) labels.
 - **Cycle 1 corrections:** Specified definite placement (new top-level `## Exploration CRs` section in qa.md between existing `## Reviewer Assignment for Pipe Dream` and `## Review Criteria`); locked (a)/(b)/(c) labels as immutable identifiers in the verbatim text; provided full verbatim section content; updated §9.4 Phase 4 and EI-9 to match.
 - **Cycle 2:** QA RECOMMEND. All 12 sections verified, no placeholders, traceability + consistency clean, no TU assignment needed.
+
+## CR-115 execution (EIs 1-10)
+- **EI-1:** pipe-dream pre-execution baseline at `3cb5ac0`
+- **EI-2:** QM execution branch `cr-115-exploration-cr-pattern` cut from QM master `e1755e3` (note: QM uses `master`, not `main`)
+- **EI-3:** QMS-Policy.md §6 paragraph at QM@`a07b990`
+- **EI-4:** scope-change-guide.md note at QM@`e666d72`; branch pushed
+- **EI-5:** QM PR #2 merged via regular merge to QM master `c6a0a04`
+- **EI-6:** Quality-Manual submodule pointer advanced in pipe-dream@`6bf4674`
+- **EI-7:** SOP-002 v16.0 → v16.1 (checkout, edit, checkin)
+- **EI-8:** SOP-002 v16.1 → v17.0 EFFECTIVE (QA review RECOMMEND cycle 1; QA approval cleared after one identity-confusion subagent retry)
+- **EI-9:** qa.md `## Exploration CRs` section added at pipe-dream@`5a31610`
+- **EI-10:** Post-execution baseline at pipe-dream@`9e61653`
+
+## CR-115 post-review history
+- **Cycle 1:** QA REQUEST_UPDATES — caught that Execution Comment 2 over-claimed verbatim sourcing (two of five additions actually included benign inline cross-reference enhancements not present in the §5 verbatim blocks). Substantive finding — the pre/post split worked.
+- **Cycle 1 correction:** Option A (honest reframing). Execution Comment 2 rewritten to enumerate which of the five additions are byte-equivalent vs which include the additive cross-references; explained rationale (additive linkage, no semantic change); explained why no VAR was warranted. §11 cross-document consistency self-check updated.
+- **Cycle 2:** QA RECOMMEND.
+
+## CR-115 post-approval and closure
+- QA approved cleanly on first attempt; v1.1 → v2.0 POST_APPROVED.
+- `qms close CR-115` → CLOSED v2.0.
+- Closure commit pipe-dream@`a05cb31` pushed.
+
+## Process observations (worth memory note)
+- **QA subagent identity-confusion pattern recurred multiple times:** SOP-002 approval (1 retry to succeed), CR-115 post-review (2 retries), CR-115 post-approval (clean first attempt). Pattern is non-deterministic but consistent enough to plan around — fresh re-spawn of QA agent typically succeeds on next attempt. Already queued as PROJECT_STATE §6.6 (Auto-mode-vs-subagent-permissions resolution).
+- **The QA-as-sole-assignee auto-close pattern (the explicit CR-114 motivation for the next process-improvement CR) DID NOT trigger this session.** SOP-002 was QA-only review/approval, CR-115 was QA-only pre-review/pre-approval/post-review/post-approval. None of the cycles auto-closed prematurely. The pattern PROJECT_STATE §8 documents may be specific to the assign-then-RECOMMEND ordering rather than a universal QA-only issue.
+- **The pre/post split worked exactly as designed.** Post-review caught the verbatim-sourcing claim deviation that pre-review couldn't have foreseen (because the deviation was an execution-time choice). Honest reframing via Option A was disproportionately cheaper than the strict-revert alternative — exactly the kind of resolution path the QMS expects.
 
 ## Lead amendments (post initial draft)
 - **Amendment 1:** TU REQ-candidacy observations are advisory only; TU shall RECOMMEND with comments, not REQUEST_UPDATES; Nail Down CR initiation is Lead's exclusive prerogative. Updated qa.md (c) wording in §5.4, §4 Proposed State, §5.6 (added 4th trade-off), §5.7 (refined rollback criterion).
