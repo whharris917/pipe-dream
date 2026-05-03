@@ -1,29 +1,31 @@
 ---
 title: Flow State Requirements Traceability Matrix
-revision_summary: 'CR-114 (v2.1 → v3.0, cycle 3 corrections per tu_sim and tu_scene
-  findings on cycle 2). REQ-FS-SIM-002 evidence had three line-citation drifts at
-  f69455f: (a) sync_*/teleport block end shifted from 508 to 520 — my cycle 1 update
-  fixed the 358→370 start anchor but failed to apply the same +12 shift to the end
-  of the range; (b) compiler.py tethered atom write cited as line 236, actual line
-  245 (pre-existing drift in v2.0 EFFECTIVE, carried forward unchanged into v2.1,
-  not caught by my "unchanged file = unchanged citation" heuristic on cycle 1); (c)
-  compiler.py static atom write cited as line 266, actual line 275 (same pre-existing
-  v2.0 drift). All three corrected. tu_ui RECOMMEND on cycle 2; tu_sim and tu_scene
-  REQUEST_UPDATES with the same findings independently. Cycle 1 substantive content
-  otherwise preserved. Re-pin Qualified Baseline to flow-state@f69455f (System Release
-  FLOW-STATE-1.2). Body changes are minimal because no requirements were added or
-  modified; CR-114 is bug fixes within the existing requirement surface (Resize World
-  UX — input field visibility + confirmation dialog + full physics reset on confirm;
-  plus ui/brush_tool.py orphan deletion). Re-anchored citations: REQ-FS-SIM-002 simulation.py
-  sync_* block 358–508 → 370–520; REQ-FS-SIM-002 compiler.py tethered 236 → 245, static
-  266 → 275. Other line citations independently re-verified via `git show f69455f:`
-  against the new commit and confirmed unchanged: REQ-FS-UI-002 (input_handler.py
-  115-136, 124-125, 1-16, app_controller.py push_modal/pop_modal at 48/63 with reset
-  calls at 59/75); REQ-FS-UI-001 (ui_widgets.py 31, 712); REQ-FS-SIM-001 (simulation.py
-  51-69, physics_core.py 100-251, 49-97, 254); REQ-FS-SIM-002 (scene.py 421 only —
-  compiler.py 245/275 are corrections in this cycle, not unchanged); REQ-FS-ARCH and
-  REQ-FS-CAD bodies (tools.py and tool_context.py untouched in CR-114). References
-  updated to add CR-114.'
+revision_summary: 'CR-112 (v1.1): RTM update for the strengthened REQ-FS-ARCH-004
+  and REQ-FS-CAD-003 in SDLC-FLOW-RS v3.0 and the new qualified baseline at flow-state@ec450e2
+  (System Release FLOW-STATE-1.1). REQ-FS-ARCH-004 evidence rewritten: the Tool base
+  class no longer extracts a public self.app — it stores only self.ctx and the leading-underscore
+  _app reference inside ToolContext is internal-only. Subclass property accessors
+  that previously reached through self.app now delegate via ctx._get_sketch / ctx._get_scene
+  (verified at ui/tools.py:263-269 and 727-733). The facade bullet list updated to
+  reflect the post-CR-112 surface (set/update/clear/has interaction_data, add_process_object,
+  clear_constraint_ui, create_coincident_command, iter_entities). REQ-FS-CAD-003 evidence
+  rewritten: tools route all interaction-data updates through the ToolContext facade
+  — two ctx.set_interaction_data call sites (with point_idx / handle_t as keyword-only
+  parameters), one ctx.update_interaction_target during drags, two ctx.clear_interaction_data
+  on tool-discard, and one ctx.has_interaction_data read to gate logic; the data still
+  resides on Sketch.interaction_data per the REQ-FS-ARCH-003 known-asymmetry note.
+  REQ-FS-UI-002 evidence: dropped the stale-narrative parenthetical (input_handler.py
+  module docstring corrected at qualified commit via CR-112 EI-8; CLAUDE.md §6.2 correction
+  is in scope of CR-112 EI-12). Qualified Baseline section updated to flow-state@ec450e2
+  (System Release FLOW-STATE-1.1). References updated to add CR-112. v0.2 cycle: addressed
+  five QA line-citation drift findings — REQ-FS-ARCH-004 property accessor pair attributions
+  corrected (GeometryTool base at 263-269; SelectTool at 727-733), Tool class line
+  range corrected to 83-120, module/class docstring distinction clarified (module
+  docstring at 12-58 holds the access contract; Tool class docstring at 84-89 points
+  to it), and REQ-FS-UI-002 line citations re-anchored at qualified commit (handle_input
+  at 115-136, Modal-before-Global comment at 124-125, input_handler.py module docstring
+  at 1-16 with numbered protocol at 4-11). All five findings independently re-verified
+  via `git show ec450e2:ui/tools.py` and `git show ec450e2:ui/input_handler.py`.'
 ---
 
 # SDLC-FLOW-RTM: Flow State Requirements Traceability Matrix
@@ -162,7 +164,7 @@ The solver at `flow-state/model/solver.py` reads `interaction_data` each iterati
 
 **Requirement:** The `Compiler` shall translate Sketch geometry into Simulation atoms — static atoms (`is_static=1`) for non-dynamic entities, and tethered atoms (`is_static=3`) for dynamic entities (the mechanism by which the Compiler enables two-way CAD↔Physics coupling). The Compiler shall rebuild these atoms when the Scene reports that geometry has changed.
 
-**Evidence:** `flow-state/engine/compiler.py` defines the `Compiler` class with a `rebuild()` entrypoint that walks Sketch entities and discretizes them into Simulation atoms. Static atoms (`is_static=1`, written at line 275) are immobile particles representing walls and other non-dynamic geometry — they participate in collisions but never move. Tethered atoms (`is_static=3`, written at line 245) are particles bound to dynamic entities via `tether_entity_idx`, `tether_local_pos`, and `tether_stiffness` arrays in `simulation.py`; they are the mechanism by which the Compiler enables two-way CAD↔Physics coupling (entity geometry drives tether positions, and tether forces influence entity dynamics). `Scene.rebuild()` at `flow-state/core/scene.py` (line 421) triggers `compiler.rebuild()` when the orchestration loop detects topology changes; geometry-only changes use a faster `sync_entity_arrays`/`sync_static_atoms_to_geometry` path (`simulation.py` lines 370–520) without full recompilation.
+**Evidence:** `flow-state/engine/compiler.py` defines the `Compiler` class with a `rebuild()` entrypoint that walks Sketch entities and discretizes them into Simulation atoms. Static atoms (`is_static=1`, written at line 266) are immobile particles representing walls and other non-dynamic geometry — they participate in collisions but never move. Tethered atoms (`is_static=3`, written at line 236) are particles bound to dynamic entities via `tether_entity_idx`, `tether_local_pos`, and `tether_stiffness` arrays in `simulation.py`; they are the mechanism by which the Compiler enables two-way CAD↔Physics coupling (entity geometry drives tether positions, and tether forces influence entity dynamics). `Scene.rebuild()` at `flow-state/core/scene.py` (line 421) triggers `compiler.rebuild()` when the orchestration loop detects topology changes; geometry-only changes use a faster `sync_entity_arrays`/`sync_static_atoms_to_geometry` path (`simulation.py` lines 358–508) without full recompilation.
 
 ---
 
@@ -200,21 +202,20 @@ The solver at `flow-state/model/solver.py` reads `interaction_data` each iterati
 |-----------|-------|
 | Requirements Spec | SDLC-FLOW-RS v3.0 |
 | Repository | whharris917/flow-state |
-| Branch | main (at merge of `cr-114-resize-world-ux`) |
-| Commit | f69455f |
-| Commit message | "CR-114 EI-9 fix: Restore input field on resize cancel" |
-| System Release | FLOW-STATE-1.2 |
-| Verification method | Qualitative-proof inspection (no automated test suite at v1.2) |
+| Branch | main (at merge of `cr-112-toolcontext-completion`) |
+| Commit | ec450e2 |
+| Commit message | "CR-112 EI-8: Update stale module docstrings" |
+| System Release | FLOW-STATE-1.1 |
+| Verification method | Qualitative-proof inspection (no automated test suite at v1.1) |
 
-The qualified-baseline commit `f69455f` is the qualified state of `flow-state` after CR-114 (Resize World UX fixes and brush_tool orphan deletion). All twelve requirements in SDLC-FLOW-RS v3.0 are verified by inspection against the source at this commit; CR-114 added no requirements and modified no verified surfaces beyond the single REQ-FS-SIM-002 line-citation re-anchor (sync_* methods shifted from line 358 to line 370 due to the resize_world body expansion). The strengthened REQ-FS-ARCH-004 and REQ-FS-CAD-003 from CR-112 remain satisfied unchanged at this commit (Tool subclass property accessors and ToolContext facade surface untouched in CR-114). The prior qualified baselines `FLOW-STATE-1.0` at flow-state@a26f7fb (under RS v1.0 / RTM v1.0) and `FLOW-STATE-1.1` at flow-state@ec450e2 (under RS v3.0 / RTM v2.0) are retained as historical record. Future CRs that modify `flow-state` code will follow the standard execution-branch workflow (SOP-005 §7.1) and will update this RTM with the new qualified baseline at merge time.
+The qualified-baseline commit `ec450e2` is the qualified state of `flow-state` after CR-112 (ToolContext Migration Completion + Documentation Reconciliation). All twelve requirements in SDLC-FLOW-RS v3.0 are verified by inspection against the source at this commit; the strengthened REQ-FS-ARCH-004 (no `self.app` passthrough; interaction_data routes through the facade) and REQ-FS-CAD-003 (facade-routed Servo injection) are satisfied at this commit per §4.1 and §4.2 above. The prior qualified baseline `FLOW-STATE-1.0` at flow-state@a26f7fb (under RS v1.0 / RTM v1.0) is retained as historical record. Future CRs that modify `flow-state` code will follow the standard execution-branch workflow (SOP-005 §7.1) and will update this RTM with the new qualified baseline at merge time.
 
 ---
 
 ## 6. References
 
 - **CR-111:** Adopt Flow State into QMS Governance — the authorizing change record for the inaugural RTM v1.0 and the FLOW-STATE-1.0 qualified baseline.
-- **CR-112:** ToolContext Migration Completion + Documentation Reconciliation — the authorizing change record for RTM revision v2.0 and the FLOW-STATE-1.1 qualified baseline; strengthened REQ-FS-ARCH-004 and REQ-FS-CAD-003.
-- **CR-114:** Resize World UX fixes and brush_tool orphan deletion — the authorizing change record for this RTM revision (v3.0) and the FLOW-STATE-1.2 qualified baseline. No requirements added or modified; the only RTM body change is the REQ-FS-SIM-002 line-citation re-anchor (sync_* methods 358 → 370 due to resize_world body expansion).
+- **CR-112:** ToolContext Migration Completion + Documentation Reconciliation — the authorizing change record for this RTM revision (v1.1) and the FLOW-STATE-1.1 qualified baseline; strengthened REQ-FS-ARCH-004 and REQ-FS-CAD-003.
 - **SDLC-FLOW-RS:** Flow State Requirements Specification v3.0 — the requirements verified here.
 - **SDLC-CQ-RTM:** claude-qms Requirements Traceability Matrix — pattern reference for inspection-only verification.
 - **Quality-Manual/10-SDLC.md:** Verification types (Unit Test, Qualitative Proof, Verification Record) and qualification semantics.
