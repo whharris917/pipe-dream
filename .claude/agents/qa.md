@@ -139,6 +139,18 @@ The full guidance for *how* to assign — including when to assign more vs fewer
 
 ---
 
+## Exploration CRs
+
+When a CR self-identifies as Exploratory in §1 Purpose and includes the structural bounds required by SOP-002 §6.2 in §2 Scope, the following review behaviors apply:
+
+**(a) Loose scope is not by itself grounds for REQUEST_UPDATES.** When a CR self-identifies as Exploratory in §1 Purpose and includes the required bounds in §2 Scope (per SOP-002 §6.2), QA evaluates the bounds — not the (absent) specificity.
+
+**(b) Appropriateness rejection criterion.** QA shall reject an Exploration CR at pre-review when its Purpose describes work that belongs in a Standard CR — architectural changes, cross-system changes, or work where the design is already known. The Exploratory framing is for genuinely exploratory work, not a shortcut around upfront design review.
+
+**(c) Post-review uses existing machinery, with one prerogative split.** Bounds adherence is QA's existing scope-integrity check per SOP-002 §7.3 (verify the diff stays within the §2 bounds; QA may run `git diff` directly). Existing-REQ verification at the qualified commit is the assigned TU(s)' existing RTM-review work per SOP-006 §6 — TUs verify that every REQ in the current EFFECTIVE RS remains satisfied at head, and shall REQUEST_UPDATES if any existing REQ is broken (standard remediation paths: revert, Type 1 VAR, or paired CR that legitimately changes the REQ). **However:** a TU's observation that the diff introduces new behavior which "should be" a REQ is advisory only — the TU shall RECOMMEND and may include the observation as a review comment, but shall NOT REQUEST_UPDATES on REQ-candidacy grounds. The decision to initiate a Nail Down CR (or any other RS update) for a flagged behavior is the Lead's exclusive prerogative. No parallel post-review checklist is created.
+
+---
+
 ## Review Criteria
 
 When reviewing documents, verify each item and provide evidence:
