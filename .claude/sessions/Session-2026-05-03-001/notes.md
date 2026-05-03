@@ -43,6 +43,11 @@
 - **The QA-as-sole-assignee auto-close pattern (the explicit CR-114 motivation for the next process-improvement CR) DID NOT trigger this session.** SOP-002 was QA-only review/approval, CR-115 was QA-only pre-review/pre-approval/post-review/post-approval. None of the cycles auto-closed prematurely. The pattern PROJECT_STATE §8 documents may be specific to the assign-then-RECOMMEND ordering rather than a universal QA-only issue.
 - **The pre/post split worked exactly as designed.** Post-review caught the verbatim-sourcing claim deviation that pre-review couldn't have foreseen (because the deviation was an execution-time choice). Honest reframing via Option A was disproportionately cheaper than the strict-revert alternative — exactly the kind of resolution path the QMS expects.
 
+## Memory updates from this session
+- Added `feedback_artifact_proliferation.md` — Lead's principle that artifact proliferation was an early QMS principle to avoid; prefer minimum-surface clarification of existing rules over new artifacts; if existing review SOPs don't cover a concern, that's an INV/CAPA target.
+- Added `feedback_stage_checkpoints.md` — for high-stakes QMS meta-CRs, pause and report at significant gates rather than auto-routing through; routine Flow State CRs can drive to closure; context-dependent.
+- Updated `MEMORY.md` index with both new entries under a new "QMS Design Principles (from Lead)" section.
+
 ## Lead amendments (post initial draft)
 - **Amendment 1:** TU REQ-candidacy observations are advisory only; TU shall RECOMMEND with comments, not REQUEST_UPDATES; Nail Down CR initiation is Lead's exclusive prerogative. Updated qa.md (c) wording in §5.4, §4 Proposed State, §5.6 (added 4th trade-off), §5.7 (refined rollback criterion).
 - **Amendment 2:** Out-of-bound work in an Exploration CR is handled via VAR (per SOP-004 §9A); the VAR may authorize a new CR for legitimate scope expansion, but does not itself expand the bound. Updated §2.3 Files Affected, §4 Proposed State, §5.5 (rewritten with two resolution paths), §8 cross-document consistency.
