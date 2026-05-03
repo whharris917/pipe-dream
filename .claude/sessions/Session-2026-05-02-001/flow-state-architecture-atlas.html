@@ -1,0 +1,2287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow State — Architecture Atlas</title>
+<style>
+  /* ==========================================================
+     Theme tokens
+     ========================================================== */
+  :root {
+    --bg: #0a0d1a;
+    --bg-elev: #11162a;
+    --bg-elev-2: #181f3a;
+    --line: #232b4d;
+    --line-soft: #1a2040;
+    --text: #e6e8f5;
+    --text-dim: #9aa0c0;
+    --text-faint: #6a7099;
+
+    --indigo: #818cf8;
+    --indigo-deep: #4f46e5;
+    --violet: #a78bfa;
+    --cyan: #67e8f9;
+    --emerald: #6ee7b7;
+    --amber: #fbbf24;
+    --pink: #f9a8d4;
+    --red: #f87171;
+    --rose: #fb7185;
+
+    /* Domain colors — used consistently across diagrams */
+    --c-sketch: #818cf8;        /* CAD domain → indigo */
+    --c-sim:    #fbbf24;        /* Physics domain → amber */
+    --c-bridge: #a78bfa;        /* Compiler bridge → violet */
+    --c-tool:   #67e8f9;        /* Tools / ToolContext → cyan */
+    --c-ui:     #f9a8d4;        /* UI layer → pink */
+    --c-cmd:    #6ee7b7;        /* Commands → emerald */
+    --c-deny:   #f87171;        /* Forbidden → red */
+
+    --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', ui-monospace, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 700px at 80% -10%, #1c1545 0%, var(--bg) 55%) fixed;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ==========================================================
+     Layout
+     ========================================================== */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 32px 28px 96px;
+    gap: 40px;
+  }
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static !important; }
+  }
+
+  /* ==========================================================
+     Header / hero
+     ========================================================== */
+  .hero {
+    padding: 32px 28px 28px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  .hero .eyebrow {
+    color: var(--violet);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hero h1 {
+    font-size: 44px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #e6e8f5 0%, var(--indigo) 50%, var(--violet) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero .sub {
+    color: var(--text-dim);
+    font-size: 17px;
+    max-width: 820px;
+    margin-bottom: 18px;
+  }
+  .hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+  .hero .meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .hero .meta b { color: var(--text-dim); font-weight: 500; }
+
+  /* ==========================================================
+     TOC
+     ========================================================== */
+  nav.toc {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  nav.toc h4 {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 18px 0 8px;
+    font-weight: 600;
+  }
+  nav.toc h4:first-child { margin-top: 0; }
+  nav.toc a {
+    display: block;
+    padding: 5px 10px;
+    margin: 1px 0;
+    color: var(--text-dim);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    border-radius: 0 4px 4px 0;
+    font-size: 13.5px;
+    line-height: 1.45;
+    transition: color 120ms, border-color 120ms, background 120ms;
+  }
+  nav.toc a:hover { color: var(--text); background: var(--bg-elev); }
+  nav.toc a.active {
+    color: var(--cyan);
+    border-left-color: var(--cyan);
+    background: rgba(103, 232, 249, 0.06);
+  }
+
+  /* ==========================================================
+     Sections
+     ========================================================== */
+  main { min-width: 0; }
+  section {
+    margin: 0 0 60px;
+    padding-top: 8px;
+  }
+  section.section-h {
+    border-top: 1px solid var(--line);
+    padding-top: 32px;
+    margin-top: 60px;
+  }
+  section h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+    color: var(--text);
+  }
+  section h2 .num {
+    color: var(--violet);
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 22px;
+    margin-right: 12px;
+  }
+  section .lede {
+    color: var(--text-dim);
+    font-size: 16px;
+    margin: 0 0 24px;
+    max-width: 800px;
+  }
+  section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 32px 0 8px;
+    color: var(--text);
+  }
+  section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin: 20px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  p { margin: 0 0 14px; }
+
+  /* ==========================================================
+     Cards / panels
+     ========================================================== */
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin: 16px 0;
+  }
+  .card.tight { padding: 14px 16px; }
+  .card.callout {
+    border-left: 3px solid var(--violet);
+    background: linear-gradient(90deg, rgba(167,139,250,0.06) 0%, var(--bg-elev) 30%);
+  }
+  .card.callout.danger { border-left-color: var(--red); background: linear-gradient(90deg, rgba(248,113,113,0.07) 0%, var(--bg-elev) 30%); }
+  .card.callout.success { border-left-color: var(--emerald); background: linear-gradient(90deg, rgba(110,231,183,0.06) 0%, var(--bg-elev) 30%); }
+  .card.callout.info    { border-left-color: var(--cyan);    background: linear-gradient(90deg, rgba(103,232,249,0.06) 0%, var(--bg-elev) 30%); }
+  .card .title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+  }
+  .card.callout.danger .title { color: var(--red); }
+  .card.callout.success .title { color: var(--emerald); }
+  .card.callout.info .title { color: var(--cyan); }
+
+  /* Two-column grid */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  @media (max-width: 740px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ==========================================================
+     Tables
+     ========================================================== */
+  .tbl-wrap { overflow-x: auto; margin: 14px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  table th, table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    vertical-align: top;
+  }
+  table th {
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-elev);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--line);
+  }
+  table tbody tr:hover { background: rgba(255,255,255,0.012); }
+  table td.mono, table th.mono { font-family: var(--mono); font-size: 12.5px; }
+  table td.center { text-align: center; }
+  table .yes { color: var(--emerald); font-weight: 600; }
+  table .no  { color: var(--red); font-weight: 600; }
+  table .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    background: var(--bg-elev-2); color: var(--text-dim);
+  }
+  table .pill.read   { background: rgba(103,232,249,0.12); color: var(--cyan); }
+  table .pill.write  { background: rgba(110,231,183,0.12); color: var(--emerald); }
+  table .pill.facade { background: rgba(167,139,250,0.12); color: var(--violet); }
+  table .pill.intern { background: rgba(248,113,113,0.12); color: var(--red); }
+  table .pill.dom    { background: rgba(129,140,248,0.12); color: var(--indigo); }
+
+  /* ==========================================================
+     Code
+     ========================================================== */
+  code, pre, .mono { font-family: var(--mono); }
+  code {
+    background: var(--bg-elev-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: var(--cyan);
+  }
+  pre {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre code { background: none; padding: 0; color: var(--text); }
+  .tok-k  { color: var(--violet); }   /* keyword */
+  .tok-s  { color: var(--emerald); }  /* string */
+  .tok-c  { color: var(--text-faint); font-style: italic; }  /* comment */
+  .tok-n  { color: var(--cyan); }     /* name/identifier */
+  .tok-fn { color: var(--amber); }    /* function */
+  .tok-t  { color: var(--pink); }     /* type */
+
+  /* ==========================================================
+     SVG diagram helpers
+     ========================================================== */
+  .diagram {
+    margin: 18px 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .diagram .caption {
+    font-size: 13px;
+    color: var(--text-faint);
+    margin-top: 8px;
+    text-align: center;
+    font-style: italic;
+  }
+  svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  svg text { font-family: var(--sans); fill: var(--text); }
+  svg .lbl { font-size: 12px; }
+  svg .lbl-sm { font-size: 10.5px; fill: var(--text-dim); }
+  svg .lbl-mono { font-family: var(--mono); }
+  svg .domain-sketch  { fill: var(--c-sketch); stroke: var(--c-sketch); }
+  svg .domain-sim     { fill: var(--c-sim);    stroke: var(--c-sim); }
+  svg .domain-bridge  { fill: var(--c-bridge); stroke: var(--c-bridge); }
+  svg .domain-tool    { fill: var(--c-tool);   stroke: var(--c-tool); }
+  svg .domain-ui      { fill: var(--c-ui);     stroke: var(--c-ui); }
+  svg .domain-cmd     { fill: var(--c-cmd);    stroke: var(--c-cmd); }
+  svg .box-fill       { fill: var(--bg-elev-2); }
+  svg .box-stroke     { stroke-width: 1.5; fill: none; }
+  svg .arrow          { fill: none; stroke-width: 1.5; }
+
+  /* ==========================================================
+     Tabs
+     ========================================================== */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    margin: 18px 0 0;
+    gap: 2px;
+  }
+  .tabs button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 18px;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 120ms, border-color 120ms;
+  }
+  .tabs button:hover { color: var(--text); }
+  .tabs button.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+  }
+  .tab-panel { display: none; padding: 18px 0; }
+  .tab-panel.active { display: block; }
+
+  /* ==========================================================
+     Step list (orchestration loop, dispatch chain)
+     ========================================================== */
+  .steps { counter-reset: step; padding: 0; margin: 16px 0; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 14px 16px 14px 64px;
+    margin: 0 0 8px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    transition: border-color 150ms, background 150ms;
+  }
+  .steps li:hover { border-color: var(--violet); background: var(--bg-elev-2); }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 14px; top: 14px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--indigo-deep) 0%, var(--violet) 100%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .steps li .step-title {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 14.5px;
+    margin-bottom: 4px;
+  }
+  .steps li .step-detail { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .steps li .step-cite {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+  .steps li.cond { border-left: 3px solid var(--amber); }
+  .steps li.cond::after {
+    content: "conditional";
+    position: absolute;
+    top: 14px; right: 14px;
+    font-size: 10px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+
+  /* ==========================================================
+     Misc
+     ========================================================== */
+  .kicker { color: var(--cyan); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; }
+  .file {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    background: var(--bg-elev-2);
+    padding: 1px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--line-soft);
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--bg-elev-2);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+    border: 1px solid var(--line);
+  }
+  .badge.cad   { background: rgba(129,140,248,0.13); color: var(--indigo); border-color: rgba(129,140,248,0.25); }
+  .badge.phys  { background: rgba(251,191,36,0.13);  color: var(--amber);  border-color: rgba(251,191,36,0.25); }
+  .badge.tool  { background: rgba(103,232,249,0.13); color: var(--cyan);   border-color: rgba(103,232,249,0.25); }
+  .badge.ui    { background: rgba(249,168,212,0.13); color: var(--pink);   border-color: rgba(249,168,212,0.25); }
+  .badge.crit  { background: rgba(248,113,113,0.13); color: var(--red);    border-color: rgba(248,113,113,0.25); }
+
+  ul.clean { padding-left: 20px; }
+  ul.clean li { margin-bottom: 6px; }
+
+  details {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+  details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text);
+    user-select: none;
+    list-style: none;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before {
+    content: "▸";
+    color: var(--violet);
+    margin-right: 8px;
+    display: inline-block;
+    transition: transform 150ms;
+  }
+  details[open] summary::before { transform: rotate(90deg); }
+
+  hr.sep { border: none; border-top: 1px dashed var(--line); margin: 24px 0; }
+
+  /* TL;DR box style */
+  .tldr {
+    background: linear-gradient(135deg, rgba(129,140,248,0.05) 0%, rgba(103,232,249,0.04) 100%);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin: 18px 0;
+  }
+  .tldr .label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--violet); margin-bottom: 6px;
+  }
+
+  /* Definition list */
+  dl.terms {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 8px 22px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  dl.terms dt { color: var(--text); font-weight: 600; font-family: var(--mono); font-size: 13px; }
+  dl.terms dd { color: var(--text-dim); margin: 0; }
+  @media (max-width: 600px) { dl.terms { grid-template-columns: 1fr; } dl.terms dd { margin-bottom: 6px; } }
+
+  /* Footer */
+  footer {
+    max-width: 1500px;
+    margin: 40px auto 0;
+    padding: 24px 28px 48px;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<header class="hero">
+  <div class="eyebrow">Pipe Dream · Session-2026-05-02-001</div>
+  <h1>Flow State — Architecture Atlas</h1>
+  <p class="sub">A deep, visual tour of how the CAD + particle-physics application is wired together — module by module, invariant by invariant. Then a focused look at the tool-facade architectural follow-up flagged on the CR-112 cycle 4 reviews.</p>
+  <div class="meta">
+    <span><b>Codebase</b> flow-state @ <code>c82c8e2</code> (qualified <code>ec450e2</code>)</span>
+    <span><b>System Release</b> FLOW-STATE-1.1</span>
+    <span><b>Files surveyed</b> ~50 .py</span>
+    <span><b>RS</b> v3.0</span>
+    <span><b>RTM</b> v2.0</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============================================================
+       TOC
+       ============================================================ -->
+  <nav class="toc" id="toc">
+    <h4>Part I · Architecture</h4>
+    <a href="#overview">1. Two Domains, One Document</a>
+    <a href="#airgap">2. The Air Gap</a>
+    <a href="#modules">3. Module Map</a>
+    <a href="#scene">4. Scene: The Orchestrator</a>
+    <a href="#orchestration">5. The 8-Step Update Loop</a>
+    <a href="#commands">6. The Command Pattern</a>
+    <a href="#sketch">7. Sketch &amp; The Solver</a>
+    <a href="#compiler">8. The Compiler Bridge</a>
+    <a href="#simulation">9. Simulation: Pure Physics</a>
+    <a href="#toolctx">10. The ToolContext Facade</a>
+    <a href="#tools">11. Tools &amp; The User Servo</a>
+    <a href="#input">12. Input Dispatch &amp; UI</a>
+    <a href="#processobj">13. Process Objects</a>
+    <a href="#state">14. State Classification Recap</a>
+
+    <h4>Part II · Follow-Up</h4>
+    <a href="#fu-context">15. Where We Are</a>
+    <a href="#fu-paths">16. Three Candidate Paths</a>
+    <a href="#fu-tradeoffs">17. Trade-Off Matrix</a>
+    <a href="#fu-rec">18. A Recommendation</a>
+  </nav>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <main>
+
+  <!-- ===================== PART I HEADER ====================== -->
+  <section>
+    <div class="kicker">Part I</div>
+    <h2 style="margin-top:4px;">The Anatomy of Flow State</h2>
+    <p class="lede">Flow State is two engines bolted to one document. A geometric constraint solver (CAD) on one side, a particle simulator (physics) on the other, with a Compiler that translates between them and a Scene that conducts the whole thing frame by frame. The brilliance — and most of the bugs — live in how those pieces talk.</p>
+  </section>
+
+  <!-- ===================== 1. OVERVIEW ====================== -->
+  <section id="overview" class="section-h">
+    <h2><span class="num">01</span>Two Domains, One Document</h2>
+    <p class="lede">The whole codebase is built around a single discipline: never let CAD geometry and physics particles share state. They communicate only through a one-direction-at-a-time bridge.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 800 360" role="img" aria-label="Two-domain block diagram">
+        <!-- Sketch box (left) -->
+        <rect x="50" y="60" width="260" height="240" rx="14" class="box-fill"/>
+        <rect x="50" y="60" width="260" height="240" rx="14" class="box-stroke domain-sketch"/>
+        <text x="180" y="92" text-anchor="middle" class="lbl" style="font-size:14px;font-weight:700;" fill="var(--c-sketch)">Sketch — CAD Domain</text>
+        <text x="180" y="110" text-anchor="middle" class="lbl-sm">model/sketch.py</text>
+
+        <g transform="translate(70,130)">
+          <text x="0" y="0" class="lbl" fill="var(--text-dim)">Lines · Circles · Points</text>
+          <text x="0" y="22" class="lbl" fill="var(--text-dim)">Constraints (length, ⊥, ∥)</text>
+          <text x="0" y="44" class="lbl" fill="var(--text-dim)">Materials (per entity)</text>
+          <text x="0" y="66" class="lbl" fill="var(--text-dim)">Anchored / dynamic flags</text>
+          <text x="0" y="88" class="lbl" fill="var(--text-dim)">interaction_data (Servo)</text>
+          <text x="0" y="125" class="lbl-sm" fill="var(--text-faint)">High-level vector geometry.</text>
+          <text x="0" y="140" class="lbl-sm" fill="var(--text-faint)">PBD solver enforces rules.</text>
+        </g>
+
+        <!-- Compiler bridge (center) -->
+        <rect x="335" y="130" width="130" height="100" rx="10" class="box-fill"/>
+        <rect x="335" y="130" width="130" height="100" rx="10" class="box-stroke domain-bridge"/>
+        <text x="400" y="158" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--c-bridge)">Compiler</text>
+        <text x="400" y="180" text-anchor="middle" class="lbl-sm">engine/compiler.py</text>
+        <text x="400" y="200" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">geometry → atoms</text>
+        <text x="400" y="216" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">forces ← atoms</text>
+
+        <!-- Arrows -->
+        <defs>
+          <marker id="arr-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--violet)"/>
+          </marker>
+          <marker id="arr-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--cyan)"/>
+          </marker>
+          <marker id="arr-emerald" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--emerald)"/>
+          </marker>
+          <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--red)"/>
+          </marker>
+          <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--amber)"/>
+          </marker>
+        </defs>
+        <path d="M 312 165 L 333 165" class="arrow" stroke="var(--violet)" marker-end="url(#arr-violet)"/>
+        <path d="M 333 195 L 312 195" class="arrow" stroke="var(--violet)" marker-end="url(#arr-violet)"/>
+        <text x="322" y="155" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">read</text>
+        <text x="322" y="215" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">force fb</text>
+
+        <path d="M 467 165 L 488 165" class="arrow" stroke="var(--violet)" marker-end="url(#arr-violet)"/>
+        <path d="M 488 195 L 467 195" class="arrow" stroke="var(--violet)" marker-end="url(#arr-violet)"/>
+        <text x="478" y="155" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">write</text>
+        <text x="478" y="215" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">tether F</text>
+
+        <!-- Simulation box (right) -->
+        <rect x="490" y="60" width="260" height="240" rx="14" class="box-fill"/>
+        <rect x="490" y="60" width="260" height="240" rx="14" class="box-stroke domain-sim"/>
+        <text x="620" y="92" text-anchor="middle" class="lbl" style="font-size:14px;font-weight:700;" fill="var(--c-sim)">Simulation — Physics Domain</text>
+        <text x="620" y="110" text-anchor="middle" class="lbl-sm">engine/simulation.py</text>
+
+        <g transform="translate(510,130)">
+          <text x="0" y="0" class="lbl" fill="var(--text-dim)">Flat numpy arrays</text>
+          <text x="0" y="22" class="lbl" fill="var(--text-dim)">pos_x, pos_y, vel_x, vel_y</text>
+          <text x="0" y="44" class="lbl" fill="var(--text-dim)">is_static (1=wall, 3=tether)</text>
+          <text x="0" y="66" class="lbl" fill="var(--text-dim)">Verlet + spatial hashing</text>
+          <text x="0" y="88" class="lbl" fill="var(--text-dim)">Numba JIT kernels</text>
+          <text x="0" y="125" class="lbl-sm" fill="var(--text-faint)">No knowledge of geometry.</text>
+          <text x="0" y="140" class="lbl-sm" fill="var(--text-faint)">Just particles and forces.</text>
+        </g>
+
+        <!-- Title overlay -->
+        <text x="400" y="40" text-anchor="middle" class="lbl" style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;" fill="var(--text-dim)">A two-way bridge, not a one-way pipe</text>
+
+        <!-- Bottom domain labels -->
+        <text x="180" y="335" text-anchor="middle" class="lbl-sm">"What the user drew"</text>
+        <text x="620" y="335" text-anchor="middle" class="lbl-sm">"What the user is watching"</text>
+      </svg>
+      <div class="caption">The Compiler is bidirectional. Static atoms (<span style="color:var(--c-sim)">is_static=1</span>) are passively teleported by their parent geometry. Tethered atoms (<span style="color:var(--c-sim)">is_static=3</span>) push back via spring forces, making CAD entities responsive to physics.</div>
+    </div>
+
+    <h3>The compressed taxonomy</h3>
+    <dl class="terms">
+      <dt>Sketch</dt><dd>The CAD document. Vector geometry plus logical constraints. Knows nothing about particles.</dd>
+      <dt>Simulation</dt><dd>Particle physics. Knows nothing about lines or constraints — just flat arrays.</dd>
+      <dt>Compiler</dt><dd>Reads Sketch, writes Simulation. Two-way coupling for tethered atoms (forces flow back).</dd>
+      <dt>Scene</dt><dd>The conductor. Owns Sketch + Sim + Compiler. Implements the 8-step update loop.</dd>
+      <dt>Session</dt><dd>Transient view state — camera, selection, active tool, focused widget.</dd>
+      <dt>Tool</dt><dd>Mouse-event handler for one operation. Talks to the world only through ToolContext.</dd>
+      <dt>ToolContext</dt><dd>The narrow facade between tools and the rest of the app. The Air Gap, made of Python.</dd>
+      <dt>Command</dt><dd>The atomic unit of mutation. Every change to the Vault flows through one.</dd>
+    </dl>
+  </section>
+
+  <!-- ===================== 2. AIR GAP ====================== -->
+  <section id="airgap" class="section-h">
+    <h2><span class="num">02</span>The Air Gap</h2>
+    <p class="lede">A foundational rule: the UI cannot mutate the Data Model directly. Every change must flow through a Command, recorded in the history. Replayability and undo depend on it.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 800 320">
+        <!-- Forbidden path -->
+        <g>
+          <text x="400" y="30" text-anchor="middle" class="lbl" style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;" fill="var(--red)">✗ Forbidden — direct mutation</text>
+          <rect x="60" y="50" width="160" height="60" rx="8" class="box-fill"/>
+          <rect x="60" y="50" width="160" height="60" rx="8" class="box-stroke domain-tool"/>
+          <text x="140" y="78" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-tool)">SelectTool</text>
+          <text x="140" y="96" text-anchor="middle" class="lbl-sm">ui/tools.py</text>
+
+          <rect x="580" y="50" width="160" height="60" rx="8" class="box-fill"/>
+          <rect x="580" y="50" width="160" height="60" rx="8" class="box-stroke domain-sketch"/>
+          <text x="660" y="78" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-sketch)">Line.end_point</text>
+          <text x="660" y="96" text-anchor="middle" class="lbl-sm">model/geometry.py</text>
+
+          <path d="M 220 80 L 580 80" class="arrow" stroke="var(--red)" marker-end="url(#arr-red)" stroke-dasharray="6 4"/>
+          <text x="400" y="72" text-anchor="middle" class="lbl-mono" fill="var(--red)" style="font-size:12px;">line.end_point = (10, 10)</text>
+          <text x="400" y="100" text-anchor="middle" class="lbl-sm" fill="var(--red)">never recorded · breaks undo · breaks replay</text>
+        </g>
+
+        <line x1="60" y1="155" x2="740" y2="155" stroke="var(--line)" stroke-dasharray="4 4"/>
+
+        <!-- Allowed path -->
+        <g>
+          <text x="400" y="190" text-anchor="middle" class="lbl" style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;" fill="var(--emerald)">✓ Conforming — mutation through a Command</text>
+
+          <rect x="60" y="220" width="120" height="60" rx="8" class="box-fill"/>
+          <rect x="60" y="220" width="120" height="60" rx="8" class="box-stroke domain-tool"/>
+          <text x="120" y="248" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-tool)">SelectTool</text>
+          <text x="120" y="266" text-anchor="middle" class="lbl-sm">construct cmd</text>
+
+          <rect x="220" y="220" width="140" height="60" rx="8" class="box-fill"/>
+          <rect x="220" y="220" width="140" height="60" rx="8" class="box-stroke domain-tool"/>
+          <text x="290" y="248" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-tool)">ctx.execute(cmd)</text>
+          <text x="290" y="266" text-anchor="middle" class="lbl-sm">ToolContext facade</text>
+
+          <rect x="400" y="220" width="140" height="60" rx="8" class="box-fill"/>
+          <rect x="400" y="220" width="140" height="60" rx="8" class="box-stroke domain-cmd"/>
+          <text x="470" y="248" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-cmd)">SetEntityGeometry</text>
+          <text x="470" y="266" text-anchor="middle" class="lbl-sm">.execute() / .undo()</text>
+
+          <rect x="580" y="220" width="160" height="60" rx="8" class="box-fill"/>
+          <rect x="580" y="220" width="160" height="60" rx="8" class="box-stroke domain-sketch"/>
+          <text x="660" y="248" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-sketch)">Line.end_point</text>
+          <text x="660" y="266" text-anchor="middle" class="lbl-sm">+ history entry</text>
+
+          <path d="M 180 250 L 220 250" class="arrow" stroke="var(--emerald)" marker-end="url(#arr-emerald)"/>
+          <path d="M 360 250 L 400 250" class="arrow" stroke="var(--emerald)" marker-end="url(#arr-emerald)"/>
+          <path d="M 540 250 L 580 250" class="arrow" stroke="var(--emerald)" marker-end="url(#arr-emerald)"/>
+        </g>
+      </svg>
+      <div class="caption">Forbidden direct mutation versus the conforming Command path. The Command path adds three concrete benefits: an undo entry, a redo entry, and a deterministic replay if state is reconstructed from history.</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card callout danger">
+        <div class="title">Why the rule is absolute</div>
+        <p>Physics is irreversible. The CAD solver introduces effects (rotation, constraint propagation) that aren't simple deltas. Without a recorded Command, undo can't restore the pre-mutation state. Even worse, replay (loading a session and re-applying its history) silently diverges.</p>
+      </div>
+      <div class="card callout success">
+        <div class="title">The one documented exception</div>
+        <p>Brush operations on particles (<code>Scene.paint_particles</code> / <code>Scene.erase_particles</code>) bypass the Command queue and snapshot-undo themselves. Particles are too cheap and too volatile to wrap each splat in its own command. Snapshots are taken on mousedown (<code>ctx.snapshot_particles()</code>) so undo still works for the brush stroke as a whole.</p>
+      </div>
+    </div>
+
+    <div class="tldr">
+      <div class="label">Air Gap, in one sentence</div>
+      <p style="margin:0;">Tools propose changes; the Scene records them. Anything that skips that handshake is a critical defect — including, historically, the SourceTool crash that triggered CR-112.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 3. MODULE MAP ====================== -->
+  <section id="modules" class="section-h">
+    <h2><span class="num">03</span>Module Map</h2>
+    <p class="lede">Roughly 50 Python files in five top-level packages. Here is who-imports-whom at the architectural level — concrete, not aspirational.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 880 540">
+        <!-- Layer labels -->
+        <text x="20" y="30" class="lbl-sm" fill="var(--text-faint)" style="font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-size:10px;">main</text>
+        <text x="20" y="100" class="lbl-sm" fill="var(--text-faint)" style="font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-size:10px;">app</text>
+        <text x="20" y="200" class="lbl-sm" fill="var(--text-faint)" style="font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-size:10px;">ui</text>
+        <text x="20" y="320" class="lbl-sm" fill="var(--text-faint)" style="font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-size:10px;">core</text>
+        <text x="20" y="440" class="lbl-sm" fill="var(--text-faint)" style="font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-size:10px;">model + engine</text>
+
+        <!-- main -->
+        <rect x="380" y="10" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="380" y="10" width="120" height="40" rx="8" class="box-stroke" stroke="var(--text-dim)"/>
+        <text x="440" y="35" text-anchor="middle" class="lbl-mono" style="font-size:11px;">main.py</text>
+
+        <!-- app layer -->
+        <rect x="280" y="80" width="160" height="40" rx="8" class="box-fill"/>
+        <rect x="280" y="80" width="160" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="360" y="105" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">FlowStateApp</text>
+
+        <rect x="460" y="80" width="160" height="40" rx="8" class="box-fill"/>
+        <rect x="460" y="80" width="160" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="540" y="105" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">AppController</text>
+
+        <rect x="640" y="80" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="640" y="80" width="120" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="700" y="105" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">Dashboard</text>
+
+        <!-- ui layer -->
+        <rect x="100" y="170" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="100" y="170" width="120" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="160" y="195" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">InputHandler</text>
+
+        <rect x="240" y="170" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="240" y="170" width="120" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="300" y="195" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">UIManager</text>
+
+        <rect x="380" y="170" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="380" y="170" width="120" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="440" y="195" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">ui_widgets</text>
+
+        <rect x="520" y="170" width="160" height="40" rx="8" class="box-fill"/>
+        <rect x="520" y="170" width="160" height="40" rx="8" class="box-stroke domain-tool"/>
+        <text x="600" y="195" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-tool)">tools / source_tool</text>
+
+        <rect x="700" y="170" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="700" y="170" width="120" height="40" rx="8" class="box-stroke domain-ui"/>
+        <text x="760" y="195" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-ui)">renderer</text>
+
+        <!-- core layer -->
+        <rect x="80" y="290" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="80" y="290" width="120" height="40" rx="8" class="box-stroke domain-tool"/>
+        <text x="140" y="315" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-tool)">ToolContext</text>
+
+        <rect x="220" y="290" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="220" y="290" width="120" height="40" rx="8" class="box-stroke" stroke="var(--violet)"/>
+        <text x="280" y="315" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--violet)">Scene</text>
+
+        <rect x="360" y="290" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="360" y="290" width="120" height="40" rx="8" class="box-stroke" stroke="var(--text-dim)"/>
+        <text x="420" y="315" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--text-dim)">Session</text>
+
+        <rect x="500" y="290" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="500" y="290" width="120" height="40" rx="8" class="box-stroke domain-cmd"/>
+        <text x="560" y="315" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-cmd)">CommandQueue</text>
+
+        <rect x="640" y="290" width="180" height="40" rx="8" class="box-fill"/>
+        <rect x="640" y="290" width="180" height="40" rx="8" class="box-stroke" stroke="var(--text-dim)"/>
+        <text x="730" y="315" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--text-dim)">camera · selection · status</text>
+
+        <!-- model+engine layer -->
+        <rect x="80" y="410" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="80" y="410" width="120" height="40" rx="8" class="box-stroke domain-sketch"/>
+        <text x="140" y="435" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-sketch)">Sketch</text>
+
+        <rect x="220" y="410" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="220" y="410" width="120" height="40" rx="8" class="box-stroke domain-sketch"/>
+        <text x="280" y="435" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-sketch)">Solver + kernels</text>
+
+        <rect x="360" y="410" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="360" y="410" width="120" height="40" rx="8" class="box-stroke domain-cmd"/>
+        <text x="420" y="435" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-cmd)">commands/*</text>
+
+        <rect x="500" y="410" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="500" y="410" width="120" height="40" rx="8" class="box-stroke domain-bridge"/>
+        <text x="560" y="435" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-bridge)">Compiler</text>
+
+        <rect x="640" y="410" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="640" y="410" width="120" height="40" rx="8" class="box-stroke domain-sim"/>
+        <text x="700" y="435" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-sim)">Simulation</text>
+
+        <rect x="780" y="410" width="60" height="40" rx="8" class="box-fill"/>
+        <rect x="780" y="410" width="60" height="40" rx="8" class="box-stroke" stroke="var(--c-bridge)"/>
+        <text x="810" y="435" text-anchor="middle" class="lbl-mono" style="font-size:11px;" fill="var(--c-bridge)">brush</text>
+
+        <!-- Strong arrows -->
+        <line x1="440" y1="50" x2="360" y2="80" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="440" y1="50" x2="540" y2="80" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="440" y1="50" x2="700" y2="80" stroke="var(--text-faint)" stroke-width="1"/>
+
+        <line x1="360" y1="120" x2="160" y2="170" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="360" y1="120" x2="300" y2="170" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="360" y1="120" x2="440" y2="170" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="360" y1="120" x2="600" y2="170" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="360" y1="120" x2="760" y2="170" stroke="var(--text-faint)" stroke-width="1"/>
+        <line x1="540" y1="120" x2="160" y2="170" stroke="var(--text-faint)" stroke-width="1"/>
+
+        <!-- Tool → ToolContext (the key edge) -->
+        <line x1="600" y1="210" x2="140" y2="290" stroke="var(--c-tool)" stroke-width="2"/>
+        <text x="280" y="245" class="lbl-sm" fill="var(--c-tool)" style="font-weight:600;">facade-only</text>
+
+        <!-- ToolContext → Scene -->
+        <line x1="140" y1="330" x2="280" y2="290" stroke="var(--c-tool)" stroke-width="1.5"/>
+        <text x="195" y="324" class="lbl-sm" fill="var(--text-faint)">delegates</text>
+
+        <!-- Scene → Sketch / Sim / Compiler / Cmd -->
+        <line x1="280" y1="330" x2="140" y2="410" stroke="var(--violet)" stroke-width="1.5"/>
+        <line x1="280" y1="330" x2="280" y2="410" stroke="var(--violet)" stroke-width="1.5"/>
+        <line x1="280" y1="330" x2="700" y2="410" stroke="var(--violet)" stroke-width="1.5"/>
+        <line x1="280" y1="330" x2="560" y2="410" stroke="var(--violet)" stroke-width="1.5"/>
+        <line x1="280" y1="330" x2="810" y2="410" stroke="var(--violet)" stroke-width="1.5"/>
+
+        <!-- CommandQueue → commands -->
+        <line x1="560" y1="330" x2="420" y2="410" stroke="var(--c-cmd)" stroke-width="1.5"/>
+
+        <!-- Compiler ↔ Sketch + Sim (inside model layer) -->
+        <line x1="500" y1="430" x2="200" y2="430" stroke="var(--c-bridge)" stroke-width="1" stroke-dasharray="4 3"/>
+        <line x1="620" y1="430" x2="640" y2="430" stroke="var(--c-bridge)" stroke-width="1" stroke-dasharray="4 3"/>
+
+        <!-- Sketch ↔ Solver -->
+        <line x1="200" y1="430" x2="220" y2="430" stroke="var(--c-sketch)" stroke-width="1.5"/>
+
+        <!-- Legend -->
+        <g transform="translate(20,490)">
+          <rect x="0" y="0" width="14" height="14" rx="3" fill="none" class="box-stroke domain-ui"/>
+          <text x="20" y="11" class="lbl-sm">UI/App</text>
+          <rect x="80" y="0" width="14" height="14" rx="3" fill="none" class="box-stroke domain-tool"/>
+          <text x="100" y="11" class="lbl-sm">Tool/Facade</text>
+          <rect x="190" y="0" width="14" height="14" rx="3" fill="none" class="box-stroke domain-sketch"/>
+          <text x="210" y="11" class="lbl-sm">Sketch (CAD)</text>
+          <rect x="320" y="0" width="14" height="14" rx="3" fill="none" class="box-stroke domain-sim"/>
+          <text x="340" y="11" class="lbl-sm">Simulation</text>
+          <rect x="430" y="0" width="14" height="14" rx="3" fill="none" class="box-stroke domain-bridge"/>
+          <text x="450" y="11" class="lbl-sm">Compiler</text>
+          <rect x="540" y="0" width="14" height="14" rx="3" fill="none" class="box-stroke domain-cmd"/>
+          <text x="560" y="11" class="lbl-sm">Commands</text>
+        </g>
+      </svg>
+      <div class="caption">The vertical axis is dependency depth — UI imports Core, Core imports Model, never the reverse. The only edge that crosses the facade boundary is <span style="color:var(--c-tool)">Tool → ToolContext</span>: tools never reach into Scene, Sketch, or Simulation directly.</div>
+    </div>
+
+    <h3>Package responsibilities</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead>
+      <tr><th style="width:14%;">Package</th><th>Responsibility</th><th style="width:30%;">Touchstone files</th></tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><code>main.py</code></td>
+        <td>argparse-based entry point. Three modes: dashboard, sim, builder.</td>
+        <td><span class="file">main.py</span></td>
+      </tr>
+      <tr>
+        <td><code>app/</code></td>
+        <td>Application shell. Wires Scene + Session + UI + InputHandler. <code>FlowStateApp</code> owns everything; <code>AppController</code> hosts high-level actions and the modal stack.</td>
+        <td><span class="file">flow_state_app.py</span> <span class="file">app_controller.py</span> <span class="file">dashboard.py</span></td>
+      </tr>
+      <tr>
+        <td><code>ui/</code></td>
+        <td>Pygame-driven view layer. Input dispatch, widget tree, rendering, and tools.</td>
+        <td><span class="file">input_handler.py</span> <span class="file">ui_manager.py</span> <span class="file">tools.py</span> <span class="file">renderer.py</span></td>
+      </tr>
+      <tr>
+        <td><code>core/</code></td>
+        <td>The orchestration layer. Scene + Session + Commands + ToolContext + supporting state objects.</td>
+        <td><span class="file">scene.py</span> <span class="file">session.py</span> <span class="file">tool_context.py</span> <span class="file">commands.py</span></td>
+      </tr>
+      <tr>
+        <td><code>model/</code></td>
+        <td>The CAD domain. Sketch, geometry primitives, constraints, the PBD solver, materials, process objects.</td>
+        <td><span class="file">sketch.py</span> <span class="file">geometry.py</span> <span class="file">constraints.py</span> <span class="file">solver.py</span> <span class="file">solver_kernels.py</span></td>
+      </tr>
+      <tr>
+        <td><code>engine/</code></td>
+        <td>The physics domain. Particle simulation, the Compiler bridge, the particle brush.</td>
+        <td><span class="file">simulation.py</span> <span class="file">compiler.py</span> <span class="file">physics_core.py</span> <span class="file">particle_brush.py</span></td>
+      </tr>
+      <tr>
+        <td><code>shared/</code> · <code>ui_folly/</code></td>
+        <td>Shared config (a thin glue file) and the playable launcher demo (peripheral, not in scope for the architecture).</td>
+        <td><span class="file">shared/config.py</span></td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- ===================== 4. SCENE ====================== -->
+  <section id="scene" class="section-h">
+    <h2><span class="num">04</span>Scene: The Orchestrator</h2>
+    <p class="lede">Scene is the single document. It owns the CAD state, the physics state, the bridge between them, and the undo stack. Everything else — UI, tools, the input handler — exists to feed it events.</p>
+
+    <h3>What Scene owns</h3>
+    <pre><code><span class="tok-k">class</span> <span class="tok-t">Scene</span>:
+    <span class="tok-k">def</span> <span class="tok-fn">__init__</span>(<span class="tok-n">self</span>, skip_warmup=<span class="tok-k">False</span>):
+        <span class="tok-c"># CAD Domain</span>
+        <span class="tok-n">self</span>.sketch          = <span class="tok-fn">Sketch</span>()
+        <span class="tok-n">self</span>.material_manager = <span class="tok-fn">MaterialManager</span>(<span class="tok-n">self</span>.sketch)
+        <span class="tok-n">self</span>.geo             = <span class="tok-fn">GeometryManager</span>(<span class="tok-n">self</span>.sketch)
+
+        <span class="tok-c"># Physics Domain (no CAD knowledge)</span>
+        <span class="tok-n">self</span>.simulation      = <span class="tok-fn">Simulation</span>(skip_warmup=skip_warmup)
+
+        <span class="tok-c"># Bridge — knows both sides</span>
+        <span class="tok-n">self</span>.compiler        = <span class="tok-fn">Compiler</span>(<span class="tok-n">self</span>.sketch, <span class="tok-n">self</span>.simulation, <span class="tok-n">self</span>.material_manager)
+
+        <span class="tok-c"># Particle brush (uses the snapshot-undo exception)</span>
+        <span class="tok-n">self</span>._brush          = <span class="tok-fn">ParticleBrush</span>(<span class="tok-n">self</span>.simulation)
+
+        <span class="tok-c"># History — the source of truth for "what happened"</span>
+        <span class="tok-n">self</span>.commands        = <span class="tok-fn">CommandQueue</span>(max_history=<span class="tok-s">50</span>)
+
+        <span class="tok-c"># Boundary conditions</span>
+        <span class="tok-n">self</span>.process_objects = []
+
+        <span class="tok-c"># Dirty flags govern the orchestration loop</span>
+        <span class="tok-n">self</span>._topology_dirty = <span class="tok-k">False</span>
+        <span class="tok-n">self</span>._geometry_dirty = <span class="tok-k">False</span>
+</code></pre>
+
+    <h3>The two dirty flags</h3>
+    <p>Performance hinges on knowing whether a change altered <em>topology</em> (atom count) or just <em>geometry</em> (atom positions). The Scene tracks both via <code>command.changes_topology</code>:</p>
+    <div class="tbl-wrap">
+    <table>
+      <thead>
+      <tr><th>Flag</th><th>Set by</th><th>Triggers</th><th>Cost</th></tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><code>_topology_dirty</code></td>
+        <td>AddLine, AddCircle, RemoveEntity, AddConstraint, SetMaterial, SetEntityDynamic</td>
+        <td><code>compiler.rebuild()</code> — full atom regeneration + joint-id assignment + Numba warmup if needed</td>
+        <td>Expensive (O(entities × atoms))</td>
+      </tr>
+      <tr>
+        <td><code>_geometry_dirty</code></td>
+        <td>MoveEntity, SetPoint, SetCircleRadius, SetEntityGeometry, ToggleAnchor</td>
+        <td><code>simulation.sync_entity_arrays()</code> + <code>sync_static_atoms_to_geometry()</code> — flat array copy</td>
+        <td>Cheap (O(entities))</td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+    <p>This split is what lets dragging an endpoint feel responsive. The drag fires <em>geometry-only</em> commands at 60 Hz — no rebuilds, no kernel warmups, just array writes.</p>
+  </section>
+
+  <!-- ===================== 5. ORCHESTRATION ====================== -->
+  <section id="orchestration" class="section-h">
+    <h2><span class="num">05</span>The 8-Step Update Loop</h2>
+    <p class="lede"><code>Scene.update(dt, geo_time, run_physics, physics_steps)</code> is the single frame entry point. The order matters — the loop is engineered for two-way CAD↔Physics coupling, and shuffling steps breaks invariants the rest of the code depends on.</p>
+
+    <ol class="steps">
+      <li class="cond">
+        <div class="step-title">Topology Check</div>
+        <div class="step-detail">If <code>_topology_dirty</code>, call <code>self.rebuild()</code> — full <code>Compiler.rebuild()</code> + snap tethered atoms to anchors. Clear both dirty flags.</div>
+        <div class="step-cite">scene.py:293-296</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Driver Update</div>
+        <div class="step-detail">Snapshot constraint values, call <code>sketch.update_drivers(geo_time)</code> to animate any time-driven constraints (e.g., motors), then snapshot again to detect change. <code>geometry_moved = True</code> if anything changed.</div>
+        <div class="step-cite">scene.py:298-305</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Sync Entity Arrays (pre-physics)</div>
+        <div class="step-detail">If geometry is dirty, copy current entity positions into Simulation flat arrays via <code>sync_entity_arrays()</code> and teleport static atoms via <code>sync_static_atoms_to_geometry()</code>. This is the fast path — no recompile.</div>
+        <div class="step-cite">scene.py:307-314</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Physics Sub-Loop (Two-Way Coupling)</div>
+        <div class="step-detail">Clear entity force accumulators, run <code>simulation.apply_tether_forces()</code> (Numba kernel), retrieve accumulated forces with <code>get_entity_forces()</code>, apply force + torque to each dynamic entity, integrate, then sync back. <strong>This is where particles push back on geometry.</strong></div>
+        <div class="step-cite">scene.py:316-320 → _run_physics_coupling: 354-415</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Constraint Solve</div>
+        <div class="step-detail">If <code>sketch.constraints</code> exist <strong>or</strong> <code>sketch.interaction_data</code> is set (User Servo active), run <code>sketch.solve()</code>. PBD iterations. The interaction data is treated as the highest-priority constraint.</div>
+        <div class="step-cite">scene.py:323-326</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Post-Constraint Sync</div>
+        <div class="step-detail">After the solver moves geometry, re-sync entity arrays and re-teleport static atoms so the next physics step sees the corrected positions.</div>
+        <div class="step-cite">scene.py:328-333</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Process Objects</div>
+        <div class="step-detail">For each enabled <code>ProcessObject</code> in <code>self.process_objects</code>, call <code>obj.execute(simulation, dt)</code>. Sources spawn particles; sinks absorb. Particles spawned this frame participate in the next frame's physics.</div>
+        <div class="step-cite">scene.py:335-339</div>
+      </li>
+      <li class="cond">
+        <div class="step-title">Physics Step</div>
+        <div class="step-detail">If physics is enabled and not paused, call <code>simulation.step(physics_steps)</code> — Verlet integration with spatial-hash collision over <code>physics_steps</code> sub-steps.</div>
+        <div class="step-cite">scene.py:341-343</div>
+      </li>
+    </ol>
+
+    <div class="card callout info">
+      <div class="title">Why "two-way" matters</div>
+      <p>If you've worked with one-way CAD-to-physics pipelines, the loop above might look elaborate. The two extra sync passes (steps 3 and 6) and the dedicated physics sub-loop (step 4) exist <em>specifically</em> because tethered atoms accumulate forces that flow back into entity dynamics. That's how a CAD-drawn flexible membrane can deform under particle pressure — the same line you drew with the LineTool can be pushed around by hot fluid hitting it.</p>
+    </div>
+
+    <h3>What does <em>not</em> happen during update</h3>
+    <ul class="clean">
+      <li><strong>No event handling.</strong> Events are dispatched by <code>InputHandler</code> before <code>update()</code> is called.</li>
+      <li><strong>No rendering.</strong> <code>FlowStateApp.render()</code> is a separate phase after <code>update()</code>.</li>
+      <li><strong>No autosave / file I/O.</strong> Save/load happens through dialogs, not the loop.</li>
+    </ul>
+  </section>
+
+  <!-- ===================== 6. COMMANDS ====================== -->
+  <section id="commands" class="section-h">
+    <h2><span class="num">06</span>The Command Pattern</h2>
+    <p class="lede">Every change to the Vault is a Command. Three orthogonal flags govern its behavior: <code>historize</code> (does it enter the undo stack?), <code>supersede</code> (does it replace the previous command?), and <code>changes_topology</code> (does it require a rebuild?). Mastering these three flags is mastering 80% of the command system.</p>
+
+    <h3>The contract</h3>
+    <pre><code><span class="tok-k">class</span> <span class="tok-t">Command</span>(<span class="tok-t">ABC</span>):
+    changes_topology = <span class="tok-k">False</span>          <span class="tok-c"># class-level — override per type</span>
+
+    <span class="tok-k">def</span> <span class="tok-fn">__init__</span>(<span class="tok-n">self</span>, historize=<span class="tok-k">True</span>, supersede=<span class="tok-k">False</span>):
+        <span class="tok-n">self</span>.historize = historize <span class="tok-c"># add to undo stack?</span>
+        <span class="tok-n">self</span>.supersede = supersede <span class="tok-c"># replace previous?</span>
+
+    <span class="tok-k">@abstractmethod</span>
+    <span class="tok-k">def</span> <span class="tok-fn">execute</span>(<span class="tok-n">self</span>) -> <span class="tok-t">bool</span>: ...
+    <span class="tok-k">@abstractmethod</span>
+    <span class="tok-k">def</span> <span class="tok-fn">undo</span>(<span class="tok-n">self</span>): ...
+    <span class="tok-k">def</span> <span class="tok-fn">redo</span>(<span class="tok-n">self</span>): <span class="tok-k">return</span> <span class="tok-n">self</span>.<span class="tok-fn">execute</span>()
+    <span class="tok-k">def</span> <span class="tok-fn">merge</span>(<span class="tok-n">self</span>, other) -> <span class="tok-t">bool</span>: <span class="tok-k">return</span> <span class="tok-k">False</span>
+</code></pre>
+
+    <h3>Three flags, six interesting combinations</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>historize</th><th>supersede</th><th>Pattern</th><th>Used by</th><th>Effect</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td class="center"><span class="yes">✓</span></td><td class="center"><span class="no">✗</span></td>
+        <td><strong>Initial mutation</strong></td>
+        <td>MOUSEDOWN of a creation tool</td>
+        <td>Push new entry on the stack. Clear the redo branch.</td>
+      </tr>
+      <tr>
+        <td class="center"><span class="yes">✓</span></td><td class="center"><span class="yes">✓</span></td>
+        <td><strong>Live preview update</strong></td>
+        <td>MOUSEMOVE of LineTool, SelectTool drag</td>
+        <td>Pop+undo previous, execute new, push. Stack height stays constant. Final MOUSEUP version stays.</td>
+      </tr>
+      <tr>
+        <td class="center"><span class="no">✗</span></td><td class="center"><span class="no">✗</span></td>
+        <td><strong>Transient ephemeral</strong></td>
+        <td>Rare — used when feedback should not be undoable at all</td>
+        <td>Execute, do not record, do not clear redo.</td>
+      </tr>
+      <tr>
+        <td class="center"><span class="yes">✓</span></td><td class="center"><span class="no">✗</span> + <code>merge()</code></td>
+        <td><strong>Mergeable continuation</strong></td>
+        <td>Sequential drags of the same handle</td>
+        <td>If top-of-stack accepts a merge, combine; otherwise push new.</td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Lifecycle of a single line draw</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 760 200">
+        <!-- Timeline -->
+        <line x1="40" y1="100" x2="720" y2="100" stroke="var(--line)" stroke-width="2"/>
+
+        <!-- Events -->
+        <g>
+          <circle cx="100" cy="100" r="6" fill="var(--c-cmd)"/>
+          <text x="100" y="60" text-anchor="middle" class="lbl" fill="var(--c-cmd)" style="font-weight:600;">MOUSEDOWN</text>
+          <text x="100" y="78" text-anchor="middle" class="lbl-sm">click start</text>
+          <text x="100" y="135" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">AddLineCommand(</text>
+          <text x="100" y="148" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">historize=True,</text>
+          <text x="100" y="161" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">supersede=False)</text>
+          <text x="100" y="182" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">stack: [AddLine]</text>
+        </g>
+
+        <g>
+          <circle cx="290" cy="100" r="5" fill="var(--c-bridge)"/>
+          <circle cx="350" cy="100" r="5" fill="var(--c-bridge)"/>
+          <circle cx="410" cy="100" r="5" fill="var(--c-bridge)"/>
+          <text x="350" y="60" text-anchor="middle" class="lbl" fill="var(--c-bridge)" style="font-weight:600;">MOUSEMOVE × N</text>
+          <text x="350" y="78" text-anchor="middle" class="lbl-sm">live preview</text>
+          <text x="350" y="135" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">AddLineCommand(</text>
+          <text x="350" y="148" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">historize=True,</text>
+          <text x="350" y="161" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">supersede=True)</text>
+          <text x="350" y="182" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">stack: [AddLine] (replaced each move)</text>
+        </g>
+
+        <g>
+          <circle cx="600" cy="100" r="6" fill="var(--c-cmd)"/>
+          <text x="600" y="60" text-anchor="middle" class="lbl" fill="var(--c-cmd)" style="font-weight:600;">MOUSEUP</text>
+          <text x="600" y="78" text-anchor="middle" class="lbl-sm">commit</text>
+          <text x="600" y="135" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">AddLineCommand(</text>
+          <text x="600" y="148" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">historize=True,</text>
+          <text x="600" y="161" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--text-dim)">supersede=True)</text>
+          <text x="600" y="182" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">stack: [AddLine] (final)</text>
+        </g>
+
+        <text x="380" y="22" text-anchor="middle" class="lbl" fill="var(--text-dim)" style="font-size:13px;">→ time</text>
+      </svg>
+      <div class="caption">The <em>supersede</em> trick: every MOUSEMOVE replaces the in-flight command on the stack. Net effect after MOUSEUP: a single, undoable "you drew a line from A to B" entry — not 47 micro-edits.</div>
+    </div>
+
+    <h3>Where the commands live</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>File</th><th>Commands</th><th>changes_topology?</th></tr></thead>
+      <tbody>
+      <tr>
+        <td><span class="file">model/commands/geometry.py</span></td>
+        <td><code>AddLineCommand</code>, <code>AddCircleCommand</code>, <code>AddRectangleCommand</code>, <code>RemoveEntityCommand</code>, <code>SetEntityGeometryCommand</code>, <code>MoveEntityCommand</code>, <code>MoveMultipleCommand</code></td>
+        <td>Adds/removes ✓ · moves ✗</td>
+      </tr>
+      <tr>
+        <td><span class="file">model/commands/points.py</span></td>
+        <td><code>SetPointCommand</code>, <code>SetCircleRadiusCommand</code></td>
+        <td>✗ (geometry only)</td>
+      </tr>
+      <tr>
+        <td><span class="file">model/commands/constraints.py</span></td>
+        <td><code>AddConstraintCommand</code>, <code>RemoveConstraintCommand</code>, <code>ToggleAnchorCommand</code>, <code>ToggleInfiniteCommand</code>, <code>SetDriverCommand</code></td>
+        <td>Add/remove ✓ · toggle ✗</td>
+      </tr>
+      <tr>
+        <td><span class="file">model/commands/properties.py</span></td>
+        <td><code>SetPhysicalCommand</code>, <code>SetMaterialCommand</code>, <code>SetEntityDynamicCommand</code></td>
+        <td>✓ (changes atomization or tethering)</td>
+      </tr>
+      <tr>
+        <td><span class="file">model/commands/composite.py</span></td>
+        <td><code>CompositeCommand</code> (groups multiple commands as one undoable unit)</td>
+        <td>Inherits from children</td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <details>
+      <summary><code>discard()</code> vs <code>undo()</code> — a subtle distinction</summary>
+      <p style="margin-top:10px;"><code>scene.undo()</code> moves the top command to the redo stack — you can press Ctrl+Y to bring it back. <code>scene.discard()</code> drops it permanently. Tools call <code>discard()</code> when the user explicitly cancels (Escape during a draw); they call <code>undo()</code> when the user presses Ctrl+Z. Same internal mechanism, different intent — and the redo stack is the difference.</p>
+    </details>
+  </section>
+
+  <!-- ===================== 7. SKETCH + SOLVER ====================== -->
+  <section id="sketch" class="section-h">
+    <h2><span class="num">07</span>Sketch &amp; The Solver</h2>
+    <p class="lede">The Sketch is the CAD half of the document. It holds entities, constraints, and one transient buffer that turns mouse drags into solver constraints — the User Servo.</p>
+
+    <h3>Entities &amp; constraints</h3>
+    <p>Three primitive entity types in <span class="file">model/geometry.py</span>:</p>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Entity</th><th>Points</th><th>Geometry</th><th>Notable flags</th></tr></thead>
+      <tbody>
+      <tr><td><code>Point</code></td><td>1</td><td>(x, y) anchor</td><td><code>is_handle</code> — marks ProcessObject handles</td></tr>
+      <tr><td><code>Line</code></td><td>2</td><td>start, end</td><td><code>is_reference</code> — non-physical guide; <code>dynamic</code> — tethered or static</td></tr>
+      <tr><td><code>Circle</code></td><td>1</td><td>center, radius</td><td><code>is_reference</code>, <code>dynamic</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Constraints come in two flavors that the solver treats differently:</p>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Class</th><th>Examples</th><th>Solver phase</th></tr></thead>
+      <tbody>
+      <tr>
+        <td><strong>Unary</strong> (single-entity)</td>
+        <td><code>LENGTH</code>, <code>RADIUS</code>, <code>HORIZONTAL</code>, <code>VERTICAL</code>, <code>FIX</code></td>
+        <td>Phase 2 — establishes "entity truth"</td>
+      </tr>
+      <tr>
+        <td><strong>Binary</strong> (multi-entity)</td>
+        <td><code>COINCIDENT</code>, <code>COLLINEAR</code>, <code>PARALLEL</code>, <code>PERPENDICULAR</code>, <code>EQUAL</code>, <code>TANGENT</code>, <code>DISTANCE</code></td>
+        <td>Phase 3 — propagates between entities</td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>The User Servo</h3>
+    <p>The <code>Sketch.interaction_data</code> field is the cleverest piece of the whole CAD architecture. It is not a Constraint object — it's a transient dict that the solver reads as <em>highest-priority</em> constraint at the start of each iteration:</p>
+
+    <pre><code>sketch.interaction_data = {
+    <span class="tok-s">'target'</span>:     (x, y),       <span class="tok-c"># where the mouse is in world coords</span>
+    <span class="tok-s">'entity_idx'</span>: <span class="tok-n">int</span>,         <span class="tok-c"># which entity is being dragged</span>
+    <span class="tok-s">'handle_t'</span>:   <span class="tok-n">float</span> | <span class="tok-k">None</span>, <span class="tok-c"># body drag: parametric position 0.0–1.0 on a line</span>
+    <span class="tok-s">'point_idx'</span>:  <span class="tok-n">int</span>   | <span class="tok-k">None</span>, <span class="tok-c"># endpoint drag: which control point</span>
+}</code></pre>
+
+    <p>The solver phases for each iteration:</p>
+    <pre><code><span class="tok-k">for</span> _ <span class="tok-k">in</span> <span class="tok-fn">range</span>(iterations):
+    <span class="tok-c"># Phase 1: User Servo (the mouse "pulls" the entity)</span>
+    <span class="tok-k">if</span> interaction_data:
+        Solver.<span class="tok-fn">_solve_interaction</span>(entities, interaction_data)
+    <span class="tok-c"># Phase 2: Unary constraints (LENGTH, RADIUS, ...)</span>
+    <span class="tok-k">for</span> c <span class="tok-k">in</span> unary_constraints:
+        Solver.<span class="tok-fn">solve_single</span>(c, entities)
+    <span class="tok-c"># Phase 3: Binary constraints (COINCIDENT, PARALLEL, ...)</span>
+    <span class="tok-k">for</span> c <span class="tok-k">in</span> binary_constraints:
+        Solver.<span class="tok-fn">solve_single</span>(c, entities)
+</code></pre>
+
+    <p>This phasing is what makes a constrained drag feel physical: pulling on a length-locked line endpoint produces rotation around the other anchor, not stretching.</p>
+
+    <h3>Two backends, one API</h3>
+    <div class="two-col">
+      <div class="card">
+        <div class="title">Legacy (Python OOP)</div>
+        <p>Per-constraint methods: <code>_solve_coincident_pt_pt</code>, <code>_solve_length</code>, etc. Easy to step through with a debugger, easy to extend with a new constraint type. Slow — Python loops over every iteration.</p>
+      </div>
+      <div class="card">
+        <div class="title">Numba (JIT kernels)</div>
+        <p>Constraints flattened into typed numpy arrays; kernel functions in <span class="file">model/solver_kernels.py</span> operate on flat data. Order-of-magnitude faster. JIT-compiled at first use; warmup amortized at scene load (skipped in Editor mode for fast startup).</p>
+      </div>
+    </div>
+    <p>Toggle live with <strong>F9</strong>. Iteration count adjustable with F10/F11. Both backends produce identical results; the toggle exists for benchmarking.</p>
+  </section>
+
+  <!-- ===================== 8. COMPILER ====================== -->
+  <section id="compiler" class="section-h">
+    <h2><span class="num">08</span>The Compiler Bridge</h2>
+    <p class="lede">The Compiler reads CAD geometry and writes particle data. It produces two distinct kinds of atoms — and the difference between them is the difference between a static wall and a dynamic, force-coupled membrane.</p>
+
+    <h3>Static atoms vs tethered atoms</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 800 320">
+        <!-- Static atoms side -->
+        <g>
+          <text x="200" y="30" text-anchor="middle" class="lbl" style="font-weight:700;font-size:14px;" fill="var(--c-sim)">Static atoms — is_static = 1</text>
+          <text x="200" y="50" text-anchor="middle" class="lbl-sm">Geometry drives atoms. One-way.</text>
+
+          <!-- Static line -->
+          <line x1="80" y1="170" x2="320" y2="120" stroke="var(--c-sketch)" stroke-width="3"/>
+          <!-- Atoms on line -->
+          <circle cx="100" cy="166" r="5" fill="var(--c-sim)" stroke="var(--c-sim)" stroke-width="1"/>
+          <circle cx="140" cy="158" r="5" fill="var(--c-sim)" stroke="var(--c-sim)" stroke-width="1"/>
+          <circle cx="180" cy="150" r="5" fill="var(--c-sim)" stroke="var(--c-sim)" stroke-width="1"/>
+          <circle cx="220" cy="142" r="5" fill="var(--c-sim)" stroke="var(--c-sim)" stroke-width="1"/>
+          <circle cx="260" cy="134" r="5" fill="var(--c-sim)" stroke="var(--c-sim)" stroke-width="1"/>
+          <circle cx="300" cy="126" r="5" fill="var(--c-sim)" stroke="var(--c-sim)" stroke-width="1"/>
+
+          <!-- Arrow from line to atoms -->
+          <path d="M 90 200 Q 200 220 310 195" class="arrow" stroke="var(--c-bridge)" marker-end="url(#arr-violet)"/>
+          <text x="200" y="235" text-anchor="middle" class="lbl-sm" fill="var(--c-bridge)">teleported each frame</text>
+          <text x="200" y="250" text-anchor="middle" class="lbl-sm" fill="var(--c-bridge)">via local_t parameter</text>
+
+          <text x="200" y="290" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">Walls. Fixed obstacles. The CAD line says where, the atoms follow.</text>
+        </g>
+
+        <!-- Tethered atoms side -->
+        <g>
+          <text x="600" y="30" text-anchor="middle" class="lbl" style="font-weight:700;font-size:14px;" fill="var(--c-sim)">Tethered atoms — is_static = 3</text>
+          <text x="600" y="50" text-anchor="middle" class="lbl-sm">Two-way. Atoms pull on geometry.</text>
+
+          <!-- Dynamic line (drawn slightly bowed) -->
+          <path d="M 480 170 Q 600 105 720 130" stroke="var(--c-sketch)" stroke-width="3" fill="none"/>
+          <!-- Anchor positions (where line "wants" them) -->
+          <circle cx="510" cy="160" r="3" fill="none" stroke="var(--text-faint)" stroke-dasharray="2 2"/>
+          <circle cx="550" cy="138" r="3" fill="none" stroke="var(--text-faint)" stroke-dasharray="2 2"/>
+          <circle cx="600" cy="120" r="3" fill="none" stroke="var(--text-faint)" stroke-dasharray="2 2"/>
+          <circle cx="650" cy="115" r="3" fill="none" stroke="var(--text-faint)" stroke-dasharray="2 2"/>
+          <circle cx="700" cy="125" r="3" fill="none" stroke="var(--text-faint)" stroke-dasharray="2 2"/>
+
+          <!-- Actual atoms (slightly displaced) -->
+          <circle cx="515" cy="180" r="5" fill="var(--c-sim)"/>
+          <circle cx="555" cy="155" r="5" fill="var(--c-sim)"/>
+          <circle cx="605" cy="138" r="5" fill="var(--c-sim)"/>
+          <circle cx="655" cy="135" r="5" fill="var(--c-sim)"/>
+          <circle cx="705" cy="142" r="5" fill="var(--c-sim)"/>
+
+          <!-- Springs between anchors and atoms -->
+          <line x1="510" y1="160" x2="515" y2="180" stroke="var(--c-cmd)" stroke-width="1" stroke-dasharray="2 2"/>
+          <line x1="550" y1="138" x2="555" y2="155" stroke="var(--c-cmd)" stroke-width="1" stroke-dasharray="2 2"/>
+          <line x1="600" y1="120" x2="605" y2="138" stroke="var(--c-cmd)" stroke-width="1" stroke-dasharray="2 2"/>
+          <line x1="650" y1="115" x2="655" y2="135" stroke="var(--c-cmd)" stroke-width="1" stroke-dasharray="2 2"/>
+          <line x1="700" y1="125" x2="705" y2="142" stroke="var(--c-cmd)" stroke-width="1" stroke-dasharray="2 2"/>
+
+          <!-- Two-way arrows -->
+          <path d="M 470 200 L 730 200" class="arrow" stroke="var(--c-bridge)" marker-end="url(#arr-violet)" marker-start="url(#arr-violet)"/>
+          <text x="600" y="235" text-anchor="middle" class="lbl-sm" fill="var(--c-bridge)">spring couples both ways</text>
+          <text x="600" y="250" text-anchor="middle" class="lbl-sm" fill="var(--c-bridge)">force ↔ position</text>
+
+          <text x="600" y="290" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">Flexible membranes. Particles deform geometry, geometry restores.</text>
+        </g>
+
+        <!-- Divider -->
+        <line x1="400" y1="40" x2="400" y2="280" stroke="var(--line)" stroke-dasharray="4 4"/>
+      </svg>
+      <div class="caption">Both atom kinds carry the same tether metadata (<code>tether_entity_idx</code>, <code>tether_local_pos</code>). The difference is <code>tether_stiffness</code>: zero on static atoms (just teleport), non-zero on tethered atoms (Hooke's law spring with force feedback into entity dynamics).</div>
+    </div>
+
+    <h3>Three Compiler entry points</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>When called</th><th>Cost</th><th>What it does</th></tr></thead>
+      <tbody>
+      <tr>
+        <td><code>compiler.rebuild()</code></td>
+        <td>Topology change (entity added/removed, material change, dynamic toggle)</td>
+        <td>Expensive (O(entities × atoms))</td>
+        <td>Compact arrays, clear joint_ids, iterate entities, generate atoms via <code>_compile_line()</code> / <code>_compile_circle()</code>, assign joint IDs via Union-Find, sync entity arrays.</td>
+      </tr>
+      <tr>
+        <td><code>simulation.sync_entity_arrays(entities)</code></td>
+        <td>Position change (every frame if <code>_geometry_dirty</code>)</td>
+        <td>Cheap (O(entities))</td>
+        <td>Copy current entity positions into the flat per-entity arrays the kernels read.</td>
+      </tr>
+      <tr>
+        <td><code>simulation.sync_static_atoms_to_geometry()</code></td>
+        <td>Same trigger as above</td>
+        <td>Cheap (O(static atoms))</td>
+        <td>Re-interpolate each static atom's position from its parent entity's current geometry using the stored local_t parameter.</td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Joint IDs: the coincidence-aware optimization</h3>
+    <p>When two lines share a coincident endpoint, the atoms at that endpoint would normally repel each other through Lennard-Jones forces. The Compiler runs a Union-Find pass after compilation: atoms at coincident vertices receive a shared, non-zero <code>joint_id</code>. The physics kernel skips LJ calculations between atoms with the same joint_id. Result: clean joints, no exploding corners.</p>
+  </section>
+
+  <!-- ===================== 9. SIMULATION ====================== -->
+  <section id="simulation" class="section-h">
+    <h2><span class="num">09</span>Simulation: Pure Physics</h2>
+    <p class="lede"><span class="file">engine/simulation.py</span> contains no CAD vocabulary. It speaks only <em>particle</em> — flat numpy arrays, a Verlet integrator, a spatial hash, a Lennard-Jones kernel. Everything CAD-shaped is the Compiler's responsibility.</p>
+
+    <h3>The arrays</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Array</th><th>Shape</th><th>Meaning</th></tr></thead>
+      <tbody>
+      <tr><td class="mono">pos_x, pos_y</td><td>(N,)</td><td>Particle positions</td></tr>
+      <tr><td class="mono">vel_x, vel_y</td><td>(N,)</td><td>Particle velocities (Verlet uses position deltas internally)</td></tr>
+      <tr><td class="mono">is_static</td><td>(N,) int</td><td>0 = fluid, 1 = wall, 3 = tethered to entity</td></tr>
+      <tr><td class="mono">sigma, epsilon, mass</td><td>(N,)</td><td>Per-particle Lennard-Jones parameters</td></tr>
+      <tr><td class="mono">color</td><td>(N, 3)</td><td>RGB for rendering</td></tr>
+      <tr><td class="mono">joint_id</td><td>(N,) int</td><td>0 = free; non-zero = belongs to a coincidence cluster</td></tr>
+      <tr><td class="mono">tether_entity_idx</td><td>(N,) int</td><td>Parent entity index (-1 if none)</td></tr>
+      <tr><td class="mono">tether_local_pos</td><td>(N, 2)</td><td>Stored local-coordinate of tether anchor</td></tr>
+      <tr><td class="mono">tether_stiffness</td><td>(N,)</td><td>Spring constant; 0 for static atoms</td></tr>
+      <tr><td class="mono">entity_pos, entity_vel</td><td>(E, 2)</td><td>Per-entity rigid-body state, synced from Sketch each frame</td></tr>
+      <tr><td class="mono">entity_forces</td><td>(E, 3)</td><td>Force_x, force_y, torque accumulators (cleared per frame)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>What <code>simulation.step()</code> does</h3>
+    <ol class="clean">
+      <li>Apply external forces (gravity, etc.) to fluid particles</li>
+      <li>Verlet integration: <code>pos += vel * dt + 0.5 * acc * dt²</code></li>
+      <li>Build spatial hash by binning particles into a coarse grid</li>
+      <li>Lennard-Jones force computation using the spatial hash for neighbor lookup</li>
+      <li>Skip force calculation for atoms sharing the same non-zero <code>joint_id</code></li>
+      <li>Update velocities</li>
+      <li>(For tethered atoms) accumulate forces back into <code>entity_forces</code></li>
+    </ol>
+
+    <p>All five kernels are Numba-compiled. The first call after import is slow (warmup) — subsequent calls run at near-C speed. Warmup is preloaded at scene init unless <code>skip_warmup=True</code> (Editor mode bypasses physics entirely so warmup is wasted there).</p>
+  </section>
+
+  <!-- ===================== 10. TOOLCONTEXT ====================== -->
+  <section id="toolctx" class="section-h">
+    <h2><span class="num">10</span>The ToolContext Facade</h2>
+    <p class="lede">ToolContext is a 600-line wall between tools and the rest of the application. CR-2026-001 created it to eliminate the God Object pattern; CR-112 finished migrating every tool to use it exclusively. This is its complete public surface — tabbed by category.</p>
+
+    <div class="tabs" id="tc-tabs">
+      <button class="active" data-tc="tc-write">Write path</button>
+      <button data-tc="tc-view">View state</button>
+      <button data-tc="tc-interact">Interaction</button>
+      <button data-tc="tc-query">Geometry</button>
+      <button data-tc="tc-coord">Transforms</button>
+      <button data-tc="tc-brush">Brush</button>
+      <button data-tc="tc-servo">Servo</button>
+      <button data-tc="tc-cb">Constraints</button>
+      <button data-tc="tc-internal">⚠ Internal</button>
+    </div>
+
+    <div class="tab-panel active" id="tc-write">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Returns</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">execute(command)</td><td>bool</td><td>The <strong>only</strong> mutation path. Delegates to <code>scene.execute()</code>.</td></tr>
+          <tr><td class="mono">discard()</td><td>bool</td><td>Drop last command (cancel; cannot be redone).</td></tr>
+          <tr><td class="mono">create_coincident_command(e1, p1, e2, p2)</td><td>cmd | None</td><td>Factory — keeps <code>Coincident</code> import out of tools.</td></tr>
+          <tr><td class="mono">add_process_object(obj)</td><td>None</td><td>Register a Source/Sink (was direct <code>self.app.scene.add_process_object</code> before CR-112).</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tc-view">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Property</th><th>Type</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">zoom</td><td>float</td><td><code>session.camera.zoom</code></td></tr>
+          <tr><td class="mono">pan</td><td>(float, float)</td><td><code>session.camera.pan_x/_y</code></td></tr>
+          <tr><td class="mono">world_size</td><td>float</td><td><code>scene.simulation.world_size</code></td></tr>
+          <tr><td class="mono">layout</td><td>dict</td><td><code>app.layout</code> — screen rectangles</td></tr>
+          <tr><td class="mono">mode</td><td>int</td><td><code>session.mode</code> — MODE_SIM / MODE_EDITOR</td></tr>
+          <tr><td class="mono">auto_atomize</td><td>bool</td><td><code>session.auto_atomize</code></td></tr>
+          <tr><td class="mono">get_active_material()</td><td>dict</td><td>Returns a <em>copy</em> — prevents mutation</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tc-interact">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Member</th><th>R/W</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">interaction_state</td><td><span class="pill read">read</span><span class="pill write">write</span></td><td>InteractionState enum on Session.</td></tr>
+          <tr><td class="mono">selection</td><td><span class="pill read">read</span></td><td>SelectionManager: <code>.walls</code>, <code>.points</code>, <code>.clear()</code>.</td></tr>
+          <tr><td class="mono">snap_target</td><td><span class="pill read">read</span><span class="pill write">write</span></td><td>Pending snap pair via ConstraintBuilder.</td></tr>
+          <tr><td class="mono">set_status(message)</td><td><span class="pill write">write</span></td><td>Status bar message.</td></tr>
+          <tr><td class="mono">play_sound(sound_id)</td><td><span class="pill write">write</span></td><td>UI sound effect.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tc-query">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Returns</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">get_entity_count()</td><td>int</td><td>How many entities exist.</td></tr>
+          <tr><td class="mono">find_entity_at(x, y, r)</td><td>int</td><td>Hit-test world coords; returns idx or -1.</td></tr>
+          <tr><td class="mono">get_entity_type(i)</td><td>EntityType?</td><td>Enum value of entity i.</td></tr>
+          <tr><td class="mono">get_entity_render_data(i)</td><td>dict?</td><td>What the renderer needs.</td></tr>
+          <tr><td class="mono">get_entity_point(ei, pi)</td><td>(x,y)?</td><td>Read a control point.</td></tr>
+          <tr><td class="mono">get_entity_point_count(ei)</td><td>int</td><td>Number of control points.</td></tr>
+          <tr><td class="mono">get_entity_parameter_at(ei, x, y)</td><td>float?</td><td>Closest-point parameter t ∈ [0,1].</td></tr>
+          <tr><td class="mono">is_entity_anchored(ei, pi)</td><td>bool</td><td>Anchor flag check.</td></tr>
+          <tr><td class="mono">find_snap(sx, sy, anchor_only, exclude)</td><td>(int,int)?</td><td>Snap target near screen coords.</td></tr>
+          <tr><td class="mono">iter_entities()</td><td>iterator</td><td>Yield (idx, read-only dict) tuples.</td></tr>
+          <tr><td class="mono">get_entity_direct(i)</td><td>Entity</td><td><span class="pill intern">caution</span> Direct entity ref. WARN docstring says "command construction only — do NOT mutate."</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tc-coord">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">screen_to_world(sx, sy)</td><td>Pixel → world. Uses zoom, pan, layout.</td></tr>
+          <tr><td class="mono">world_to_screen(wx, wy)</td><td>World → pixel. Inverse of the above.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tc-brush">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Used by</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">paint_particles(x, y, r, mat=None)</td><td>BrushTool</td><td>Add fluid particles at world position. Returns count added.</td></tr>
+          <tr><td class="mono">erase_particles(x, y, r)</td><td>BrushTool</td><td>Remove particles. Returns count removed.</td></tr>
+          <tr><td class="mono">snapshot_particles()</td><td>BrushTool MOUSEDOWN</td><td>Take simulation snapshot — enables undo for the whole brush stroke.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="margin-top:14px;color:var(--text-dim);">These three methods are the documented Air Gap exception. Brush mutates Simulation directly because per-particle commands would explode the undo stack.</p>
+    </div>
+
+    <div class="tab-panel" id="tc-servo">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>When called</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">set_interaction_data(target, ei, *, handle_t=None, point_idx=None)</td><td>MOUSEDOWN of drag</td><td>Inject the User Servo. Keyword-only handle_t / point_idx (CR-112 strengthening).</td></tr>
+          <tr><td class="mono">update_interaction_target(target)</td><td>MOUSEMOVE during drag</td><td>Move the target point each frame.</td></tr>
+          <tr><td class="mono">clear_interaction_data()</td><td>MOUSEUP / cancel / tool switch</td><td>Drop the Servo. Solver returns to baseline.</td></tr>
+          <tr><td class="mono">has_interaction_data()</td><td>any</td><td>True if a drag is active right now.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="margin-top:14px;color:var(--text-dim);">Before CR-112, tools mutated <code>sketch.interaction_data</code> directly — a leaky abstraction across the Air Gap. Now all four operations route through the facade.</p>
+    </div>
+
+    <div class="tab-panel" id="tc-cb">
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Member</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">constraint_builder</td><td>Read-only property; ConstraintBuilder instance for binary-constraint UI state.</td></tr>
+          <tr><td class="mono">clear_constraint_ui()</td><td>Reset builder + deactivate every constraint button. Symmetric "we're done picking" call.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tc-internal">
+      <div class="card callout danger">
+        <div class="title">The discipline-only methods</div>
+        <p>These two methods are the subject of <a href="#fu-context" style="color:var(--cyan);text-decoration:none;border-bottom:1px solid var(--cyan);">Part II</a>. They are leading-underscore "internal" — but they are the sanctioned delegation surface that subclass <code>@property sketch</code> / <code>@property scene</code> accessors call into. The Air Gap rests on convention here, not structure.</p>
+      </div>
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Returns</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">_get_sketch()</td><td>Sketch</td><td>GeometryTool/SelectTool subclass <code>@property sketch</code>; SourceTool calls directly twice.</td></tr>
+          <tr><td class="mono">_get_scene()</td><td>Scene</td><td>GeometryTool/SelectTool subclass <code>@property scene</code>.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 11. TOOLS ====================== -->
+  <section id="tools" class="section-h">
+    <h2><span class="num">11</span>Tools &amp; The User Servo in Practice</h2>
+    <p class="lede">Every tool is a thin event handler that constructs Commands. The Tool base class has only <code>self.ctx</code> and <code>self.name</code> — no <code>self.app</code> backdoor. Subclasses split into a "creation" lineage (GeometryTool) and standalone tools (BrushTool, SelectTool, SourceTool).</p>
+
+    <h3>Tool taxonomy</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 800 380">
+        <!-- Tool base -->
+        <rect x="320" y="20" width="160" height="56" rx="10" class="box-fill"/>
+        <rect x="320" y="20" width="160" height="56" rx="10" class="box-stroke domain-tool"/>
+        <text x="400" y="44" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--c-tool)">Tool</text>
+        <text x="400" y="62" text-anchor="middle" class="lbl-mono lbl-sm">self.ctx, self.name</text>
+
+        <!-- Branch lines -->
+        <line x1="400" y1="76" x2="180" y2="130" stroke="var(--c-tool)" stroke-width="1"/>
+        <line x1="400" y1="76" x2="400" y2="130" stroke="var(--c-tool)" stroke-width="1"/>
+        <line x1="400" y1="76" x2="620" y2="130" stroke="var(--c-tool)" stroke-width="1"/>
+
+        <!-- BrushTool -->
+        <rect x="80" y="130" width="200" height="56" rx="10" class="box-fill"/>
+        <rect x="80" y="130" width="200" height="56" rx="10" class="box-stroke domain-tool"/>
+        <text x="180" y="154" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-tool)">BrushTool</text>
+        <text x="180" y="172" text-anchor="middle" class="lbl-mono lbl-sm">paint/erase via ctx</text>
+
+        <!-- GeometryTool -->
+        <rect x="300" y="130" width="200" height="56" rx="10" class="box-fill"/>
+        <rect x="300" y="130" width="200" height="56" rx="10" class="box-stroke domain-tool"/>
+        <text x="400" y="154" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-tool)">GeometryTool (abstract)</text>
+        <text x="400" y="172" text-anchor="middle" class="lbl-mono lbl-sm">@property sketch / scene</text>
+
+        <!-- SelectTool & SourceTool -->
+        <rect x="520" y="130" width="200" height="56" rx="10" class="box-fill"/>
+        <rect x="520" y="130" width="200" height="56" rx="10" class="box-stroke domain-tool"/>
+        <text x="620" y="154" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--c-tool)">SelectTool</text>
+        <text x="620" y="172" text-anchor="middle" class="lbl-mono lbl-sm">@property sketch / scene</text>
+
+        <!-- GeometryTool children -->
+        <line x1="400" y1="186" x2="160" y2="240" stroke="var(--c-tool)" stroke-width="1" opacity="0.5"/>
+        <line x1="400" y1="186" x2="290" y2="240" stroke="var(--c-tool)" stroke-width="1" opacity="0.5"/>
+        <line x1="400" y1="186" x2="420" y2="240" stroke="var(--c-tool)" stroke-width="1" opacity="0.5"/>
+        <line x1="400" y1="186" x2="550" y2="240" stroke="var(--c-tool)" stroke-width="1" opacity="0.5"/>
+        <line x1="400" y1="186" x2="680" y2="240" stroke="var(--c-tool)" stroke-width="1" opacity="0.5"/>
+
+        <rect x="100" y="240" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="100" y="240" width="120" height="40" rx="8" class="box-stroke domain-tool" stroke-opacity="0.5"/>
+        <text x="160" y="264" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-tool)">LineTool</text>
+
+        <rect x="230" y="240" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="230" y="240" width="120" height="40" rx="8" class="box-stroke domain-tool" stroke-opacity="0.5"/>
+        <text x="290" y="264" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-tool)">RectTool</text>
+
+        <rect x="360" y="240" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="360" y="240" width="120" height="40" rx="8" class="box-stroke domain-tool" stroke-opacity="0.5"/>
+        <text x="420" y="264" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-tool)">CircleTool</text>
+
+        <rect x="490" y="240" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="490" y="240" width="120" height="40" rx="8" class="box-stroke domain-tool" stroke-opacity="0.5"/>
+        <text x="550" y="264" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-tool)">PointTool</text>
+
+        <rect x="620" y="240" width="120" height="40" rx="8" class="box-fill"/>
+        <rect x="620" y="240" width="120" height="40" rx="8" class="box-stroke domain-tool" stroke-opacity="0.5"/>
+        <text x="680" y="264" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-tool)">SourceTool</text>
+
+        <text x="400" y="320" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)" style="font-style:italic;">SourceTool lives in source_tool.py and inherits from Tool, not GeometryTool —</text>
+        <text x="400" y="335" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)" style="font-style:italic;">but it carries the same <tspan font-family="var(--mono)">_get_sketch()</tspan> coupling pattern via direct facade calls.</text>
+      </svg>
+      <div class="caption">All tools inherit <code>Tool(ctx, name)</code>. <strong>GeometryTool</strong> and <strong>SelectTool</strong> add the two <code>@property sketch</code> / <code>@property scene</code> accessors that delegate to <code>ctx._get_sketch()</code> / <code>ctx._get_scene()</code> — the very pattern Part II is about.</div>
+    </div>
+
+    <h3>An idealized handle_event</h3>
+    <pre><code><span class="tok-k">class</span> <span class="tok-t">LineTool</span>(<span class="tok-t">GeometryTool</span>):
+    <span class="tok-k">def</span> <span class="tok-fn">handle_event</span>(<span class="tok-n">self</span>, event, layout):
+        <span class="tok-k">if</span> event.type == pygame.MOUSEBUTTONDOWN:
+            world = <span class="tok-n">self</span>.ctx.<span class="tok-fn">screen_to_world</span>(*event.pos)
+            <span class="tok-n">self</span>.start = world
+            <span class="tok-n">self</span>.ctx.<span class="tok-fn">execute</span>(<span class="tok-fn">AddLineCommand</span>(<span class="tok-n">self</span>.sketch, world, world, historize=<span class="tok-k">True</span>))
+            <span class="tok-n">self</span>.ctx.<span class="tok-fn">set_interaction_data</span>(world, entity_idx=<span class="tok-n">self</span>.<span class="tok-fn">_last_idx</span>(), point_idx=<span class="tok-s">1</span>)
+        <span class="tok-k">elif</span> event.type == pygame.MOUSEMOTION <span class="tok-k">and</span> <span class="tok-n">self</span>.dragging:
+            world = <span class="tok-n">self</span>.ctx.<span class="tok-fn">screen_to_world</span>(*event.pos)
+            <span class="tok-n">self</span>.ctx.<span class="tok-fn">execute</span>(<span class="tok-fn">AddLineCommand</span>(<span class="tok-n">self</span>.sketch, <span class="tok-n">self</span>.start, world, supersede=<span class="tok-k">True</span>))
+            <span class="tok-n">self</span>.ctx.<span class="tok-fn">update_interaction_target</span>(world)
+        <span class="tok-k">elif</span> event.type == pygame.MOUSEBUTTONUP:
+            <span class="tok-n">self</span>.ctx.<span class="tok-fn">clear_interaction_data</span>()
+            <span class="tok-n">self</span>.dragging = <span class="tok-k">False</span>
+</code></pre>
+    <p>Note the dependency: the tool needs <code>self.sketch</code> to construct the <code>AddLineCommand</code>. That's where <code>ctx._get_sketch()</code> earns its keep — and that's the source of Part II's discomfort.</p>
+  </section>
+
+  <!-- ===================== 12. INPUT + UI ====================== -->
+  <section id="input" class="section-h">
+    <h2><span class="num">12</span>Input Dispatch &amp; UI</h2>
+    <p class="lede">Pygame events run through a 4-layer chain. Each layer can consume the event, blocking lower layers. Modal precedes Global so dialogs can capture keys before global hotkeys fire.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 800 280">
+        <!-- Event source -->
+        <rect x="20" y="115" width="120" height="50" rx="10" class="box-fill"/>
+        <rect x="20" y="115" width="120" height="50" rx="10" class="box-stroke" stroke="var(--text-dim)"/>
+        <text x="80" y="138" text-anchor="middle" class="lbl" style="font-weight:600;">pygame event</text>
+        <text x="80" y="155" text-anchor="middle" class="lbl-sm">queue</text>
+
+        <!-- Layers -->
+        <g>
+          <rect x="180" y="40" width="140" height="50" rx="10" fill="rgba(248,113,113,0.08)" stroke="var(--red)" stroke-width="1.5"/>
+          <text x="250" y="60" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--red)">1. System</text>
+          <text x="250" y="78" text-anchor="middle" class="lbl-sm">QUIT, VIDEORESIZE</text>
+        </g>
+        <g>
+          <rect x="340" y="40" width="140" height="50" rx="10" fill="rgba(167,139,250,0.08)" stroke="var(--violet)" stroke-width="1.5"/>
+          <text x="410" y="60" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--violet)">2. Modal</text>
+          <text x="410" y="78" text-anchor="middle" class="lbl-sm">dialog stack</text>
+        </g>
+        <g>
+          <rect x="500" y="40" width="140" height="50" rx="10" fill="rgba(251,191,36,0.08)" stroke="var(--amber)" stroke-width="1.5"/>
+          <text x="570" y="60" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--amber)">3. Global</text>
+          <text x="570" y="78" text-anchor="middle" class="lbl-sm">Ctrl+Z, hotkeys</text>
+        </g>
+        <g>
+          <rect x="660" y="40" width="120" height="50" rx="10" fill="rgba(110,231,183,0.08)" stroke="var(--emerald)" stroke-width="1.5"/>
+          <text x="720" y="60" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--emerald)">4. HUD</text>
+          <text x="720" y="78" text-anchor="middle" class="lbl-sm">UI tree + tools</text>
+        </g>
+
+        <!-- Cascade arrows -->
+        <path d="M 140 140 L 180 95" class="arrow" stroke="var(--text-dim)" marker-end="url(#arr-amber)" stroke-opacity="0.6"/>
+        <path d="M 320 65 L 340 65" class="arrow" stroke="var(--text-dim)" marker-end="url(#arr-amber)" stroke-opacity="0.4"/>
+        <path d="M 480 65 L 500 65" class="arrow" stroke="var(--text-dim)" marker-end="url(#arr-amber)" stroke-opacity="0.4"/>
+        <path d="M 640 65 L 660 65" class="arrow" stroke="var(--text-dim)" marker-end="url(#arr-amber)" stroke-opacity="0.4"/>
+
+        <!-- Consume / fall-through -->
+        <text x="560" y="115" text-anchor="middle" class="lbl-sm" fill="var(--emerald)">consume → return True (stop)</text>
+        <text x="560" y="135" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">no match → fall through to next layer</text>
+
+        <!-- HUD breakdown -->
+        <g transform="translate(0, 175)">
+          <text x="400" y="0" text-anchor="middle" class="lbl" style="font-weight:600;font-size:13px;" fill="var(--emerald)">HUD layer detail</text>
+
+          <rect x="160" y="20" width="160" height="50" rx="8" class="box-fill"/>
+          <rect x="160" y="20" width="160" height="50" rx="8" class="box-stroke domain-ui"/>
+          <text x="240" y="42" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-ui)">UIManager.root</text>
+          <text x="240" y="58" text-anchor="middle" class="lbl-sm">widget tree</text>
+
+          <rect x="340" y="20" width="160" height="50" rx="8" class="box-fill"/>
+          <rect x="340" y="20" width="160" height="50" rx="8" class="box-stroke domain-ui"/>
+          <text x="420" y="42" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-ui)">SceneViewport</text>
+          <text x="420" y="58" text-anchor="middle" class="lbl-sm">delegates to current tool</text>
+
+          <rect x="520" y="20" width="160" height="50" rx="8" class="box-fill"/>
+          <rect x="520" y="20" width="160" height="50" rx="8" class="box-stroke domain-tool"/>
+          <text x="600" y="42" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--c-tool)">tool.handle_event</text>
+          <text x="600" y="58" text-anchor="middle" class="lbl-sm">via self.ctx</text>
+
+          <line x1="320" y1="45" x2="340" y2="45" stroke="var(--text-faint)"/>
+          <line x1="500" y1="45" x2="520" y2="45" stroke="var(--text-faint)"/>
+        </g>
+      </svg>
+      <div class="caption">The cascade: System catches OS-level events, Modal grabs anything when a dialog is up, Global owns hotkeys, HUD covers everything else (and is where the live tool lives).</div>
+    </div>
+
+    <h3>The Modal Stack</h3>
+    <p><code>AppController</code> maintains a list-based stack via <code>push_modal()</code> / <code>pop_modal()</code>. Both methods cascade <code>reset_interaction_state()</code> through the entire UI tree — preventing "ghost click" bugs where a button registered as hovered before a modal opened still appears clickable when the modal closes.</p>
+
+    <h3>The Overlay Protocol</h3>
+    <p>Widgets that need to spawn floating elements (dropdowns, tooltips) implement <code>OverlayProvider</code>. The UIManager iterates all registered providers and renders their overlays <em>after</em> the main tree, ensuring correct Z-ordering. The rule: never hardcode widget-specific overlay calls in UIManager. Use the protocol.</p>
+
+    <h3>Global hotkey reference</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Key</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Ctrl+Z / Ctrl+Y</td><td>Undo / Redo</td></tr>
+        <tr><td class="mono">Esc</td><td>Cancel pending constraint, cancel current tool operation</td></tr>
+        <tr><td class="mono">Del</td><td>Delete selected entities</td></tr>
+        <tr><td class="mono">B / V / L / R / C / P</td><td>Brush / Select / Line / Rect / Circle / Point tool</td></tr>
+        <tr><td class="mono">Shift+S</td><td>Source tool</td></tr>
+        <tr><td class="mono">F9</td><td>Toggle Numba solver backend</td></tr>
+        <tr><td class="mono">F10 / F11</td><td>Decrease / Increase solver iteration count</td></tr>
+        <tr><td class="mono">Ctrl + / Ctrl -</td><td>UI scale up / down</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- ===================== 13. PROCESS OBJECTS ====================== -->
+  <section id="processobj" class="section-h">
+    <h2><span class="num">13</span>Process Objects</h2>
+    <p class="lede">Process objects are the boundary conditions of the simulation: things that emit, absorb, heat, or measure particles. Each one owns a set of "handle" Points — real Sketch entities marked <code>is_handle=True</code> — that can participate in CAD constraints just like any other point.</p>
+
+    <h3>The protocol</h3>
+    <pre><code><span class="tok-k">class</span> <span class="tok-t">ProcessObject</span>(<span class="tok-t">ABC</span>):
+    handles: <span class="tok-t">Dict</span>[<span class="tok-t">str</span>, <span class="tok-t">Point</span>]   <span class="tok-c"># named handle Points (e.g. 'center')</span>
+    enabled: <span class="tok-t">bool</span>
+
+    <span class="tok-k">@abstractmethod</span>
+    <span class="tok-k">def</span> <span class="tok-fn">execute</span>(<span class="tok-n">self</span>, simulation, dt): ...        <span class="tok-c"># called in step 7</span>
+
+    <span class="tok-k">@abstractmethod</span>
+    <span class="tok-k">def</span> <span class="tok-fn">get_geometry_for_rendering</span>(<span class="tok-n">self</span>): ...   <span class="tok-c"># dashed circles, etc.</span>
+
+    <span class="tok-k">def</span> <span class="tok-fn">register_handles</span>(<span class="tok-n">self</span>, sketch): ...        <span class="tok-c"># add handle Points to sketch.entities</span>
+    <span class="tok-k">def</span> <span class="tok-fn">unregister_handles</span>(<span class="tok-n">self</span>, sketch): ...      <span class="tok-c"># remove on deletion</span>
+    <span class="tok-k">def</span> <span class="tok-fn">to_dict</span>(<span class="tok-n">self</span>): ...                          <span class="tok-c"># save</span>
+    <span class="tok-k">@staticmethod</span>
+    <span class="tok-k">def</span> <span class="tok-fn">from_dict</span>(data): ...                       <span class="tok-c"># load</span>
+</code></pre>
+
+    <h3>Source — the canonical implementation</h3>
+    <p>A Source spawns particles inside a circular region at a configured rate. Each frame:</p>
+    <ol class="clean">
+      <li>Accumulate spawn credit: <code>_spawn_accumulator += rate * dt</code></li>
+      <li>Compute an adaptive attempt count from a rolling success-rate average</li>
+      <li>Rejection-sample positions inside the circle; check existing-particle proximity</li>
+      <li>Spawn until the accumulator drops below 1.0 or the per-frame cap (50) is hit</li>
+    </ol>
+    <p>The center handle is a real Point in the Sketch — drag it, anchor it, constrain it to a line. The Source moves with it. That's the elegance: process objects don't have a separate transform system; they ride on Sketch entities.</p>
+  </section>
+
+  <!-- ===================== 14. STATE CLASSIFICATION ====================== -->
+  <section id="state" class="section-h">
+    <h2><span class="num">14</span>State Classification Recap</h2>
+    <p class="lede">Every piece of state in Flow State falls into one of two buckets. Knowing which bucket a piece of state belongs to determines whether you mutate it through a Command or directly. This is the most important rule in the codebase.</p>
+
+    <div class="two-col">
+      <div class="card callout danger">
+        <div class="title">The Vault — Persistent State</div>
+        <p style="font-weight:600;color:var(--text);margin-bottom:8px;">Must use Commands.</p>
+        <p>Data that constitutes "the document." If the user saved their work right now, this is what would be in the file.</p>
+        <ul class="clean" style="font-size:13px;color:var(--text-dim);">
+          <li>Entity coordinates (Line.start, Circle.radius, etc.)</li>
+          <li>Constraints and their values</li>
+          <li>Materials</li>
+          <li>Anchored / dynamic flags</li>
+          <li>Process object configuration</li>
+          <li>Particle simulation state (with the brush exception)</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--red);"><strong>Rule:</strong> Zero trust. No direct mutation. Through <code>scene.execute()</code> only.</p>
+      </div>
+      <div class="card callout success">
+        <div class="title">The Lobby — Transient State</div>
+        <p style="font-weight:600;color:var(--text);margin-bottom:8px;">Direct access OK.</p>
+        <p>State that describes <em>how the user is looking at</em> the document. None of this would be in a saved file (other than view restoration on load).</p>
+        <ul class="clean" style="font-size:13px;color:var(--text-dim);">
+          <li>Camera zoom, pan</li>
+          <li>Selection sets (walls, points)</li>
+          <li>Active tool</li>
+          <li>Focused widget</li>
+          <li>Modal stack</li>
+          <li>Status bar message</li>
+          <li>Snap target preview</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--emerald);"><strong>Rule:</strong> Direct mutation via Managers is acceptable.</p>
+      </div>
+    </div>
+
+    <div class="card callout info">
+      <div class="title">The asymmetry: <code>interaction_data</code></div>
+      <p>The User Servo's drag-target buffer is transient state — there's no reason to undo a mouse position — but it lives on <code>Sketch</code>, in the Vault, rather than on Session, in the Lobby. CR-112 enforced facade-only writes (<code>ctx.set_interaction_data</code>) which restored discipline at the tool boundary, but the underlying field still lives where it always has. This is a documented residual asymmetry — recorded as REQ-FS-ARCH-003 in the RTM.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PART II — TOOL FACADE FOLLOW-UP
+       ============================================================ -->
+  <section style="margin-top: 80px;">
+    <div class="kicker">Part II</div>
+    <h2 style="margin-top:4px;">The Tool-Facade Follow-Up</h2>
+    <p class="lede">On the CR-112 cycle 4 RTM review, both <strong>tu_ui</strong> and <strong>tu_sketch</strong> independently flagged the same architectural concern. It wasn't a blocker — they both labeled it as a backlog candidate — but it's worth understanding why <em>two independent reviewers</em> reached the same conclusion, and what the available paths forward are.</p>
+  </section>
+
+  <!-- ===================== 15. WHERE WE ARE ====================== -->
+  <section id="fu-context" class="section-h">
+    <h2><span class="num">15</span>Where We Are</h2>
+    <p class="lede">CR-112 made tools talk only to ToolContext. But two of ToolContext's 30+ methods are leading-underscore "internal," and they're load-bearing. The Air Gap holds because of a convention, not a wall.</p>
+
+    <h3>The exact pattern under review</h3>
+    <p>Inside <code>tools.py</code>, both <code>GeometryTool</code> (the parent of LineTool, RectTool, CircleTool, PointTool) and <code>SelectTool</code> define identical accessors:</p>
+
+    <pre><code><span class="tok-c"># From flow-state/ui/tools.py — same pattern at lines 263-269 and 727-733</span>
+<span class="tok-k">class</span> <span class="tok-t">GeometryTool</span>(<span class="tok-t">Tool</span>):
+    <span class="tok-c"># ...</span>
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">sketch</span>(<span class="tok-n">self</span>):
+        <span class="tok-k">return</span> <span class="tok-n">self</span>.ctx.<span class="tok-fn">_get_sketch</span>()    <span class="tok-c"># ← reaches across the underscore</span>
+
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">scene</span>(<span class="tok-n">self</span>):
+        <span class="tok-k">return</span> <span class="tok-n">self</span>.ctx.<span class="tok-fn">_get_scene</span>()     <span class="tok-c"># ← same here</span>
+
+<span class="tok-k">class</span> <span class="tok-t">SelectTool</span>(<span class="tok-t">Tool</span>):
+    <span class="tok-c"># ...</span>
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">sketch</span>(<span class="tok-n">self</span>):
+        <span class="tok-k">return</span> <span class="tok-n">self</span>.ctx.<span class="tok-fn">_get_sketch</span>()    <span class="tok-c"># ← duplicated</span>
+
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">scene</span>(<span class="tok-n">self</span>):
+        <span class="tok-k">return</span> <span class="tok-n">self</span>.ctx.<span class="tok-fn">_get_scene</span>()     <span class="tok-c"># ← duplicated</span>
+</code></pre>
+
+    <p>And in <code>source_tool.py</code>, two direct calls bypass even this thin shim:</p>
+    <pre><code><span class="tok-c"># source_tool.py:164</span>
+handle_indices = source.<span class="tok-fn">get_handle_indices</span>(<span class="tok-n">self</span>.ctx.<span class="tok-fn">_get_sketch</span>())
+
+<span class="tok-c"># source_tool.py:198</span>
+<span class="tok-k">return</span> utils.<span class="tok-fn">get_snapped_pos</span>(mx, my, <span class="tok-n">self</span>.ctx.<span class="tok-fn">_get_sketch</span>().entities, ...)
+</code></pre>
+
+    <h3>The reviewer observation, restated</h3>
+    <div class="card callout info">
+      <div class="title">What both TUs noticed</div>
+      <p>The leading underscore on <code>_get_sketch()</code> / <code>_get_scene()</code> says "internal — don't call from outside." But the documented Tool contract <em>relies</em> on tools calling them — that's how subclasses build commands. The convention says "don't"; the reality says "but you must."</p>
+      <p style="margin-top:10px;"><strong>The Air Gap is enforced by discipline (a code review will catch a misuse) rather than by structure (a type system or import boundary that physically prevents misuse).</strong></p>
+    </div>
+
+    <div class="diagram">
+      <svg viewBox="0 0 800 320">
+        <text x="400" y="24" text-anchor="middle" class="lbl" style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;" fill="var(--text-dim)">The current shape — two coupled pretenses</text>
+
+        <!-- Tool layer -->
+        <rect x="60" y="60" width="240" height="100" rx="10" class="box-fill"/>
+        <rect x="60" y="60" width="240" height="100" rx="10" class="box-stroke domain-tool"/>
+        <text x="180" y="84" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--c-tool)">Tool subclass</text>
+        <text x="180" y="104" text-anchor="middle" class="lbl-mono lbl-sm">@property sketch  # delegates ↓</text>
+        <text x="180" y="120" text-anchor="middle" class="lbl-mono lbl-sm">@property scene   # delegates ↓</text>
+        <text x="180" y="142" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">"reaches" through the convention</text>
+
+        <!-- ToolContext layer -->
+        <rect x="380" y="60" width="240" height="100" rx="10" class="box-fill"/>
+        <rect x="380" y="60" width="240" height="100" rx="10" class="box-stroke domain-tool"/>
+        <text x="500" y="84" text-anchor="middle" class="lbl" style="font-weight:700;" fill="var(--c-tool)">ToolContext</text>
+        <text x="500" y="104" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--red)">_get_sketch()  # "internal"</text>
+        <text x="500" y="120" text-anchor="middle" class="lbl-mono lbl-sm" fill="var(--red)">_get_scene()   # "internal"</text>
+        <text x="500" y="142" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">but documented as the path</text>
+
+        <!-- Sketch / Scene -->
+        <rect x="660" y="60" width="120" height="50" rx="10" class="box-fill"/>
+        <rect x="660" y="60" width="120" height="50" rx="10" class="box-stroke domain-sketch"/>
+        <text x="720" y="92" text-anchor="middle" class="lbl-mono" style="font-weight:600;" fill="var(--c-sketch)">Sketch</text>
+
+        <rect x="660" y="120" width="120" height="50" rx="10" class="box-fill"/>
+        <rect x="660" y="120" width="120" height="50" rx="10" class="box-stroke" stroke="var(--violet)"/>
+        <text x="720" y="152" text-anchor="middle" class="lbl-mono" style="font-weight:600;" fill="var(--violet)">Scene</text>
+
+        <!-- Arrows -->
+        <path d="M 300 110 L 380 110" class="arrow" stroke="var(--c-tool)" marker-end="url(#arr-cyan)"/>
+        <path d="M 620 90 L 660 90" class="arrow" stroke="var(--c-tool)" marker-end="url(#arr-cyan)"/>
+        <path d="M 620 145 L 660 145" class="arrow" stroke="var(--c-tool)" marker-end="url(#arr-cyan)"/>
+
+        <!-- Below: warning -->
+        <g transform="translate(0,200)">
+          <rect x="50" y="0" width="700" height="100" rx="10" fill="rgba(248,113,113,0.05)" stroke="var(--red)" stroke-width="1" stroke-dasharray="6 4"/>
+          <text x="400" y="24" text-anchor="middle" class="lbl" style="font-weight:600;" fill="var(--red)">Nothing structural prevents misuse</text>
+          <text x="400" y="50" text-anchor="middle" class="lbl-sm" fill="var(--text-dim)">Any new tool author can call <tspan font-family="var(--mono)">ctx._get_sketch().entities[i].end_point = (10, 10)</tspan></text>
+          <text x="400" y="68" text-anchor="middle" class="lbl-sm" fill="var(--text-dim)">— and bypass every Command, every undo, every history entry.</text>
+          <text x="400" y="86" text-anchor="middle" class="lbl-sm" fill="var(--text-faint)">The leading underscore is a request, not a fence.</text>
+        </g>
+      </svg>
+      <div class="caption">The Air Gap holds today because every tool author is reviewed. Fine for a single-developer codebase. As the project grows — or as agents start authoring tools — discipline-only enforcement is the cheap link in the chain.</div>
+    </div>
+  </section>
+
+  <!-- ===================== 16. THREE PATHS ====================== -->
+  <section id="fu-paths" class="section-h">
+    <h2><span class="num">16</span>Three Candidate Paths</h2>
+    <p class="lede">The TU reviewers sketched three ways to structurally enforce what's currently held by convention. Each one trades off differently — and they're not mutually exclusive.</p>
+
+    <div class="tabs" id="path-tabs">
+      <button class="active" data-tab="path-a">Path A · Rename</button>
+      <button data-tab="path-b">Path B · Typed view</button>
+      <button data-tab="path-c">Path C · Eliminate</button>
+    </div>
+
+    <!-- ===== Path A ===== -->
+    <div class="tab-panel active" id="path-a">
+      <h3>Path A — Rename to first-class facade methods</h3>
+      <p class="lede">Drop the underscore. Promote <code>_get_sketch</code> / <code>_get_scene</code> to public methods, with WARNING docstrings making the "construct commands; don't mutate" intent explicit. The pattern already exists in the codebase: <code>ctx.get_entity_direct()</code> uses exactly this approach.</p>
+
+      <pre><code><span class="tok-k">class</span> <span class="tok-t">ToolContext</span>:
+    <span class="tok-c"># ...</span>
+    <span class="tok-k">def</span> <span class="tok-fn">get_sketch</span>(<span class="tok-n">self</span>):
+        <span class="tok-s">"""
+        Get sketch reference for command construction.
+
+        WARNING: This provides direct model access. Use ONLY for:
+          - Constructing Command instances that need a Sketch parameter
+          - Read-only queries
+
+        Do NOT mutate sketch.entities or sketch.constraints directly.
+        Use ctx.execute(SomeCommand(...)) for any change.
+        """</span>
+        <span class="tok-k">return</span> <span class="tok-n">self</span>._app.scene.sketch
+
+    <span class="tok-k">def</span> <span class="tok-fn">get_scene</span>(<span class="tok-n">self</span>):
+        <span class="tok-s">"""WARNING: Direct scene access. Use sparingly. ..."""</span>
+        <span class="tok-k">return</span> <span class="tok-n">self</span>._app.scene</code></pre>
+
+      <p>Tool subclasses become a one-line property change:</p>
+      <pre><code><span class="tok-k">class</span> <span class="tok-t">GeometryTool</span>(<span class="tok-t">Tool</span>):
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">sketch</span>(<span class="tok-n">self</span>): <span class="tok-k">return</span> <span class="tok-n">self</span>.ctx.<span class="tok-fn">get_sketch</span>()</code></pre>
+
+      <div class="card">
+        <div class="title">Pros</div>
+        <ul class="clean" style="margin:0;">
+          <li>Tiny diff. ~10 line changes total. Could land in a single commit.</li>
+          <li>Self-consistent with <code>get_entity_direct()</code>, which already follows this pattern.</li>
+          <li>Honesty: docstring says "use carefully," code says "use carefully," no contradiction.</li>
+          <li>Doesn't constrain future architectural moves (Path B or C still possible later).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="title">Cons</div>
+        <ul class="clean" style="margin:0;">
+          <li>Still discipline-only. The WARNING docstring is no harder to ignore than the underscore is.</li>
+          <li>Trades one convention for another — but at least it's an honest convention.</li>
+          <li>Doesn't address the duplicated <code>@property</code> pair across two unrelated tool classes.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===== Path B ===== -->
+    <div class="tab-panel" id="path-b">
+      <h3>Path B — Introduce a typed read-only <code>SketchView</code> protocol</h3>
+      <p class="lede">Define a Protocol (PEP 544) that exposes only the read methods commands need to access. Tools receive a <code>SketchView</code>, not a Sketch — the type system structurally prevents mutation.</p>
+
+      <pre><code><span class="tok-c"># model/protocols.py</span>
+<span class="tok-k">from</span> typing <span class="tok-k">import</span> Protocol, runtime_checkable
+
+<span class="tok-k">@runtime_checkable</span>
+<span class="tok-k">class</span> <span class="tok-t">SketchView</span>(<span class="tok-t">Protocol</span>):
+    <span class="tok-s">"""Read-only view of a Sketch for use in tools and command construction."""</span>
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">entities</span>(<span class="tok-n">self</span>) -> <span class="tok-t">Sequence</span>[<span class="tok-t">Entity</span>]: ...     <span class="tok-c"># Sequence, not list</span>
+    <span class="tok-k">@property</span>
+    <span class="tok-k">def</span> <span class="tok-fn">constraints</span>(<span class="tok-n">self</span>) -> <span class="tok-t">Sequence</span>[<span class="tok-t">Constraint</span>]: ...
+    <span class="tok-k">def</span> <span class="tok-fn">find_entity_at</span>(<span class="tok-n">self</span>, x: <span class="tok-t">float</span>, y: <span class="tok-t">float</span>, r: <span class="tok-t">float</span>) -> <span class="tok-t">int</span>: ...
+    <span class="tok-c"># ... only the methods commands actually need ...</span>
+
+<span class="tok-c"># tool_context.py</span>
+<span class="tok-k">class</span> <span class="tok-t">ToolContext</span>:
+    <span class="tok-k">def</span> <span class="tok-fn">sketch_view</span>(<span class="tok-n">self</span>) -> <span class="tok-t">SketchView</span>:
+        <span class="tok-k">return</span> <span class="tok-n">self</span>._app.scene.sketch    <span class="tok-c"># Sketch satisfies SketchView structurally</span></code></pre>
+
+      <p>Commands accept <code>SketchView</code> as their sketch parameter. Type checkers (mypy, pyright) reject any tool that tries to call <code>sketch.add_entity()</code> on a SketchView.</p>
+
+      <div class="card">
+        <div class="title">Pros</div>
+        <ul class="clean" style="margin:0;">
+          <li><strong>Structural enforcement.</strong> Type checker refuses non-conforming code at edit time.</li>
+          <li>Self-documenting: the type signature says exactly what's allowed.</li>
+          <li>Forces an explicit decision about the tool surface — no accidental over-exposure.</li>
+          <li>Future-proof: adding a new method to SketchView is a deliberate review event.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="title">Cons</div>
+        <ul class="clean" style="margin:0;">
+          <li>Largest change. Must update every Command class to accept <code>SketchView</code> in its signature.</li>
+          <li>Requires running a type checker in CI to actually enforce — Flow State doesn't have one yet.</li>
+          <li>Sequence types are immutable interfaces, but Python doesn't <em>structurally</em> prevent calling Sketch's mutator methods through a SketchView reference at runtime — you only get warnings at type-check time.</li>
+          <li>Adds a new abstraction layer that all future contributors have to learn.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===== Path C ===== -->
+    <div class="tab-panel" id="path-c">
+      <h3>Path C — Eliminate the subclass property accessors entirely</h3>
+      <p class="lede">Move command construction <em>into ToolContext</em>. Tools never get a Sketch reference because they never need one. The facade builds the command from the tool's request and a sketch reference it already has internally.</p>
+
+      <pre><code><span class="tok-c"># tool_context.py — many new factory methods</span>
+<span class="tok-k">class</span> <span class="tok-t">ToolContext</span>:
+    <span class="tok-k">def</span> <span class="tok-fn">create_add_line_command</span>(<span class="tok-n">self</span>, start, end, *, supersede=<span class="tok-k">False</span>):
+        <span class="tok-k">return</span> <span class="tok-fn">AddLineCommand</span>(<span class="tok-n">self</span>._app.scene.sketch, start, end, supersede=supersede)
+
+    <span class="tok-k">def</span> <span class="tok-fn">create_move_entity_command</span>(<span class="tok-n">self</span>, idx, dx, dy, *, supersede=<span class="tok-k">False</span>):
+        <span class="tok-k">return</span> <span class="tok-fn">MoveEntityCommand</span>(<span class="tok-n">self</span>._app.scene.sketch, idx, dx, dy, supersede=supersede)
+
+    <span class="tok-c"># ... one factory per command type, ~15 methods ...</span>
+
+<span class="tok-c"># tools.py — no more @property sketch / @property scene</span>
+<span class="tok-k">class</span> <span class="tok-t">LineTool</span>(<span class="tok-t">GeometryTool</span>):    <span class="tok-c"># GeometryTool loses both properties</span>
+    <span class="tok-k">def</span> <span class="tok-fn">handle_event</span>(<span class="tok-n">self</span>, event, layout):
+        <span class="tok-c"># ...</span>
+        cmd = <span class="tok-n">self</span>.ctx.<span class="tok-fn">create_add_line_command</span>(start, end, supersede=<span class="tok-k">True</span>)
+        <span class="tok-n">self</span>.ctx.<span class="tok-fn">execute</span>(cmd)</code></pre>
+
+      <p>The <code>create_coincident_command()</code> that already exists on ToolContext is the prototype. Path C generalizes that pattern across all command types.</p>
+
+      <div class="card">
+        <div class="title">Pros</div>
+        <ul class="clean" style="margin:0;">
+          <li><strong>Strongest structural Air Gap.</strong> Tools physically cannot get a Sketch reference, ever.</li>
+          <li>The duplicated subclass property pair vanishes from every tool.</li>
+          <li>Command imports — currently in <code>tools.py</code> — concentrate in ToolContext, where they belong.</li>
+          <li>SourceTool's two direct <code>_get_sketch()</code> reaches become facade calls naturally.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="title">Cons</div>
+        <ul class="clean" style="margin:0;">
+          <li>Largest API surface on ToolContext: ~15 new factory methods (one per command type).</li>
+          <li>Each new command type now requires a corresponding ToolContext factory — extra ceremony.</li>
+          <li>Doesn't help with read paths inside tools (e.g., <code>utils.get_snapped_pos(sketch.entities, ...)</code>) — those still need <em>some</em> way to access entities, perhaps via <code>iter_entities</code>.</li>
+          <li>Trades one source of friction (discipline) for another (verbosity).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 17. TRADE-OFFS ====================== -->
+  <section id="fu-tradeoffs" class="section-h">
+    <h2><span class="num">17</span>Trade-Off Matrix</h2>
+    <p class="lede">Same axes, three paths. The right answer depends on how much weight you put on structural enforcement versus implementation cost.</p>
+
+    <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:24%;">Axis</th>
+          <th>A · Rename</th>
+          <th>B · Typed view</th>
+          <th>C · Eliminate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Lines changed</strong></td>
+          <td><span class="pill" style="background:rgba(110,231,183,0.13);color:var(--emerald);">~10</span></td>
+          <td><span class="pill" style="background:rgba(251,191,36,0.13);color:var(--amber);">~150</span> (every Command signature)</td>
+          <td><span class="pill" style="background:rgba(251,191,36,0.13);color:var(--amber);">~80</span> (factories + tool migration)</td>
+        </tr>
+        <tr>
+          <td><strong>Air Gap enforced by</strong></td>
+          <td>Convention (docstring)</td>
+          <td><strong>Type system</strong> (if mypy/pyright in CI)</td>
+          <td><strong>Structure</strong> (no path to Sketch from tool)</td>
+        </tr>
+        <tr>
+          <td><strong>Backward-compatibility</strong></td>
+          <td>Aliases possible — <code>_get_sketch</code> can stay as deprecated.</td>
+          <td>Not breaking at runtime; only type-checker complaints.</td>
+          <td>Tool surface changes — every tool needs migration.</td>
+        </tr>
+        <tr>
+          <td><strong>Time to land</strong></td>
+          <td>One session, half a day.</td>
+          <td>Two sessions plus mypy CI infra.</td>
+          <td>Two sessions for migration + factory authoring.</td>
+        </tr>
+        <tr>
+          <td><strong>Risk</strong></td>
+          <td>Near zero — pure rename + docstring.</td>
+          <td>Medium — Command signature churn touches many files; could surface latent bugs.</td>
+          <td>Medium — every tool subclass has to be migrated; tested by interactive smoke.</td>
+        </tr>
+        <tr>
+          <td><strong>Future ergonomics</strong></td>
+          <td>Easy to extend; nothing changes about how tools work.</td>
+          <td>Adding a method to SketchView is a small but deliberate event — type-checker forces the discussion.</td>
+          <td>Adding a command type means adding a factory method too — extra ceremony, but the surface stays explicit.</td>
+        </tr>
+        <tr>
+          <td><strong>Solves duplicated <code>@property</code> pair</strong></td>
+          <td><span class="no">No</span></td>
+          <td>Partially (could push into Tool base class)</td>
+          <td><span class="yes">Yes</span> (deletes both properties)</td>
+        </tr>
+        <tr>
+          <td><strong>Affects SourceTool's two direct calls</strong></td>
+          <td>Becomes <code>self.ctx.get_sketch()</code> — same shape, public name.</td>
+          <td>Same — typed return.</td>
+          <td>Calls become <code>self.ctx.create_*</code> factory invocations.</td>
+        </tr>
+        <tr>
+          <td><strong>Composes with the others</strong></td>
+          <td>Yes — A first, then B or C later.</td>
+          <td>Best paired with A (public name) or as a step toward C.</td>
+          <td>Self-contained; B becomes unnecessary because there's no surface to type.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>The hidden criterion</h3>
+    <p>None of these axes captures the deeper question, which is: <em>who will be writing tools next?</em></p>
+    <ul class="clean">
+      <li>If the answer is "the same one or two humans who've been writing them," <strong>Path A</strong> buys honesty for almost no cost.</li>
+      <li>If the answer is "agents authoring new tools without human review," <strong>Path C</strong> is the only one that survives — discipline doesn't generalize across non-human contributors.</li>
+      <li>If the answer is "we want the type system to be load-bearing in this codebase generally," <strong>Path B</strong> is a strategic investment that pays off across many subsystems, not just this one.</li>
+    </ul>
+  </section>
+
+  <!-- ===================== 18. RECOMMENDATION ====================== -->
+  <section id="fu-rec" class="section-h">
+    <h2><span class="num">18</span>A Recommendation</h2>
+    <p class="lede">My take, from sitting with the code and the reviewers' notes.</p>
+
+    <div class="tldr">
+      <div class="label">Recommendation</div>
+      <p style="margin:0;font-size:15.5px;"><strong>Land Path A now</strong> as a tiny bookkeeping CR. <strong>Defer Path C</strong> until you actually have a use case that justifies its weight — most likely the first time an agent (or a new contributor) writes a tool without close review.</p>
+    </div>
+
+    <h3>The reasoning</h3>
+    <p>Path A is honest about what already exists. The Air Gap <em>is</em> discipline-enforced today; calling those methods <code>get_sketch()</code> and <code>get_scene()</code> with proper warning docstrings doesn't <em>weaken</em> any guarantee — it just stops pretending they're internal when they're documented as the path. The lie is more dangerous than the convention.</p>
+
+    <p>Path C is the architecturally correct end state, but it's the kind of refactor that earns its weight only when there's a concrete pressure for it. Right now, two humans write the tools and review each other; the structural enforcement Path C provides is overkill. Adding 15 factory methods to ToolContext for two developers who can be trusted to call <code>execute(SetEntityGeometryCommand(sketch, ...))</code> correctly is process for its own sake.</p>
+
+    <p>Path B is the most interesting <em>strategically</em> but the most expensive <em>tactically</em>. Flow State doesn't run mypy in CI today — adopting Path B means adopting that infrastructure too. That's a decision that should be made on its own merits, not as a side effect of cleaning up two property accessors.</p>
+
+    <h3>Trigger conditions for revisiting</h3>
+    <p>Specific signals that would push toward Path C:</p>
+    <ul class="clean">
+      <li>An agent writes a tool that violates the Air Gap (a CR-2026-001-style incident, repeating).</li>
+      <li>A new contributor — human or otherwise — uses <code>_get_sketch()</code> for direct mutation and ships it.</li>
+      <li>Tools start being authored from outside the core team (mods, plugins, user scripts).</li>
+      <li>The tool surface stabilizes such that the 15 factory methods become a closed, well-understood set.</li>
+    </ul>
+
+    <p>Until any of those happens, the cost-benefit on Path C doesn't pencil out. The reviewers were right to flag it, and right to label it a backlog candidate. Land A; queue C; revisit when there's a forcing function.</p>
+
+    <hr class="sep">
+
+    <div class="card callout success">
+      <div class="title">A modest scope for the actual CR</div>
+      <ol class="clean" style="margin:0;">
+        <li>Rename <code>_get_sketch</code> → <code>get_sketch</code>, <code>_get_scene</code> → <code>get_scene</code> in <code>tool_context.py</code>.</li>
+        <li>Update WARNING docstrings to make intent explicit (model the wording on existing <code>get_entity_direct()</code>).</li>
+        <li>Update the four call sites: GeometryTool's two properties (lines 263-269), SelectTool's two properties (lines 727-733), SourceTool's two direct calls (lines 164, 198).</li>
+        <li>Update the Tool contract docstring at the top of <code>tools.py</code> (line 42).</li>
+        <li>Update <code>tool_context.py</code>'s "What Tools CAN do" docstring (lines 15-26).</li>
+        <li>RTM evidence updates for REQ-FS-ARCH-004 and REQ-FS-CAD-003 — facade name change is in scope.</li>
+      </ol>
+      <p style="margin-top:10px;color:var(--text-dim);">No new requirements. No commands changed. No tests touched. Half-day CR with a small RTM follow-on. The kind of change that should sail through pre-review with a tu_ui sign-off.</p>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  Generated for Session-2026-05-02-001. Sources verified against flow-state @ <code>c82c8e2</code> (qualified <code>ec450e2</code>). Architecture diagrams are SVG; everything is self-contained — open the file directly in any modern browser.
+</footer>
+
+<script>
+  // ====================================================
+  // TOC scrollspy
+  // ====================================================
+  (function() {
+    const tocLinks = document.querySelectorAll('nav.toc a');
+    const sections = Array.from(tocLinks).map(a => {
+      const id = a.getAttribute('href').slice(1);
+      return { id: id, el: document.getElementById(id), link: a };
+    }).filter(s => s.el);
+
+    let activeId = null;
+    function update() {
+      const y = window.scrollY + 120;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.el.offsetTop <= y) current = s;
+        else break;
+      }
+      if (current && current.id !== activeId) {
+        activeId = current.id;
+        tocLinks.forEach(a => a.classList.remove('active'));
+        current.link.classList.add('active');
+      }
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+  })();
+
+  // ====================================================
+  // Generic tab system (works for any [data-tab/data-tc] group)
+  // ====================================================
+  function bindTabs(container, attr) {
+    const buttons = container.querySelectorAll('button[' + attr + ']');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute(attr);
+        // Deactivate sibling buttons
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Find sibling panels — under the same parent of the .tabs container
+        const root = container.parentElement;
+        const panels = root.querySelectorAll('.tab-panel');
+        panels.forEach(p => {
+          p.classList.toggle('active', p.id === target);
+        });
+      });
+    });
+  }
+  bindTabs(document.getElementById('tc-tabs'), 'data-tc');
+  bindTabs(document.getElementById('path-tabs'), 'data-tab');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,56 @@
+# Session-2026-05-02-001
+
+## Current State (last updated: post-EI-1 baseline)
+- **Active document:** CR-114 IN_EXECUTION v1.0
+- **Current EI:** EI-1 (pre-execution baseline) in progress
+- **Blocking on:** Nothing
+- **Next:** EI-2 (test environment + execution branch on flow-state)
+
+## Inherited from Session-2026-05-01-001
+- CR-112 CLOSED v2.0 (ToolContext migration completion + documentation reconciliation; FLOW-STATE-1.1)
+- CR-113 CLOSED v2.0 (Agent definition and Quality Manual cleanup, post-CR-112 retrospective)
+- 69 CRs CLOSED total; 5 INVs CLOSED
+- Qualified state: SDLC-FLOW-RS v3.0 EFFECTIVE; SDLC-FLOW-RTM v2.0 EFFECTIVE; flow-state main at `c82c8e2` (qualified `ec450e2`); FLOW-STATE-1.1 tag; quality-manual at `e1755e3`.
+- Latest pipe-dream commit at session start: `39ed950` (Session-2026-05-01-001 wrap-up: PROJECT_STATE + session notes)
+
+## Carry-forward queue (for Lead's pick)
+1. First real Flow State gameplay/CAD/sim feature CR (the fun stuff)
+2. Small CR: delete orphan `flow-state/ui/brush_tool.py` (discovered during CR-112 scoping)
+3. Tool-facade architectural follow-up CR (rename `_get_sketch`/`_get_scene` to first-class methods, OR introduce typed `SketchView` protocol, OR eliminate Tool subclass property accessors entirely — non-blocker captured by both tu_ui and tu_sketch on CR-112 cycle 4)
+4. Auto-mode-vs-subagent permissions resolution (Bash hook layer denies `qms approve`; allow-rule or migrate to MCP `qms_approve`)
+
+## Session-start checklist (complete)
+- Session-2026-05-02-001 initialized; CURRENT_SESSION updated
+- Read SELF.md, PROJECT_STATE.md, MEMORY.md
+- Read Session-2026-05-01-001/notes.md
+- Read QMS-Policy.md, START_HERE.md, QMS-Glossary.md
+
+## Progress Log
+
+### [session start] Context loaded
+- New session (today is 2026-05-02 — new date; previous session was 2026-05-01-001 with no compaction log)
+- Idle; awaiting Lead direction
+
+### Architecture atlas authored
+- Lead requested an HTML explainer of the Flow State codebase + the tool-facade follow-up (item 3 from the carry-forward queue) for personal study
+- Surveyed flow-state codebase via Explore agent + targeted reads of tool_context.py, scene.py, tools.py
+- Built `flow-state-architecture-atlas.html` (~1900 lines) — single self-contained file:
+  - Part I: 14 sections covering two-domain model, Air Gap, module map, Scene orchestration, 8-step update loop, Command pattern (historize/supersede/changes_topology), Sketch+Solver, Compiler bridge (static vs tethered), Simulation arrays, full ToolContext surface (tabbed by category), Tool taxonomy, input dispatch + UI, process objects, state classification (Vault vs Lobby)
+  - Part II: 4 sections on the tool-facade follow-up — current state with diagram, three candidate paths (Rename / Typed view / Eliminate) tabbed, trade-off matrix, recommendation (Path A now, Path C deferred until forcing function)
+  - Embedded SVG diagrams for two-domain model, Air Gap, module map, static-vs-tethered atoms, command lifecycle, tool taxonomy, input dispatch, current-shape pattern
+  - Dark indigo/violet theme; sticky TOC with scrollspy; tabbed sections; cards with semantic color coding
+- File: `.claude/sessions/Session-2026-05-02-001/flow-state-architecture-atlas.html`
+
+### CR-114 lifecycle: pre-approval cycles
+- **Scope:** Resize World UX fixes (InputField visibility bug, confirmation dialog, full physics reset on confirm) + ui/brush_tool.py orphan deletion. No RS revision; RTM v2.0 → v3.0 to re-pin Qualified Baseline.
+- **Discussion en route:** Lead asked whether QMS allows "free-form CR with all rigor at closure" — answered No, current QMS-Policy §6 (Scope Integrity) forbids it; Genesis Sandbox is per §7.4 a bootstrap mechanism not a standing exception. Suggested an "Exploration CR" pattern as a possible future QMS evolution. Lead deferred discussion, asked to proceed with CR-114 as drafted.
+- **7 pre-review cycles total:**
+  - **Cycle 1 (QA REQUEST_UPDATES, 3 findings):** Section 9 numbering gap (jumped 9.1 → 9.3); three (actually four) stale CR-2026-001 references → CR-112; Section 1 "two defects" / three-item enumeration mismatch. Plus non-blocking: hardcoded "50.0" → str(config.DEFAULT_WORLD_SIZE).
+  - **Cycle 2 (QA RECOMMEND, procedural error):** QA RECOMMEND auto-closed the cycle without TU assignment — known CR-113 §5.5 pattern (QA-as-sole-assignee + RECOMMEND auto-transitions to PRE_REVIEWED).
+  - **Cycle 3 (procedural reset; QA REQUEST_UPDATES, CLI bug):** QA found malformed frontmatter — duplicate empty `---/{}/---` block prepended to file at lines 1-3 by previous checkin operation (CLI artifact). Title parsed as N/A. Removed duplicate block.
+  - **Cycle 4 (QA RECOMMEND + assigned; tu_ui RECOMMEND, tu_sim REQUEST_UPDATES, bu RECOMMEND):** tu_sim caught snapshot duplication — `simulation.reset()` already snapshots internally (line 292), so the proposed outer `self.snapshot()` in `resize_world` would push two undo states per resize. tu_ui flagged double-snapshot as non-blocking. bu observed default-focus-on-Cancel UX preference for destructive confirmations.
+  - **Cycle 5 (corrected; QA RECOMMEND + assigned; tu_ui REQUEST_UPDATES with 2 blockers, tu_sim REQUEST_UPDATES with 1 blocker, bu RECOMMEND):** tu_ui blockers — (a) ConfirmDialog spec used callback pattern divergent from codebase precedent (existing dialogs use polled-flag pattern: done/confirmed); (b) click-outside-to-dismiss in input_handler centralizer needs explicit `'confirm_resize_dialog'` branch to route through Cancel. tu_sim blocker — `simulation.reset()` wipes Compiler-emitted static atoms (is_static=1) and tethered atoms (is_static=3); without explicit `scene.rebuild()` after resize, CAD walls stop colliding until something else dirties topology.
+  - **Cycle 6 (corrected; QA RECOMMEND, procedural error redux):** Substantive corrections — ConfirmDialog rewritten to polled-flag pattern with explicit Enter/Escape keyboard handling and destructive flag; `_do_resize_world` now calls `scene.rebuild()` after `sim.resize_world(val)` (mirroring `action_clear_particles` precedent at app_controller.py:174-178); added `apply_resize_confirm` dispatcher hook; added input_handler.py to file list with explicit dispatcher branch in BOTH click-outside-dismiss AND modal completion sections. But QA RECOMMEND auto-closed without re-assigning TUs — repeat of cycle 2 procedural error. Per CR-113 §5.6 (TU re-review baseline rule) the cycle 6 substantive changes needed TU verification before pre-approval.
+  - **Cycle 7 (procedural reset; all clean):** QA assigned tu_ui + tu_sim + tu_scene (newly engaged for `scene.rebuild()` orchestration concern) + bu first, then RECOMMEND. All four TUs/BU returned RECOMMEND. Three non-blocking notes captured for execution-time judgment: dialog positioning arithmetic (tu_ui), snapshot field coverage as backlog (tu_sim), pick explicit dispatcher polling location for click-outside path (tu_scene — favor `actions.update()` to match `save_as_new_dialog` precedent).
+- **Pre-approval (cycle 7):** QA approved cleanly; no Bash hook permission issue this time. CR-114 v0.1 → v1.0 PRE_APPROVED → released to IN_EXECUTION.
+- **Procedural lessons captured:** (1) QA as sole reviewer + RECOMMEND auto-closes cycle and skips TU re-engagement — the CR-113 §5.5 pattern recurred TWICE in this CR (cycles 2 and 6). The agent definition or the CLI itself may need a guard. (2) Checkin appears to prepend an empty `---/{}/---` frontmatter block under some conditions (cycle 2→3 transition) — CLI bug worth investigating. (3) Tool registry `Tool` taxonomy was sufficient for this CR's reviewer set: tu_ui covered UI widgets/dispatcher/app init; tu_sim covered simulation; tu_scene covered orchestration (`scene.rebuild()` placement); bu covered user-facing UX.
