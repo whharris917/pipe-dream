@@ -1,10 +1,13 @@
 # Session-2026-05-03-002
 
-## Current State (last updated: CR-116 IN_EXECUTION v1.0)
-- **Active document:** CR-116 (IN_EXECUTION v1.0)
-- **Current EI:** EI-1 (pre-execution baseline) — not yet started
-- **Blocking on:** Lead direction for EI-1 (commit + push) and the start of exploration
-- **Next:** EI-1 pre-execution baseline → EI-2 cut execution branch → EI-3 begin free-form exploration
+## Current State (last updated: CR-116 EI-1 Pass)
+- **Active document:** CR-116 (IN_EXECUTION v1.1)
+- **Current EI:** EI-1 Pass (pre-execution baseline captured)
+- **Blocking on:** Lead direction for EI-2 (cut execution branch in flow-state)
+- **Next:** EI-2 cut `cr-116-beach-trip-exploration` from `flow-state/main` at `da012b4` → EI-3 begin free-form exploration
+
+## CR-116 execution progress
+- **EI-1:** Pre-execution baseline at pipe-dream@`ac2ecf1` (CR-116 v1.0 IN_EXECUTION captured; all submodules at their pre-execution pointers; flow-state @ `da012b4` / FLOW-STATE-1.2). Pass; CR EI-1 row updated; v1.0 → v1.1.
 
 ## CR-116 pre-review history
 - **Cycle 1 (route → review):** QA RECOMMEND first cycle, no TU assignment per SOP-002 §7.1 Exploratory discretion. All four bounds present and verified, factual claims independently verified, appropriateness criterion satisfied. Pre-review subagent ID: `adbc64636efee3e90`.
@@ -67,4 +70,12 @@
 - `qms route CR-116 --approval` → PRE_REVIEWED → IN_PRE_APPROVAL
 - QA pre-approval cleanly first attempt; v0.1 → v1.0; status → PRE_APPROVED
 - `qms release CR-116` → PRE_APPROVED → IN_EXECUTION
-- Total cycles: 1 review + 1 approval. No findings, no rework. Awaiting Lead direction to begin EI-1.
+- Total cycles: 1 review + 1 approval. No findings, no rework.
+
+### EI-1: Pre-execution baseline
+- Lead directed: execute EI-1 per the CR
+- pipe-dream working tree clean, on `main`, up to date with origin
+- Staged: `.claude/sessions/CURRENT_SESSION`, `.claude/sessions/Session-2026-05-03-002/`, `QMS/.archive/CR/CR-116/`, `QMS/.audit/CR/CR-116.jsonl`, `QMS/.meta/CR/CR-116.json`, `QMS/CR/CR-116/`
+- Commit `ac2ecf1` pushed to origin/main
+- Submodule pointers at baseline: Quality-Manual `c6a0a04`, claude-qms `d3c34e5`, flow-state `da012b4` (FLOW-STATE-1.2), qms-cli `309f217`, qms-workflow-engine `3565895`
+- Checked out CR-116 (v1.0 → v1.1), updated EI-1 row with evidence (hash + Pass + signature), checked in
