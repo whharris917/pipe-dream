@@ -1,13 +1,14 @@
 # Session-2026-05-03-002
 
-## Current State (last updated: CR-116 EI-1 Pass)
-- **Active document:** CR-116 (IN_EXECUTION v1.1)
-- **Current EI:** EI-1 Pass (pre-execution baseline captured)
-- **Blocking on:** Lead direction for EI-2 (cut execution branch in flow-state)
-- **Next:** EI-2 cut `cr-116-beach-trip-exploration` from `flow-state/main` at `da012b4` → EI-3 begin free-form exploration
+## Current State (last updated: CR-116 EI-2 Pass)
+- **Active document:** CR-116 (IN_EXECUTION v1.2)
+- **Current EI:** EI-2 Pass (execution branch cut, pushed)
+- **Blocking on:** Nothing — ready for EI-3 (free-form exploration) whenever the Lead chooses to begin
+- **Next:** EI-3 free-form Flow State exploration on `cr-116-beach-trip-exploration`
 
 ## CR-116 execution progress
 - **EI-1:** Pre-execution baseline at pipe-dream@`ac2ecf1` (CR-116 v1.0 IN_EXECUTION captured; all submodules at their pre-execution pointers; flow-state @ `da012b4` / FLOW-STATE-1.2). Pass; CR EI-1 row updated; v1.0 → v1.1.
+- **EI-2:** Branch `cr-116-beach-trip-exploration` cut from flow-state `origin/main` at `da012b4` (verified local HEAD == origin/main before cut). Pushed to flow-state remote with `-u` tracking. Pipe-dream submodule pointer unchanged (no commits yet on branch). Pass; CR EI-2 row updated; v1.1 → v1.2.
 
 ## CR-116 pre-review history
 - **Cycle 1 (route → review):** QA RECOMMEND first cycle, no TU assignment per SOP-002 §7.1 Exploratory discretion. All four bounds present and verified, factual claims independently verified, appropriateness criterion satisfied. Pre-review subagent ID: `adbc64636efee3e90`.
