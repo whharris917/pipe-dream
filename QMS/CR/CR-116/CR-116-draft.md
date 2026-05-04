@@ -1,0 +1,243 @@
+---
+title: Free-form Flow State exploration (beach trip)
+revision_summary: Initial draft
+---
+
+# CR-116: Free-form Flow State exploration (beach trip)
+
+## 1. Purpose
+
+**This is an Exploration CR** per QMS-Policy §6 and SOP-002 §6.2 / §7.1. It self-identifies as Exploratory.
+
+The Lead intends to use the upcoming working vacation ("beach trip") for unstructured, rapid development of the Flow State chemical-engineering game — adding, removing, and reshaping features based on what proves fun and instructive in real play. No specific feature target, refactor target, or architectural change is committed to upfront. The work is genuinely exploratory: the design surface is "what should Flow State be as a game," and the answers are expected to emerge from playing with the system rather than from upfront design.
+
+This CR is appropriate as Exploratory rather than Standard because:
+
+- The work has no known design — Standard CRs require pre-approved Change Description and Implementation Plan content that pre-commits to specific outcomes; that pre-commitment would be fictional here.
+- The work is single-system: changes stay within the `flow-state/` submodule.
+- The work is not architectural — the Air Gap (CLAUDE.md §3.1), Command pattern (§3.2), ToolContext facade (§5.5), and orchestration loop (§7) are pre-existing constraints the exploration operates within, not surfaces it modifies.
+- Behaviors discovered during exploration that warrant being captured as requirements are surfaced as advisory comments by post-review TUs (per qa.md § Exploration CRs item (c)) and may be Nail Down'd later by Lead-initiated Standard CR(s); RS evolution remains the Lead's exclusive prerogative.
+
+This is the first use of the Exploration CR pattern established by CR-115; per CR-115 §5.7, it operates within the three-CR probation window.
+
+---
+
+## 2. Scope
+
+### 2.1 Context
+
+Independent Lead-driven exploration. No parent INV or CAPA. First application of the Exploration CR pattern (CR-115) following Lead direction in Session-2026-05-03-002.
+
+- **Parent Document:** None
+
+### 2.2 Changes Summary
+
+Free-form development of the Flow State application during the beach trip — feature additions, removals, refactorings, tunings, and any other modifications the Lead chooses to make within the bounds below. Specific outcomes are not pre-committed.
+
+### 2.3 Files Affected
+
+Any file within the `flow-state/` submodule, subject to the bounds in §2.4. Specific files modified will be enumerated in the Execution Comments and the eventual qualified diff, not in this section.
+
+### 2.4 Bounds (per SOP-002 §6.2)
+
+This CR is Exploratory and declares the following structural bounds:
+
+- **Target submodule:** `flow-state/` only. No modifications to any other governed submodule (`qms-cli/`, `claude-qms/`, `Quality-Manual/`, `qms-workflow-engine/`) and no modifications to QMS-controlled artifacts in the pipe-dream root (`QMS/`, `.claude/agents/`, `CLAUDE.md`, etc.).
+- **Execution branch:** `cr-116-beach-trip-exploration`, cut from `flow-state/main` at `da012b4` (the FLOW-STATE-1.2 merge commit). All exploration work lands on this branch; main stays qualified throughout.
+- **RS-immutability declaration:** No SDLC-FLOW-RS modifications by this CR. The current EFFECTIVE RS (v3.0) describes Flow State's requirement surface and is preserved unchanged. Behaviors that the Lead later judges should be captured as requirements are deferred to subsequent Lead-initiated Standard CRs ("Nail Down" CRs).
+- **Anti-scope:**
+  - Modifications to other submodules or to the pipe-dream root QMS surface (defensive restatement of the target-submodule bound).
+  - SDLC-FLOW-RS modifications (defensive restatement of the RS-immutability declaration).
+  - New top-level pipe-dream submodules.
+  - The annotated tag namespace `FLOW-STATE-*` is read-only during exploration; the next tag is created at merge time as part of EI-6.
+
+---
+
+## 3. Current State
+
+`flow-state/main` is at `da012b4` (FLOW-STATE-1.2, qualified at `f69455f` per CR-114). Pipe-dream submodule pointer for `flow-state` is at `da012b4`. SDLC-FLOW-RS is v3.0 EFFECTIVE; SDLC-FLOW-RTM is v3.0 EFFECTIVE with line citations anchored to `f69455f`. No exploration branch exists.
+
+---
+
+## 4. Proposed State
+
+`flow-state/main` is advanced through one merge commit containing the qualified head of branch `cr-116-beach-trip-exploration`. The qualified commit is whatever HEAD of the branch is when the Lead concludes the exploration and qualifies it. SDLC-FLOW-RS remains v3.0 EFFECTIVE (unchanged). SDLC-FLOW-RTM is advanced to v4.0 EFFECTIVE with existing requirement line citations re-anchored to the new qualified commit (without adding, removing, or modifying any requirements). Pipe-dream submodule pointer for `flow-state` is advanced to the new merge commit. An annotated tag `FLOW-STATE-1.3` is placed at the merge commit.
+
+The actual content of the diff (which features were added, which were removed, which behaviors changed) is not specified here. It will be enumerated in the Execution Comments as exploration progresses and summarized in §11 at post-review.
+
+---
+
+## 5. Change Description
+
+The change is structurally simple and substantively open:
+
+### 5.1 Structurally
+
+A single execution branch `cr-116-beach-trip-exploration` is cut from `flow-state/main`, accumulates an unspecified number of exploration commits over the course of the beach trip, and is qualified, RTM-anchored, and merged once the Lead concludes the exploration. The merge follows SOP-005 §7.1 (regular merge, not squash; PR-gated; CI passing at the qualified commit).
+
+### 5.2 Substantively
+
+Examples of the *kinds* of work that may emerge during exploration — none of which are commitments — include:
+
+- New tools, commands, widgets, or process objects.
+- Tuning of physics parameters, solver iterations, render rates, or atom counts.
+- New gameplay levers (sources, sinks, materials, constraints).
+- Refactoring or deletion of code that proves to be in the way.
+- Addition of tests for behaviors the Lead wants to lock down.
+- Configuration changes (`config.py` constants, defaults).
+- UI polish, theming, layout adjustments.
+- Audio/visual feedback changes.
+
+The list is illustrative and not exhaustive. The Lead may pursue any of these, none of these, or work outside this list — provided the bounds in §2.4 are honored.
+
+### 5.3 Out-of-bound work
+
+Any work that would exit the §2.4 bounds is handled via the standard VAR mechanism per scope-change-guide.md "Out-of-bound work in an Exploration CR". The VAR documents the deviation and may authorize a new CR for legitimate scope expansion; the VAR itself does not expand the bound (per QMS-Policy §6 final paragraph).
+
+---
+
+## 6. Justification
+
+- **The Lead has stated intent** to use the beach trip for free-form, fun-driven development of Flow State and to validate the Exploration CR pattern in real use. This CR is the vehicle.
+- **The Standard CR pattern would be wrong here.** A Standard CR requires pre-approved §5 Change Description and §9 Implementation Plan content that commits to specific outcomes; pre-committing to outcomes that are intentionally undecided would either produce fictional content (failing pre-review on factual grounds) or force the Lead to invent specifics he does not yet have (defeating the purpose).
+- **The Exploration CR pattern is the designed answer to this.** CR-115 was authored specifically to permit this use case under existing scope-integrity machinery. Not using it now would mean the pattern remains untested.
+- **The QMS retains its assurances.** The pre/post split holds: pre-review verifies the bounds (§2.4) are present and reasonable; post-review verifies the diff stayed within those bounds (QA scope-integrity check, SOP-002 §7.3) and existing REQs remain satisfied (TUs at RTM review, SOP-006 §6). Loose specificity does not mean loose verification — verification simply moves from "did execution match the plan" to "did execution stay within the bounds and preserve existing requirements".
+
+---
+
+## 7. Impact Assessment
+
+### 7.1 Files Affected
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| Files within `flow-state/` | Create / Modify / Delete | Specific files determined during execution; enumerated in Execution Comments and the qualified diff |
+| `flow-state/` submodule pointer in pipe-dream | Modify | Advanced to the new merge commit at EI-6 |
+
+### 7.2 Documents Affected
+
+| Document | Change Type | Description |
+|----------|-------------|-------------|
+| SDLC-FLOW-RTM | Modify | Line citations re-anchored to new qualified commit; v3.0 → v4.0 EFFECTIVE; no requirements added, removed, or modified |
+| SDLC-FLOW-RS | None | Explicitly unchanged per RS-immutability declaration in §2.4 |
+
+### 7.3 Other Impacts
+
+- A new annotated tag `FLOW-STATE-1.3` is created on `flow-state/main` at the merge commit.
+- No external systems, interfaces, or APIs are affected (Flow State is local-only).
+- No QMS document or process changes.
+
+### 7.4 Development Controls
+
+This CR implements changes to `flow-state`, a controlled submodule. Development follows established controls:
+
+1. **Test environment isolation:** Development on the `flow-state/` working tree (local) or `/projects/flow-state/` (containerized).
+2. **Branch isolation:** All development on branch `cr-116-beach-trip-exploration`.
+3. **Write protection:** Existing pipe-dream `.claude/settings.local.json` write-protection rules continue to apply.
+4. **Qualification required:** All existing requirements in EFFECTIVE RS v3.0 must remain satisfied at the qualified commit. CI must pass.
+5. **CI verification:** Tests must pass on GitHub Actions for the execution branch.
+6. **PR gate:** Changes merge to main only via PR after RTM is EFFECTIVE.
+7. **Submodule update:** Pipe-dream pointer advances only after the PR is merged.
+
+### 7.5 Qualified State Continuity
+
+| Phase | flow-state main | RS / RTM Status | Qualified Release |
+|-------|-----------------|-----------------|-------------------|
+| Before CR | `da012b4` | RS v3.0 / RTM v3.0 EFFECTIVE | FLOW-STATE-1.2 |
+| During execution | Unchanged | RS v3.0 EFFECTIVE / RTM v3.0 EFFECTIVE during exploration; RTM checked out for re-anchoring at EI-5 | FLOW-STATE-1.2 (unchanged) |
+| Post-approval | Advanced via merge commit from `cr-116-beach-trip-exploration` | RS v3.0 EFFECTIVE (unchanged) / RTM v4.0 EFFECTIVE | FLOW-STATE-1.3 |
+
+---
+
+## 8. Testing Summary
+
+### Automated Verification
+
+The existing test suite under `flow-state/tests/` (and any new tests added during exploration) must pass at the qualified commit. CI on GitHub Actions is the gate. New behaviors introduced exploratorily are encouraged — but not required — to be accompanied by tests; behaviors that the Lead wants to lock down should be tested at minimum.
+
+### Integration Verification
+
+The Lead will exercise Flow State directly throughout the beach trip — that is the exploration. Integration verification is the *purpose* of the CR, not a discrete phase. The qualified commit will be HEAD of the branch at the moment the Lead judges the exploration ready to merge.
+
+VR documents are not pre-flagged in the EI table because the exploration may produce many or zero distinct verification surfaces; concrete VRs (if any) may be added during execution per SOP-004 §9C.
+
+---
+
+## 9. Implementation Plan
+
+The plan is intentionally a structural envelope with one open exploration EI. Specific work performed inside EI-3 is captured in Execution Comments as it happens, not enumerated here.
+
+### 9.1 Phase 1: Pre-execution baseline
+
+Commit and push pipe-dream + all submodules to capture pre-execution state. (EI-1.)
+
+### 9.2 Phase 2: Branch setup
+
+Create `cr-116-beach-trip-exploration` from `flow-state/main` at `da012b4`. (EI-2.)
+
+### 9.3 Phase 3: Exploration
+
+Free-form development on the execution branch over the duration of the beach trip. Multiple commits per session are normal; each commit is local until pushed. Per-session or per-feature observations are captured in Execution Comments. (EI-3.)
+
+### 9.4 Phase 4: Qualification
+
+When the Lead judges the exploration ready, push the branch and verify CI passes. The CI-verified head commit is the qualified commit. (EI-4.)
+
+### 9.5 Phase 5: RTM update
+
+Check out SDLC-FLOW-RTM, re-anchor existing line citations to the qualified commit, advance v3.0 → v4.0 (no requirements added, removed, or modified). Route for review and approval; verify EFFECTIVE before merge. (EI-5.)
+
+### 9.6 Phase 6: Merge and submodule update
+
+Open PR from `cr-116-beach-trip-exploration` to `flow-state/main`. Merge with regular merge commit (not squash, per SOP-005 §7.1.3). Verify the qualified commit is reachable from main. Push annotated tag `FLOW-STATE-1.3` at the merge commit. Advance pipe-dream submodule pointer. (EI-6.)
+
+### 9.7 Phase 7: Post-execution baseline
+
+Commit and push pipe-dream + all submodules to capture post-execution state. (EI-7.)
+
+---
+
+## 10. Execution
+
+| EI | Task Description | VR | Execution Summary | Task Outcome | Performed By - Date |
+|----|------------------|----|-------------------|--------------|---------------------|
+| EI-1 | Pre-execution baseline: commit and push pipe-dream + all submodules | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-2 | Create execution branch `cr-116-beach-trip-exploration` from `flow-state/main` at `da012b4` | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-3 | Free-form Flow State exploration on the execution branch (multiple sessions; per-session observations captured in Execution Comments) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-4 | Push execution branch; verify CI passes; record qualified commit hash | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-5 | Re-anchor SDLC-FLOW-RTM line citations to qualified commit; advance v3.0 → v4.0 EFFECTIVE (no REQ changes) | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-6 | Open PR; regular-merge to `flow-state/main`; tag `FLOW-STATE-1.3` annotated; advance pipe-dream submodule pointer | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+| EI-7 | Post-execution baseline: commit and push pipe-dream + all submodules | | [SUMMARY] | [Pass/Fail] | [PERFORMER] - [DATE] |
+
+---
+
+### Execution Comments
+
+| Comment | Performed By - Date |
+|---------|---------------------|
+| [COMMENT] | [PERFORMER] - [DATE] |
+
+---
+
+## 11. Execution Summary
+
+[EXECUTION_SUMMARY]
+
+---
+
+## 12. References
+
+- **SOP-001:** Document Control
+- **SOP-002:** Change Control (v17.0; §6.2 and §7.1 Exploratory CR provisions)
+- **SOP-005:** SDLC and System Releases (§7.1 execution-branch / PR / regular-merge workflow)
+- **SOP-006:** SDLC Documents (§6 RTM verification; §7.4 merge gate)
+- **QMS-Policy:** §6 Scope Integrity (Exploratory CR paragraph)
+- **qa.md:** ## Exploration CRs section (review behaviors (a)/(b)/(c))
+- **scope-change-guide.md:** "Out-of-bound work in an Exploration CR"
+- **CR-115:** Permit Exploration CRs under existing scope-integrity machinery (the meta-CR that established this pattern)
+- **SDLC-FLOW-RS:** v3.0 EFFECTIVE (unchanged by this CR)
+- **SDLC-FLOW-RTM:** v3.0 EFFECTIVE → v4.0 EFFECTIVE (line citations re-anchored at EI-5)
+
+---
+
+**END OF DOCUMENT**
