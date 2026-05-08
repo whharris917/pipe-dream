@@ -90,3 +90,14 @@
 ### Lead validation
 - Lead built and ran the GUI; PBC observed working visually. Quote: "It works!"
 - Stamp on the design choices: backward-compat `use_boundaries` property + F8 cycle + button auto-sync all confirmed by live use.
+
+### Submodule clone reconciliation (post-PBC cleanup)
+- Lead surfaced a long-standing process drift: the `pipe-dream/flow-state/` submodule clone had been left checked out on `cr-116-beach-trip-exploration@6b6ad45` since 2026-05-04, while the intent was that this clone stay on `main` and all CR-116 work happen in `.test-env/flow-state/`.
+- Reflog audit traced the original deviation to **2026-05-03 20:50** — pipe-dream commit `df4ec0e CR-116 EI-2: Cut execution branch in flow-state`. EI-2's task description specified "Branch `cr-116-beach-trip-exploration` created in flow-state submodule" — i.e. the wrong clone. Subsequent dev work migrated correctly into `.test-env/flow-state/` but the submodule clone was never put back on main.
+- Confirmed this session did **not** modify the submodule clone's HEAD or branches. Only operation against it was a `git fetch origin` (read-only with respect to local refs/HEAD).
+- Reconciliation: `cd flow-state && git checkout main && git pull origin main --ff-only`. Fast-forwarded local main from `c82c8e2` (CR-112 / FLOW-STATE-1.1, last pulled 2026-05-01) → `da012b4` (CR-114 / FLOW-STATE-1.2). Matches pipe-dream's tracked submodule pointer exactly; `git status` now clean at both levels.
+- The `cr-116-beach-trip-exploration` local branch ref is preserved in the submodule clone but not checked out. CR-116 development continues to live solely in `.test-env/flow-state/` and on the remote.
+
+### Lessons / candidate process improvements
+- The CR-116 §9.2 EI-2 wording ("created in flow-state submodule") quietly contradicted the working norm of using `.test-env/flow-state/` as the dev clone. For future Exploration CRs, EI-2-style branch-cut tasks should be explicit about which clone gets touched.
+- A quick cleanup pre-flight check at session start ("is the `flow-state/` submodule clone on main with HEAD == tracked pointer?") would have surfaced this drift sooner. Worth folding into the session-start checklist if the pattern recurs.
