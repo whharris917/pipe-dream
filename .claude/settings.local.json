@@ -137,7 +137,9 @@
       "Bash(mkdir -p .claude/sessions/Session-2026-05-03-001)",
       "Bash(echo \"Session-2026-05-03-001\")",
       "Bash(echo Session-2026-05-03-003)",
-      "Bash(mkdir -p .claude/sessions/Session-2026-05-03-003)"
+      "Bash(mkdir -p .claude/sessions/Session-2026-05-03-003)",
+      "Bash(echo \"Session-2026-05-05-002\")",
+      "Bash(mkdir -p .claude/sessions/Session-2026-05-05-002)"
     ],
     "deny": [
       "Edit(QMS/**)",
