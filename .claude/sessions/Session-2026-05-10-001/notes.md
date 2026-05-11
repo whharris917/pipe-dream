@@ -1,16 +1,15 @@
 # Session-2026-05-10-001
 
-## Current State (last updated: Sink + ProcessObject resize + handle cascade-delete done)
+## Current State (last updated: end of session — all rounds committed and pushed)
 - **Active document:** CR-116 (IN_EXECUTION v1.2) — Exploration CR umbrella for beach-trip Flow State work
 - **Current EI:** EI-3 (free-form exploration)
-- **Blocking on:** Nothing — ready for Lead in-GUI re-validation
-- **Next:** Lead validates resize (drag a Source/Sink edge) and cascade-delete (select handle Point + DEL) in
-  the GUI; if both work, commit the session's work
+- **Blocking on:** Nothing — all work committed and pushed
+- **Next:** Lead in-GUI validation of remaining items (Mercury vs Water inertia, damping=0.95
+  deceleration, Wall sigma=0.1 sticky). See "Final state (post-Round 9)" at the end of these notes.
 - **Subagent IDs:** none active
 - **Branch state:**
-  - `.test-env/flow-state/` on `cr-116-beach-trip-exploration` upstream @ `9358631`
-  - **Uncommitted local changes** across 13 files now (Sink + resize + cascade-delete)
-  - Suite at **564 passing + 1 skipped** (was 523 + 1 → **+41 new tests this session**)
+  - `.test-env/flow-state/` on `cr-116-beach-trip-exploration` @ `5298dce` (clean working tree)
+  - Suite at **653 passing + 1 skipped** (was 523 + 1 → **+130 tests this session**, single-session record)
 
 ## Session-start checklist
 - New day (2026-05-10); first session of the day → Session-2026-05-10-001
@@ -528,3 +527,139 @@ max_val to 999 so the slider's draggable range grows. That would explain the unu
 `hard_min`/`hard_max` constructor params (they'd be the absolute walls beyond which expansion
 can't go). If the Lead wants auto-expansion, that's a small follow-up: replace the clamp with
 `min_val/max_val = ...; respecting hard_min/hard_max if set`.
+
+### Round 7: slider auto-expand instead of clamp
+
+Lead reported: typing Wall sigma=0.1 (MiniSlider min_val=0.5) kept snapping back to 0.5. The
+clamp behaviour from Round 6 was the wrong interpretation — the user wanted the **limits to
+expand to include the typed value**, not the typed value to clamp to the limits.
+
+**Fix:** SmartSlider and MiniSlider now both auto-expand. `min_val`/`max_val` are SOFT limits that
+auto-stretch to include typed values outside the current range; `hard_min`/`hard_max` are
+IMMUTABLE walls (None = no wall) that auto-expansion respects. Values typed beyond a hard wall
+clip to the wall; the soft range expands to meet it. MiniSlider gained the `hard_min`/`hard_max`
+constructor params it was missing (SmartSlider already had them). Both sliders' `set_value`
+(programmatic — handles loading a material with out-of-range values) and InputField-entry paths
+go through a single `_apply_value_with_expansion` helper.
+
+**Tests updated:** 6 clamp tests rewritten as expansion tests + 7 new tests covering hard-cap
+clipping, in-range no-op, and the literal Wall-sigma=0.1 scenario. **Suite 631 → 638 + 1 skipped.**
+
+### Round 8: per-particle mass — physics engine refactor
+
+Lead reported: two blobs of atoms with 100× mass ratio per atom moved with identical inertia.
+Root cause in the kernel: `integrate_n_steps`, `integrate_n_steps_newton3`, and `apply_thermostat`
+all took `mass` as a **scalar** parameter. Materials carry per-material mass (Mercury 13.5, Water
+1.0, Oil 0.9) but the value was discarded at spawn time — every call used
+`np.float32(config.ATOM_MASS)`. Inside the kernel `inv_mass = 1.0/mass` and
+`dt2_2m = 0.5*dt*dt/mass` were precomputed scalars, so every atom integrated with the same
+inertia.
+
+**Engine refactor — per-particle mass plumbed end-to-end:**
+
+- `engine/simulation.py`: new `self.atom_mass` array (shape `capacity`, dtype `float32`, defaults
+  to `config.ATOM_MASS`). Threaded through `_add_particle` (new `mass=` param), `compact_arrays`,
+  `snapshot`, `_push_to_stack`, `_restore_physics_state`, `to_dict`, `restore`, `_resize_arrays`,
+  warmup, `step()`. Both `integrate_n_steps` and `integrate_n_steps_newton3` calls now pass
+  `self.atom_mass[:count]` instead of `np.float32(config.ATOM_MASS)`. `apply_thermostat` call
+  passes the array.
+
+- `engine/physics_core.py`: kernel signatures `mass` (scalar) → `atom_mass` (array). Inside the
+  kernel, replaced precomputed `dt2_2m` / `inv_mass` scalars with per-particle
+  `inv_mi = 1.0 / atom_mass[i]` and `dt2_2m_i = half_dt2 * inv_mi` computed inside each per-
+  particle loop iteration (4 sites in classic, 5 in Newton-3 incl. gravity merge). Gravity force
+  now `atom_mass[i] * gravity`. `apply_thermostat` KE reduction now `0.5 * atom_mass[i] * v²`.
+  `spatial_sort` permutes atom_mass alongside other per-particle arrays.
+
+- `engine/compiler.py`: `_add_tethered_atom` and `_add_static_atom` accept `mass` param and write
+  `sim.atom_mass[idx]`. Call sites pass `mat.mass`.
+
+- `engine/particle_brush.py`: `paint` accepts `mass=`. Internal `_add_particle` writes
+  `sim.atom_mass[idx]`.
+
+- Air-gap surface: `core/tool_context.py` `get_active_material` returns mass; `core/scene.py`
+  `paint_particles` passes `material['mass']` to brush; `model/process_objects.py`
+  `Source._try_spawn_particle` passes `material.mass`.
+
+**Tests added (round 8 — +11, all green):**
+- `TestPerParticleMass` (7): atom_mass array default; per-particle storage (1.0/13.5/0.9); heavy
+  and light fall the **same** distance under gravity alone (F=mg → a=g, mass cancels — pins
+  physical sanity); heavy particle's **|Δv| stays smaller** under LJ repulsion (bug-pinpoint test:
+  light/heavy |Δv| ratio > 1.5 vs the buggy scalar-mass case which would give 1.0; theoretical
+  max is 2.0); atom_mass round-trips through `snapshot`, `to_dict`/`restore`, `compact_arrays`.
+- `TestSourceParticlesCarryMaterialMass` (1): Mercury Source spawn → all atoms `atom_mass=13.5`.
+- `TestBrushParticlesCarryMaterialMass` (2): `brush.paint(mass=13.5)` sets atom_mass to 13.5;
+  default falls back to `config.ATOM_MASS`.
+- `TestCompilerAtomsCarryMaterialMass` (1): line with Oil material → static wall atoms carry
+  Oil's mass.
+
+**Tests updated:** `TestApplyThermostat` (5) updated to pass `atom_mass` arrays.
+
+**Suite:** 638 → **649 + 1 skipped** (+11 net).
+
+### Round 9: damping → per-substep medium drag
+
+Lead reported: particles bounce elastically even with `damping=0.999`. Diagnosed: the "Damping"
+slider's value was only ever applied at wall bounces (`vel *= wall_damping` on reflection).
+Free-flying particles saw zero deceleration regardless of slider value, so `damping=0.999`
+looked indistinguishable from `damping=1.0` in free flight, and a 0.1% per-bounce loss is
+barely visible at all. **The slider was a "wall elasticity" knob misnamed as "Damping".**
+
+**Fix:** apply `wall_damping` as a per-substep velocity multiplier on every dynamic atom at the
+end of section 4 (after Verlet half-vel update), in both `integrate_n_steps` and
+`integrate_n_steps_newton3`. The wall-bounce multiplier is left in place so reflecting-boundary
+energy loss still applies (combines with per-substep drag for a small extra loss at walls).
+Tethered atoms (st==3) keep their separate `TETHER_DAMPING` constant (spring-oscillation
+suppressor) and are NOT subject to the new medium-drag term — the slider only affects dynamic
+atoms.
+
+**New semantic:**
+- `damping=1.0` → no drag (particles fly forever in OPEN/PERIODIC)
+- `damping=0.99` → loses 1% velocity per substep (visible deceleration over a second)
+- `damping=0.95` → loses 5% per substep (rapid halt)
+- `damping=0.999` → loses 0.1% per substep (gentle but **visible**)
+
+Slider range stays 0.90–1.0 with default 0.99. The match between slider value and physical "drag
+coefficient" is now intuitive.
+
+**Tests added (round 9 — +4, all green):**
+- `TestPerSubstepDamping` (4): damping<1.0 reduces free-flying particle velocity by exactly
+  `damping^N` (single-substep granularity to avoid displacement-safety cutoff in long inner
+  loops); damping=1.0 preserves velocity exactly; damping is mass-independent (drag is a velocity
+  multiplier, not a force — heavy and light damp at identical relative rates); tethered atoms use
+  `TETHER_DAMPING` regardless of slider.
+
+**Tests updated:** Round-8 mass-inertia tests now set `damping=1.0` explicitly to isolate mass
+effects from the new per-substep drag.
+
+**Discovery during testing:** with `world_size` default at 50 and a particle placed at exactly
+(50, 50), the OPEN-boundary escape filter removes it after one substep of motion. Tests now use
+`world_size=200` and central positions to keep particles well in-bounds.
+
+**Suite:** 649 → **653 + 1 skipped** (+4 net). Session total: 523 → 653 (**+130 tests**, the
+largest test-add session by a wide margin).
+
+**Naming gotcha flagged but not changed:** the variable is named `self.damping` on Simulation but
+passed to the kernel as `wall_damping`. The kernel-side variable name is now slightly inaccurate
+(it's no longer wall-only). Renaming to `dynamic_damping` or `drag` would be cosmetic; deferred.
+
+## Final state (post-Round 9)
+
+**Suite:** 653 passing + 1 skipped (was 523 + 1 → **+130 tests**, by far the largest test-add
+session to date).
+
+**Flow-state commits this session (on `cr-116-beach-trip-exploration`):**
+- c51790b — Sink ProcessObject + Source Properties dialog + flux refactor + slider fixes (Rounds 1-6)
+- 6bfbbc1 — slider auto-expand instead of clamp on typed input (Round 7)
+- a7d98a4 — per-particle mass — fix every atom using the same inertia (Round 8)
+- 5298dce — damping now acts as per-substep medium drag, not wall-only (Round 9)
+
+**Pipe-dream commits this session (on `main`):**
+- 0dbd800 — Session-2026-05-10-001 progress + PROJECT_STATE update (after Round 6)
+- (this commit) — Rounds 7-9 narrative + PROJECT_STATE update
+
+**Outstanding GUI validations the Lead may want to do:**
+- Mercury vs Water blobs should now visibly differ in inertia
+- Damping slider at 0.95 should produce visible deceleration of free particles
+- Wall sigma=0.1 should stick (slider expands range, no snap-back)
+- Source Properties dialog → material switch propagates particle properties immediately
