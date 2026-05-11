@@ -1,13 +1,14 @@
 # Session-2026-05-10-002
 
-## Current State (last updated: end of session — R5 fix landed)
+## Current State (last updated: end of session — R6 angle springs + 6-molecule palette)
 - **Active document:** CR-116 IN_EXECUTION v1.2 — Exploration CR (beach-trip Flow State work)
 - **Current EI:** EI-3 (free-form exploration) — still open
-- **Blocking on:** Nothing — R5 Maxwell-Boltzmann fix landed for the
-  "placed molecules don't translate under thermostat" issue
+- **Blocking on:** Nothing — Lead-requested angle springs + molecule
+  palette population landed
 - **Next:** Lead to decide (continue CR-116 exploration, address known
   limitations, or close out CR-116 for qualification)
-- **Suite:** **762 passing + 1 skipped** (+109 this session: R1-R4 +103, R5 +6)
+- **Suite:** **801 passing + 1 skipped** (+148 this session: R1-R4 +103,
+  R5 +6, R6 +39)
 - **Subagent IDs:** none active
 - **Branch state:**
   - `.test-env/flow-state/` on `cr-116-beach-trip-exploration` — uncommitted molecule
@@ -390,6 +391,74 @@ mass drifts measurably over 200 substeps (pre-fix this was zero).
   perpendicular kick instead)
 - True stochastic thermostat (Langevin) — bigger refactor; Berendsen
   is adequate now that placed molecules have nonzero initial KE
+
+### Round 6: Angle springs + populate starter molecule palette ✅
+
+Lead requested: "Add an angle-based spring force (energy = k*(θ-θ_eq)²),
+then populate Flow State with a handful of simple molecules."
+
+**Engine (parallel to R1 bond plumbing):**
+- `engine/physics_core.py` — new `apply_angle_forces` @njit kernel.
+  Analytical force gradients of U = k*(θ - θ_eq)² with respect to each
+  atom; cos(θ) clamped to [-1, 1] before `acos`; sin(θ) clamped to
+  ≥ 1e-6 to avoid 1/sinθ singularity at linear configurations. F_b
+  = -(F_a + F_c) so no net force on the triplet. PBC minimum-image
+  supported. Wired into both `integrate_n_steps` and
+  `integrate_n_steps_newton3` after the bond-force phase.
+- `engine/simulation.py` — `angle_*` arrays + `add_angle` / `remove_angle`
+  / `clear_angles` / `_resize_angle_arrays`. Plumbing through
+  `clear`, `compact_arrays` (remap + drop), `snapshot` / `_push_to_stack`
+  / `_restore_physics_state`, `to_dict` / `restore`, `step` (both
+  paths), `_warmup_compiler`. Pre-angle saves get `angle_count=0`.
+- `benchmarks/breakdown.py` — kernel call site updated.
+
+**Data model:**
+- `model/molecule.py` — `MoleculeAngle` dataclass; `MoleculeTemplate`
+  gains `angles: list` + serializes them. `validate()` checks angle
+  indices. `auto_generate_angles(k=50.0)` infers angles from bond
+  topology + atom positions (every pair of bonds sharing a common atom
+  becomes an angle at that apex with θ_eq from current geometry).
+- `make_water` updated with explicit 104.5° angle.
+- NEW: `make_co2` (linear, 180°), `make_ammonia` (trigonal 120°),
+  `make_methane` (2D-planar 4-fold, 90°), `make_benzene` (hexagonal
+  6-ring, 120° at every vertex).
+- `Sketch._seed_default_molecules` expanded to seed all six starters.
+
+**Command + UX:**
+- `AddMoleculeCommand` places template angles via `sim.add_angle` with
+  the same template-local → placement-time atom-index remap used for
+  bonds. Undo truncation extended to `angle_count`.
+- `MoleculeBuilderDialog.apply_to_sketch` auto-generates angles from
+  the current bond topology on Save when the template doesn't already
+  carry explicit angles.
+
+**Tests added (+39, all green):**
+- `tests/test_simulation.py`: `TestAngleArrayConstruction` (7),
+  `TestAngleForceKernel` (6 incl. PBC min-image and near-linear stays-
+  finite), `TestAngleCompactRemap` (2), `TestAngleSerializationRoundTrip`
+  (3), `TestAngleIntegration` (1, end-to-end relaxation toward θ_eq).
+- `tests/test_molecule.py`: `TestMoleculeAngleDataclass` (1),
+  `TestMoleculeTemplateAngleValidation` (3),
+  `TestStarterMoleculesShipWithAngles` (6),
+  `TestSketchSeedsAllStarterMolecules` (1), `TestAutoGenerateAngles`
+  (3), `TestAddMoleculeCommandPlacesAngles` (5 incl. end-to-end "water
+  holds its V-shape"), `TestBuilderAutoGeneratesAnglesOnSave` (1).
+
+**Suite:** 762 → **801 passing + 1 skipped** (+39).
+
+**Starter palette (now 6 templates):** Diatom (H₂-like), Water-mol (V),
+CO₂ (linear), Ammonia (trigonal), Methane (4-fold planar), Benzene
+(hexagonal ring).
+
+**Architectural notes:**
+- Angle force is perpendicular to the leg direction (not along the
+  bisector); discovered during test authoring. The kernel computes
+  ∂cos(θ)/∂r_a which gives a vector orthogonal to the b→a direction
+  (since changing |r_a| alone doesn't change cos(θ)). Updated the
+  test prediction.
+- Real CH₄ is tetrahedral (109.5°) and NH₃ is pyramidal in 3D; the 2D
+  collapse uses flat geometries (4-fold 90° for methane, trigonal 120°
+  for ammonia). Documented in helper docstrings.
 
 **Known limitations (not fixed in this arc — flagged for follow-up if
 Lead validates):**
