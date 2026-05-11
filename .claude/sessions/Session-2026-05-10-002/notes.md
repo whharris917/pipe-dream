@@ -1,12 +1,13 @@
 # Session-2026-05-10-002
 
-## Current State (last updated: end of session — Lead validated + commits pushed)
+## Current State (last updated: end of session — R5 fix landed)
 - **Active document:** CR-116 IN_EXECUTION v1.2 — Exploration CR (beach-trip Flow State work)
 - **Current EI:** EI-3 (free-form exploration) — still open
-- **Blocking on:** Nothing — Lead validated the GUI ("This largely works!") after
-  the Dropdown.on_change two-arg signature fix; all work committed and pushed
+- **Blocking on:** Nothing — R5 Maxwell-Boltzmann fix landed for the
+  "placed molecules don't translate under thermostat" issue
 - **Next:** Lead to decide (continue CR-116 exploration, address known
   limitations, or close out CR-116 for qualification)
+- **Suite:** **762 passing + 1 skipped** (+109 this session: R1-R4 +103, R5 +6)
 - **Subagent IDs:** none active
 - **Branch state:**
   - `.test-env/flow-state/` on `cr-116-beach-trip-exploration` — uncommitted molecule
@@ -343,6 +344,52 @@ uncommitted (Lead preference: no commit until asked).
 
 **Branch state:** `.test-env/flow-state/` on `cr-116-beach-trip-exploration`,
 all R1-R4 work committed + pushed in four round-aligned commits.
+
+### Round 5: Maxwell-Boltzmann COM velocity at placement ✅
+
+Lead observed post-validation: placed water molecules don't translate
+even with the thermostat on and target_temp > 0.
+
+**Diagnosis.** `apply_thermostat` (Berendsen velocity-rescaling at
+`engine/physics_core.py:760`) is a multiplicative rescaler with an
+`if current_T <= 1e-6: return` early-out. AddMoleculeCommand spawned
+atoms with `vx=vy=0`, and `make_water` places atoms at LJ + bond
+equilibrium (zero net force), so molecules sat perfectly still —
+KE=0 forever, thermostat did nothing. Internal bond vibration (when
+it eventually starts via gravity or wall bounces) doesn't produce
+centre-of-mass translation, and the thermostat just scales existing
+motion.
+
+**Fix.** `AddMoleculeCommand.execute` now samples a centre-of-mass
+velocity from `N(0, sqrt(target_temp / M_molecule))` and applies the
+same `(vx_cm, vy_cm)` to every atom in the molecule. Each placed
+molecule starts with a Maxwell-Boltzmann translational kick in a
+random direction; the thermostat then maintains it. Uses Python's
+`random` module (matches the existing `Source._sample_velocity`
+pattern). The kick is suppressed when `target_temp == 0` (placed
+molecules stay stationary), preserving the existing-test behaviour.
+
+Same-COM-velocity-for-every-atom (rather than per-atom Maxwell-
+Boltzmann) keeps the bond at `r_eq` at t=0 — internal vibration would
+stretch the bond on placement, which is a worse starting state.
+
+**Tests added (+6, all green):** `TestMaxwellBoltzmannPlacementVelocity`
+in `tests/test_molecule.py` — zero-temp → zero velocity (regression
+case), nonzero-temp → nonzero velocity (the fix), all atoms in a
+diatom share COM velocity, all 3 atoms in water_mol share COM
+velocity, heavier molecule has smaller speed at same target_temp
+(200-sample ratio test in [2.7, 5.0] for the theoretical 3.67),
+end-to-end: thermostat-on + placed molecule + no gravity → centre-of-
+mass drifts measurably over 200 substeps (pre-fix this was zero).
+
+**Suite:** 756 → **762 passing + 1 skipped** (+6).
+
+**Open follow-ups deliberately deferred:**
+- Per-atom internal vibration initialization (would stretch bonds on
+  placement — bad starting state; could do small-amplitude
+  perpendicular kick instead)
+- True stochastic thermostat (Langevin) — bigger refactor; Berendsen
+  is adequate now that placed molecules have nonzero initial KE
 
 **Known limitations (not fixed in this arc — flagged for follow-up if
 Lead validates):**
